@@ -1,7 +1,7 @@
 # Reliable public non-ATS URL imports
 
 Date: 2026-09-05
-Status: Approved conversational design; written specification awaiting review.
+Status: Written specification approved by the user on 2026-09-05.
 
 ## Outcome and approved scope
 
