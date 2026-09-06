@@ -222,14 +222,11 @@ def set_override(
     body: OverridePatch,
     session: Session = Depends(get_session),
 ):
-    def change():
-        if body.field != field:
-            raise ValueError("Field does not match request path")
-        revision = ScrapeStore(session).set_override(_job_key(session, job_id), body)
-        session.commit()
-        return {"revision": revision}
-
-    return _guard(change)
+    return _guard(
+        lambda: {
+            "revision": scrape_review.set_job_override(session, job_id, field, body)
+        }
+    )
 
 
 @router.delete("/jobs/{job_id}/source-overrides/{field}")
@@ -239,14 +236,13 @@ def clear_override(
     expected_revision: int,
     session: Session = Depends(get_session),
 ):
-    def change():
-        revision = ScrapeStore(session).remove_override(
-            _job_key(session, job_id), field, expected_revision
-        )
-        session.commit()
-        return {"revision": revision}
-
-    return _guard(change)
+    return _guard(
+        lambda: {
+            "revision": scrape_review.clear_job_override(
+                session, job_id, field, expected_revision
+            )
+        }
+    )
 
 
 @router.post("/scrape/sources/{source_id}/edit", response_model=Draft)

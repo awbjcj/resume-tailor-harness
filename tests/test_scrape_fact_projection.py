@@ -107,3 +107,48 @@ def test_distinct_inline_postings_do_not_merge_on_board_url():
             )
             ingest_observation(session, item, store, inline=True)
         assert len(session.exec(select(Job)).all()) == 2
+
+
+def test_explicit_override_projects_latest_source_facts_for_a_progressed_job():
+    from resume_tailor_harness.services.scrape_review import set_job_override
+    from resume_tailor_harness.tracking.tables import Job, JobStatus
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        store = ScrapeStore(session)
+        first = Observation(
+            source_id="board",
+            revision=1,
+            job_key="one",
+            accepted=True,
+            facts=JobFacts(
+                source_url="https://example.com/jobs/1",
+                title="Engineer",
+                company="Example",
+                jd_text="Build reliable software",
+                remote_policy="onsite",
+            ),
+        )
+        job_id = ingest_observation(session, first, store)
+        assert job_id is not None
+        job = session.get(Job, job_id)
+        assert job is not None
+        job.status = JobStatus.tailored.value
+        session.add(job)
+        session.commit()
+
+        latest = first.model_copy(deep=True, update={"id": "latest"})
+        latest.facts.remote_policy = "hybrid"
+        ingest_observation(session, latest, store)
+        set_job_override(
+            session,
+            job_id,
+            "remote_policy",
+            OverridePatch(field="remote_policy", value="remote", expected_revision=0),
+        )
+
+        criteria = project_source_facts(session, job_id, JobCriteria())
+        session.refresh(job)
+        assert criteria.remote_policy == "remote"
+        assert job.status == JobStatus.tailored.value

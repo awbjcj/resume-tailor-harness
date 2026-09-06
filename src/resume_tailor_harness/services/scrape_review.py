@@ -5,10 +5,12 @@ from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy.engine import CursorResult
-from sqlmodel import Session, col
+from sqlmodel import Session, col, select
 
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.db import make_engine
+from resume_tailor_harness.discovery.connectors.dates import parse_iso_datetime
+from resume_tailor_harness.discovery.merge import IncomingJob
 from resume_tailor_harness.discovery.scraper.browser_worker import (
     BrowserUnavailable,
     BrowserWorker,
@@ -20,6 +22,7 @@ from resume_tailor_harness.discovery.scraper.contracts import (
     Draft,
     FieldName,
     JsonValue,
+    Observation,
     OverridePatch,
     JobFacts,
     ValidationResult,
@@ -37,6 +40,7 @@ from resume_tailor_harness.discovery.scraper.replay import replay
 from resume_tailor_harness.discovery.scraper.store import RevisionConflict, ScrapeStore
 from resume_tailor_harness.discovery.scraper.tables import (
     ScrapeApprovalRow,
+    ScrapeObservationRow,
     ScrapeOverrideRow,
     ScrapeSourceRow,
     ScrapeRevisionRow,
@@ -55,6 +59,11 @@ from resume_tailor_harness.services.scrape_ingest import (
     find_observed_job,
 )
 from resume_tailor_harness.tenancy.context import current_context
+from resume_tailor_harness.tracking.repository import (
+    company_rename_collides,
+    has_progress,
+)
+from resume_tailor_harness.tracking.tables import Job, JobStatus
 
 
 def build_gateway() -> BrowserGateway:
@@ -250,6 +259,106 @@ def approve_draft(
         raise
 
 
+def set_job_override(
+    session: Session, job_id: int, field: FieldName, patch: OverridePatch
+) -> int:
+    """Save a correction and immediately project its effective facts onto its job."""
+    if patch.field != field:
+        raise ValueError("Field does not match request path")
+    try:
+        row, job_key = _latest_job_observation(session, job_id)
+        store = ScrapeStore(session)
+        revision = store.set_override(job_key, patch)
+        _sync_job_source_facts(session, job_id, row, store)
+        session.commit()
+        return revision
+    except Exception:
+        session.rollback()
+        raise
+
+
+def clear_job_override(
+    session: Session, job_id: int, field: FieldName, expected_revision: int
+) -> int:
+    """Remove a correction and restore the source value on its canonical job."""
+    try:
+        row, job_key = _latest_job_observation(session, job_id)
+        store = ScrapeStore(session)
+        revision = store.remove_override(job_key, field, expected_revision)
+        _sync_job_source_facts(session, job_id, row, store)
+        session.commit()
+        return revision
+    except Exception:
+        session.rollback()
+        raise
+
+
+def _latest_job_observation(
+    session: Session, job_id: int
+) -> tuple[ScrapeObservationRow, str]:
+    row = session.exec(
+        select(ScrapeObservationRow)
+        .where(ScrapeObservationRow.job_id == job_id)
+        .order_by(col(ScrapeObservationRow.observed_at).desc())
+    ).first()
+    if row is None or row.job_key is None:
+        raise KeyError(job_id)
+    return row, row.job_key
+
+
+def _sync_job_source_facts(
+    session: Session,
+    job_id: int,
+    row: ScrapeObservationRow,
+    store: ScrapeStore,
+) -> None:
+    """Apply one observation's effective facts without discarding user artifacts."""
+    job = session.get(Job, job_id)
+    if job is None:
+        raise KeyError(job_id)
+    observation = Observation.model_validate_json(row.payload)
+    facts = store.effective_facts(observation)
+    incoming = IncomingJob.clean(
+        source=job.source,
+        url=job.url,
+        company=facts.company,
+        title=facts.title,
+        location="; ".join(facts.locations) if facts.locations else None,
+        jd_text=facts.jd_text or "",
+        posted_at=parse_iso_datetime(facts.posted_at),
+    )
+    if (
+        incoming.dedup_key != job.dedup_key
+        and company_rename_collides(
+            session, existing=job, dedup_key=incoming.dedup_key
+        )
+    ):
+        raise ValueError("Corrected title and company conflict with another active job")
+
+    job.company = incoming.company
+    job.title = incoming.title
+    job.location = incoming.location
+    job.jd_text = incoming.jd_text
+    job.posted_at = incoming.posted_at
+    job.dedup_key = incoming.dedup_key
+    job.content_fingerprint = incoming.content_fingerprint
+    job.criteria_json = None
+    job.analysis_meta_json = None
+    job.fit_score = None
+    job.fit_rationale = None
+    job.reject_reason = None
+    job.reject_category = None
+    job.industry_pending = False
+    if job.id is not None and not has_progress(session, job.id):
+        job.status = JobStatus.raw.value
+    # This explicit correction promotes the selected observation even when an
+    # earlier automatic ingest left it unapplied to protect user progress.
+    row.applied = True
+    session.add(row)
+    session.add(job)
+    session.flush()
+
+
 def pull_source(
     session: Session,
     source_id: str,
@@ -258,6 +367,8 @@ def pull_source(
     checkpoint=None,
     search=None,
 ):
+    from resume_tailor_harness.services.discovery import ActiveJobQuotaError
+
     row = session.get(ScrapeSourceRow, source_id)
     if row is None:
         raise KeyError(source_id)
@@ -303,15 +414,23 @@ def pull_source(
             store,
             inline=inline_listing,
         )
-        if (
-            ingest_observation(
+        try:
+            job_id = ingest_observation(
                 session,
                 observation,
                 store,
                 inline=inline_listing,
             )
-            is not None
-        ):
+        except ActiveJobQuotaError as exc:
+            # A quota only blocks this new canonical row. Keep observations and
+            # jobs already flushed in this pull rather than rolling back the
+            # complete source transaction.
+            if report.terminal_reason == "complete":
+                report.terminal_reason = "partial_limit"
+            if str(exc) not in report.messages:
+                report.messages.append(str(exc))
+            continue
+        if job_id is not None:
             if existing is None:
                 report.imported += 1
             else:

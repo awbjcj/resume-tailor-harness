@@ -7,6 +7,9 @@ from resume_tailor_harness.discovery.scraper.contracts import (
     BoardPlan,
     CrawlLimits,
     Draft,
+    JobFacts,
+    Observation,
+    ValidationResult,
 )
 from resume_tailor_harness.discovery.scraper.replay import replay
 from resume_tailor_harness.discovery.scraper.store import ScrapeStore
@@ -249,3 +252,108 @@ def test_acquisition_stop_keeps_its_terminal_reason(reason):
         )
         result = replay(draft, Worker(), ScrapeStore(session), None)
         assert result.terminal_reason == reason
+
+
+def test_replay_tracks_learned_inline_identity_on_a_repeated_listing(monkeypatch):
+    import importlib
+
+    module = importlib.import_module("resume_tailor_harness.discovery.scraper.replay")
+
+    class Worker:
+        errors = []
+
+        def __init__(self):
+            self.next_calls = 0
+
+        def snapshot(self, url, budget):
+            return snapshot_from_html(
+                url,
+                "<article><h1>Engineer</h1><span>role-1</span>"
+                "<div class='jd'>Build reliable services.</div></article>"
+                "<button class='next'>Next</button>",
+            )
+
+        def act(self, action, budget):
+            assert action.kind == "next"
+            self.next_calls += 1
+            return self.snapshot("https://example.com/jobs", budget)
+
+    def extract(detail, source_id, revision, agent, field_rules):
+        return Observation(
+            source_id=source_id,
+            revision=revision,
+            accepted=True,
+            facts=JobFacts(
+                source_url=detail.final_url,
+                posting_id="role-1",
+                title="Engineer",
+                jd_text="Build reliable services.",
+            ),
+        )
+
+    monkeypatch.setattr(module, "extract_observation", extract)
+    monkeypatch.setattr(
+        module, "validate_evidence", lambda *args: ValidationResult(valid=True)
+    )
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        draft = Draft(
+            source_id="board",
+            url="https://example.com/jobs",
+            plan=BoardPlan(
+                card_selector="article",
+                detail_mode="inline",
+                detail_selector=".jd",
+                pagination="next",
+                control_selector=".next",
+            ),
+        )
+        worker = Worker()
+        report = replay(draft, worker, ScrapeStore(session), None)
+
+    assert report.inspected == 1
+    assert report.discovered == 1
+    assert len(report.observations) == 1
+    assert report.observations[0].job_key is not None
+    assert worker.next_calls == 1
+    assert report.terminal_reason == "review_required"
+
+
+def test_replay_restores_the_listing_after_detail_navigation_fails():
+    class Worker:
+        errors = []
+
+        def __init__(self):
+            self.close_calls = 0
+
+        def snapshot(self, url, budget):
+            return snapshot_from_html(
+                url,
+                '<article><a href="/jobs/1">One</a></article>',
+            )
+
+        def act(self, action, budget):
+            if action.kind == "open_detail":
+                raise RuntimeError("detail navigation failed")
+            assert action.kind == "close_detail"
+            self.close_calls += 1
+            return self.snapshot("https://example.com/jobs", budget)
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        draft = Draft(
+            source_id="board",
+            url="https://example.com/jobs",
+            plan=BoardPlan(
+                card_selector="article", link_selector="a", detail_selector=".jd"
+            ),
+        )
+        worker = Worker()
+        report = replay(draft, worker, ScrapeStore(session), None)
+
+    assert worker.close_calls == 1
+    assert report.failed == 1
+    assert report.messages == ["detail navigation failed"]
+    assert report.terminal_reason == "review_required"

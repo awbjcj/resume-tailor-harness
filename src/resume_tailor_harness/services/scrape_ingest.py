@@ -2,6 +2,7 @@
 
 from sqlmodel import Session, col, select
 
+from resume_tailor_harness.discovery.connectors.dates import parse_iso_datetime
 from resume_tailor_harness.services.discovery import _save_with_active_job_limit
 from resume_tailor_harness.discovery.scraper.contracts import Observation
 from resume_tailor_harness.discovery.scraper.store import ScrapeStore
@@ -40,6 +41,7 @@ def ingest_observation(
         company=facts.company,
         location="; ".join(facts.locations) if facts.locations else None,
         jd_text=facts.jd_text,
+        posted_at=parse_iso_datetime(facts.posted_at),
         commit=False,
         source_identity=observation.job_key if inline else None,
     )

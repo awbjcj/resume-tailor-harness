@@ -51,6 +51,7 @@ function CorrectionEditor({
         queryKey: ["source-observations", jobId],
       });
       await cache.invalidateQueries({ queryKey: ["source-overrides", jobId] });
+      await cache.invalidateQueries({ queryKey: ["job", jobId] });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -87,6 +88,7 @@ function CorrectionEditor({
                   await cache.invalidateQueries({
                     queryKey: ["source-overrides", jobId],
                   });
+                  await cache.invalidateQueries({ queryKey: ["job", jobId] });
                 } catch (e) {
                   setError((e as Error).message);
                 }

@@ -208,3 +208,73 @@ def test_approval_rejects_a_job_override_changed_after_draft_creation():
         with pytest.raises(RevisionConflict):
             approve_draft(session, draft.id, draft.revision, ["job-one"])
         assert not store.list_sources()
+
+
+def test_pull_source_keeps_earlier_imports_when_the_active_job_quota_is_reached(
+    monkeypatch,
+):
+    from resume_tailor_harness.discovery.scraper.contracts import PullReport
+    from resume_tailor_harness.services import discovery, scrape_review as review
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        store = ScrapeStore(session)
+        draft = ready_draft(store)
+        session.commit()
+        approve_draft(session, draft.id, draft.revision, ["job-one"])
+
+        first = Observation(
+            source_id="board",
+            revision=1,
+            job_key="job-two",
+            accepted=True,
+            facts=JobFacts(
+                source_url="https://example.com/jobs/2",
+                title="Engineer Two",
+                company="Example",
+                jd_text="Build reliable services for a second team.",
+            ),
+        )
+        second = Observation(
+            source_id="board",
+            revision=1,
+            job_key="job-three",
+            accepted=True,
+            facts=JobFacts(
+                source_url="https://example.com/jobs/3",
+                title="Engineer Three",
+                company="Example",
+                jd_text="Build reliable services for a third team.",
+            ),
+        )
+
+        class Worker:
+            def __init__(self, *args):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        monkeypatch.setattr(review, "BrowserWorker", Worker)
+        monkeypatch.setattr(review, "build_gateway", lambda: None)
+        monkeypatch.setattr(review, "build_extract_agent", lambda: None)
+        monkeypatch.setattr(
+            review,
+            "replay",
+            lambda *args, **kwargs: PullReport(observations=[first, second]),
+        )
+        monkeypatch.setattr(discovery, "active_limit", lambda *args, **kwargs: 2)
+
+        report = review.pull_source(session, draft.source_id)
+
+        assert report.imported == 1
+        assert report.terminal_reason == "partial_limit"
+        assert report.messages == ["active job limit reached (2)"]
+        assert {job.title for job in session.exec(select(Job)).all()} == {
+            "Engineer",
+            "Engineer Two",
+        }

@@ -18,6 +18,11 @@ from .store import ScrapeStore
 from .validate import validate_evidence
 
 
+def _anonymous_card_key(source_id: str, card: Any) -> str:
+    """Keep an inline/panel card replayable even before extraction finds its ID."""
+    return sha256(f"{source_id}\ncard:{card}".encode()).hexdigest()
+
+
 def replay(
     draft: Draft,
     worker: Any,
@@ -59,6 +64,8 @@ def replay(
                 identity = observed_job_key(
                     draft.source_id, str(posting_id) if posting_id else None, url
                 )
+                if identity is None and plan.detail_mode != "link":
+                    identity = _anonymous_card_key(draft.source_id, card)
                 if identity is not None and identity in seen:
                     continue
                 if identity:
@@ -103,19 +110,19 @@ def replay(
                                     f"Detail refresh returned HTTP {response.status}"
                                 )
                         if detail is None:
+                            opened = True
                             detail = worker.act(
                                 BrowserAction(kind="open_detail", url=url), budget
                             )
-                            opened = True
                             if not worker.errors:
                                 store.cache_snapshot(cache_key, detail)
                     elif plan.detail_mode == "panel":
                         # Playwright's nth-match syntax applies to the complete card selector.
                         selector = f":nth-match({plan.card_selector}, {index + 1}) {plan.open_selector}"
+                        opened = True
                         detail = worker.act(
                             BrowserAction(kind="open_detail", selector=selector), budget
                         )
-                        opened = True
                     else:
                         detail = snapshot_from_html(listing.final_url, str(card))
                     report.inspected += 1
@@ -141,6 +148,8 @@ def replay(
                             or (str(posting_id) if posting_id else None),
                             url,
                         )
+                    if observation.job_key:
+                        seen.add(observation.job_key)
                     if not observation.job_key:
                         observation.accepted = False
                         observation.issues.append(
