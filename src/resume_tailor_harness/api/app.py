@@ -30,7 +30,9 @@ from resume_tailor_harness.api.routers import admin_routing as admin_routing_rou
 from resume_tailor_harness.api.routers import admin_users as admin_users_router
 from resume_tailor_harness.api.routers import analytics as analytics_router
 from resume_tailor_harness.api.routers import applications as applications_router
-from resume_tailor_harness.api.routers import application_events as application_events_router
+from resume_tailor_harness.api.routers import (
+    application_events as application_events_router,
+)
 from resume_tailor_harness.api.routers import auth as auth_router
 from resume_tailor_harness.api.routers import auth_google as auth_google_router
 from resume_tailor_harness.api.routers import auth_password as auth_password_router
@@ -55,8 +57,12 @@ from resume_tailor_harness.api.routers import run_completions as run_completions
 from resume_tailor_harness.api.routers import profile as profile_router
 from resume_tailor_harness.api.routers import prompts as prompts_router
 from resume_tailor_harness.api.routers import prune as prune_router
-from resume_tailor_harness.api.routers import render_templates as render_templates_router
-from resume_tailor_harness.api.routers import role_preparation as role_preparation_router
+from resume_tailor_harness.api.routers import (
+    render_templates as render_templates_router,
+)
+from resume_tailor_harness.api.routers import (
+    role_preparation as role_preparation_router,
+)
 from resume_tailor_harness.api.routers import role_comparison as role_comparison_router
 from resume_tailor_harness.api.routers import runs as runs_router
 from resume_tailor_harness.api.routers import scout as scout_router
@@ -64,6 +70,7 @@ from resume_tailor_harness.api.routers import secrets as secrets_router
 from resume_tailor_harness.api.routers import settings as settings_router
 from resume_tailor_harness.api.routers import setup as setup_router
 from resume_tailor_harness.api.routers import sources as sources_router
+from resume_tailor_harness.api.routers import scrape as scrape_router
 from resume_tailor_harness.api.routers import suggestions as suggestions_router
 from resume_tailor_harness.api.routers import taxonomy as taxonomy_router
 from resume_tailor_harness.api.routers import transcribe as transcribe_router
@@ -311,9 +318,7 @@ def create_app(
                 label=str(payload.get("label") or payload.get("kind") or "Run"),
                 status=str(payload.get("status") or "failed"),
                 error=(
-                    str(payload["error"])
-                    if payload.get("error") is not None
-                    else None
+                    str(payload["error"]) if payload.get("error") is not None else None
                 ),
                 completed_at=completed_at,
             )
@@ -401,7 +406,9 @@ def create_app(
     app.include_router(boards.router, prefix="/api", dependencies=guarded)
     app.include_router(board_views_router.router, prefix="/api", dependencies=guarded)
     app.include_router(jobs_router.router, prefix="/api", dependencies=guarded)
-    app.include_router(role_comparison_router.router, prefix="/api", dependencies=guarded)
+    app.include_router(
+        role_comparison_router.router, prefix="/api", dependencies=guarded
+    )
     app.include_router(
         hiring_contacts_router.router, prefix="/api", dependencies=guarded
     )
@@ -421,6 +428,7 @@ def create_app(
     )
     app.include_router(runs_router.router, prefix="/api", dependencies=guarded)
     app.include_router(sources_router.router, prefix="/api", dependencies=guarded)
+    app.include_router(scrape_router.router, prefix="/api", dependencies=guarded)
     app.include_router(scout_router.router, prefix="/api", dependencies=guarded)
     app.include_router(analytics_router.router, prefix="/api", dependencies=guarded)
     app.include_router(applications_router.router, prefix="/api", dependencies=guarded)
@@ -428,7 +436,9 @@ def create_app(
     app.include_router(taxonomy_router.router, prefix="/api", dependencies=guarded)
     app.include_router(suggestions_router.router, prefix="/api", dependencies=guarded)
     app.include_router(notifications_router.router, prefix="/api", dependencies=guarded)
-    app.include_router(run_completions_router.router, prefix="/api", dependencies=guarded)
+    app.include_router(
+        run_completions_router.router, prefix="/api", dependencies=guarded
+    )
     app.include_router(gmail_router.router, prefix="/api", dependencies=guarded)
     app.include_router(gmail_router.callback_router, prefix="/api")
     app.include_router(email_drafts_router.router, prefix="/api", dependencies=guarded)

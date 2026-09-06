@@ -92,6 +92,7 @@ class AddJobUrlParams(CamelModel):
     title: str | None = None
     location: str | None = None
     allow_browser: bool = True
+    public_extraction: bool = False
 
 
 def _dedupe(values: list) -> list:

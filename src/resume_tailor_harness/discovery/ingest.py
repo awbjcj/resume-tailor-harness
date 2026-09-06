@@ -69,6 +69,7 @@ def save_or_upgrade(
     commit: bool = True,
     allow_insert: bool = True,
     stale_company: str | None = None,
+    source_identity: str | None = None,
 ) -> tuple[Job | None, IngestOutcome]:
     """Insert a new job, upgrade an existing one from a higher-tier source, or skip."""
     incoming = IncomingJob.clean(
@@ -81,14 +82,19 @@ def save_or_upgrade(
         posted_at=posted_at,
         stale_company=stale_company,
     )
-    existing = find_existing(
-        session,
-        incoming.url,
-        incoming.jd_text,
-        incoming.dedup_key,
-        incoming.content_fingerprint,
-        incoming.location,
-    )
+    if source_identity:
+        existing = session.execute(
+            select(Job).where(Job.source_identity == source_identity)
+        ).scalar_one_or_none()
+    else:
+        existing = find_existing(
+            session,
+            incoming.url,
+            incoming.jd_text,
+            incoming.dedup_key,
+            incoming.content_fingerprint,
+            incoming.location,
+        )
     action = decide(existing, incoming)
     if (
         isinstance(action, RefreshText)
@@ -118,7 +124,13 @@ def save_or_upgrade(
         action = Skip()
     if isinstance(action, Insert) and not allow_insert:
         return None, IngestOutcome.quota_skipped
-    return _apply(session, existing, incoming, action, commit)
+    result, outcome = _apply(
+        session, existing, incoming, action, False if source_identity else commit
+    )
+    if source_identity and result is not None:
+        result.source_identity = source_identity
+        _persist(session, result, commit)
+    return result, outcome
 
 
 def _apply(

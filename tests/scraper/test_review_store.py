@@ -112,3 +112,65 @@ def test_rollback_does_not_leave_approved_revision():
         session.rollback()
         assert store.get_draft(draft.id).state == "validated"
         assert store.list_sources() == []
+
+
+def test_old_draft_cannot_replace_a_newly_approved_source():
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        store = ScrapeStore(session)
+        first = store.save_draft(example_draft())
+        stale = store.save_draft(example_draft())
+        store.approve(first.id, 0)
+        session.commit()
+        with pytest.raises(RevisionConflict, match="source"):
+            store.approve(stale.id, 0)
+
+
+def test_value_overrides_cannot_rewrite_posting_identity():
+    from resume_tailor_harness.discovery.scraper.contracts import OverridePatch
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        with pytest.raises(ValueError, match="identity"):
+            ScrapeStore(session).set_override(
+                "one",
+                OverridePatch(
+                    field="source_url",
+                    value="https://elsewhere.example/",
+                    expected_revision=0,
+                ),
+            )
+
+
+def test_changed_source_value_under_override_is_retained_as_conflict():
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        store = ScrapeStore(session)
+        old = Observation(
+            source_id="board",
+            revision=1,
+            job_key="one",
+            accepted=True,
+            facts=JobFacts(
+                source_url="https://example.com/1",
+                title="Engineer",
+                jd_text="Build systems",
+                remote_policy="remote",
+            ),
+        )
+        store.save_observation(old)
+        store.set_override(
+            "one", OverridePatch(field="remote_policy", value=None, expected_revision=0)
+        )
+        new = old.model_copy(deep=True, update={"id": "new"})
+        new.facts.remote_policy = "hybrid"
+        store.save_observation(new)
+        assert not new.accepted
+        assert any(
+            item.field == "remote_policy" and item.kind == "conflict"
+            for item in new.issues
+        )
+        assert store.effective_facts(new).remote_policy is None

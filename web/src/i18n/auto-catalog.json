@@ -10963,5 +10963,355 @@
     "key": "ui_bc7b631a689b",
     "en": "Zoom out",
     "zh-CN": "缩小"
+  },
+  "Save corrections": {
+    "key": "ui_12515ba5bfd3",
+    "en": "Save corrections",
+    "zh-CN": "保存修正"
+  },
+  "Use source value": {
+    "key": "ui_7c0aad783e57",
+    "en": "Use source value",
+    "zh-CN": "使用来源值"
+  },
+  "Review source fields": {
+    "key": "ui_dccb64330de4",
+    "en": "Review source fields",
+    "zh-CN": "检查来源字段"
+  },
+  "No public-page extraction evidence is saved for this job.": {
+    "key": "ui_11bc0543b57a",
+    "en": "No public-page extraction evidence is saved for this job.",
+    "zh-CN": "此职位没有已保存的公开页面提取证据。"
+  },
+  "Preview public page": {
+    "key": "ui_7ceaa0808534",
+    "en": "Preview public page",
+    "zh-CN": "预览公开页面"
+  },
+  "Import public page": {
+    "key": "ui_51a666f31739",
+    "en": "Import public page",
+    "zh-CN": "导入公开页面"
+  },
+  "Review public job page": {
+    "key": "ui_91f249db09d7",
+    "en": "Review public job page",
+    "zh-CN": "检查公开职位页面"
+  },
+  "Inspect public postings, correct extracted fields, and save reusable rules.": {
+    "key": "ui_48f6ef7173db",
+    "en": "Inspect public postings, correct extracted fields, and save reusable rules.",
+    "zh-CN": "检查公开职位信息，修正提取的字段，并保存可重复使用的规则。"
+  },
+  "Public job or board URL": {
+    "key": "ui_f8e45ae0b371",
+    "en": "Public job or board URL",
+    "zh-CN": "公开职位或招聘列表网址"
+  },
+  "Analyze page": {
+    "key": "ui_7d9f57ed06b4",
+    "en": "Analyze page",
+    "zh-CN": "分析页面"
+  },
+  "Inspecting public page…": {
+    "key": "ui_efb59caf6e53",
+    "en": "Inspecting public page…",
+    "zh-CN": "正在检查公开页面…"
+  },
+  "Requests are paced to respect the website. This may take several minutes.": {
+    "key": "ui_059f28b405dc",
+    "en": "Requests are paced to respect the website. This may take several minutes.",
+    "zh-CN": "系统会控制请求频率，避免给网站造成负担。这可能需要几分钟。"
+  },
+  "Employment type": {
+    "key": "ui_ea8972863d1c",
+    "en": "Employment type",
+    "zh-CN": "雇佣类型"
+  },
+  "Remote geographic restrictions": {
+    "key": "ui_2cf17e18344c",
+    "en": "Remote geographic restrictions",
+    "zh-CN": "远程工作的地域限制"
+  },
+  "Office attendance": {
+    "key": "ui_1720dc40fd5e",
+    "en": "Office attendance",
+    "zh-CN": "到岗要求"
+  },
+  "Posted date": {
+    "key": "ui_fc29afe115be",
+    "en": "Posted date",
+    "zh-CN": "发布日期"
+  },
+  "Closing date": {
+    "key": "ui_d34f597093df",
+    "en": "Closing date",
+    "zh-CN": "截止日期"
+  },
+  "Application URL": {
+    "key": "ui_96884337d874",
+    "en": "Application URL",
+    "zh-CN": "申请网址"
+  },
+  "Not stated": {
+    "key": "ui_068109fd3f73",
+    "en": "Not stated",
+    "zh-CN": "未说明"
+  },
+  "Work policy": {
+    "key": "ui_9cc453eed269",
+    "en": "Work policy",
+    "zh-CN": "办公方式"
+  },
+  "Locations (one per line)": {
+    "key": "ui_8045f91edbb7",
+    "en": "Locations (one per line)",
+    "zh-CN": "工作地点（每行一个）"
+  },
+  "Minimum": {
+    "key": "ui_735beee2e390",
+    "en": "Minimum",
+    "zh-CN": "最低值"
+  },
+  "Maximum": {
+    "key": "ui_66c9ab177708",
+    "en": "Maximum",
+    "zh-CN": "最高值"
+  },
+  "Pay period": {
+    "key": "ui_31e4b79f2ead",
+    "en": "Pay period",
+    "zh-CN": "薪资周期"
+  },
+  "Original salary text": {
+    "key": "ui_f76dd677a9ae",
+    "en": "Original salary text",
+    "zh-CN": "薪资原文"
+  },
+  "Salary locations": {
+    "key": "ui_046ff2b54189",
+    "en": "Salary locations",
+    "zh-CN": "薪资适用地点"
+  },
+  "Remove salary band": {
+    "key": "ui_e4961354e8ab",
+    "en": "Remove salary band",
+    "zh-CN": "删除薪资区间"
+  },
+  "Add salary band": {
+    "key": "ui_b03aa6f6307e",
+    "en": "Add salary band",
+    "zh-CN": "添加薪资区间"
+  },
+  "Full description": {
+    "key": "ui_37ab0c4fffd2",
+    "en": "Full description",
+    "zh-CN": "完整职位描述"
+  },
+  "Crawl limits": {
+    "key": "ui_f9f5074fc20c",
+    "en": "Crawl limits",
+    "zh-CN": "抓取限制"
+  },
+  "Listing pages": {
+    "key": "ui_a2c84d98289b",
+    "en": "Listing pages",
+    "zh-CN": "列表页数"
+  },
+  "Time limit (seconds)": {
+    "key": "ui_cf9965b51940",
+    "en": "Time limit (seconds)",
+    "zh-CN": "时间上限（秒）"
+  },
+  "Review these sample jobs and their evidence. Corrections stay with each job; extraction rules are reused for future pulls.": {
+    "key": "ui_c5a3c1bdd64b",
+    "en": "Review these sample jobs and their evidence. Corrections stay with each job; extraction rules are reused for future pulls.",
+    "zh-CN": "检查这些职位样本及其证据。字段修正会保存在对应职位中；提取规则将用于后续抓取。"
+  },
+  "Sample {{v0}}": {
+    "key": "ui_e6e10401c9fb",
+    "en": "Sample {{v0}}",
+    "zh-CN": "样本 {{v0}}"
+  },
+  "Source evidence": {
+    "key": "ui_e86636feeb00",
+    "en": "Source evidence",
+    "zh-CN": "来源证据"
+  },
+  "No verified job samples are available. This source cannot be approved yet.": {
+    "key": "ui_02cda37e9b58",
+    "en": "No verified job samples are available. This source cannot be approved yet.",
+    "zh-CN": "暂无已验证的职位样本，尚不能批准此来源。"
+  },
+  "Save and validate rules": {
+    "key": "ui_f71ba5aa9bcd",
+    "en": "Save and validate rules",
+    "zh-CN": "保存并验证规则"
+  },
+  "Approve and save": {
+    "key": "ui_1b9b961ef4ce",
+    "en": "Approve and save",
+    "zh-CN": "批准并保存"
+  },
+  "Loading extraction preview…": {
+    "key": "ui_8b5cd6256f47",
+    "en": "Loading extraction preview…",
+    "zh-CN": "正在加载提取预览…"
+  },
+  "Change extraction rules": {
+    "key": "ui_0d33a2bd6474",
+    "en": "Change extraction rules",
+    "zh-CN": "修改提取规则"
+  },
+  "Job card selector": {
+    "key": "ui_c475649c9c8f",
+    "en": "Job card selector",
+    "zh-CN": "职位卡片选择器"
+  },
+  "Description selector": {
+    "key": "ui_5d7d99a9418a",
+    "en": "Description selector",
+    "zh-CN": "职位描述选择器"
+  },
+  "Job link selector": {
+    "key": "ui_ee1cf56aa1c7",
+    "en": "Job link selector",
+    "zh-CN": "职位链接选择器"
+  },
+  "Open detail selector": {
+    "key": "ui_9dd905ea4bff",
+    "en": "Open detail selector",
+    "zh-CN": "打开详情选择器"
+  },
+  "Close detail selector": {
+    "key": "ui_80c9f880d6aa",
+    "en": "Close detail selector",
+    "zh-CN": "关闭详情选择器"
+  },
+  "Next results selector": {
+    "key": "ui_7afe1856f8e8",
+    "en": "Next results selector",
+    "zh-CN": "下一页结果选择器"
+  },
+  "Selector for {{v0}}": {
+    "key": "ui_c75eda9fcb9d",
+    "en": "Selector for {{v0}}",
+    "zh-CN": "{{v0}} 的选择器"
+  },
+  "Saved public boards": {
+    "key": "ui_752ddfe07a76",
+    "en": "Saved public boards",
+    "zh-CN": "已保存的公开招聘列表"
+  },
+  "Approved revision": {
+    "key": "ui_d023634bf26a",
+    "en": "Approved revision",
+    "zh-CN": "已批准版本"
+  },
+  "job details per pull": {
+    "key": "ui_c0c3ee94ef63",
+    "en": "job details per pull",
+    "zh-CN": "每次抓取的职位详情数"
+  },
+  "Edit or relearn": {
+    "key": "ui_54303c034fe2",
+    "en": "Edit or relearn",
+    "zh-CN": "编辑或重新学习"
+  },
+  "Re-pull": {
+    "key": "ui_e89bbdc790b4",
+    "en": "Re-pull",
+    "zh-CN": "重新抓取"
+  },
+  "Imported": {
+    "key": "ui_321f179c80ba",
+    "en": "Imported",
+    "zh-CN": "已导入"
+  },
+  "Choose observed page content for a field.": {
+    "key": "ui_89d5522cbc72",
+    "en": "Choose observed page content for a field.",
+    "zh-CN": "为字段选择页面中实际出现的内容。"
+  },
+  "Source snapshot": {
+    "key": "ui_98c0faa0e62d",
+    "en": "Source snapshot",
+    "zh-CN": "来源快照"
+  },
+  "Field": {
+    "key": "ui_f45fc1dfdc96",
+    "en": "Field",
+    "zh-CN": "字段"
+  },
+  "Observed content": {
+    "key": "ui_906008ed5845",
+    "en": "Observed content",
+    "zh-CN": "页面中的内容"
+  },
+  "Select content": {
+    "key": "ui_4526f6864ae5",
+    "en": "Select content",
+    "zh-CN": "选择内容"
+  },
+  "Use selected content": {
+    "key": "ui_e11534b38e04",
+    "en": "Use selected content",
+    "zh-CN": "使用所选内容"
+  },
+  "Needs review": {
+    "key": "ui_07297fa94a99",
+    "en": "Needs review",
+    "zh-CN": "需要检查"
+  },
+  "imported ·": {
+    "key": "ui_3a845964a878",
+    "en": "imported ·",
+    "zh-CN": "已导入 ·"
+  },
+  "duplicates ·": {
+    "key": "ui_353d65ed5ec1",
+    "en": "duplicates ·",
+    "zh-CN": "重复 ·"
+  },
+  "need review": {
+    "key": "ui_261cee7346a1",
+    "en": "need review",
+    "zh-CN": "需要审核"
+  },
+  "Review updated rules": {
+    "key": "ui_fc8c37ce8335",
+    "en": "Review updated rules",
+    "zh-CN": "审核更新后的规则"
+  },
+  "Source settings and history": {
+    "key": "ui_108155b99edb",
+    "en": "Source settings and history",
+    "zh-CN": "来源设置与历史记录"
+  },
+  "Relearn page structure": {
+    "key": "ui_e09e8a68ceff",
+    "en": "Relearn page structure",
+    "zh-CN": "重新识别页面结构"
+  },
+  "Saved revision": {
+    "key": "ui_6694ccd98f12",
+    "en": "Saved revision",
+    "zh-CN": "已保存的版本"
+  },
+  "Select revision": {
+    "key": "ui_4c84315133f7",
+    "en": "Select revision",
+    "zh-CN": "选择版本"
+  },
+  "Restore revision": {
+    "key": "ui_e276237699c9",
+    "en": "Restore revision",
+    "zh-CN": "恢复版本"
+  },
+  "Refresh cached pages": {
+    "key": "ui_070135bd8c50",
+    "en": "Refresh cached pages",
+    "zh-CN": "刷新缓存页面"
   }
 }

@@ -39,7 +39,11 @@ class SettingsSection:
 
 
 SETTINGS_SECTIONS: tuple[SettingsSection, ...] = (
-    SettingsSection("sources", "Company sources", ("config/connectors.yaml",)),
+    SettingsSection(
+        "sources",
+        "Company sources",
+        ("config/connectors.yaml", "config/public_boards.json"),
+    ),
     SettingsSection("search", "Search", ("config/search.yaml",)),
     SettingsSection(
         "review",
@@ -151,6 +155,16 @@ def reset_section(section: SettingsSection) -> None:
     templates, and the three correction ledgers -- all land on their true
     defaults by being removed.
     """
+    if section.id == "sources":
+        from resume_tailor_harness.tenancy.context import current_context
+        from resume_tailor_harness.services.scrape_transfer import reset_sources
+        from sqlmodel import Session
+
+        context = current_context()
+        if context and context.engine:
+            with Session(context.engine) as session:
+                reset_sources(session)
+                session.commit()
     for entry in section.files:
         for path in live_paths(entry):
             path.unlink(missing_ok=True)

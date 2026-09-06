@@ -71,6 +71,7 @@ one route's key with the other route's endpoint.
 | `DB_URL` | `sqlite:///data/resume_tailor_harness.db` | SQLAlchemy database URL. The supported Railway topology uses one SQLite replica and one persistent volume. |
 | `APP_MODE` | `auto` in Docker | Container runtime mode: `local`, `hosted`, or `auto`. Outside the container, use the `serve --mode` option. |
 | `API_TOKEN` | empty | Optional bearer token for scripts in hosted mode. Local mode ignores API/account authentication. |
+| `PUBLIC_BROWSER_ENABLED` | `true` | Enables isolated public-page analysis and approved board re-pulls. Requires sandboxed Chromium. |
 | `BROWSER_ENABLED` | `true` | Enables browser-backed connectors. The Docker image sets this to `false`. |
 | `STREAM_ENABLED` | `true` | Enables streamed conversational turns; `false` uses the blocking fallback. |
 | `CORS_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Comma-separated allowed browser origins. |

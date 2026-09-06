@@ -175,6 +175,11 @@
             ],
             "title": "Location"
           },
+          "publicExtraction": {
+            "default": false,
+            "title": "Publicextraction",
+            "type": "boolean"
+          },
           "title": {
             "anyOf": [
               {
@@ -574,6 +579,24 @@
           "byBand"
         ],
         "title": "AnalyticsOut",
+        "type": "object"
+      },
+      "AnalyzeIn": {
+        "properties": {
+          "limits": {
+            "$ref": "#/components/schemas/CrawlLimits"
+          },
+          "url": {
+            "maxLength": 8192,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "AnalyzeIn",
         "type": "object"
       },
       "ApplicationEventCreate": {
@@ -1372,6 +1395,54 @@
         "title": "ApplicationUpsert",
         "type": "object"
       },
+      "ApprovalResult": {
+        "additionalProperties": false,
+        "properties": {
+          "approvedRevision": {
+            "title": "Approvedrevision",
+            "type": "integer"
+          },
+          "jobIds": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Jobids",
+            "type": "array"
+          },
+          "sourceId": {
+            "title": "Sourceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceId",
+          "approvedRevision"
+        ],
+        "title": "ApprovalResult",
+        "type": "object"
+      },
+      "ApproveIn": {
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "selectedKeys": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Selectedkeys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expectedRevision"
+        ],
+        "title": "ApproveIn",
+        "type": "object"
+      },
       "ArtifactDeleteOut": {
         "properties": {
           "deleted": {
@@ -1529,6 +1600,112 @@
           "total"
         ],
         "title": "BoardPage[TriageItem]",
+        "type": "object"
+      },
+      "BoardPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "cardSelector": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Cardselector",
+            "type": "string"
+          },
+          "closeSelector": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closeselector"
+          },
+          "controlSelector": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Controlselector"
+          },
+          "detailMode": {
+            "default": "link",
+            "enum": [
+              "link",
+              "inline",
+              "panel"
+            ],
+            "title": "Detailmode",
+            "type": "string"
+          },
+          "detailSelector": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detailselector"
+          },
+          "fieldRules": {
+            "items": {
+              "$ref": "#/components/schemas/FieldRule"
+            },
+            "maxItems": 30,
+            "title": "Fieldrules",
+            "type": "array"
+          },
+          "linkSelector": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linkselector"
+          },
+          "openSelector": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Openselector"
+          },
+          "pagination": {
+            "default": "none",
+            "enum": [
+              "none",
+              "numbered",
+              "next",
+              "load_more",
+              "infinite"
+            ],
+            "title": "Pagination",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cardSelector"
+        ],
+        "title": "BoardPlan",
         "type": "object"
       },
       "Body_apply_bundle_api_settings_bundle_post": {
@@ -3982,6 +4159,34 @@
         "title": "CoverLetterSkillName",
         "type": "string"
       },
+      "CrawlLimits": {
+        "additionalProperties": false,
+        "properties": {
+          "detailPages": {
+            "default": 50,
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Detailpages",
+            "type": "integer"
+          },
+          "elapsedSeconds": {
+            "default": 300,
+            "maximum": 900.0,
+            "minimum": 1.0,
+            "title": "Elapsedseconds",
+            "type": "integer"
+          },
+          "listingPages": {
+            "default": 10,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Listingpages",
+            "type": "integer"
+          }
+        },
+        "title": "CrawlLimits",
+        "type": "object"
+      },
       "CycleTimeOut": {
         "properties": {
           "fromKind": {
@@ -4253,6 +4458,196 @@
         "title": "DomainPatchIn",
         "type": "object"
       },
+      "Draft": {
+        "additionalProperties": false,
+        "properties": {
+          "baseRevision": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Baserevision",
+            "type": "integer"
+          },
+          "correctionRevisions": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "propertyNames": {
+                "enum": [
+                  "title",
+                  "company",
+                  "jd_text",
+                  "locations",
+                  "salary_bands",
+                  "remote_policy",
+                  "remote_restrictions",
+                  "attendance",
+                  "employment_type",
+                  "posted_at",
+                  "closes_at",
+                  "source_url",
+                  "application_url",
+                  "posting_id"
+                ]
+              },
+              "type": "object"
+            },
+            "title": "Correctionrevisions",
+            "type": "object"
+          },
+          "corrections": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              "propertyNames": {
+                "enum": [
+                  "title",
+                  "company",
+                  "jd_text",
+                  "locations",
+                  "salary_bands",
+                  "remote_policy",
+                  "remote_restrictions",
+                  "attendance",
+                  "employment_type",
+                  "posted_at",
+                  "closes_at",
+                  "source_url",
+                  "application_url",
+                  "posting_id"
+                ]
+              },
+              "type": "object"
+            },
+            "title": "Corrections",
+            "type": "object"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/CrawlLimits"
+          },
+          "pageKind": {
+            "default": "listing",
+            "enum": [
+              "posting",
+              "listing",
+              "empty_listing",
+              "blocked",
+              "unrelated"
+            ],
+            "title": "Pagekind",
+            "type": "string"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "samples": {
+            "items": {
+              "$ref": "#/components/schemas/Observation"
+            },
+            "title": "Samples",
+            "type": "array"
+          },
+          "sourceId": {
+            "title": "Sourceid",
+            "type": "string"
+          },
+          "state": {
+            "default": "draft",
+            "enum": [
+              "draft",
+              "validated",
+              "approved",
+              "unverified"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ValidationResult"
+          }
+        },
+        "required": [
+          "sourceId",
+          "url"
+        ],
+        "title": "Draft",
+        "type": "object"
+      },
+      "DraftPatchIn": {
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "limits": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CrawlLimits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "samples": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JobFacts-Input"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Samples"
+          }
+        },
+        "required": [
+          "expectedRevision"
+        ],
+        "title": "DraftPatchIn",
+        "type": "object"
+      },
       "EmailDraftOut": {
         "properties": {
           "body": {
@@ -4448,6 +4843,69 @@
         "title": "ErrorRecordsOut",
         "type": "object"
       },
+      "Evidence": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "enum": [
+              "title",
+              "company",
+              "jd_text",
+              "locations",
+              "salary_bands",
+              "remote_policy",
+              "remote_restrictions",
+              "attendance",
+              "employment_type",
+              "posted_at",
+              "closes_at",
+              "source_url",
+              "application_url",
+              "posting_id"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "jsonPath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jsonpath"
+          },
+          "quote": {
+            "minLength": 1,
+            "title": "Quote",
+            "type": "string"
+          },
+          "selector": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selector"
+          },
+          "snapshotId": {
+            "title": "Snapshotid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "snapshotId",
+          "quote"
+        ],
+        "title": "Evidence",
+        "type": "object"
+      },
       "EvidenceExcerptOut": {
         "properties": {
           "factId": {
@@ -4563,6 +5021,113 @@
           "status"
         ],
         "title": "EvidencePortfolioOut",
+        "type": "object"
+      },
+      "FieldIssue": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "anyOf": [
+              {
+                "enum": [
+                  "title",
+                  "company",
+                  "jd_text",
+                  "locations",
+                  "salary_bands",
+                  "remote_policy",
+                  "remote_restrictions",
+                  "attendance",
+                  "employment_type",
+                  "posted_at",
+                  "closes_at",
+                  "source_url",
+                  "application_url",
+                  "posting_id"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "kind": {
+            "enum": [
+              "not_stated",
+              "extraction_failed",
+              "conflict",
+              "invalid_evidence"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "message": {
+            "default": "",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "FieldIssue",
+        "type": "object"
+      },
+      "FieldRule": {
+        "additionalProperties": false,
+        "properties": {
+          "attribute": {
+            "anyOf": [
+              {
+                "enum": [
+                  "href",
+                  "content",
+                  "datetime",
+                  "data-job-id",
+                  "id"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attribute"
+          },
+          "field": {
+            "enum": [
+              "title",
+              "company",
+              "jd_text",
+              "locations",
+              "salary_bands",
+              "remote_policy",
+              "remote_restrictions",
+              "attendance",
+              "employment_type",
+              "posted_at",
+              "closes_at",
+              "source_url",
+              "application_url",
+              "posting_id"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "selector": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Selector",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "selector"
+        ],
+        "title": "FieldRule",
         "type": "object"
       },
       "FlowEdgeOut": {
@@ -6215,6 +6780,342 @@
         "title": "JobDetail",
         "type": "object"
       },
+      "JobFacts-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "applicationUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicationurl"
+          },
+          "attendance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance"
+          },
+          "closesAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closesat"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "employmentType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employmenttype"
+          },
+          "jdText": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jdtext"
+          },
+          "locations": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locations"
+          },
+          "postedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postedat"
+          },
+          "postingId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postingid"
+          },
+          "remotePolicy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "remote",
+                  "hybrid",
+                  "onsite"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remotepolicy"
+          },
+          "remoteRestrictions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remoterestrictions"
+          },
+          "salaryBands": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SalaryBand-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salarybands"
+          },
+          "sourceUrl": {
+            "title": "Sourceurl",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "sourceUrl"
+        ],
+        "title": "JobFacts",
+        "type": "object"
+      },
+      "JobFacts-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "applicationUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicationurl"
+          },
+          "attendance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance"
+          },
+          "closesAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closesat"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "employmentType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employmenttype"
+          },
+          "jdText": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jdtext"
+          },
+          "locations": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locations"
+          },
+          "postedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postedat"
+          },
+          "postingId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postingid"
+          },
+          "remotePolicy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "remote",
+                  "hybrid",
+                  "onsite"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remotepolicy"
+          },
+          "remoteRestrictions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remoterestrictions"
+          },
+          "salaryBands": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SalaryBand-Output"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salarybands"
+          },
+          "sourceUrl": {
+            "title": "Sourceurl",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "sourceUrl"
+        ],
+        "title": "JobFacts",
+        "type": "object"
+      },
       "JobFailureDetails": {
         "description": "The formatted diagnostic for one job's stage failure.\n\nTyped rather than a free-form map: an exposed dict's keys become a de facto\ncontract with nothing holding them stable, and a schema flows into the\ngenerated TS client so the web side needs no hand-written shape.",
         "properties": {
@@ -6416,6 +7317,7 @@
         "title": "JobsImportReportOut",
         "type": "object"
       },
+      "JsonValue": {},
       "LaneEventOut": {
         "properties": {
           "allDay": {
@@ -7554,6 +8456,64 @@
         "title": "NotificationOut",
         "type": "object"
       },
+      "Observation": {
+        "additionalProperties": false,
+        "properties": {
+          "accepted": {
+            "default": false,
+            "title": "Accepted",
+            "type": "boolean"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "facts": {
+            "$ref": "#/components/schemas/JobFacts-Output"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/FieldIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "jobKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jobkey"
+          },
+          "revision": {
+            "minimum": 0.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "sourceId": {
+            "title": "Sourceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceId",
+          "revision",
+          "facts"
+        ],
+        "title": "Observation",
+        "type": "object"
+      },
       "OfferOut": {
         "properties": {
           "compBase": {
@@ -7690,6 +8650,89 @@
           "resolution"
         ],
         "title": "OverrideConflictOut",
+        "type": "object"
+      },
+      "OverrideOut": {
+        "properties": {
+          "field": {
+            "enum": [
+              "title",
+              "company",
+              "jd_text",
+              "locations",
+              "salary_bands",
+              "remote_policy",
+              "remote_restrictions",
+              "attendance",
+              "employment_type",
+              "posted_at",
+              "closes_at",
+              "source_url",
+              "application_url",
+              "posting_id"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "removed": {
+            "title": "Removed",
+            "type": "boolean"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        },
+        "required": [
+          "field",
+          "revision",
+          "value",
+          "removed"
+        ],
+        "title": "OverrideOut",
+        "type": "object"
+      },
+      "OverridePatch": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "field": {
+            "enum": [
+              "title",
+              "company",
+              "jd_text",
+              "locations",
+              "salary_bands",
+              "remote_policy",
+              "remote_restrictions",
+              "attendance",
+              "employment_type",
+              "posted_at",
+              "closes_at",
+              "source_url",
+              "application_url",
+              "posting_id"
+            ],
+            "title": "Field",
+            "type": "string"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        },
+        "required": [
+          "field",
+          "value",
+          "expectedRevision"
+        ],
+        "title": "OverridePatch",
         "type": "object"
       },
       "Page_RunOut_": {
@@ -10489,6 +11532,20 @@
         "title": "ReviseRequest",
         "type": "object"
       },
+      "RevisionIn": {
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expectedRevision"
+        ],
+        "title": "RevisionIn",
+        "type": "object"
+      },
       "RoleComparisonIn": {
         "properties": {
           "jobIds": {
@@ -11010,6 +12067,26 @@
         "title": "RolePreparationUnavailableOut",
         "type": "object"
       },
+      "RollbackIn": {
+        "properties": {
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expectedRevision",
+          "revision"
+        ],
+        "title": "RollbackIn",
+        "type": "object"
+      },
       "RoutingConfigDoc": {
         "properties": {
           "baseUrl": {
@@ -11380,6 +12457,148 @@
         ],
         "title": "RunState",
         "type": "string"
+      },
+      "SalaryBand-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "locations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Locations",
+            "type": "array"
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum"
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          },
+          "rawText": {
+            "title": "Rawtext",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rawText"
+        ],
+        "title": "SalaryBand",
+        "type": "object"
+      },
+      "SalaryBand-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "locations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Locations",
+            "type": "array"
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum"
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          },
+          "rawText": {
+            "title": "Rawtext",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rawText"
+        ],
+        "title": "SalaryBand",
+        "type": "object"
       },
       "SavedBoardViewCreate": {
         "properties": {
@@ -13088,6 +14307,24 @@
         "title": "SkillTagOut",
         "type": "object"
       },
+      "SnapshotElement": {
+        "properties": {
+          "selector": {
+            "title": "Selector",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "selector",
+          "text"
+        ],
+        "title": "SnapshotElement",
+        "type": "object"
+      },
       "SourceHealthOut": {
         "properties": {
           "affectedSources": {
@@ -13374,6 +14611,25 @@
           "url"
         ],
         "title": "SourcePreviewOut",
+        "type": "object"
+      },
+      "SourceStateIn": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "expectedRevision": {
+            "minimum": 0.0,
+            "title": "Expectedrevision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expectedRevision",
+          "enabled"
+        ],
+        "title": "SourceStateIn",
         "type": "object"
       },
       "SourcesStatus": {
@@ -14419,6 +15675,25 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "ValidationResult": {
+        "additionalProperties": false,
+        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/FieldIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "valid": {
+            "default": false,
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "title": "ValidationResult",
         "type": "object"
       },
       "VerifyAccountEmailRequest": {
@@ -23226,6 +24501,297 @@
         "summary": "Select Resume Endpoint"
       }
     },
+    "/api/jobs/{job_id}/source-observations": {
+      "get": {
+        "operationId": "observations_api_jobs__job_id__source_observations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Observation"
+                  },
+                  "title": "Response Observations Api Jobs  Job Id  Source Observations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Observations"
+      }
+    },
+    "/api/jobs/{job_id}/source-overrides": {
+      "get": {
+        "operationId": "get_overrides_api_jobs__job_id__source_overrides_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OverrideOut"
+                  },
+                  "title": "Response Get Overrides Api Jobs  Job Id  Source Overrides Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Overrides"
+      }
+    },
+    "/api/jobs/{job_id}/source-overrides/{field}": {
+      "delete": {
+        "operationId": "clear_override_api_jobs__job_id__source_overrides__field__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "field",
+            "required": true,
+            "schema": {
+              "enum": [
+                "title",
+                "company",
+                "jd_text",
+                "locations",
+                "salary_bands",
+                "remote_policy",
+                "remote_restrictions",
+                "attendance",
+                "employment_type",
+                "posted_at",
+                "closes_at",
+                "source_url",
+                "application_url",
+                "posting_id"
+              ],
+              "title": "Field",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expected_revision",
+            "required": true,
+            "schema": {
+              "title": "Expected Revision",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clear Override"
+      },
+      "put": {
+        "operationId": "set_override_api_jobs__job_id__source_overrides__field__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "field",
+            "required": true,
+            "schema": {
+              "enum": [
+                "title",
+                "company",
+                "jd_text",
+                "locations",
+                "salary_bands",
+                "remote_policy",
+                "remote_restrictions",
+                "attendance",
+                "employment_type",
+                "posted_at",
+                "closes_at",
+                "source_url",
+                "application_url",
+                "posting_id"
+              ],
+              "title": "Field",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OverridePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Override"
+      }
+    },
     "/api/match-gap": {
       "get": {
         "operationId": "get_match_gap_api_match_gap_get",
@@ -27772,6 +29338,783 @@
           }
         },
         "summary": "Unarchive Scout Session"
+      }
+    },
+    "/api/scrape/drafts": {
+      "post": {
+        "operationId": "analyze_api_scrape_drafts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze"
+      }
+    },
+    "/api/scrape/drafts/{draft_id}": {
+      "get": {
+        "operationId": "get_draft_api_scrape_drafts__draft_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Draft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Draft"
+      },
+      "patch": {
+        "operationId": "patch_draft_api_scrape_drafts__draft_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftPatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Draft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Draft"
+      }
+    },
+    "/api/scrape/drafts/{draft_id}/approve": {
+      "post": {
+        "operationId": "approve_api_scrape_drafts__draft_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approve"
+      }
+    },
+    "/api/scrape/drafts/{draft_id}/validate": {
+      "post": {
+        "operationId": "validate_api_scrape_drafts__draft_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate"
+      }
+    },
+    "/api/scrape/snapshots/{snapshot_id}/elements": {
+      "get": {
+        "operationId": "elements_api_scrape_snapshots__snapshot_id__elements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot_id",
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SnapshotElement"
+                  },
+                  "title": "Response Elements Api Scrape Snapshots  Snapshot Id  Elements Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Elements"
+      }
+    },
+    "/api/scrape/sources": {
+      "get": {
+        "operationId": "sources_api_scrape_sources_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Draft"
+                  },
+                  "title": "Response Sources Api Scrape Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sources"
+      }
+    },
+    "/api/scrape/sources/{source_id}": {
+      "patch": {
+        "operationId": "source_state_api_scrape_sources__source_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceStateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Draft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Source State"
+      }
+    },
+    "/api/scrape/sources/{source_id}/edit": {
+      "post": {
+        "operationId": "edit_api_scrape_sources__source_id__edit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Draft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Edit"
+      }
+    },
+    "/api/scrape/sources/{source_id}/pull": {
+      "post": {
+        "operationId": "pull_api_scrape_sources__source_id__pull_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "refresh",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Refresh",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pull"
+      }
+    },
+    "/api/scrape/sources/{source_id}/relearn": {
+      "post": {
+        "operationId": "relearn_api_scrape_sources__source_id__relearn_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Relearn"
+      }
+    },
+    "/api/scrape/sources/{source_id}/revisions": {
+      "get": {
+        "operationId": "revisions_api_scrape_sources__source_id__revisions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Draft"
+                  },
+                  "title": "Response Revisions Api Scrape Sources  Source Id  Revisions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revisions"
+      }
+    },
+    "/api/scrape/sources/{source_id}/rollback": {
+      "post": {
+        "operationId": "rollback_api_scrape_sources__source_id__rollback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RollbackIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Draft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rollback"
       }
     },
     "/api/secrets": {

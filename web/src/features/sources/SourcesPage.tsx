@@ -9,6 +9,8 @@ import { launchers, useLaunchRun } from "@/features/runs/use-launch-run";
 import { ResetSectionButton } from "@/features/settings/ResetSectionButton";
 import { useRunStore, type PullRunResult } from "@/lib/runs/store";
 import { AddSourceDialog } from "./AddSourceDialog";
+import { ScrapeImport } from "./scrape/ScrapeImport";
+import { ScrapeSources } from "./scrape/ScrapeSources";
 import {
   useRemoveSource,
   useSetEnabled,
@@ -84,14 +86,18 @@ function SourceRow({
           {source.detail}
         </div>
       </div>
-      <Badge variant={source.pullable ? "outline" : "secondary"}>{source.kind}</Badge>
+      <Badge variant={source.pullable ? "outline" : "secondary"}>
+        {source.kind}
+      </Badge>
       <div className="col-span-3 flex min-w-0 flex-wrap items-center justify-end gap-2 border-t pt-2 lg:contents">
         <LimitInput key={source.limit ?? "none"} source={source} />
         <Switch
           size="sm"
           aria-label={`Enable ${source.displayName}`}
           checked={source.enabled}
-          onCheckedChange={(enabled) => setEnabled.mutate({ id: source.id, enabled })}
+          onCheckedChange={(enabled) =>
+            setEnabled.mutate({ id: source.id, enabled })
+          }
         />
         <Button
           size="sm"
@@ -99,11 +105,12 @@ function SourceRow({
           aria-label={`Pull ${source.displayName}`}
           disabled={pullDisabled}
           onClick={() =>
-            launch(
-              "pull",
-              () => launchers.pullSources([source.id]),
-              ["shortlist", "pipeline", "triage", "sources"],
-            )
+            launch("pull", () => launchers.pullSources([source.id]), [
+              "shortlist",
+              "pipeline",
+              "triage",
+              "sources",
+            ])
           }
         >
           <Play className="size-3.5" aria-hidden="true" />
@@ -134,7 +141,9 @@ function LatestPullResult({ sources }: { sources: Source[] }) {
   const result = latestPull?.result as PullRunResult | undefined;
   if (!result) return null;
 
-  const labels = new Map(sources.map((source) => [source.id, source.displayName]));
+  const labels = new Map(
+    sources.map((source) => [source.id, source.displayName]),
+  );
   const ids = new Set([
     ...Object.keys(result.totals ?? {}),
     ...Object.keys(result.upgraded ?? {}),
@@ -143,7 +152,10 @@ function LatestPullResult({ sources }: { sources: Source[] }) {
   ]);
 
   return (
-    <section aria-labelledby="sources-results" className="rounded-lg border bg-card p-4">
+    <section
+      aria-labelledby="sources-results"
+      className="rounded-lg border bg-card p-4"
+    >
       <h2
         id="sources-results"
         className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
@@ -158,11 +170,23 @@ function LatestPullResult({ sources }: { sources: Source[] }) {
               key={id}
               className="grid gap-2 py-2 text-sm md:grid-cols-[minmax(0,1fr)_repeat(4,auto)] md:items-center"
             >
-              <span className="truncate font-medium">{labels.get(id) ?? id}</span>
-              <span className="tabular-nums">+{result.totals?.[id] ?? 0} added</span>
-              <span className="tabular-nums">{result.upgraded?.[id] ?? 0} upd</span>
-              <span className="tabular-nums">{result.skipped?.[id] ?? 0} skip</span>
-              <span className={failed ? "text-destructive" : "text-muted-foreground"}>
+              <span className="truncate font-medium">
+                {labels.get(id) ?? id}
+              </span>
+              <span className="tabular-nums">
+                +{result.totals?.[id] ?? 0} added
+              </span>
+              <span className="tabular-nums">
+                {result.upgraded?.[id] ?? 0} upd
+              </span>
+              <span className="tabular-nums">
+                {result.skipped?.[id] ?? 0} skip
+              </span>
+              <span
+                className={
+                  failed ? "text-destructive" : "text-muted-foreground"
+                }
+              >
                 {failed ? `${failed} failed` : "0 failed"}
               </span>
             </li>
@@ -216,7 +240,10 @@ export function SourcesManager() {
   const { launch } = useLaunchRun();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const boards = useMemo(() => data.filter((source) => source.type === "board"), [data]);
+  const boards = useMemo(
+    () => data.filter((source) => source.type === "board"),
+    [data],
+  );
   const aggregators = useMemo(
     () => data.filter((source) => source.type === "aggregator"),
     [data],
@@ -238,6 +265,7 @@ export function SourcesManager() {
     <div>
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <AddSourceDialog />
+        <ScrapeImport />
         <a
           className={buttonVariants({ variant: "outline", size: "sm" })}
           data-slot="button"
@@ -251,11 +279,12 @@ export function SourcesManager() {
           size="sm"
           disabled={selected.size === 0}
           onClick={() =>
-            launch(
-              "pull",
-              () => launchers.pullSources([...selected]),
-              ["shortlist", "pipeline", "triage", "sources"],
-            )
+            launch("pull", () => launchers.pullSources([...selected]), [
+              "shortlist",
+              "pipeline",
+              "triage",
+              "sources",
+            ])
           }
         >
           Pull selected ({selected.size})
@@ -263,11 +292,12 @@ export function SourcesManager() {
         <Button
           size="sm"
           onClick={() =>
-            launch(
-              "pull",
-              () => launchers.pullSources(null),
-              ["shortlist", "pipeline", "triage", "sources"],
-            )
+            launch("pull", () => launchers.pullSources(null), [
+              "shortlist",
+              "pipeline",
+              "triage",
+              "sources",
+            ])
           }
         >
           Pull all
@@ -311,6 +341,7 @@ export function SourcesPage() {
         </div>
         <ResetSectionButton sectionId="sources" label="Company sources" />
       </header>
+      <ScrapeSources />
       <SourcesManager />
     </div>
   );

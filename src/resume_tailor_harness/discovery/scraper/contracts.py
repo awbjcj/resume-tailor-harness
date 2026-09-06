@@ -6,10 +6,16 @@ from typing import Literal, Self
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
+from pydantic.alias_generators import to_camel
 
 
 class Contract(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
 
 
 class CrawlLimits(Contract):
@@ -87,6 +93,9 @@ class FieldIssue(Contract):
 
 
 class Snapshot(Contract):
+    etag: str | None = None
+    last_modified: str | None = None
+    dynamic: bool = True
     id: str
     requested_url: str
     final_url: str
@@ -152,7 +161,14 @@ class Draft(Contract):
     id: str = Field(default_factory=lambda: uuid4().hex)
     source_id: str
     url: str
+    enabled: bool = True
+    page_kind: Literal[
+        "posting", "listing", "empty_listing", "blocked", "unrelated"
+    ] = "listing"
     revision: int = Field(default=0, ge=0)
+    base_revision: int = Field(default=0, ge=0)
+    corrections: dict[str, dict[FieldName, JsonValue]] = Field(default_factory=dict)
+    correction_revisions: dict[str, dict[FieldName, int]] = Field(default_factory=dict)
     plan: BoardPlan | None = None
     limits: CrawlLimits = Field(default_factory=CrawlLimits)
     samples: list[Observation] = Field(default_factory=list)
@@ -173,6 +189,7 @@ class OverridePatch(Contract):
 
 
 class PullReport(Contract):
+    repair_draft_id: str | None = None
     terminal_reason: Literal[
         "complete",
         "empty",

@@ -107,6 +107,13 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
     assert response.json() == {
         "scope": "jobs",
         "rowsDeleted": {
+            "scrape_observations": 0,
+            "scrape_override_history": 0,
+            "scrape_overrides": 0,
+            "scrape_snapshots": 0,
+            "scrape_cache": 0,
+            "scrape_approvals": 0,
+            "scrape_drafts": 0,
             "run_completions": 0,
             "saved_board_views": 0,
             "notifications": 0,

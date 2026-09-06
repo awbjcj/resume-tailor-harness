@@ -35,7 +35,18 @@ def evidence_text(evidence: Evidence, snapshot: Snapshot) -> str:
             )
         except SelectorSyntaxError:
             return ""
-        return "\n".join(node.get_text(" ", strip=True) for node in nodes)
+        return "\n".join(
+            " ".join(
+                [
+                    node.get_text(" ", strip=True),
+                    *[
+                        str(node.get(key, ""))
+                        for key in ("href", "content", "datetime", "data-job-id", "id")
+                    ],
+                ]
+            )
+            for node in nodes
+        )
     return snapshot.visible_text
 
 
@@ -52,6 +63,9 @@ def validate_evidence(
             item.snapshot_id in by_id
             and " ".join(item.quote.split())
             in " ".join(evidence_text(item, by_id[item.snapshot_id]).split())
+            and _supports_value(
+                field, value, evidence_text(item, by_id[item.snapshot_id])
+            )
             for item in candidates
         ):
             issues.append(
@@ -75,6 +89,66 @@ def validate_evidence(
                 )
             )
     return ValidationResult(valid=not issues, issues=issues)
+
+
+def _supports_value(field: str, value, text: str) -> bool:
+    normalized = " ".join(
+        BeautifulSoup(text, "html.parser").get_text(" ", strip=True).split()
+    ).casefold()
+    if field in {
+        "title",
+        "company",
+        "jd_text",
+        "posting_id",
+        "application_url",
+        "posted_at",
+        "closes_at",
+    }:
+        return " ".join(str(value).split()).casefold() in normalized
+    if field == "remote_policy":
+        terms = {
+            "remote": ("remote", "telecommute"),
+            "hybrid": ("hybrid",),
+            "onsite": ("onsite", "on-site", "on site", "in office"),
+        }
+        if any(
+            phrase in normalized
+            for phrase in (
+                f"not {value}",
+                f"no {value}",
+                f"not a {value}",
+                f"{value} not available",
+            )
+        ):
+            return False
+        return any(term in normalized for term in terms.get(value, ()))
+    if field == "locations":
+        return all(
+            all(part.strip().casefold() in normalized for part in location.split(","))
+            for location in value
+        )
+    if field == "salary_bands":
+        for band in value:
+            raw = " ".join(str(band.get("raw_text", "")).split()).casefold()
+            if not raw or raw not in normalized:
+                return False
+            local = raw.replace(",", "")
+            for key in ("minimum", "maximum", "currency", "period"):
+                fact = band.get(key)
+                if fact is None:
+                    continue
+                alternatives = [str(fact).casefold()]
+                if key in {"minimum", "maximum"}:
+                    amount = float(fact)
+                    alternatives.extend([f"{amount:g}", f"{amount / 1000:g}k"])
+                if not any(item in local for item in alternatives):
+                    return False
+            if any(
+                location.casefold() not in raw for location in band.get("locations", [])
+            ):
+                return False
+        return True
+    return " ".join(str(value).split()).casefold() in normalized
 
 
 def validate_plan(

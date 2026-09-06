@@ -144,7 +144,11 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
 
     report = reset_workspace(session, paths, ResetScope.jobs)
 
-    assert report.rows_deleted == {
+    assert {
+        key: value
+        for key, value in report.rows_deleted.items()
+        if not key.startswith("scrape_")
+    } == {
         "run_completions": 1,
         "saved_board_views": 1,
         "notifications": 1,

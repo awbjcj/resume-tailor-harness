@@ -3,24 +3,30 @@
 import json
 import multiprocessing
 import threading
+import time
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from bs4 import BeautifulSoup
+from resume_tailor_harness.config import get_settings
 
 from resume_tailor_harness.security.browser_gateway import (
     BrowserGateway,
     BrowserRequest,
+    CrawlStopped,
 )
 
 from .contracts import BrowserAction, Snapshot
-from .pacing import CrawlBudget
+from .pacing import BudgetExceeded, CrawlBudget
 
 
 def snapshot_from_html(
     url: str, html: str, requested_url: str | None = None
 ) -> Snapshot:
     soup = BeautifulSoup(html, "html.parser")
+    dynamic = any(
+        tag.get("type") != "application/ld+json" for tag in soup.find_all("script")
+    )
     structured = []
     for tag in soup.select('script[type="application/ld+json"]'):
         try:
@@ -32,6 +38,7 @@ def snapshot_from_html(
     return Snapshot(
         id=sha256((url + "\n" + html).encode()).hexdigest(),
         requested_url=requested_url or url,
+        dynamic=dynamic,
         final_url=url,
         html=html,
         visible_text=soup.get_text("\n", strip=True),
@@ -106,6 +113,7 @@ def _browser_main(pipe):
             context.route("**/*", route_request)
             context.route_web_socket("**/*", lambda ws: ws.close())
             page = context.new_page()
+            page_stack = []
             page.set_default_timeout(15000)
             pipe.send(("ready", None))
             while True:
@@ -119,6 +127,16 @@ def _browser_main(pipe):
                         page.goto(
                             action.url, wait_until="domcontentloaded", timeout=20000
                         )
+                    elif action.kind == "open_detail" and action.url:
+                        page_stack.append(page)
+                        page = context.new_page()
+                        page.set_default_timeout(15000)
+                        page.goto(
+                            action.url, wait_until="domcontentloaded", timeout=20000
+                        )
+                    elif action.kind == "close_detail" and page_stack:
+                        page.close()
+                        page = page_stack.pop()
                     elif action.kind == "scroll":
                         page.mouse.wheel(0, 900)
                     elif action.selector:
@@ -126,8 +144,19 @@ def _browser_main(pipe):
                     else:
                         raise ValueError("action requires an observed selector")
                     # Allow pending content requests/microtasks to settle, bounded by parent deadline.
-                    page.wait_for_timeout(350)
+                    started = stable_since = time.monotonic()
                     html = page.content()
+                    while time.monotonic() - started < 8:
+                        page.wait_for_timeout(250)
+                        current = page.content()
+                        if current != html:
+                            stable_since = time.monotonic()
+                            html = current
+                        if (
+                            time.monotonic() - started >= 2
+                            and time.monotonic() - stable_since >= 1.5
+                        ):
+                            break
                     if len(html.encode()) > 2_000_000:
                         raise ValueError("rendered page snapshot is too large")
                     pipe.send(("snapshot", (page.url, html, errors.copy())))
@@ -143,12 +172,19 @@ def _browser_main(pipe):
         pipe.close()
 
 
+class BrowserUnavailable(RuntimeError):
+    code = "BROWSER_UNAVAILABLE"
+
+
 class BrowserWorker:
     def __init__(self, gateway: BrowserGateway):
         self.gateway = gateway
         self._process = None
         self._pipe = None
         self.errors: list[str] = []
+        self._slot = None
+        self._renew_at = 0.0
+        self._current_url = ""
 
     @property
     def alive(self) -> bool:
@@ -158,8 +194,27 @@ class BrowserWorker:
         return self
 
     def _start(self, budget: CrawlBudget) -> None:
+        if not get_settings().public_browser_enabled:
+            raise BrowserUnavailable(
+                "Browser extraction is disabled on this installation"
+            )
         if self.alive:
             return
+        scheduler = getattr(self.gateway, "scheduler", None)
+        if scheduler:
+            while self._slot is None:
+                budget.check_deadline()
+                for index in range(2):
+                    self._slot = scheduler.acquire(
+                        f"browser-slot:{index}",
+                        self.gateway.owner,
+                        time.time() + max(0, budget.deadline - budget.clock()),
+                    )
+                    if self._slot:
+                        break
+                if self._slot is None:
+                    time.sleep(0.1)
+            self._renew_at = time.monotonic() + 20
         context = multiprocessing.get_context("spawn")
         self._pipe, child = context.Pipe()
         self._process = context.Process(
@@ -172,6 +227,12 @@ class BrowserWorker:
     def _receive(self, budget: CrawlBudget):
         while True:
             budget.check_deadline()
+            if hasattr(self.gateway, "renew_page"):
+                self.gateway.renew_page()
+            if self._slot and time.monotonic() >= self._renew_at:
+                if not self.gateway.scheduler.renew(self._slot):
+                    raise RuntimeError("Browser worker lease expired")
+                self._renew_at = time.monotonic() + 20
             if not self._pipe.poll(0.1):
                 if not self.alive:
                     raise RuntimeError("browser worker exited unexpectedly")
@@ -183,7 +244,11 @@ class BrowserWorker:
                     self._pipe.send(("response", response))
                 except Exception as exc:
                     self._pipe.send(("error", str(exc)))
+                    if isinstance(exc, (CrawlStopped, BudgetExceeded)):
+                        raise
             elif kind == "error":
+                if result.startswith("browser unavailable:"):
+                    raise BrowserUnavailable(result)
                 raise RuntimeError(result)
             else:
                 return result
@@ -194,10 +259,21 @@ class BrowserWorker:
     def act(self, action: BrowserAction, budget: CrawlBudget) -> Snapshot:
         budget.check_deadline()
         budget.begin_page()
-        self._start(budget)
-        self._pipe.send(("action", action.model_dump()))
-        url, html, self.errors = self._receive(budget)
-        return snapshot_from_html(url, html, action.url)
+        try:
+            self._start(budget)
+            if hasattr(self.gateway, "begin_page"):
+                self.gateway.begin_page(action.url or self._current_url, budget)
+            self._pipe.send(("action", action.model_dump()))
+            url, html, self.errors = self._receive(budget)
+            self._current_url = url
+            snapshot = snapshot_from_html(url, html, action.url)
+            headers = getattr(self.gateway, "response_headers", {}).get(url, {})
+            snapshot.etag = headers.get("etag")
+            snapshot.last_modified = headers.get("last-modified")
+            return snapshot
+        finally:
+            if hasattr(self.gateway, "end_page"):
+                self.gateway.end_page()
 
     def __exit__(self, *_args):
         if self.alive:
@@ -211,3 +287,6 @@ class BrowserWorker:
                 self._process.join(timeout=3)
         if self._pipe:
             self._pipe.close()
+        if self._slot:
+            self.gateway.scheduler.release(self._slot, 0)
+            self._slot = None

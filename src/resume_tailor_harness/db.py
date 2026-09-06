@@ -31,6 +31,7 @@ from resume_tailor_harness.tracking.migrate import (
     ensure_resume_version_revision_columns,
     ensure_resume_version_taxonomy_columns,
     ensure_url_index,
+    ensure_source_identity_column,
 )
 
 
@@ -106,6 +107,7 @@ def init_db(engine: Engine) -> None:
     ensure_cover_letter_revision_columns(engine)
     ensure_application_cover_letter_id_column(engine)
     ensure_agent_metadata_columns(engine)
+    ensure_source_identity_column(engine)
     ensure_url_index(engine)
     ensure_application_event_sequence_override_column(engine)
     ensure_application_submitted_events(engine)

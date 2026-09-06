@@ -117,7 +117,32 @@ class _ResetTarget:
 
 
 def scope_tables(scope: ResetScope) -> tuple[type[SQLModel], ...]:
-    return _PROFILE_TABLES if scope is ResetScope.profile else _PIPELINE_TABLES
+    from resume_tailor_harness.discovery.scraper.tables import (
+        ScrapeObservationRow,
+        ScrapeOverrideRow,
+        ScrapeOverrideHistoryRow,
+        ScrapeSnapshotRow,
+        ScrapeCacheRow,
+        ScrapeApprovalRow,
+        ScrapeDraftRow,
+        ScrapeRevisionRow,
+        ScrapeSourceRow,
+    )
+
+    if scope is ResetScope.profile:
+        return _PROFILE_TABLES
+    scrape = (
+        ScrapeObservationRow,
+        ScrapeOverrideHistoryRow,
+        ScrapeOverrideRow,
+        ScrapeSnapshotRow,
+        ScrapeCacheRow,
+        ScrapeApprovalRow,
+        ScrapeDraftRow,
+    )
+    if scope is ResetScope.all:
+        scrape += (ScrapeRevisionRow, ScrapeSourceRow)
+    return scrape + _PIPELINE_TABLES
 
 
 def _scope_targets(paths: ResetPaths, scope: ResetScope) -> tuple[_ResetTarget, ...]:

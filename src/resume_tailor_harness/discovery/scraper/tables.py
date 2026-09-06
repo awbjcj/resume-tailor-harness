@@ -1,6 +1,7 @@
 """Tenant-owned scraping state; callers own transaction boundaries."""
 
 from sqlmodel import Field, SQLModel
+import time
 
 
 class ScrapeDraftRow(SQLModel, table=True):
@@ -33,12 +34,21 @@ class ScrapeObservationRow(SQLModel, table=True):
     job_key: str | None = Field(index=True)
     source_id: str = Field(index=True)
     job_id: int | None = Field(default=None, index=True)
+    observed_at: float = Field(default_factory=time.time)
+    applied: bool = False
     payload: str
 
 
 class ScrapeSnapshotRow(SQLModel, table=True):
     __tablename__ = "scrape_snapshots"
     id: str = Field(primary_key=True)
+    payload: str
+
+
+class ScrapeCacheRow(SQLModel, table=True):
+    __tablename__ = "scrape_cache"
+    key: str = Field(primary_key=True)
+    expires_at: float
     payload: str
 
 

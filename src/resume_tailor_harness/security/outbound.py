@@ -35,15 +35,22 @@ def fetch_public_bytes(
     url: str,
     *,
     method: str = "GET",
+    body: bytes | None = None,
+    read_only_search: bool = False,
     headers: Mapping[str, str] | None = None,
     client: httpx.Client | None = None,
-    resolver: Resolver = None,
+    resolver: Resolver | None = None,
     max_bytes: int = 20 * 1024 * 1024,
     timeout: float = 20,
 ) -> PublicBytesResponse:
     """One pinned browser request; redirects return to the caller's policy gate."""
-    if method not in {"GET", "HEAD"}:
-        raise ValueError("only read-only GET/HEAD browser requests are allowed")
+    if method not in {"GET", "HEAD"} and not (
+        method == "POST"
+        and read_only_search
+        and body is not None
+        and len(body) <= 65536
+    ):
+        raise ValueError("only read-only browser requests are allowed")
     if len(url) > 8192:
         raise ValueError("URL is too large")
     host, address, port = resolve_public_url(url, resolver or resolve_host)
@@ -73,7 +80,11 @@ def fetch_public_bytes(
     http = client or httpx.Client(timeout=timeout, trust_env=False)
     try:
         request = http.build_request(
-            method, pinned, headers=request_headers, extensions={"sni_hostname": host}
+            method,
+            pinned,
+            content=body,
+            headers=request_headers,
+            extensions={"sni_hostname": host},
         )
         response = http.send(request, stream=True, follow_redirects=False)
         try:
