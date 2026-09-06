@@ -1,0 +1,3 @@
+[submodule "h1b-job-search-mcp"]
+	path = services/h1b-job-search-mcp
+	url = https://github.com/awbjcj/h1b-job-search-mcp.git

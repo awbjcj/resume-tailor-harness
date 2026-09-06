@@ -8,7 +8,7 @@ PORT ?= 8000
 MODE ?= local
 WEB_HOST ?= localhost
 WEB_PORT ?= 5173
-H1B_DIR ?= ../h1b-job-search-mcp
+H1B_DIR ?= services/h1b-job-search-mcp
 H1B_HOST ?= 127.0.0.1
 H1B_PORT ?= 8001
 H1B_MCP_ENABLED ?= false
@@ -36,7 +36,7 @@ endif
 # not reuse PORT, which belongs to the resume-tailor-harness API.
 export H1B_HOST H1B_PORT
 
-.PHONY: help setup setup-browser api web h1b dev full-stack docker-up docker-down h1b-health api-health mcp-health stack-health test test-api test-py test-web lint lint-py lint-web build build-web preview verify eval openapi client kill-port backup-remote seed
+.PHONY: help setup setup-browser api web h1b dev full-stack docker-up docker-up-h1b docker-down docker-down-h1b h1b-health api-health mcp-health stack-health test test-api test-py test-web lint lint-py lint-web build build-web preview verify eval openapi client kill-port backup-remote seed
 
 help:
 	@echo "Common targets:"
@@ -44,8 +44,9 @@ help:
 	@echo "  make api            Run FastAPI backend at http://$(HOST):$(PORT)"
 	@echo "  make web            Run Vite frontend at http://$(WEB_HOST):$(WEB_PORT)"
 	@echo "  make dev            Run FastAPI and Vite together (Windows/macOS/Linux)"
-	@echo "  make full-stack     Run API, frontend, and the optional local H-1B MCP server"
+	@echo "  make full-stack     Run API, frontend, and the optional bundled H-1B MCP server"
 	@echo "  make docker-up      Build and run the single-container app"
+	@echo "  make docker-up-h1b  Build and run the app with the optional H-1B service"
 	@echo "  make docker-down    Stop the container (persistent data is retained)"
 	@echo "  make h1b            Run H-1B MCP at http://$(H1B_HOST):$(H1B_PORT)/mcp"
 	@echo "  make stack-health   Check API health and the H-1B MCP connection"
@@ -84,6 +85,7 @@ web:
 	cd web && $(NPX) vite --host $(WEB_HOST) --port $(WEB_PORT)
 
 h1b:
+	@test -f "$(H1B_DIR)/src/server.py" || (echo "H-1B service is not initialized. Run: git submodule update --init --recursive" && exit 1)
 	$(UV) --directory "$(H1B_DIR)" run python src/server.py
 
 dev:
@@ -95,8 +97,14 @@ full-stack:
 docker-up:
 	docker compose up --build
 
+docker-up-h1b:
+	docker compose -f compose.yaml -f compose.h1b.yaml --profile h1b up --build
+
 docker-down:
 	docker compose down
+
+docker-down-h1b:
+	docker compose -f compose.yaml -f compose.h1b.yaml --profile h1b down
 
 h1b-health:
 	powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-RestMethod -ErrorAction Stop -Uri 'http://$(H1B_HOST):$(H1B_PORT)/health' -TimeoutSec 15 | ConvertTo-Json -Compress"

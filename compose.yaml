@@ -2,7 +2,7 @@ services:
   resume-tailor-harness:
     build:
       context: .
-    image: resume-tailor-harness:local
+    image: ${RESUME_TAILOR_HARNESS_IMAGE:-resume-tailor-harness:local}
     init: true
     restart: unless-stopped
     ports:

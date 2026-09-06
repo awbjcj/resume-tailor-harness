@@ -226,10 +226,29 @@ Choose either setup path:
 
 ---
 
-## Start with Docker
+## Run with Docker
 
-This builds the frontend and backend into one image, stores application data in
-a named volume, and exposes the app only on the host's loopback interface:
+Docker is the simplest way to run a local desktop instance: it builds the
+frontend and API into one image, stores application data in a named volume, and
+publishes the app only on this computer's loopback interface.
+
+### Configure once
+
+Copy the safe template, then set an LLM provider key (for example,
+`ANTHROPIC_API_KEY`) if you want AI-powered operations. The app can still start
+without a key so you can finish configuration from its UI.
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+`RESUME_TAILOR_HARNESS_PORT` is optional when port `8000` is busy. The `.env`
+file never enters the built image. Do not enable the H-1B variables in `.env`
+just to use the bundled service; the optional Compose stack supplies its private
+container URL at runtime.
+
+### Start the app
 
 ```bash
 docker compose up --build
@@ -237,7 +256,57 @@ docker compose up --build
 
 Open <http://localhost:8000>. Stop it with `Ctrl+C` and later restart with
 `docker compose up`. `docker compose down` removes the container and network
-but retains your named data volume.
+but retains your named data volume. Use `docker compose down --volumes` only
+when you intentionally want to erase local application and H-1B cache data.
+Browser-backed connectors are disabled in the image; use the native setup when
+you need LinkedIn or another browser-driven source.
+
+### Start with the optional H-1B service
+
+The repository pins the companion service as a submodule and builds it with its
+frozen dependency lock, so the combined stack uses a known source revision.
+Clone with `--recurse-submodules`, or initialize it once in an existing clone:
+
+```bash
+git submodule update --init --recursive
+docker compose -f compose.yaml -f compose.h1b.yaml --profile h1b up --build
+```
+
+This starts the application and the H-1B MCP service together. The MCP endpoint
+is private to Docker's network; only the application remains reachable at
+<http://localhost:8000>. Both data stores use named volumes and survive normal
+stops/restarts. Historical H-1B data remains advisory evidence, not proof of a
+company's current sponsorship policy.
+
+### Windows quick start
+
+Install and start [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+(the default WSL 2 backend works for most users), then verify it from
+PowerShell:
+
+```powershell
+docker version
+docker compose version
+```
+
+Install Git for Windows too only if you plan to use `-WithH1B`, because that
+mode initializes the pinned service submodule on first use.
+
+The included PowerShell launcher creates a missing `.env`, checks Docker
+Desktop, initializes the optional submodule when needed, and preserves data on
+stop:
+
+```powershell
+.\scripts\windows\Start-ResumeTailor.cmd -Detach
+.\scripts\windows\Start-ResumeTailor.cmd -WithH1B -Detach
+.\scripts\windows\Start-ResumeTailor.cmd -WithH1B -Status
+.\scripts\windows\Start-ResumeTailor.cmd -WithH1B -Stop
+```
+
+`-WithH1B` is optional; omit it for the smaller default image. Add `-Port 8080`
+to either start command when you need a different local port. The `.cmd`
+launcher applies an execution-policy bypass only to the child PowerShell process;
+you may also call the `.ps1` file directly from an already-configured shell.
 
 To build and run the image without Compose:
 
@@ -346,11 +415,17 @@ per job from the **Sponsorship** tab in the job detail view:
 ![Sponsorship tab — historical H-1B filing evidence for one company](docs/screenshots/sponsorship-tab.png)
 
 For local development, `make dev` starts only the API and Vite frontend, so a
-fresh clone has no sibling-repository dependency. `make full-stack` additionally
-starts the optional sibling `h1b-job-search-mcp` server. That launcher uses
+fresh clone has no H-1B service process. After `git submodule update --init
+--recursive`, `make full-stack` additionally starts the optional bundled
+`h1b-job-search-mcp` server. That launcher uses
 `http://127.0.0.1:8001/mcp` for the API's Streamable HTTP connection, so no
 manual MCP command or URL is needed. Run `make stack-health` after startup to
 check both HTTP health endpoints and the MCP handshake/tool allowlist.
+
+For the Docker equivalent, use the optional `h1b` profile in
+[Run with Docker](#run-with-docker). Do not use `localhost` for that profile's
+MCP URL: inside a container it would refer to the application container rather
+than the companion service.
 
 ### Application workspace and company research
 

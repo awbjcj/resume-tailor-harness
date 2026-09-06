@@ -14,6 +14,11 @@ docs
 node_modules
 __pycache__
 *.pyc
+services/h1b-job-search-mcp/.git
+services/h1b-job-search-mcp/.venv
+services/h1b-job-search-mcp/__pycache__
+services/h1b-job-search-mcp/.pytest_cache
+services/h1b-job-search-mcp/data_cache
 .env
 config/*
 !config/*.example

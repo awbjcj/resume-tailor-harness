@@ -83,3 +83,37 @@ def test_compose_binds_localhost_and_persists_the_data_root():
     assert '"127.0.0.1:${RESUME_TAILOR_HARNESS_PORT:-8000}:8000"' in compose
     assert "APP_MODE: local" in compose
     assert "resume-tailor-harness-data:/app/data" in compose
+
+
+def test_optional_h1b_compose_profile_uses_private_network_and_persistent_cache():
+    compose = (ROOT / "compose.h1b.yaml").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "Dockerfile.h1b").read_text(encoding="utf-8")
+
+    assert "profiles:" in compose
+    assert "- h1b" in compose
+    assert "H1B_MCP_ENABLED: \"true\"" in compose
+    assert "H1B_MCP_URL: http://h1b-job-search-mcp:8000/mcp" in compose
+    assert "condition: service_healthy" in compose
+    assert "h1b-job-search-mcp-data:/app/data_cache" in compose
+    assert "ports:" not in compose
+    assert "dockerfile: Dockerfile.h1b" in compose
+    assert "uv sync --frozen --no-dev --no-install-project" in dockerfile
+    assert "USER h1b-job-search-mcp" in dockerfile
+
+
+def test_windows_launcher_initializes_config_and_optional_h1b_service():
+    launcher = (ROOT / "scripts" / "windows" / "Start-ResumeTailor.ps1").read_text(
+        encoding="utf-8"
+    )
+    command_launcher = (
+        ROOT / "scripts" / "windows" / "Start-ResumeTailor.cmd"
+    ).read_text(encoding="utf-8")
+
+    assert "git submodule update --init --recursive" in launcher
+    assert "Copy-Item -LiteralPath $templateFile -Destination $envFile" in launcher
+    assert "Docker Desktop is required" in launcher
+    assert "compose.h1b.yaml" in launcher
+    assert "--profile', 'h1b" in launcher
+    assert "-ExecutionPolicy Bypass" in command_launcher
+    assert "Start-ResumeTailor.ps1" in command_launcher
+    assert "exit /b %ERRORLEVEL%" in command_launcher
