@@ -54,9 +54,9 @@ describe("FilterDesk", () => {
     expect(screen.getByRole("combobox", { name: "发布日期" })).toHaveTextContent("不限时间");
 
     await user.click(sort);
-    expect(screen.getByRole("option", { name: "匹配度" })).toBeVisible();
-    expect(screen.getByRole("option", { name: "薪资" })).toBeVisible();
-    expect(screen.getByRole("option", { name: "最新发布" })).toBeVisible();
+    expect(await screen.findByRole("option", { name: "匹配度" })).toBeVisible();
+    expect(await screen.findByRole("option", { name: "薪资" })).toBeVisible();
+    expect(await screen.findByRole("option", { name: "最新发布" })).toBeVisible();
   });
 
   it("shows the Preset control only for composite sort", () => {
