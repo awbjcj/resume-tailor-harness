@@ -185,13 +185,61 @@ uv run resume-tailor-harness career-lab "准备薪酬谈判要点" \
 
 ## 使用 Docker 启动
 
-最简单的启动方式：
+Docker 是在本机运行的最简方式：它会把网页和 API 构建进同一个镜像，将应用数据保存在具名卷中，并且只绑定到这台计算机的回环地址。
+
+### 先配置一次
+
+复制安全模板，然后按需填写模型提供商密钥（例如 `ANTHROPIC_API_KEY`）。没有密钥也可以启动，再从网页 UI 完成配置。
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+如果 `8000` 被占用，可设置 `RESUME_TAILOR_HARNESS_PORT`。`.env` 不会进入镜像。使用随附 H-1B 服务时，不要在 `.env` 中手动启用 H-1B 变量；可选 Compose 栈会在运行时注入私有服务地址。
+
+### 启动默认应用
 
 ```bash
 docker compose up --build
 ```
 
-容器会把已构建的网页和 API 一起提供在 `http://localhost:8000`。Docker 镜像默认关闭浏览器型连接器；需要 LinkedIn 或其他浏览器来源时，请使用原生运行方式。
+容器会把已构建的网页和 API 一起提供在 <http://localhost:8000>。按 `Ctrl+C` 停止，以后用 `docker compose up` 重启。`docker compose down` 会删除容器和网络，但保留具名数据卷。只有明确要清除本地应用和 H-1B 缓存数据时，才使用 `docker compose down --volumes`。
+
+镜像默认关闭浏览器型连接器；需要 LinkedIn 或其他浏览器驱动的来源时，请使用原生安装方式。
+
+### 同时启动可选 H-1B 服务
+
+仓库将配套服务固定为 Git 子模块，并使用其冻结依赖锁构建，所以组合栈使用的是已知的源代码版本。克隆时使用 `--recurse-submodules`，或在现有克隆中执行一次：
+
+```bash
+git submodule update --init --recursive
+docker compose -f compose.yaml -f compose.h1b.yaml --profile h1b up --build
+```
+
+该命令会同时启动应用和 H-1B MCP 服务。MCP 端点只存在于 Docker 私有网络中；浏览器仍然只访问 <http://localhost:8000>。两个服务的数据卷在正常停止和重启后都会保留。历史 H-1B 记录只是辅助证据，不能证明公司当前提供赞助。
+
+### Windows 快速启动
+
+安装并启动 [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)（默认 WSL 2 后端适合大多数用户），然后在 PowerShell 中确认：
+
+```powershell
+docker version
+docker compose version
+```
+
+只有计划使用 `-WithH1B` 时才需要安装 Git for Windows，因为该模式会在第一次运行时初始化固定版本的服务子模块。
+
+随附的 PowerShell 启动器会创建缺失的 `.env`、检查 Docker Desktop、按需初始化 H-1B 子模块，并在停止时保留数据：
+
+```powershell
+.\scripts\windows\Start-ResumeTailor.cmd -Detach
+.\scripts\windows\Start-ResumeTailor.cmd -WithH1B -Detach
+.\scripts\windows\Start-ResumeTailor.cmd -WithH1B -Status
+.\scripts\windows\Start-ResumeTailor.cmd -WithH1B -Stop
+```
+
+`-WithH1B` 是可选项；省略它即可使用较小的默认栈。端口冲突时可在任一启动命令后加 `-Port 8080`。`.cmd` 启动器只会在其子 PowerShell 进程中临时绕过执行策略；也可以在已配置的 shell 中直接调用 `.ps1` 文件。
 
 也可以直接构建并运行镜像：
 

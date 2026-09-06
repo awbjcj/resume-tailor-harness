@@ -151,6 +151,17 @@ units and rollout behavior.
 Historical H-1B data is an advisory signal only. It never confirms current
 sponsorship policy and never hard-rejects a job.
 
+For the bundled Docker service, leave these values at their defaults in `.env`
+and start the `h1b` profile with:
+
+```bash
+docker compose -f compose.yaml -f compose.h1b.yaml --profile h1b up --build
+```
+
+The override injects a private `http://h1b-job-search-mcp:8000/mcp` URL only
+for that profile; a container must not use `localhost` to reach its companion
+service.
+
 ## Gmail and platform mail
 
 | Variable | Default | Accepted values and purpose |

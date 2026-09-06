@@ -1,0 +1,30 @@
+# The companion service is pinned as a submodule. Build it from its lockfile
+# rather than its standalone convenience Dockerfile, which allows dependency
+# ranges for independent deployments.
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir uv
+
+COPY services/h1b-job-search-mcp/pyproject.toml services/h1b-job-search-mcp/uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+COPY services/h1b-job-search-mcp/src ./src
+RUN groupadd --system h1b-job-search-mcp \
+    && useradd --system --gid h1b-job-search-mcp --home-dir /app h1b-job-search-mcp \
+    && mkdir --parents /app/data_cache \
+    && chown --recursive h1b-job-search-mcp:h1b-job-search-mcp /app/data_cache
+
+USER h1b-job-search-mcp
+
+EXPOSE 8000
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=12 \
+    CMD ["curl", "--fail", "--silent", "http://127.0.0.1:8000/health"]
+CMD ["/app/.venv/bin/python", "src/server.py"]
