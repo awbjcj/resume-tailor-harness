@@ -1,4 +1,13 @@
 {
+  "include": [
+    "src",
+    "tests"
+  ],
+  "exclude": [
+    ".venv"
+  ],
+  "venvPath": ".",
+  "venv": ".venv",
   "executionEnvironments": [
     {
       "root": "services/h1b-job-search-mcp",
@@ -7,7 +16,10 @@
       ]
     },
     {
-      "root": "."
+      "root": ".",
+      "extraPaths": [
+        "src"
+      ]
     }
   ]
 }
