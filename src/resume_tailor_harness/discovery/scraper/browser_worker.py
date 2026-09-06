@@ -6,7 +6,6 @@ import threading
 import time
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from multiprocessing.connection import PipeConnection
 from multiprocessing.process import BaseProcess
 from typing import Any, Protocol
 
@@ -27,6 +26,18 @@ class BrowserGatewayClient(Protocol):
     def fetch(
         self, request: BrowserRequest, budget: CrawlBudget
     ) -> PublicBytesResponse: ...
+
+
+class WorkerPipe(Protocol):
+    """Portable subset shared by Unix and Windows multiprocessing pipes."""
+
+    def close(self) -> None: ...
+
+    def poll(self, timeout: float = 0.0) -> bool: ...
+
+    def recv(self) -> Any: ...
+
+    def send(self, obj: Any) -> None: ...
 
 
 def snapshot_from_html(
@@ -191,7 +202,7 @@ class BrowserWorker:
     def __init__(self, gateway: BrowserGatewayClient):
         self.gateway = gateway
         self._process: BaseProcess | None = None
-        self._pipe: PipeConnection[Any, Any] | None = None
+        self._pipe: WorkerPipe | None = None
         self.errors: list[str] = []
         self._slot = None
         self._renew_at = 0.0

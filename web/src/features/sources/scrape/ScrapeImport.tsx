@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Globe2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PublicUrlField, isPublicHttpUrl } from "@/components/PublicUrlField";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { cancelRun, useLaunchRun } from "@/features/runs/use-launch-run";
 import { api, unwrap } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
@@ -21,7 +22,7 @@ export function ScrapeImport({
   initialUrl = "",
   initialDraftId = "",
   sourceId = "",
-  label = "Import public page",
+  label = "Add job board URL",
 }: {
   initialUrl?: string;
   initialDraftId?: string;
@@ -32,6 +33,7 @@ export function ScrapeImport({
   const [url, setUrl] = useState(initialUrl);
   const [limits, setLimits] = useState(defaultLimits);
   const [runId, setRunId] = useState("");
+  const [urlTouched, setUrlTouched] = useState(false);
   const cache = useQueryClient();
   const { launch } = useLaunchRun();
   const run = useQuery({
@@ -83,6 +85,19 @@ export function ScrapeImport({
       ["scrape-sources", "sources", "triage"],
     );
   }
+  const urlIsValid = isPublicHttpUrl(url);
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setUrlTouched(true);
+    if (!urlIsValid || working) return;
+    void start(() =>
+      unwrap(
+        api.POST("/api/scrape/drafts", {
+          body: { url: url.trim(), limits },
+        }),
+      ),
+    );
+  }
   return (
     <Dialog
       open={open}
@@ -94,39 +109,43 @@ export function ScrapeImport({
       <DialogTrigger render={<Button variant="outline" size="sm" />}>
         {label}
       </DialogTrigger>
-      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-4xl">
+      <DialogContent
+        className={`max-h-[90svh] overflow-y-auto ${draftId || sourceId ? "sm:max-w-4xl" : "sm:max-w-lg"}`}
+      >
         <DialogHeader>
           <DialogTitle>Review public job page</DialogTitle>
           <DialogDescription>
-            Inspect public postings, correct extracted fields, and save reusable
-            rules.
+            Add a public careers page, review a sample of its postings, and save
+            reusable import rules.
           </DialogDescription>
         </DialogHeader>
         {savedDraft.error && <p role="alert">{savedDraft.error.message}</p>}
         {!draftId && !sourceId && (
-          <>
-            <label className="space-y-1 text-sm">
-              Public job or board URL
-              <Input
+          <form className="space-y-4" noValidate onSubmit={submit}>
+            <div className="space-y-4 rounded-xl border bg-muted/25 p-4">
+              <PublicUrlField
+                id="public-board-url"
+                label="Job board URL"
                 value={url}
-                onChange={(event) => setUrl(event.target.value)}
                 placeholder="https://example.com/careers"
+                invalid={urlTouched && !urlIsValid}
+                onBlur={() => setUrlTouched(true)}
+                onChange={(value) => {
+                  setUrl(value);
+                  if (urlTouched && !value) setUrlTouched(false);
+                }}
               />
-            </label>
-            <ScrapeLimits value={limits} onChange={setLimits} />
+              <ScrapeLimits value={limits} onChange={setLimits} />
+            </div>
             <Button
+              type="submit"
+              className="w-full sm:w-auto"
               disabled={!url.trim() || working}
-              onClick={() =>
-                void start(() =>
-                  unwrap(
-                    api.POST("/api/scrape/drafts", { body: { url, limits } }),
-                  ),
-                )
-              }
             >
-              Analyze page
+              <Globe2 data-icon="inline-start" aria-hidden="true" />
+              Analyze job board
             </Button>
-          </>
+          </form>
         )}
         {working && (
           <div role="status" className="space-y-2">
