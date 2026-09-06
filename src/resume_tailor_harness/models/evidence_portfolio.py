@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -62,6 +62,36 @@ class PortfolioSelection(ExtensibleModel):
     bridge: bool = False
     rationale: str = ""
 
+    def __init__(
+        self,
+        *,
+        owner_id: str,
+        owner_kind: OwnerKind,
+        selected_fact_ids: list[str] | None = None,
+        requirement_texts: list[str] | None = None,
+        rank: int = 100,
+        bullet_budget: int = 1,
+        bridge: bool = False,
+        rationale: str = "",
+        schema_version: int = 1,
+        **extra_data: Any,
+    ) -> None:
+        """Expose Pydantic's generated keyword interface to static analyzers."""
+        values: dict[str, Any] = {
+            "owner_id": owner_id,
+            "owner_kind": owner_kind,
+            "rank": rank,
+            "bullet_budget": bullet_budget,
+            "bridge": bridge,
+            "rationale": rationale,
+            "schema_version": schema_version,
+        }
+        if selected_fact_ids is not None:
+            values["selected_fact_ids"] = selected_fact_ids
+        if requirement_texts is not None:
+            values["requirement_texts"] = requirement_texts
+        super().__init__(**values, **extra_data)
+
 
 class PortfolioOmission(ExtensibleModel):
     owner_id: str
@@ -92,3 +122,37 @@ class EvidencePortfolio(ExtensibleModel):
     section_order: list[str] = Field(default_factory=list)
     omissions: list[PortfolioOmission] = Field(default_factory=list)
     evidence_excerpts: list[EvidenceExcerpt] = Field(default_factory=list)
+
+    def __init__(
+        self,
+        *,
+        status: PortfolioStatus = "planned",
+        warning: str | None = None,
+        requirements: list[PortfolioRequirement] | None = None,
+        selections: list[PortfolioSelection] | None = None,
+        selected_skill_fact_ids: list[str] | None = None,
+        highlight_terms: list[str] | None = None,
+        section_order: list[str] | None = None,
+        omissions: list[PortfolioOmission] | None = None,
+        evidence_excerpts: list[EvidenceExcerpt] | None = None,
+        schema_version: int = 1,
+        **extra_data: Any,
+    ) -> None:
+        """Expose Pydantic's generated keyword interface to static analyzers."""
+        values: dict[str, Any] = {
+            "status": status,
+            "warning": warning,
+            "schema_version": schema_version,
+        }
+        for name, value in (
+            ("requirements", requirements),
+            ("selections", selections),
+            ("selected_skill_fact_ids", selected_skill_fact_ids),
+            ("highlight_terms", highlight_terms),
+            ("section_order", section_order),
+            ("omissions", omissions),
+            ("evidence_excerpts", evidence_excerpts),
+        ):
+            if value is not None:
+                values[name] = value
+        super().__init__(**values, **extra_data)
