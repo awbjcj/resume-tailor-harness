@@ -1157,6 +1157,25 @@ def _without_ref_siblings(schema: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+def _without_openai_regex_lookaround(schema: dict[str, Any]) -> dict[str, Any]:
+    """Drop regex assertions unsupported by OpenAI's schema compiler.
+
+    Pydantic emits a negative-lookahead pattern for every ``Decimal`` string
+    branch. OpenAI rejects that request before generation; omitting only the
+    unsupported pattern keeps the accepted JSON types intact, while Pydantic
+    still performs the full local validation after generation.
+    """
+    normalized = deepcopy(schema)
+    lookaround_tokens = ("(?=", "(?!", "(?<=", "(?<!")
+    for node in _walk_json_schema(normalized):
+        pattern = node.get("pattern")
+        if isinstance(pattern, str) and any(
+            token in pattern for token in lookaround_tokens
+        ):
+            del node["pattern"]
+    return normalized
+
+
 @lru_cache(maxsize=1)
 def _compatible_openai_responses_class():
     from agno.models.openai.responses import OpenAIResponses
@@ -1211,7 +1230,10 @@ def _compatible_openai_responses_class():
             text_format = params.get("text", {}).get("format", {})
             schema = text_format.get("schema")
             if isinstance(schema, dict):
-                text_format["schema"] = _without_ref_siblings(schema)
+                schema = _without_ref_siblings(schema)
+                if self.provider == "OpenAI":
+                    schema = _without_openai_regex_lookaround(schema)
+                text_format["schema"] = schema
             if not params.get("reasoning"):
                 params.pop("reasoning", None)
             return params
