@@ -14,6 +14,7 @@ from resume_tailor_harness.discovery.scraper.store import ScrapeStore
 
 class FixtureWorker:
     errors = []
+    gateway: object | None = None
 
     def __init__(self):
         self.details = 0
@@ -189,6 +190,7 @@ def test_expired_static_detail_is_conditionally_revalidated_without_browser():
             key = f"board:detail:{url}"
             store.cache_snapshot(key, snapshot)
             row = session.get(ScrapeCacheRow, key)
+            assert row is not None
             row.expires_at = 0
             session.add(row)
 

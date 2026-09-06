@@ -398,7 +398,7 @@ def pull_jobs(
         max_active_jobs=active_limit("max_active_jobs", DEFAULT_MAX_ACTIVE_JOBS),
     )
     for source in session.exec(
-        sql_select(ScrapeSourceRow).where(ScrapeSourceRow.enabled.is_(True))
+        sql_select(ScrapeSourceRow).where(col(ScrapeSourceRow.enabled).is_(True))
     ).all():
         if source_ids is not None and source.id not in source_ids:
             continue

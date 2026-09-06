@@ -84,7 +84,7 @@ def save_or_upgrade(
     )
     if source_identity:
         existing = session.execute(
-            select(Job).where(Job.source_identity == source_identity)
+            select(Job).where(col(Job.source_identity) == source_identity)
         ).scalar_one_or_none()
     else:
         existing = find_existing(

@@ -1,5 +1,6 @@
 import httpx
 import pytest
+from typing import cast
 
 from resume_tailor_harness.security.outbound import fetch_public_bytes
 
@@ -54,8 +55,13 @@ def test_gateway_pins_public_address_and_preserves_json():
 
 def test_private_browser_request_never_reaches_transport():
     seen = []
+
+    def unexpected_request(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(500)
+
     with httpx.Client(
-        transport=httpx.MockTransport(lambda r: seen.append(r))
+        transport=httpx.MockTransport(unexpected_request)
     ) as client:
         with pytest.raises(ValueError, match="public"):
             fetch_public_bytes("http://169.254.169.254/", client=client)
@@ -148,7 +154,11 @@ def test_assets_share_one_paced_page_acquisition():
         BrowserRequest,
     )
     from resume_tailor_harness.security.outbound import PublicBytesResponse
-    from resume_tailor_harness.discovery.scraper.pacing import CrawlBudget, HostLease
+    from resume_tailor_harness.discovery.scraper.pacing import (
+        CrawlBudget,
+        HostLease,
+        HostScheduler,
+    )
     from resume_tailor_harness.discovery.scraper.contracts import CrawlLimits
 
     class Scheduler:
@@ -168,7 +178,7 @@ def test_assets_share_one_paced_page_acquisition():
 
     scheduler = Scheduler()
     gateway = BrowserGateway(
-        scheduler,
+        cast(HostScheduler, scheduler),
         fetcher=lambda url, **kw: PublicBytesResponse(
             404 if url.endswith("robots.txt") else 200, {}, b"", url
         ),

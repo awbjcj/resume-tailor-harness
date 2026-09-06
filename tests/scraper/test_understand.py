@@ -7,10 +7,13 @@ from resume_tailor_harness.discovery.scraper.understand import understand
 
 def test_page_classification_passes_bounded_untrusted_content():
     class Runner:
-        def run(self, message):
-            assert "snapshot_id" in message
-            assert len(message) < 70000
+        def run(self, prompt: str):
+            assert "snapshot_id" in prompt
+            assert len(prompt) < 70000
             return SimpleNamespace(content=PageUnderstanding(kind="unrelated"))
+
+        async def arun(self, prompt: str):
+            return self.run(prompt)
 
     result = understand(
         snapshot_from_html("https://example.com", "<nav>" + "x" * 90000 + "</nav>"),

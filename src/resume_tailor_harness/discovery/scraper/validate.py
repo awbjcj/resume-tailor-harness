@@ -1,6 +1,7 @@
 """Observable checks separate schema validity from extraction correctness."""
 
 import json
+from typing import cast
 
 from bs4 import BeautifulSoup
 from soupsieve import SelectorSyntaxError
@@ -9,6 +10,7 @@ from .contracts import (
     BoardPlan,
     Evidence,
     FieldIssue,
+    FieldName,
     Observation,
     Snapshot,
     ValidationResult,
@@ -19,10 +21,15 @@ def evidence_text(evidence: Evidence, snapshot: Snapshot) -> str:
     if evidence.snapshot_id != snapshot.id:
         return ""
     if evidence.json_path:
-        value = snapshot.json_ld
+        value = cast(list[object] | dict[str, object], snapshot.json_ld)
         try:
             for part in evidence.json_path.split("."):
-                value = value[int(part)] if isinstance(value, list) else value[part]
+                if isinstance(value, list):
+                    value = value[int(part)]
+                elif isinstance(value, dict):
+                    value = value[part]
+                else:
+                    return ""
         except (KeyError, IndexError, TypeError, ValueError):
             return ""
         return (
@@ -70,7 +77,7 @@ def validate_evidence(
         ):
             issues.append(
                 FieldIssue(
-                    field=field,
+                    field=cast(FieldName, field),
                     kind="invalid_evidence",
                     message="No matching source evidence",
                 )

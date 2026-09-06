@@ -2,7 +2,9 @@
 
 from fastapi import APIRouter, Depends, Request
 import json
-from sqlmodel import Session, select
+from typing import cast
+
+from sqlmodel import Session, col, select
 
 from resume_tailor_harness.api.deps import get_engine, get_run_manager, get_session
 from resume_tailor_harness.api.errors import ApiException
@@ -174,7 +176,7 @@ def observations(job_id: int, session: Session = Depends(get_session)):
     rows = session.exec(
         select(ScrapeObservationRow)
         .where(ScrapeObservationRow.job_id == job_id)
-        .order_by(ScrapeObservationRow.observed_at)
+        .order_by(col(ScrapeObservationRow.observed_at))
     ).all()
     store = ScrapeStore(session)
     result = []
@@ -189,7 +191,7 @@ def _job_key(session: Session, job_id: int) -> str:
     row = session.exec(
         select(ScrapeObservationRow)
         .where(ScrapeObservationRow.job_id == job_id)
-        .order_by(ScrapeObservationRow.observed_at.desc())
+        .order_by(col(ScrapeObservationRow.observed_at).desc())
     ).first()
     if row is None or row.job_key is None:
         raise KeyError(job_id)
@@ -204,7 +206,7 @@ def get_overrides(job_id: int, session: Session = Depends(get_session)):
     ).all()
     return [
         OverrideOut(
-            field=row.field,
+            field=cast(FieldName, row.field),
             revision=row.revision,
             value=json.loads(row.value),
             removed=row.removed,

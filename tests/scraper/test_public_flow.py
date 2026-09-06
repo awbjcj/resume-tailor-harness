@@ -3,7 +3,7 @@
 import os
 from types import SimpleNamespace
 import pytest
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.discovery.scraper.contracts import (
     BoardPlan,
@@ -69,7 +69,10 @@ def test_public_board_review_restart_and_repull(tmp_path, monkeypatch):
             session, draft.id, draft.revision, samples={sample.job_key: corrected}
         )
         result = review.approve_draft(
-            session, draft.id, draft.revision, [sample.job_key]
+            session,
+            draft.id,
+            draft.revision,
+            [sample.job_key] if sample.job_key is not None else [],
         )
         assert len(result.job_ids) == 1
     engine.dispose()
@@ -81,11 +84,12 @@ def test_public_board_review_restart_and_repull(tmp_path, monkeypatch):
         assert len(session.exec(select(Job)).all()) == 1
         latest = session.exec(
             select(ScrapeObservationRow).order_by(
-                ScrapeObservationRow.observed_at.desc()
+                col(ScrapeObservationRow.observed_at).desc()
             )
         ).first()
         from resume_tailor_harness.discovery.scraper.contracts import Observation
 
+        assert latest is not None
         effective = ScrapeStore(session).effective_facts(
             Observation.model_validate_json(latest.payload)
         )

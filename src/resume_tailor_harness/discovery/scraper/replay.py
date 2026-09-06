@@ -2,13 +2,14 @@
 
 from urllib.parse import urljoin
 from hashlib import sha256
+from typing import Any, Literal, cast
 
 from bs4 import BeautifulSoup
 
 from resume_tailor_harness.llm_runner import Runner
 from resume_tailor_harness.security.browser_gateway import CrawlStopped
 
-from .browser_worker import BrowserUnavailable, BrowserWorker, snapshot_from_html
+from .browser_worker import BrowserUnavailable, snapshot_from_html
 from .contracts import BrowserAction, Draft, Evidence, FieldIssue, FieldRule, PullReport
 from .extract import extract_observation
 from .identity import observed_job_key
@@ -19,7 +20,7 @@ from .validate import validate_evidence
 
 def replay(
     draft: Draft,
-    worker: BrowserWorker,
+    worker: Any,
     store: ScrapeStore,
     agent: Runner | None,
     *,
@@ -277,7 +278,7 @@ def replay(
                 BrowserAction(kind=kind, selector=plan.control_selector), budget
             )
     except CrawlStopped as exc:
-        report.terminal_reason = exc.reason
+        report.terminal_reason = cast(Literal["blocked", "throttled"], exc.reason)
         report.messages.append(str(exc))
     except BrowserUnavailable as exc:
         report.terminal_reason = "capability_unavailable"

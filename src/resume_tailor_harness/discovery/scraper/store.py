@@ -2,10 +2,12 @@
 
 import json
 import time
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy import update
-from sqlmodel import Session, select
+from sqlalchemy.engine import CursorResult
+from sqlmodel import Session, col, select
 
 from .contracts import (
     Draft,
@@ -57,13 +59,13 @@ class ScrapeStore:
         result = self.session.execute(
             update(ScrapeDraftRow)
             .where(
-                ScrapeDraftRow.id == draft.id,
-                ScrapeDraftRow.revision == draft.revision,
-                ScrapeDraftRow.approved_from.is_(None),
+                col(ScrapeDraftRow.id) == draft.id,
+                col(ScrapeDraftRow.revision) == draft.revision,
+                col(ScrapeDraftRow.approved_from).is_(None),
             )
             .values(revision=saved.revision, payload=saved.model_dump_json())
         )
-        if result.rowcount != 1:
+        if cast(CursorResult[Any], result).rowcount != 1:
             raise RevisionConflict("draft changed; reload before editing")
         self.session.flush()
         return saved
@@ -96,9 +98,9 @@ class ScrapeStore:
         result = self.session.execute(
             update(ScrapeDraftRow)
             .where(
-                ScrapeDraftRow.id == draft.id,
-                ScrapeDraftRow.revision == expected_revision,
-                ScrapeDraftRow.approved_from.is_(None),
+                col(ScrapeDraftRow.id) == draft.id,
+                col(ScrapeDraftRow.revision) == expected_revision,
+                col(ScrapeDraftRow.approved_from).is_(None),
             )
             .values(
                 payload=payload,
@@ -106,18 +108,18 @@ class ScrapeStore:
                 approved_from=expected_revision,
             )
         )
-        if result.rowcount != 1:
+        if cast(CursorResult[Any], result).rowcount != 1:
             raise RevisionConflict("draft approval raced another change")
         if source:
             result = self.session.execute(
                 update(ScrapeSourceRow)
                 .where(
-                    ScrapeSourceRow.id == source.id,
-                    ScrapeSourceRow.revision == source_revision,
+                    col(ScrapeSourceRow.id) == source.id,
+                    col(ScrapeSourceRow.revision) == source_revision,
                 )
                 .values(revision=approved.revision, payload=payload, enabled=True)
             )
-            if result.rowcount != 1:
+            if cast(CursorResult[Any], result).rowcount != 1:
                 raise RevisionConflict("source changed during approval")
         else:
             self.session.add(
@@ -145,15 +147,15 @@ class ScrapeStore:
             if value.job_key:
                 previous = self.session.exec(
                     select(ScrapeObservationRow)
-                    .where(ScrapeObservationRow.job_key == value.job_key)
-                    .order_by(ScrapeObservationRow.observed_at.desc())
+                    .where(col(ScrapeObservationRow.job_key) == value.job_key)
+                    .order_by(col(ScrapeObservationRow.observed_at).desc())
                 ).first()
             if previous:
                 old = Observation.model_validate_json(previous.payload)
                 overrides = self.session.exec(
                     select(ScrapeOverrideRow).where(
-                        ScrapeOverrideRow.job_key == value.job_key,
-                        ScrapeOverrideRow.removed.is_(False),
+                        col(ScrapeOverrideRow.job_key) == value.job_key,
+                        col(ScrapeOverrideRow.removed).is_(False),
                     )
                 ).all()
                 for override in overrides:
@@ -163,7 +165,7 @@ class ScrapeStore:
                         value.accepted = False
                         value.issues.append(
                             FieldIssue(
-                                field=override.field,
+                                field=cast(FieldName, override.field),
                                 kind="conflict",
                                 message="The source changed beneath your saved correction; review the new evidence",
                             )
@@ -235,7 +237,7 @@ class ScrapeStore:
         return self._override(job_key, field, expected_revision, "null", True)
 
     def _override(
-        self, job_key: str, field: str, expected: int, value: str, removed: bool
+        self, job_key: str, field: FieldName, expected: int, value: str, removed: bool
     ) -> int:
         current = self.session.get(ScrapeOverrideRow, (job_key, field))
         revision = expected + 1
@@ -255,13 +257,13 @@ class ScrapeStore:
             result = self.session.execute(
                 update(ScrapeOverrideRow)
                 .where(
-                    ScrapeOverrideRow.job_key == job_key,
-                    ScrapeOverrideRow.field == field,
-                    ScrapeOverrideRow.revision == expected,
+                    col(ScrapeOverrideRow.job_key) == job_key,
+                    col(ScrapeOverrideRow.field) == field,
+                    col(ScrapeOverrideRow.revision) == expected,
                 )
                 .values(revision=revision, value=value, removed=removed)
             )
-            if result.rowcount != 1:
+            if cast(CursorResult[Any], result).rowcount != 1:
                 raise RevisionConflict("override changed; reload before editing")
         self.session.add(
             ScrapeOverrideHistoryRow(
@@ -279,8 +281,8 @@ class ScrapeStore:
         return list(
             self.session.exec(
                 select(ScrapeOverrideHistoryRow)
-                .where(ScrapeOverrideHistoryRow.job_key == job_key)
-                .order_by(ScrapeOverrideHistoryRow.revision)
+                .where(col(ScrapeOverrideHistoryRow.job_key) == job_key)
+                .order_by(col(ScrapeOverrideHistoryRow.revision))
             ).all()
         )
 
@@ -289,12 +291,12 @@ class ScrapeStore:
         if observation.job_key:
             rows = self.session.exec(
                 select(ScrapeOverrideRow).where(
-                    ScrapeOverrideRow.job_key == observation.job_key
+                    col(ScrapeOverrideRow.job_key) == observation.job_key
                 )
             ).all()
             for row in rows:
                 if not row.removed:
-                    data[row.field] = json.loads(row.value)
+                    data[cast(FieldName, row.field)] = json.loads(row.value)
         return JobFacts.model_validate(data)
 
     def cached_observation(self, key: str) -> Observation | None:
