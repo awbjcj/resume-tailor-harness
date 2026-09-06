@@ -13,6 +13,13 @@ DOC_ROW = re.compile(
     r"^\| `([A-Z][A-Z0-9_]*)` \| ([^|]+) \| (.*) \|$",
     re.MULTILINE,
 )
+COMPOSE_ENV_NAMES = frozenset(
+    {
+        "RESUME_TAILOR_HARNESS_IMAGE",
+        "RESUME_TAILOR_HARNESS_PORT",
+        "H1B_JOB_SEARCH_MCP_IMAGE",
+    }
+)
 
 
 def _field_env_names(name: str, field: Any) -> tuple[str, ...]:
@@ -75,7 +82,16 @@ def test_env_example_covers_every_setting_without_unknown_keys():
     example_names = _example_env_names()
 
     assert _canonical_env_names() - example_names == set()
-    assert example_names - _all_accepted_env_names() == set()
+    assert example_names - (_all_accepted_env_names() | COMPOSE_ENV_NAMES) == set()
+
+
+def test_compose_environment_names_are_used_by_the_compose_stacks():
+    compose_text = "\n".join(
+        (ROOT / name).read_text(encoding="utf-8")
+        for name in ("compose.yaml", "compose.h1b.yaml")
+    )
+
+    assert {name for name in COMPOSE_ENV_NAMES if name not in compose_text} == set()
 
 
 def test_configuration_reference_documents_every_setting():
