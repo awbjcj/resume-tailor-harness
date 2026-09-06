@@ -424,10 +424,10 @@
     "en": "% fit",
     "zh-CN": "% 匹配"
   },
-  "+ Add URL": {
-    "key": "ui_dc26d92d594c",
-    "en": "+ Add URL",
-    "zh-CN": "+ 添加网址"
+  "Add job URL": {
+    "key": "ui_71cde23f79bb",
+    "en": "Add job URL",
+    "zh-CN": "添加职位网址"
   },
   "+ days": {
     "key": "ui_e7d3add15a3a",
@@ -10989,30 +10989,30 @@
     "en": "Preview public page",
     "zh-CN": "预览公开页面"
   },
-  "Import public page": {
-    "key": "ui_51a666f31739",
-    "en": "Import public page",
-    "zh-CN": "导入公开页面"
+  "Add job board URL": {
+    "key": "ui_127ffc162bf3",
+    "en": "Add job board URL",
+    "zh-CN": "添加招聘列表网址"
   },
   "Review public job page": {
     "key": "ui_91f249db09d7",
     "en": "Review public job page",
     "zh-CN": "检查公开职位页面"
   },
-  "Inspect public postings, correct extracted fields, and save reusable rules.": {
-    "key": "ui_48f6ef7173db",
-    "en": "Inspect public postings, correct extracted fields, and save reusable rules.",
-    "zh-CN": "检查公开职位信息，修正提取的字段，并保存可重复使用的规则。"
+  "Add a public careers page, review a sample of its postings, and save reusable import rules.": {
+    "key": "ui_8cd92302f5b9",
+    "en": "Add a public careers page, review a sample of its postings, and save reusable import rules.",
+    "zh-CN": "添加公开招聘页面，检查职位样本并保存可复用的导入规则。"
   },
-  "Public job or board URL": {
-    "key": "ui_f8e45ae0b371",
-    "en": "Public job or board URL",
-    "zh-CN": "公开职位或招聘列表网址"
+  "Job board URL": {
+    "key": "ui_72732b35d91c",
+    "en": "Job board URL",
+    "zh-CN": "招聘列表网址"
   },
-  "Analyze page": {
-    "key": "ui_7d9f57ed06b4",
-    "en": "Analyze page",
-    "zh-CN": "分析页面"
+  "Analyze job board": {
+    "key": "ui_260c4674f8b9",
+    "en": "Analyze job board",
+    "zh-CN": "分析招聘列表"
   },
   "Inspecting public page…": {
     "key": "ui_efb59caf6e53",
@@ -11313,5 +11313,25 @@
     "key": "ui_070135bd8c50",
     "en": "Refresh cached pages",
     "zh-CN": "刷新缓存页面"
+  },
+  "Use a direct, public http(s) link. Up to 8,192 characters.": {
+    "key": "ui_d96c3a015deb",
+    "en": "Use a direct, public http(s) link. Up to 8,192 characters.",
+    "zh-CN": "使用直接的公开 http(s) 链接，最多 8,192 个字符。"
+  },
+  "Enter a complete http(s) URL.": {
+    "key": "ui_bfb2fb3e5468",
+    "en": "Enter a complete http(s) URL.",
+    "zh-CN": "输入完整的 http(s) 网址。"
+  },
+  "Paste one public job posting. We’ll import its details and flag anything that needs your review.": {
+    "key": "ui_81ce659420bc",
+    "en": "Paste one public job posting. We’ll import its details and flag anything that needs your review.",
+    "zh-CN": "粘贴一个公开职位页面。我们将导入职位详情，并标记需要你检查的内容。"
+  },
+  "Importing job…": {
+    "key": "ui_1a4f7bfcfb42",
+    "en": "Importing job…",
+    "zh-CN": "正在导入职位…"
   }
 }
