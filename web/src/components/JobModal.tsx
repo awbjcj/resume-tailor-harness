@@ -22,6 +22,7 @@ import { locationLabel } from "@/lib/format";
 import { FitDial } from "./FitDial";
 import { JdBody } from "./JdBody";
 import { JobMeta } from "./JobMeta";
+import { SourceCorrections } from "@/features/job/SourceCorrections";
 import { SkillMatrix } from "./SkillMatrix";
 import { StatusBadge } from "./StatusBadge";
 import { DrawerSkeleton } from "./skeletons";
@@ -61,8 +62,7 @@ export function JobModal({
 }) {
   const { data: job, isLoading } = useJobDetail(jobId);
   const closedLoopJob = job as
-    | (NonNullable<typeof job> & ClosedLoopJob)
-    | undefined;
+    (NonNullable<typeof job> & ClosedLoopJob) | undefined;
   const coverLetters = closedLoopJob?.coverLetters ?? [];
   const [emailDraftOpen, setEmailDraftOpen] = useState(false);
   const [redoOpen, setRedoOpen] = useState(false);
@@ -248,6 +248,7 @@ export function JobModal({
                           <FitDial score={job.fitScore} />
                         </div>
                         <JobMeta job={job} />
+                        <SourceCorrections jobId={jobId} />
                       </div>
                       <div
                         className="rise-in"
@@ -262,7 +263,10 @@ export function JobModal({
 
                     {(job.status === "rejected" || job.status === "filtered") &&
                       job.rejectReason && (
-                        <div className="tone-panel mt-6 rounded-xl p-5" data-tone="danger">
+                        <div
+                          className="tone-panel mt-6 rounded-xl p-5"
+                          data-tone="danger"
+                        >
                           <span className="tone-accent block text-xs font-semibold uppercase tracking-[0.16em]">
                             {job.status === "filtered" ||
                             job.rejectCategory === "filtered"

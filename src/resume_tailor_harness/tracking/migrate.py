@@ -3,7 +3,10 @@ import json
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
-from resume_tailor_harness.tracking.dedup import compute_content_fingerprint, compute_dedup_key
+from resume_tailor_harness.tracking.dedup import (
+    compute_content_fingerprint,
+    compute_dedup_key,
+)
 from resume_tailor_harness.taxonomy.location import (
     StructuredLocation,
     build_locations,
@@ -496,3 +499,15 @@ def ensure_application_event_sequence_override_column(engine: Engine) -> None:
                     )
                 )
             )
+
+
+def ensure_source_identity_column(engine: Engine) -> None:
+    with engine.begin() as conn:
+        columns = {row[1] for row in conn.execute(text("PRAGMA table_info(jobs)"))}
+        if "source_identity" not in columns:
+            conn.execute(text("ALTER TABLE jobs ADD COLUMN source_identity VARCHAR"))
+        conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_jobs_source_identity ON jobs (source_identity)"
+            )
+        )

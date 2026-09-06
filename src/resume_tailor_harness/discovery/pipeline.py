@@ -26,7 +26,10 @@ from resume_tailor_harness.discovery.fit import (  # noqa: F401
     compose_fit_input,
     score_fit,
 )
-from resume_tailor_harness.discovery.industry import IndustryCandidate, classify_industries
+from resume_tailor_harness.discovery.industry import (
+    IndustryCandidate,
+    classify_industries,
+)
 from resume_tailor_harness.discovery.relevance import (  # noqa: F401
     ajudge_relevance,
     judge_relevance,
@@ -53,7 +56,11 @@ from resume_tailor_harness.taxonomy.location import StructuredLocation, build_lo
 from resume_tailor_harness.taxonomy.skills import refresh_aliases, split_skills
 from resume_tailor_harness.tenancy.paths import SKILL_ALIASES_PATH
 from resume_tailor_harness.tracking.match_gap import Canonicalizer, normalize_skill
-from resume_tailor_harness.tracking.repository import has_progress, jobs_by_status, status_counts
+from resume_tailor_harness.tracking.repository import (
+    has_progress,
+    jobs_by_status,
+    status_counts,
+)
 from resume_tailor_harness.tracking.stages import advance
 from resume_tailor_harness.tracking.tables import Job, JobStatus
 
@@ -144,7 +151,15 @@ def run_extract(
                     error = res.error or RuntimeError("extraction produced no criteria")
                     failures[job.id] = StageFailure.from_exception(error)
                 continue
-            criteria = res.value
+            from resume_tailor_harness.services.scrape_ingest import (
+                project_source_facts,
+            )
+
+            criteria = (
+                project_source_facts(session, job.id, res.value)
+                if job.id is not None
+                else res.value
+            )
             job.criteria_json = criteria.model_dump(mode="json")
             _record_job_agent_meta(job, "criteria", agent)
             advance(job, JobStatus.extracted.value, never_regress=scope.never_regress)

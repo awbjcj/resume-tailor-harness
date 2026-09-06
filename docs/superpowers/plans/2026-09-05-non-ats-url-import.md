@@ -10,6 +10,33 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-05-non-ats-url-import-design.md` (approved).
 
+## Execution record (2026-09-05)
+
+Implemented on `codex/non-ats-url-import`, based on `dev`, in the isolated
+`.worktrees/non-ats` checkout. No subagents were used for implementation/review.
+The numbered tasks below retain the original proposed test/commit recipe; the
+following delivery record and review report describe what was actually verified.
+
+| Task | Delivered implementation | Verification |
+| --- | --- | --- |
+| 1 | Typed fields, evidence, plans and full-URL identity | Contract/identity tests |
+| 2 | Tenant drafts, revisions, observations, overrides and CAS | File-backed restart, null, approval and conflict tests |
+| 3 | Shared leases, robots, retry delays and budgets | Pacing and gateway tests |
+| 4 | DNS-pinned response broker and bounded read-only requests | Transport/gateway and real private-subresource tests |
+| 5 | Sandboxed child browser, lifecycle and Docker dependencies | Windows Chromium fixtures and nonroot offline Docker probe |
+| 6 | Agno structured understanding and observed-plan validation | Fake-runner classification/selector tests |
+| 7 | Grounded facts, full description scopes, conflicts and unknowns | Evidence, salary, policy and JSON-LD tests |
+| 8 | Bounded replay, caches, repair drafts and truthful outcomes | Pagination-loop, refresh, cache and stop-reason tests |
+| 9 | Atomic approval and existing job ingestion/progress rules | Rollback, duplicate, inline identity and fact projection tests |
+| 10 | Review APIs and settings/reset lifecycle | API, bundle/reset and generated contract checks |
+| 11 | Editable preview, inert selector picker, history and corrections | Frontend suite and 390px/1280px Chromium review checks |
+| 12 | Restart integration, runtime documentation and browser CI | Full suites, controlled browser restart and container capability |
+
+See [public-job-import-review.md](../../public-job-import-review.md) for measured
+results, fixed review findings and validation boundaries. Operational setup is in
+[public-job-import.md](../../public-job-import.md). No production deployment or
+live-provider accuracy evaluation was performed.
+
 ## Global Constraints
 
 - Accuracy takes priority over throughput.
@@ -592,6 +619,5 @@ integration markers. Report unavailable prerequisites distinctly from passing te
 | Tenant isolation, migration, backup/reset/export and rollback | 2, 9, 10, 12 |
 | API generation, accessibility, localization and lifecycle tests | 10, 11, 12 |
 
-All tasks remain unchecked until executed. No runtime tests have been run merely
-by writing this plan. Review each task against both this plan and the approved
-spec; passing a narrow test is not a substitute for the acceptance matrix.
+The original granular checkboxes are a planning recipe, not a test-results ledger.
+Use the execution record above and linked review report for verified outcomes.

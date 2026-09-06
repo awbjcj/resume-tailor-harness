@@ -19,7 +19,10 @@ from sqlalchemy import func, select, text
 from sqlmodel import Session, col, select as model_select
 
 from resume_tailor_harness.config import get_settings
-from resume_tailor_harness.career_skills.models import JobAnalysisMeta, read_job_analysis_meta
+from resume_tailor_harness.career_skills.models import (
+    JobAnalysisMeta,
+    read_job_analysis_meta,
+)
 from resume_tailor_harness.discovery.connectors.config import load_connectors_config
 from resume_tailor_harness.discovery.connectors.registry import build_source_connectors
 from resume_tailor_harness.discovery.connectors.runner import PullReport, run_pull
@@ -371,17 +374,68 @@ def pull_jobs(
         for connector in connectors:
             if isinstance(connector, DashboardScraper):
                 connector.relearn = True
-    return run_pull(
+    from resume_tailor_harness.services import scrape_review
+    from resume_tailor_harness.discovery.scraper.tables import ScrapeSourceRow
+    from sqlmodel import select as sql_select
+
+    scrape_review.list_sources(
+        session
+    )  # Legacy recipes are candidates, never silently approved.
+    connectors = [
+        connector
+        for connector in connectors
+        if not isinstance(connector, DashboardScraper)
+    ]
+    report = run_pull(
         session,
         connectors,
         search_config,
         telemetry_path,
         limit=limit,
         reporter=reporter,
-        finish=finish,
+        finish=False,
         skip_known=skip_known,
         max_active_jobs=active_limit("max_active_jobs", DEFAULT_MAX_ACTIVE_JOBS),
     )
+    for source in session.exec(
+        sql_select(ScrapeSourceRow).where(col(ScrapeSourceRow.enabled).is_(True))
+    ).all():
+        if source_ids is not None and source.id not in source_ids:
+            continue
+        name = f"public:{source.id}"
+        try:
+            if relearn:
+                from resume_tailor_harness.discovery.scraper.contracts import Draft
+
+                previous = Draft.model_validate_json(source.payload)
+                proposal = scrape_review.analyze_url(
+                    session,
+                    source.url,
+                    previous.limits,
+                    checkpoint=reporter.checkpoint if reporter else None,
+                )
+                report.failures[name] = {
+                    source.url: f"Review proposed rules in draft {proposal.id}"
+                }
+                continue
+            result = scrape_review.pull_source(
+                session,
+                source.id,
+                checkpoint=reporter.checkpoint if reporter else None,
+                search=search_config,
+            )
+            report.totals[name] = result.imported
+            report.skipped[name] = result.duplicate + result.filtered
+            if result.terminal_reason != "complete":
+                report.failures[name] = {
+                    source.url: "; ".join(result.messages) or result.terminal_reason
+                }
+        except Exception as exc:
+            session.rollback()
+            report.failures[name] = {source.url: str(exc)}
+    if reporter and finish:
+        reporter.done(added=sum(report.totals.values()))
+    return report
 
 
 def scrape_linkedin_jobs(

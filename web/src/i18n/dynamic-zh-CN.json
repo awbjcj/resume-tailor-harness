@@ -50,7 +50,10 @@
     "Retrieved taxonomy candidates": "已获取技能分类候选项",
     "Prepared profile facts": "个人资料事实已准备好",
     "Classifying the shared skill taxonomy": "正在整理共享技能分类",
-    "Saved matrix.json": "技能矩阵文件已保存"
+    "Saved matrix.json": "技能矩阵文件已保存",
+    "Inspecting public job page": "正在检查公开职位页面",
+    "Checking extraction rules": "正在检查提取规则",
+    "Checking public job board": "正在检查公开招聘列表"
   },
   "sourceModes": {
     "literal": "原文",

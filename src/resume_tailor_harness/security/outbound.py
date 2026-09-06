@@ -23,6 +23,123 @@ class PublicTextResponse:
     redirect_chain: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class PublicBytesResponse:
+    status: int
+    headers: dict[str, str]
+    body: bytes
+    final_url: str
+
+
+def fetch_public_bytes(
+    url: str,
+    *,
+    method: str = "GET",
+    body: bytes | None = None,
+    read_only_search: bool = False,
+    headers: Mapping[str, str] | None = None,
+    client: httpx.Client | None = None,
+    resolver: Resolver | None = None,
+    max_bytes: int = 20 * 1024 * 1024,
+    timeout: float = 20,
+) -> PublicBytesResponse:
+    """One pinned browser request; redirects return to the caller's policy gate."""
+    if method not in {"GET", "HEAD"} and not (
+        method == "POST"
+        and read_only_search
+        and body is not None
+        and len(body) <= 65536
+    ):
+        raise ValueError("only read-only browser requests are allowed")
+    if len(url) > 8192:
+        raise ValueError("URL is too large")
+    host, address, port = resolve_public_url(url, resolver or resolve_host)
+    parsed = urlsplit(url)
+    pinned = urlunsplit(
+        (parsed.scheme, _authority(address, port), parsed.path, parsed.query, "")
+    )
+    request_headers = {
+        k: v
+        for k, v in (headers or {}).items()
+        if k.lower()
+        in {
+            "accept",
+            "accept-language",
+            "if-none-match",
+            "if-modified-since",
+            "content-type",
+        }
+    }
+    request_headers.update(
+        {
+            "Host": _authority(host, port),
+            "User-Agent": "ResumeTailorBot/1.0",
+            "Accept-Encoding": "identity",
+        }
+    )
+    http = client or httpx.Client(timeout=timeout, trust_env=False)
+    try:
+        request = http.build_request(
+            method,
+            pinned,
+            content=body,
+            headers=request_headers,
+            extensions={"sni_hostname": host},
+        )
+        response = http.send(request, stream=True, follow_redirects=False)
+        try:
+            length = response.headers.get("content-length", "")
+            if length.isdigit() and int(length) > max_bytes:
+                raise ValueError("URL response is too large")
+            content_type = (
+                response.headers.get("content-type", "").split(";", 1)[0].lower()
+            )
+            allowed = content_type.startswith(("text/", "font/")) or content_type in {
+                "",
+                "application/json",
+                "application/ld+json",
+                "application/javascript",
+                "application/x-javascript",
+                "application/xhtml+xml",
+                "application/font-woff",
+                "application/wasm",
+            }
+            if response.status_code == 200 and not allowed:
+                raise ValueError(f"unsupported browser content type: {content_type}")
+            content = bytearray()
+            for chunk in response.iter_bytes(chunk_size=65536):
+                if (
+                    len(content) + len(chunk) > max_bytes
+                    or response.num_bytes_downloaded > max_bytes
+                ):
+                    raise ValueError("URL response is too large")
+                content.extend(chunk)
+            safe_headers = {
+                k: v
+                for k, v in response.headers.items()
+                if k.lower()
+                not in {
+                    "content-encoding",
+                    "transfer-encoding",
+                    "content-length",
+                    "connection",
+                    "set-cookie",
+                    "keep-alive",
+                    "proxy-authenticate",
+                    "proxy-authorization",
+                    "upgrade",
+                }
+            }
+            return PublicBytesResponse(
+                response.status_code, safe_headers, bytes(content), url
+            )
+        finally:
+            response.close()
+    finally:
+        if client is None:
+            http.close()
+
+
 def resolve_host(host: str) -> set[str]:
     return {
         str(address[0])

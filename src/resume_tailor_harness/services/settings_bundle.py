@@ -63,7 +63,9 @@ def export_settings_bundle(out_dir: Path) -> Path:
     """Write a tar.gz of every populated section into `out_dir`."""
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(UTC)
-    archive = out_dir / f"resume-tailor-harness-settings-{stamp.date().isoformat()}.tar.gz"
+    archive = (
+        out_dir / f"resume-tailor-harness-settings-{stamp.date().isoformat()}.tar.gz"
+    )
 
     sections: list[str] = []
     members: list[tuple[str, Path]] = []
@@ -77,6 +79,22 @@ def export_settings_bundle(out_dir: Path) -> Path:
             sections.append(section.id)
             members.extend(found)
 
+    from resume_tailor_harness.tenancy.context import current_context
+    from resume_tailor_harness.services.scrape_transfer import export_sources
+    from sqlmodel import Session
+
+    context = current_context()
+    public_sources = None
+    if context and context.engine:
+        with Session(context.engine) as session:
+            public_sources = export_sources(session).encode("utf-8")
+        if "sources" not in sections:
+            sections.append("sources")
+        members = [
+            (name, path)
+            for name, path in members
+            if name != "config/public_boards.json"
+        ]
     manifest = json.dumps(
         {
             "version": BUNDLE_VERSION,
@@ -91,6 +109,10 @@ def export_settings_bundle(out_dir: Path) -> Path:
         info.size = len(manifest)
         info.mtime = int(stamp.timestamp())
         tar.addfile(info, io.BytesIO(manifest))
+        if public_sources is not None:
+            info = tarfile.TarInfo("config/public_boards.json")
+            info.size = len(public_sources)
+            tar.addfile(info, io.BytesIO(public_sources))
         for arcname, path in members:
             tar.add(path, arcname=arcname)
     return archive
@@ -160,6 +182,11 @@ _VALIDATORS: dict[str, Callable[[Path], None]] = {
 
 
 def validate_member(arcname: str, path: Path) -> None:
+    if arcname == "config/public_boards.json":
+        from resume_tailor_harness.services.scrape_transfer import SourceBundle
+
+        SourceBundle.model_validate_json(path.read_text(encoding="utf-8"))
+        return
     """Parse a staged member strictly; raise InvalidBundleError on corruption.
 
     `_extract_validated` already rejects `..` in a raw archive member's path,
@@ -310,6 +337,22 @@ def _apply(claimed: dict[str, list[tuple[str, Path]]]) -> tuple[str, ...]:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(staged, target)
                 written.append(target)
+        if "sources" in claimed:
+            from resume_tailor_harness.tenancy.context import current_context
+            from resume_tailor_harness.services.scrape_transfer import import_sources
+            from sqlmodel import Session
+
+            context = current_context()
+            if context and context.engine:
+                path = resolve_tenant_path("config/public_boards.json")
+                with Session(context.engine) as session:
+                    import_sources(
+                        session,
+                        path.read_text(encoding="utf-8")
+                        if path.exists()
+                        else '{"sources":[]}',
+                    )
+                    session.commit()
     except BaseException:
         for target in written:
             target.unlink(missing_ok=True)

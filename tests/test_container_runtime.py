@@ -83,6 +83,7 @@ def test_compose_binds_localhost_and_persists_the_data_root():
     assert '"127.0.0.1:${RESUME_TAILOR_HARNESS_PORT:-8000}:8000"' in compose
     assert "APP_MODE: local" in compose
     assert "resume-tailor-harness-data:/app/data" in compose
+    assert "seccomp:./deploy/playwright-seccomp.json" in compose
 
 
 def test_optional_h1b_compose_profile_uses_private_network_and_persistent_cache():

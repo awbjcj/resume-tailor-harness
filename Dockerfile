@@ -34,6 +34,8 @@ RUN uv export --frozen --no-dev --no-emit-project --format requirements-txt > /t
     && uv pip install --system --no-deps -e .
 
 COPY templates ./templates
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
+RUN python -m playwright install --with-deps chromium
 COPY resume-template ./resume-template
 COPY config/*.example ./config.defaults/
 COPY config/prune.yaml config/review.early_stop.yaml config/review.match_plan.yaml ./config.defaults/

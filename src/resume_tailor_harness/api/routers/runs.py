@@ -14,7 +14,11 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
 from sse_starlette.sse import EventSourceResponse
 
-from resume_tailor_harness.api.deps import get_engine, get_run_manager, get_sse_user_context
+from resume_tailor_harness.api.deps import (
+    get_engine,
+    get_run_manager,
+    get_sse_user_context,
+)
 from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.mappers import to_page
 from resume_tailor_harness.api.runs.launch import launch, session_work
@@ -41,7 +45,11 @@ from resume_tailor_harness.api.schemas.runs import (
 from resume_tailor_harness.api.uploads import UploadTooLargeError, read_upload
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.db import get_session
-from resume_tailor_harness.services.cover_letter_revision import revise_cover_letter_version
+from resume_tailor_harness.discovery.connectors.detect import identify_host
+from resume_tailor_harness.discovery.url_ingest.fetch import fetch_static
+from resume_tailor_harness.services.cover_letter_revision import (
+    revise_cover_letter_version,
+)
 from resume_tailor_harness.services.cover_letters import (
     resolve_cover_letter_targets,
     write_cover_letters,
@@ -58,9 +66,16 @@ from resume_tailor_harness.services.errors import record_source_failures
 from resume_tailor_harness.services.pagination import paginate
 from resume_tailor_harness.services.redo import redo_jobs
 from resume_tailor_harness.services.revision import revise_resume_version
-from resume_tailor_harness.services.tailoring import DEFAULT_REVIEW, DEFAULT_REVIEW_DEEP, tailor
+from resume_tailor_harness.services.tailoring import (
+    DEFAULT_REVIEW,
+    DEFAULT_REVIEW_DEEP,
+    tailor,
+)
 from resume_tailor_harness.tenancy.context import current_context
-from resume_tailor_harness.tracking.repository import get_cover_letter, get_resume_version
+from resume_tailor_harness.tracking.repository import (
+    get_cover_letter,
+    get_resume_version,
+)
 
 router = APIRouter()
 link_router = APIRouter()
@@ -68,6 +83,14 @@ link_router = APIRouter()
 
 def _engine(request: Request):
     return get_engine(request)
+
+
+def _public_extraction_url(url: str) -> str | None:
+    """Return an unrecognized destination for the generic public scraper."""
+    if identify_host(url) is not None:
+        return None
+    final_url = fetch_static(url).final_url
+    return final_url if identify_host(final_url) is None else None
 
 
 def _owned_record(mgr: RunManager, run_id: str):
@@ -492,6 +515,21 @@ def launch_add_from_url(
 
     def do_add(session, reporter):
         reporter.begin(1, f"Fetching {params.url}")
+        if params.public_extraction:
+            from resume_tailor_harness.services.scrape_review import import_public_url
+
+            if url := _public_extraction_url(params.url):
+                result = import_public_url(
+                    session,
+                    url,
+                    company=params.company,
+                    title=params.title,
+                    location=params.location,
+                    checkpoint=reporter.checkpoint,
+                    allow_browser=params.allow_browser,
+                )
+                reporter.step(1)
+                return result
         job = add_job_from_url(
             session,
             url=params.url,

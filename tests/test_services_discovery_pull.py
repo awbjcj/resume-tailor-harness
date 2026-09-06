@@ -49,7 +49,7 @@ def test_pull_jobs_forwards_skip_known(monkeypatch):
     assert captured["skip_known"] is False
 
 
-def test_pull_jobs_sets_relearn_on_dashboard_scrapers(monkeypatch):
+def test_pull_jobs_does_not_replay_unreviewed_host_recipes(monkeypatch):
     scraper = DashboardScraper([])
     observed = {}
 
@@ -60,7 +60,7 @@ def test_pull_jobs_sets_relearn_on_dashboard_scrapers(monkeypatch):
     )
 
     def fake_run_pull(session, connectors, search, telemetry_path, **kwargs):
-        observed["relearn"] = connectors[0].relearn
+        observed["connectors"] = connectors
         return PullReport()
 
     monkeypatch.setattr(discovery, "run_pull", fake_run_pull)
@@ -68,4 +68,4 @@ def test_pull_jobs_sets_relearn_on_dashboard_scrapers(monkeypatch):
     with _session() as session:
         discovery.pull_jobs(session, relearn=True)
 
-    assert observed["relearn"] is True
+    assert observed["connectors"] == []

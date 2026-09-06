@@ -404,6 +404,24 @@ def test_responses_shim_strips_ref_siblings_from_the_output_schema():
     assert "description" not in node
 
 
+def test_responses_shim_strips_unsupported_decimal_lookaround():
+    from resume_tailor_harness.discovery.scraper.contracts import Observation
+
+    model = llm_runner._compatible_openai_responses_class()(
+        id="gpt-5.6-terra", api_key="k"
+    )
+    params = model.get_request_params(messages=[], response_format=Observation)
+
+    minimum = params["text"]["format"]["schema"]["$defs"]["SalaryBand"][
+        "properties"
+    ]["minimum"]
+    assert minimum["anyOf"] == [
+        {"minimum": 0.0, "type": "number"},
+        {"type": "string"},
+        {"type": "null"},
+    ]
+
+
 def test_responses_shim_drops_an_empty_reasoning_object():
     model = llm_runner._compatible_openai_responses_class()(
         id="gpt-5.6-terra", api_key="k"

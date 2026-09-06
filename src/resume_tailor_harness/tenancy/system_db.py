@@ -28,6 +28,15 @@ class SystemBase(DeclarativeBase):
     pass
 
 
+class CrawlHostLease(SystemBase):
+    __tablename__ = "crawl_host_leases"
+    host: Mapped[str] = mapped_column(String, primary_key=True)
+    owner: Mapped[str] = mapped_column(String, default="")
+    token: Mapped[int] = mapped_column(Integer, default=0)
+    expires_at: Mapped[float] = mapped_column(Float, default=0)
+    available_at: Mapped[float] = mapped_column(Float, default=0)
+
+
 class User(SystemBase):
     __tablename__ = "users"
     __table_args__ = (

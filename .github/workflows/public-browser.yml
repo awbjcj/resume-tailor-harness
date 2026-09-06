@@ -1,0 +1,32 @@
+name: Public browser fixtures
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "src/**"
+      - "tests/scraper/**"
+      - "uv.lock"
+      - ".github/workflows/public-browser.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-browser:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      RUN_PUBLIC_BROWSER_TESTS: "1"
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run playwright install chromium
+      - name: Sandboxed rendering, network controls, cleanup and restart
+        run: uv run pytest tests/scraper/test_browser_worker.py tests/scraper/test_public_flow.py

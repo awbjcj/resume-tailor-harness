@@ -44,6 +44,13 @@ builder imports a concrete agno model class directly.
   provider-managed response state (not broader provider retention), while
   Agno requests `reasoning.encrypted_content` so stateless tool turns can replay
   opaque reasoning items. Those replayed items count as later input tokens.
+- **OpenAI request schemas cannot contain regex lookaround.** Pydantic emits a
+  negative-lookahead `pattern` for the string branch of every `Decimal`, which
+  the Responses API rejects before generation. `CompatibleOpenAIResponses`
+  removes only lookaround-bearing `pattern` keywords from the provider-bound
+  schema; the types and numeric bounds remain, and local Pydantic validation
+  still enforces the full decimal contract. Public OpenAPI schemas are not
+  rewritten, and the DeepSeek subclass keeps its existing schema path.
 - **OpenAI must always request a reasoning summary — otherwise agno relabels the
   answer as reasoning.** agno's Responses adapter reads "a `reasoning` config
   was sent but no `reasoning_summary`" as "the visible output text _is_ the
