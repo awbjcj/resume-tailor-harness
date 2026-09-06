@@ -1,0 +1,13 @@
+{
+  "executionEnvironments": [
+    {
+      "root": "services/h1b-job-search-mcp",
+      "extraPaths": [
+        "services/h1b-job-search-mcp/src"
+      ]
+    },
+    {
+      "root": "."
+    }
+  ]
+}
