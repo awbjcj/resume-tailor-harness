@@ -15,7 +15,9 @@ def test_snapshot_preserves_structured_data_before_pruning():
         "https://example.com/jobs/1",
         '<script type="application/ld+json">{"@type":"JobPosting","title":"Engineer"}</script><h1>Engineer</h1>',
     )
-    assert snapshot.json_ld[0]["title"] == "Engineer"
+    item = snapshot.json_ld[0]
+    assert isinstance(item, dict)
+    assert item["title"] == "Engineer"
     assert snapshot.visible_text == "Engineer"
 
 
@@ -50,7 +52,7 @@ def test_cancelled_browser_does_not_navigate():
 
 def test_declared_actions_reject_arbitrary_execution():
     with pytest.raises(ValueError):
-        BrowserAction(kind="evaluate", selector="alert(1)")
+        BrowserAction.model_validate({"kind": "evaluate", "selector": "alert(1)"})
 
 
 class DelayedGateway:

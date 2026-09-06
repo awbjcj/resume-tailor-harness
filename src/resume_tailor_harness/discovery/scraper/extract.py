@@ -1,6 +1,7 @@
 """Recover source-grounded job facts, preserving compensation and work policy."""
 
 import json
+from typing import cast
 from urllib.parse import urljoin
 
 from agno.agent import Agent
@@ -21,6 +22,7 @@ from resume_tailor_harness.llm_runner import (
 from .contracts import (
     Evidence,
     FieldIssue,
+    FieldName,
     FieldRule,
     JobFacts,
     Observation,
@@ -93,7 +95,7 @@ def _structured(snapshot: Snapshot, source_id: str, revision: int) -> Observatio
         quote = raw if isinstance(raw, str) else json.dumps(raw, ensure_ascii=False)
         result.evidence.append(
             Evidence(
-                field=field,
+                field=cast(FieldName, field),
                 snapshot_id=snapshot.id,
                 quote=quote,
                 json_path=f"{path}.{key}",
@@ -200,7 +202,7 @@ def reconcile_facts(structured: Observation, visible: Observation) -> Observatio
         elif existing != getattr(visible.facts, field):
             result.issues.append(
                 FieldIssue(
-                    field=field,
+                    field=cast(FieldName, field),
                     kind="conflict",
                     message="Structured and visible content disagree",
                 )

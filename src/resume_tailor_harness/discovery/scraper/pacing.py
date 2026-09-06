@@ -4,11 +4,13 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
+from typing import cast
 from urllib.robotparser import RobotFileParser
 
 from sqlalchemy import insert, select, update
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql.schema import Table
 
 from resume_tailor_harness.tenancy.system_db import CrawlHostLease
 
@@ -30,13 +32,13 @@ class HostScheduler:
     def __init__(self, engine: Engine, clock: Callable[[], float] = time.time):
         self.engine = engine
         self.clock = clock
-        CrawlHostLease.__table__.create(engine, checkfirst=True)
+        cast(Table, CrawlHostLease.__table__).create(engine, checkfirst=True)
 
     def acquire(self, host: str, owner: str, deadline: float) -> HostLease | None:
         now = self.clock()
         if now >= deadline:
             return None
-        table = CrawlHostLease.__table__
+        table = cast(Table, CrawlHostLease.__table__)
         try:
             with self.engine.begin() as conn:
                 conn.execute(
@@ -66,7 +68,7 @@ class HostScheduler:
             return HostLease(host, owner, row["token"], row["expires_at"])
 
     def renew(self, lease: HostLease) -> bool:
-        table = CrawlHostLease.__table__
+        table = cast(Table, CrawlHostLease.__table__)
         now = self.clock()
         with self.engine.begin() as conn:
             result = conn.execute(
@@ -82,7 +84,7 @@ class HostScheduler:
             return result.rowcount == 1
 
     def release(self, lease: HostLease, delay: float) -> None:
-        table = CrawlHostLease.__table__
+        table = cast(Table, CrawlHostLease.__table__)
         with self.engine.begin() as conn:
             conn.execute(
                 update(table)
@@ -171,9 +173,10 @@ def robots_decision(url: str, status: int, text: str) -> RobotsDecision:
     parser = RobotFileParser()
     parser.parse(text.splitlines())
     delay = parser.crawl_delay(CRAWLER_AGENT) or parser.crawl_delay("*") or 3
+    delay_seconds = max(3.0, float(delay))
     allowed = parser.can_fetch(CRAWLER_AGENT, url)
     return RobotsDecision(
-        allowed, max(3, delay), "" if allowed else "robots.txt disallows this path"
+        allowed, delay_seconds, "" if allowed else "robots.txt disallows this path"
     )
 
 

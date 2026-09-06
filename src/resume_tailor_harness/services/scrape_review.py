@@ -1,9 +1,11 @@
 """Public URL analysis, editable drafts and atomic source approval."""
 
 from pathlib import Path
+from typing import Any, cast
 from uuid import uuid4
 
-from sqlmodel import Session
+from sqlalchemy.engine import CursorResult
+from sqlmodel import Session, col
 
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.db import make_engine
@@ -16,6 +18,8 @@ from resume_tailor_harness.discovery.scraper.contracts import (
     ApprovalResult,
     CrawlLimits,
     Draft,
+    FieldName,
+    JsonValue,
     OverridePatch,
     JobFacts,
     ValidationResult,
@@ -199,6 +203,11 @@ def approve_draft(
             raise ValueError("Selected sample was not observed")
         approved = store.approve(draft_id, expected_revision)
         job_ids = []
+        inline_listing = (
+            draft.page_kind == "listing"
+            and draft.plan is not None
+            and draft.plan.detail_mode != "link"
+        )
         for key in dict.fromkeys(selected_keys):
             sample = samples[key]
             if (
@@ -211,8 +220,8 @@ def approve_draft(
                 store.set_override(
                     key,
                     OverridePatch(
-                        field=field,
-                        value=value,
+                        field=cast(FieldName, field),
+                        value=cast(JsonValue, value),
                         expected_revision=draft.correction_revisions.get(key, {}).get(
                             field, 0
                         ),
@@ -222,8 +231,7 @@ def approve_draft(
                 session,
                 sample,
                 store,
-                inline=draft.page_kind == "listing"
-                and draft.plan.detail_mode != "link",
+                inline=inline_listing,
             )
             if job_id is not None:
                 job_ids.append(job_id)
@@ -258,6 +266,11 @@ def pull_source(
         raise ValueError("Validate and approve this source before pulling")
     store = ScrapeStore(session)
     budget = _budget(draft.limits, checkpoint)
+    inline_listing = (
+        draft.page_kind == "listing"
+        and draft.plan is not None
+        and draft.plan.detail_mode != "link"
+    )
     with BrowserWorker(build_gateway()) as worker:
         report = replay(
             draft,
@@ -288,15 +301,14 @@ def pull_source(
             session,
             observation,
             store,
-            inline=draft.page_kind == "listing" and draft.plan.detail_mode != "link",
+            inline=inline_listing,
         )
         if (
             ingest_observation(
                 session,
                 observation,
                 store,
-                inline=draft.page_kind == "listing"
-                and draft.plan.detail_mode != "link",
+                inline=inline_listing,
             )
             is not None
         ):
@@ -361,18 +373,19 @@ def import_public_url(
         return {"jobId": None, "duplicate": False, "draftId": draft.id}
     sample = draft.samples[0]
     store = ScrapeStore(session)
-    for field, value in (
+    for raw_field, value in (
         ("company", company),
         ("title", title),
         ("locations", [location] if location else None),
     ):
         if value is not None and sample.job_key:
+            field = cast(FieldName, raw_field)
             existing = session.get(ScrapeOverrideRow, (sample.job_key, field))
             store.set_override(
                 sample.job_key,
                 OverridePatch(
                     field=field,
-                    value=value,
+                    value=cast(JsonValue, value),
                     expected_revision=existing.revision if existing else 0,
                 ),
             )
@@ -435,7 +448,7 @@ def patch_draft(
         if not set(samples).issubset(keys):
             raise ValueError("Only observed samples can be corrected")
         for sample in draft.samples:
-            if sample.job_key in samples:
+            if sample.job_key is not None and sample.job_key in samples:
                 corrected = samples[sample.job_key]
                 for field, value in corrected.model_dump(mode="json").items():
                     if field in {"source_url", "posting_id"}:
@@ -443,7 +456,9 @@ def patch_draft(
                             raise ValueError("Posting identity cannot be edited")
                         continue
                     if value != sample.facts.model_dump(mode="json")[field]:
-                        draft.corrections.setdefault(sample.job_key, {})[field] = value
+                        draft.corrections.setdefault(sample.job_key, {})[
+                            cast(FieldName, field)
+                        ] = cast(JsonValue, value)
                 sample.facts = corrected
     apply_corrections(draft)
     if (
@@ -463,6 +478,8 @@ def patch_draft(
 
 def apply_corrections(draft: Draft) -> None:
     for sample in draft.samples:
+        if sample.job_key is None:
+            continue
         corrections = draft.corrections.get(sample.job_key, {})
         if not corrections:
             continue
@@ -567,12 +584,12 @@ def set_source_enabled(
     result = session.execute(
         update(ScrapeSourceRow)
         .where(
-            ScrapeSourceRow.id == source_id,
-            ScrapeSourceRow.revision == expected_revision,
+            col(ScrapeSourceRow.id) == source_id,
+            col(ScrapeSourceRow.revision) == expected_revision,
         )
         .values(enabled=enabled)
     )
-    if result.rowcount != 1:
+    if cast(CursorResult[Any], result).rowcount != 1:
         raise RevisionConflict("source revision changed")
     session.commit()
     return draft.model_copy(update={"enabled": enabled})
@@ -584,9 +601,11 @@ def capture_override_revisions(session: Session, draft: Draft) -> None:
     keys = [item.job_key for item in draft.samples if item.job_key]
     draft.correction_revisions = {}
     for row in session.exec(
-        select(ScrapeOverrideRow).where(ScrapeOverrideRow.job_key.in_(keys))
+        select(ScrapeOverrideRow).where(col(ScrapeOverrideRow.job_key).in_(keys))
     ).all():
-        draft.correction_revisions.setdefault(row.job_key, {})[row.field] = row.revision
+        draft.correction_revisions.setdefault(row.job_key, {})[
+            cast(FieldName, row.field)
+        ] = row.revision
 
 
 def rollback_source(

@@ -16,7 +16,7 @@ def test_real_quote_does_not_validate_an_invented_title():
     )
 
     class Runner:
-        def run(self, message):
+        def run(self, prompt: str):
             return SimpleNamespace(
                 content=Observation(
                     source_id="ignored",
@@ -39,6 +39,9 @@ def test_real_quote_does_not_validate_an_invented_title():
                 )
             )
 
+        async def arun(self, prompt: str):
+            return self.run(prompt)
+
     assert not extract_observation(snapshot, "board", 1, Runner()).accepted
 
 
@@ -49,6 +52,7 @@ def test_jsonld_preserves_salary_units_locations_and_unknown_policy():
     )
     assert observation.accepted
     assert observation.facts.locations == ["New York", "Toronto"]
+    assert observation.facts.salary_bands is not None
     assert observation.facts.salary_bands[0].minimum == 40
     assert observation.facts.salary_bands[0].period == "HOUR"
     assert observation.facts.remote_policy is None
@@ -82,6 +86,7 @@ def test_access_page_is_not_a_description():
 def test_real_quote_cannot_support_invented_attendance():
     from resume_tailor_harness.discovery.scraper.contracts import (
         Evidence,
+        FieldName,
         JobFacts,
         Observation,
     )
@@ -94,6 +99,11 @@ def test_real_quote_cannot_support_invented_attendance():
         "https://example.com/1",
         "<h1>Engineer</h1><p>Build tools</p><p>Team meetings weekly</p>",
     )
+    evidence_quotes: list[tuple[FieldName, str]] = [
+        ("title", "Engineer"),
+        ("jd_text", "Build tools"),
+        ("attendance", "Team meetings weekly"),
+    ]
     observation = Observation(
         source_id="x",
         revision=0,
@@ -106,11 +116,7 @@ def test_real_quote_cannot_support_invented_attendance():
         ),
         evidence=[
             Evidence(field=field, snapshot_id=snap.id, quote=quote)
-            for field, quote in [
-                ("title", "Engineer"),
-                ("jd_text", "Build tools"),
-                ("attendance", "Team meetings weekly"),
-            ]
+            for field, quote in evidence_quotes
         ],
     )
     assert not validate_evidence(observation, [snap]).valid

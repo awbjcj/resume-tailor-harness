@@ -107,11 +107,13 @@ def test_enhanced_url_entry_returns_board_review_result(tmp_path, monkeypatch):
             "/api/jobs/from-url",
             json={"url": "https://example.com/jobs", "publicExtraction": True},
         ).json()
+        result = None
         for _ in range(100):
             result = client.get(f"/api/runs/{run['runId']}").json()
             if result["state"] in {"done", "error"}:
                 break
             time.sleep(0.02)
+        assert result is not None
         assert result["state"] == "done"
         assert result["result"]["draftId"] == "review"
 

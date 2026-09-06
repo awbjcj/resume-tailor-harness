@@ -1,6 +1,6 @@
 """Observation persistence is independent of canonical-source ingest no-ops."""
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from resume_tailor_harness.services.discovery import _save_with_active_job_limit
 from resume_tailor_harness.discovery.scraper.contracts import Observation
@@ -26,6 +26,8 @@ def ingest_observation(
     existing = find_observed_job(session, observation, store, inline=inline)
     if existing is not None and existing.status != "raw":
         row = session.get(ScrapeObservationRow, observation.id)
+        if row is None:
+            raise RuntimeError("saved observation is missing")
         row.job_id = existing.id
         session.add(row)
         session.flush()
@@ -46,6 +48,8 @@ def ingest_observation(
     if job is None:
         return None
     row = session.get(ScrapeObservationRow, observation.id)
+    if row is None:
+        raise RuntimeError("saved observation is missing")
     row.job_id = job.id
     row.applied = job.status == "raw" and job.source == "scrape"
     session.add(row)
@@ -59,10 +63,10 @@ def project_source_facts(
     row = session.exec(
         select(ScrapeObservationRow)
         .where(
-            ScrapeObservationRow.job_id == job_id,
-            ScrapeObservationRow.applied.is_(True),
+            col(ScrapeObservationRow.job_id) == job_id,
+            col(ScrapeObservationRow.applied).is_(True),
         )
-        .order_by(ScrapeObservationRow.observed_at.desc())
+        .order_by(col(ScrapeObservationRow.observed_at).desc())
     ).first()
     if row is None:
         return criteria
@@ -103,7 +107,7 @@ def find_observed_job(
 ) -> Job | None:
     if inline:
         return session.exec(
-            select(Job).where(Job.source_identity == observation.job_key)
+            select(Job).where(col(Job.source_identity) == observation.job_key)
         ).first()
     from resume_tailor_harness.discovery.merge import IncomingJob
     from resume_tailor_harness.tracking.repository import find_existing

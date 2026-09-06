@@ -38,6 +38,7 @@ def test_location_salary_bands_round_trip_without_conversion():
     )
     restored = JobFacts.model_validate_json(facts.model_dump_json())
     assert restored == facts
+    assert restored.salary_bands is not None
     assert restored.salary_bands[0].maximum is None
 
 

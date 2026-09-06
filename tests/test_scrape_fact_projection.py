@@ -33,6 +33,7 @@ def test_explicit_unknown_override_survives_downstream_extraction():
             ),
         )
         job_id = ingest_observation(session, observation, store)
+        assert job_id is not None
         store.set_override(
             "one", OverridePatch(field="remote_policy", value=None, expected_revision=0)
         )
@@ -63,6 +64,7 @@ def test_progressed_job_is_not_rewritten_by_new_source_observation():
         )
         job_id = ingest_observation(session, first, store)
         job = session.get(Job, job_id)
+        assert job is not None
         job.status = "extracted"
         session.add(job)
         session.commit()
