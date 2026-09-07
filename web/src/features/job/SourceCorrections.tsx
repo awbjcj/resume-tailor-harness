@@ -7,6 +7,48 @@ import { api, unwrap } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 
 type Override = components["schemas"]["OverrideOut"];
+type Observation = components["schemas"]["ObservationOut"];
+
+function factKey(field: string): keyof JobFacts {
+  return field.replace(/_([a-z])/g, (_, letter: string) =>
+    letter.toUpperCase(),
+  ) as keyof JobFacts;
+}
+
+function displayFact(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "Not stated";
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function ObservationIssues({ observation }: { observation: Observation }) {
+  if (!observation.issues?.length) return null;
+  return (
+    <div className="space-y-2" role="alert">
+      {observation.issues.map((issue, index) => {
+        const key = issue.field ? factKey(issue.field) : null;
+        return (
+          <div key={`${issue.field ?? "general"}:${index}`} className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+            <p>{issue.message || issue.kind}</p>
+            {issue.kind === "conflict" && key ? (
+              <dl className="mt-2 grid gap-1">
+                <div>
+                  <dt className="inline font-medium">Latest source: </dt>
+                  <dd className="inline">{displayFact(observation.facts[key])}</dd>
+                </div>
+                <div>
+                  <dt className="inline font-medium">Saved correction: </dt>
+                  <dd className="inline">
+                    {displayFact(observation.effectiveFacts?.[key])}
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 function CorrectionEditor({
   jobId,
   initial,
@@ -144,23 +186,26 @@ export function SourceCorrections({ jobId }: { jobId: number }) {
             <p>No public-page extraction evidence is saved for this job.</p>
           )}
           {latest && (
-            <details>
-              <summary>Source evidence</summary>
-              {latest.evidence?.map((item, i) => (
-                <blockquote
-                  key={i}
-                  className="my-2 whitespace-pre-wrap text-sm text-muted-foreground"
-                >
-                  {item.field}: {item.quote}
-                </blockquote>
-              ))}
-            </details>
+            <>
+              <ObservationIssues observation={latest} />
+              <details>
+                <summary>Source evidence</summary>
+                {latest.evidence?.map((item, i) => (
+                  <blockquote
+                    key={i}
+                    className="my-2 whitespace-pre-wrap text-sm text-muted-foreground"
+                  >
+                    {item.field}: {item.quote}
+                  </blockquote>
+                ))}
+              </details>
+            </>
           )}
           {latest && overrides.data && (
             <CorrectionEditor
               key={`${jobId}:${JSON.stringify(overrides.data)}`}
               jobId={jobId}
-              initial={latest.facts}
+              initial={latest.effectiveFacts ?? latest.facts}
               overrides={overrides.data}
             />
           )}

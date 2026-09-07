@@ -110,7 +110,7 @@ def test_distinct_inline_postings_do_not_merge_on_board_url():
 
 
 def test_explicit_override_projects_latest_source_facts_for_a_progressed_job():
-    from resume_tailor_harness.services.scrape_review import set_job_override
+    from resume_tailor_harness.services.scrape_corrections import set_job_override
     from resume_tailor_harness.tracking.tables import Job, JobStatus
 
     engine = make_engine("sqlite://")

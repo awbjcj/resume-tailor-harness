@@ -4225,8 +4225,8 @@ export interface components {
             /** Status */
             status: string;
         };
-        /** ApprovalResult */
-        ApprovalResult: {
+        /** ApprovalResultOut */
+        ApprovalResultOut: {
             /** Approvedrevision */
             approvedRevision: number;
             /** Jobids */
@@ -5406,58 +5406,48 @@ export interface components {
             /** Label */
             label?: string | null;
         };
-        /** Draft */
-        Draft: {
-            /**
-             * Baserevision
-             * @default 0
-             */
+        /** DraftOut */
+        DraftOut: {
+            /** Baserevision */
             baseRevision: number;
             /** Correctionrevisions */
-            correctionRevisions?: {
+            correctionRevisions: {
                 [key: string]: {
                     [key: string]: number;
                 };
             };
             /** Corrections */
-            corrections?: {
+            corrections: {
                 [key: string]: {
                     [key: string]: components["schemas"]["JsonValue"];
                 };
             };
-            /**
-             * Enabled
-             * @default true
-             */
+            /** Enabled */
             enabled: boolean;
             /** Id */
-            id?: string;
-            limits?: components["schemas"]["CrawlLimits"];
+            id: string;
+            limits: components["schemas"]["CrawlLimits"];
+            navigation?: components["schemas"]["NavigationOutcome"] | null;
             /**
              * Pagekind
-             * @default listing
              * @enum {string}
              */
             pageKind: "posting" | "listing" | "empty_listing" | "blocked" | "unrelated";
             plan?: components["schemas"]["BoardPlan"] | null;
-            /**
-             * Revision
-             * @default 0
-             */
+            /** Revision */
             revision: number;
             /** Samples */
-            samples?: components["schemas"]["Observation"][];
+            samples: components["schemas"]["ObservationOut"][];
             /** Sourceid */
             sourceId: string;
             /**
              * State
-             * @default draft
              * @enum {string}
              */
             state: "draft" | "validated" | "approved" | "unverified";
             /** Url */
             url: string;
-            validation?: components["schemas"]["ValidationResult"];
+            validation: components["schemas"]["ValidationResult"];
         };
         /** DraftPatchIn */
         DraftPatchIn: {
@@ -6776,6 +6766,27 @@ export interface components {
             domainId?: string | null;
             newDomain?: components["schemas"]["NewDomainIn"] | null;
         };
+        /** NavigationOutcome */
+        NavigationOutcome: {
+            /**
+             * Discovered
+             * @default 0
+             */
+            discovered: number;
+            /**
+             * Inspected
+             * @default 0
+             */
+            inspected: number;
+            /** Messages */
+            messages?: string[];
+            /**
+             * Terminalreason
+             * @default complete
+             * @enum {string}
+             */
+            terminalReason: "complete" | "empty" | "partial_limit" | "throttled" | "blocked" | "review_required" | "failed" | "cancelled" | "capability_unavailable";
+        };
         /** NewDomainIn */
         NewDomainIn: {
             /** Category */
@@ -6831,18 +6842,19 @@ export interface components {
             /** Title */
             title?: string | null;
         };
-        /** Observation */
-        Observation: {
+        /** ObservationOut */
+        ObservationOut: {
             /**
              * Accepted
              * @default false
              */
             accepted: boolean;
+            effectiveFacts?: components["schemas"]["JobFacts-Output"] | null;
             /** Evidence */
             evidence?: components["schemas"]["Evidence"][];
             facts: components["schemas"]["JobFacts-Output"];
             /** Id */
-            id?: string;
+            id: string;
             /** Issues */
             issues?: components["schemas"]["FieldIssue"][];
             /** Jobkey */
@@ -6907,8 +6919,8 @@ export interface components {
             revision: number;
             value: components["schemas"]["JsonValue"];
         };
-        /** OverridePatch */
-        OverridePatch: {
+        /** OverridePatchIn */
+        OverridePatchIn: {
             /** Expectedrevision */
             expectedRevision: number;
             /**
@@ -6917,6 +6929,11 @@ export interface components {
              */
             field: "title" | "company" | "jd_text" | "locations" | "salary_bands" | "remote_policy" | "remote_restrictions" | "attendance" | "employment_type" | "posted_at" | "closes_at" | "source_url" | "application_url" | "posting_id";
             value: components["schemas"]["JsonValue"];
+        };
+        /** OverrideRevisionOut */
+        OverrideRevisionOut: {
+            /** Revision */
+            revision: number;
         };
         /** Page[RunOut] */
         Page_RunOut_: {
@@ -14563,7 +14580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Observation"][];
+                    "application/json": components["schemas"]["ObservationOut"][];
                 };
             };
             /** @description Validation Error */
@@ -14624,7 +14641,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["OverridePatch"];
+                "application/json": components["schemas"]["OverridePatchIn"];
             };
         };
         responses: {
@@ -14634,7 +14651,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["OverrideRevisionOut"];
                 };
             };
             /** @description Validation Error */
@@ -14670,7 +14687,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["OverrideRevisionOut"];
                 };
             };
             /** @description Validation Error */
@@ -17253,7 +17270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Draft"];
+                    "application/json": components["schemas"]["DraftOut"];
                 };
             };
             /** @description Validation Error */
@@ -17290,7 +17307,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Draft"];
+                    "application/json": components["schemas"]["DraftOut"];
                 };
             };
             /** @description Validation Error */
@@ -17327,7 +17344,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApprovalResult"];
+                    "application/json": components["schemas"]["ApprovalResultOut"];
                 };
             };
             /** @description Validation Error */
@@ -17428,7 +17445,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Draft"][];
+                    "application/json": components["schemas"]["DraftOut"][];
                 };
             };
             /** @description Validation Error */
@@ -17465,7 +17482,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Draft"];
+                    "application/json": components["schemas"]["DraftOut"];
                 };
             };
             /** @description Validation Error */
@@ -17498,7 +17515,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Draft"];
+                    "application/json": components["schemas"]["DraftOut"];
                 };
             };
             /** @description Validation Error */
@@ -17599,7 +17616,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Draft"][];
+                    "application/json": components["schemas"]["DraftOut"][];
                 };
             };
             /** @description Validation Error */
@@ -17636,7 +17653,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Draft"];
+                    "application/json": components["schemas"]["DraftOut"];
                 };
             };
             /** @description Validation Error */
