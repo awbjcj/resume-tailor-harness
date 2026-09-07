@@ -11264,20 +11264,60 @@
     "en": "Needs review",
     "zh-CN": "需要检查"
   },
-  "imported ·": {
-    "key": "ui_3a845964a878",
-    "en": "imported ·",
-    "zh-CN": "已导入 ·"
+  "Latest source:": {
+    "key": "ui_ea7b0b45801f",
+    "en": "Latest source:",
+    "zh-CN": "最新来源："
+  },
+  "Saved correction:": {
+    "key": "ui_02bce86c21e8",
+    "en": "Saved correction:",
+    "zh-CN": "已保存的更正："
+  },
+  "Navigation outcome:": {
+    "key": "ui_2e05920a8762",
+    "en": "Navigation outcome:",
+    "zh-CN": "导航结果："
+  },
+  "Pull outcome:": {
+    "key": "ui_e2a42d7746ad",
+    "en": "Pull outcome:",
+    "zh-CN": "拉取结果："
+  },
+  "discovered ·": {
+    "key": "ui_424f57e9f061",
+    "en": "discovered ·",
+    "zh-CN": "已发现 ·"
+  },
+  "inspected": {
+    "key": "ui_5cfc694a09a2",
+    "en": "inspected",
+    "zh-CN": "已检查"
+  },
+  "inspected ·": {
+    "key": "ui_5d8fddca6c59",
+    "en": "inspected ·",
+    "zh-CN": "已检查 ·"
+  },
+  "imported": {
+    "key": "ui_5f54227b74fb",
+    "en": "imported",
+    "zh-CN": "已导入"
   },
   "duplicates ·": {
     "key": "ui_353d65ed5ec1",
     "en": "duplicates ·",
     "zh-CN": "重复 ·"
   },
-  "need review": {
-    "key": "ui_261cee7346a1",
-    "en": "need review",
-    "zh-CN": "需要审核"
+  "filtered ·": {
+    "key": "ui_4ce9dd0701c5",
+    "en": "filtered ·",
+    "zh-CN": "已筛选 ·"
+  },
+  "need review ·": {
+    "key": "ui_420ab49c3cfb",
+    "en": "need review ·",
+    "zh-CN": "需审核 ·"
   },
   "Review updated rules": {
     "key": "ui_fc8c37ce8335",
