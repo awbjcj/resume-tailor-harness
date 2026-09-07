@@ -140,6 +140,7 @@ def test_explicit_override_projects_latest_source_facts_for_a_progressed_job():
 
         latest = first.model_copy(deep=True, update={"id": "latest"})
         latest.facts.remote_policy = "hybrid"
+        latest.facts.jd_text = "New source description that has not been approved"
         ingest_observation(session, latest, store)
         set_job_override(
             session,
@@ -152,3 +153,4 @@ def test_explicit_override_projects_latest_source_facts_for_a_progressed_job():
         session.refresh(job)
         assert criteria.remote_policy == "remote"
         assert job.status == JobStatus.tailored.value
+        assert job.jd_text == "Build reliable software"

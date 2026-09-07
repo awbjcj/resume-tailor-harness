@@ -80,6 +80,28 @@ def test_repeated_page_stops_without_claiming_complete_coverage(pagination):
         assert report.inspected == 2
 
 
+def test_missing_saved_pagination_control_requires_review():
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        draft = Draft(
+            source_id="board",
+            url="https://example.com/jobs",
+            plan=BoardPlan(
+                card_selector="article",
+                link_selector="a",
+                detail_selector=".jd",
+                pagination="next",
+                control_selector=".missing-next",
+            ),
+        )
+        report = replay(draft, FixtureWorker(), ScrapeStore(session), None)
+        assert report.terminal_reason == "review_required"
+        assert report.messages == [
+            "Saved pagination control no longer matches the page"
+        ]
+
+
 def test_preview_samples_are_bounded_and_persisted():
     engine = make_engine("sqlite://")
     init_db(engine)
@@ -96,6 +118,67 @@ def test_preview_samples_are_bounded_and_persisted():
         )
         assert len(report.observations) == 2
         assert report.observations[0].accepted
+
+
+def test_preview_prefers_distinct_visible_card_layouts(monkeypatch):
+    import importlib
+
+    module = importlib.import_module("resume_tailor_harness.discovery.scraper.replay")
+    inspected = []
+
+    class LayoutWorker(FixtureWorker):
+        def snapshot(self, url, budget):
+            if url.endswith("/jobs"):
+                return snapshot_from_html(
+                    url,
+                    '<article class="standard"><a href="/jobs/1">One</a></article>'
+                    '<article class="standard"><a href="/jobs/2">Two</a></article>'
+                    '<article class="featured"><header>Featured</header><a href="/jobs/3">Three</a></article>'
+                    '<article class="standard"><a href="/jobs/4">Four</a></article>',
+                )
+            inspected.append(url)
+            return super().snapshot(url, budget)
+
+    monkeypatch.setattr(
+        module,
+        "extract_observation",
+        lambda detail, source_id, revision, agent, field_rules: Observation(
+            source_id=source_id,
+            revision=revision,
+            job_key=detail.final_url,
+            accepted=True,
+            facts=JobFacts(
+                source_url=detail.final_url,
+                title="Engineer",
+                jd_text="Build reliable systems.",
+            ),
+        ),
+    )
+    monkeypatch.setattr(
+        module, "validate_evidence", lambda *args: ValidationResult(valid=True)
+    )
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        draft = Draft(
+            source_id="board",
+            url="https://example.com/jobs",
+            plan=BoardPlan(
+                card_selector="article", link_selector="a", detail_selector=".jd"
+            ),
+        )
+        report = replay(
+            draft, LayoutWorker(), ScrapeStore(session), None, preview=True
+        )
+
+    assert inspected == [
+        "https://example.com/jobs/1",
+        "https://example.com/jobs/3",
+        "https://example.com/jobs/2",
+    ]
+    assert report.discovered == 4
+    assert report.inspected == 3
+    assert report.terminal_reason == "partial_limit"
 
 
 def test_repull_reuses_fresh_detail_snapshots_until_explicit_refresh():

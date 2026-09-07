@@ -23,6 +23,27 @@ def _anonymous_card_key(source_id: str, card: Any) -> str:
     return sha256(f"{source_id}\ncard:{card}".encode()).hexdigest()
 
 
+def _layout_signature(card: Any) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Describe visible card structure without using its job-specific text."""
+    return tuple(
+        (node.name, tuple(sorted(node.get("class", []))))
+        for node in [card, *card.find_all(True)]
+    )
+
+
+def _preview_cards(cards: list[Any], limit: int) -> list[tuple[int, Any]]:
+    """Prefer distinct visible card layouts, then fill the remaining sample slots."""
+    unique: list[tuple[int, Any]] = []
+    repeated: list[tuple[int, Any]] = []
+    seen_layouts: set[tuple[tuple[str, tuple[str, ...]], ...]] = set()
+    for index, card in enumerate(cards):
+        signature = _layout_signature(card)
+        target = repeated if signature in seen_layouts else unique
+        target.append((index, card))
+        seen_layouts.add(signature)
+    return (unique + repeated)[:limit]
+
+
 def replay(
     draft: Draft,
     worker: Any,
@@ -51,7 +72,11 @@ def replay(
                 plan.card_selector
             )
             new_count = 0
-            for index, card in enumerate(cards):
+            card_entries = list(enumerate(cards))
+            if preview:
+                report.discovered += len(cards)
+                card_entries = _preview_cards(cards, max(0, 3 - report.inspected))
+            for index, card in card_entries:
                 link = (
                     card.select_one(plan.link_selector) if plan.link_selector else None
                 )
@@ -71,10 +96,8 @@ def replay(
                 if identity:
                     seen.add(identity)
                 new_count += 1
-                report.discovered += 1
-                if preview and report.inspected >= 3:
-                    report.terminal_reason = "partial_limit"
-                    return report
+                if not preview:
+                    report.discovered += 1
                 budget.charge_detail()
                 detail = None
                 opened = False
@@ -257,6 +280,9 @@ def replay(
                             ),
                             budget,
                         )
+            if preview and report.inspected >= 3:
+                report.terminal_reason = "partial_limit"
+                return report
             if not cards:
                 report.terminal_reason = "review_required"
                 report.messages.append(
@@ -275,11 +301,13 @@ def replay(
                 control = BeautifulSoup(listing.html, "html.parser").select_one(
                     plan.control_selector or ""
                 )
-                if (
-                    control is None
-                    or control.has_attr("disabled")
-                    or control.get("aria-disabled") == "true"
-                ):
+                if control is None:
+                    report.terminal_reason = "review_required"
+                    report.messages.append(
+                        "Saved pagination control no longer matches the page"
+                    )
+                    break
+                if control.has_attr("disabled") or control.get("aria-disabled") == "true":
                     break
             budget.charge_listing()
             kind = "scroll" if plan.pagination == "infinite" else "next"
