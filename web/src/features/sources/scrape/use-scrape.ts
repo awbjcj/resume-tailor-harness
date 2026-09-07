@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { api, unwrap } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 
-export type Draft = components["schemas"]["Draft"];
+export type Draft = components["schemas"]["DraftOut"];
 export type JobFacts = components["schemas"]["JobFacts-Input"];
 export type BoardPlan = components["schemas"]["BoardPlan"];
 export type CrawlLimits = components["schemas"]["CrawlLimits"];
-export type ApprovalResult = components["schemas"]["ApprovalResult"];
+export type ApprovalResult = components["schemas"]["ApprovalResultOut"];
 export const defaultLimits: CrawlLimits = {
   listingPages: 10,
   detailPages: 50,

@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.discovery.scraper.contracts import (
     BoardPlan,
+    CrawlLimits,
     Draft,
     JobFacts,
     Observation,
@@ -52,6 +53,86 @@ def test_approval_is_atomic_and_idempotent():
         assert first == second
         assert len(session.exec(select(Job)).all()) == 1
         assert len(ScrapeStore(session).list_sources()) == 1
+
+
+def test_static_posting_without_required_content_retries_in_browser(monkeypatch):
+    from types import SimpleNamespace
+
+    import resume_tailor_harness.services.scrape_review as review
+    from resume_tailor_harness.discovery.scraper.browser_worker import (
+        snapshot_from_html,
+    )
+    from resume_tailor_harness.discovery.scraper.contracts import PageUnderstanding
+    from resume_tailor_harness.security.outbound import PublicBytesResponse
+
+    static_html = "<main>Job posting shell</main>"
+    rendered_html = "<h1>Engineer</h1><div class='jd'>Build reliable systems.</div>"
+
+    class Gateway:
+        def document(self, url, budget):
+            return PublicBytesResponse(200, {}, static_html.encode(), url)
+
+    class Worker:
+        def __init__(self, gateway):
+            self.gateway = gateway
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def snapshot(self, url, budget):
+            return snapshot_from_html(url, rendered_html)
+
+    plan = BoardPlan(
+        card_selector="body", detail_mode="inline", detail_selector=".jd"
+    )
+    monkeypatch.setattr(review, "build_gateway", Gateway)
+    monkeypatch.setattr(review, "BrowserWorker", Worker)
+    monkeypatch.setattr(review, "build_understand_agent", lambda: object())
+    monkeypatch.setattr(review, "build_extract_agent", lambda: object())
+    monkeypatch.setattr(
+        review,
+        "get_settings",
+        lambda: SimpleNamespace(public_browser_enabled=True),
+    )
+    monkeypatch.setattr(review, "validate_public_url", lambda _url: None)
+    monkeypatch.setattr(
+        "resume_tailor_harness.tenancy.limits.enforce_active_budget", lambda: None
+    )
+    monkeypatch.setattr(
+        review,
+        "understand",
+        lambda snapshot, _agent: PageUnderstanding(kind="posting", plan=plan),
+    )
+
+    def extract(snapshot, source_id, revision, _agent):
+        rendered = "Build reliable systems." in snapshot.visible_text
+        return Observation(
+            source_id=source_id,
+            revision=revision,
+            job_key="job-one",
+            accepted=rendered,
+            facts=JobFacts(
+                source_url=snapshot.final_url,
+                title="Engineer" if rendered else None,
+                jd_text="Build reliable systems." if rendered else None,
+            ),
+        )
+
+    monkeypatch.setattr(review, "extract_observation", extract)
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        draft = review.analyze_url(
+            session, "https://example.com/jobs/one", CrawlLimits()
+        )
+
+    assert draft.validation.valid
+    assert draft.samples[0].facts.jd_text == "Build reliable systems."
+    assert draft.navigation is not None
+    assert draft.navigation.terminal_reason == "complete"
 
 
 def test_failed_sample_ingest_rolls_back_source_approval(monkeypatch):

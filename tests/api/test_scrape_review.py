@@ -86,7 +86,7 @@ def test_enhanced_url_entry_returns_board_review_result(tmp_path, monkeypatch):
     import time
     from types import SimpleNamespace
     from resume_tailor_harness.api.routers import runs
-    from resume_tailor_harness.services import scrape_review
+    from resume_tailor_harness.services import public_url_routing, scrape_review
 
     monkeypatch.setattr(
         scrape_review,
@@ -103,7 +103,9 @@ def test_enhanced_url_entry_returns_board_review_result(tmp_path, monkeypatch):
 
     monkeypatch.setattr(runs, "add_job_from_url", legacy)
     monkeypatch.setattr(
-        runs, "fetch_static", lambda url: SimpleNamespace(final_url=url)
+        public_url_routing,
+        "fetch_static",
+        lambda url: SimpleNamespace(final_url=url),
     )
     app = create_app(db_url="sqlite://", api_token="", data_dir=tmp_path)
     with TestClient(app) as client:
@@ -129,11 +131,11 @@ def test_enhanced_url_entry_routes_redirected_ats_to_the_ats_reader(
     from types import SimpleNamespace
 
     from resume_tailor_harness.api.routers import runs
-    from resume_tailor_harness.services import scrape_review
+    from resume_tailor_harness.services import public_url_routing, scrape_review
 
     original_url = "https://jobs.example.test/redirect"
     monkeypatch.setattr(
-        runs,
+        public_url_routing,
         "fetch_static",
         lambda url: SimpleNamespace(
             final_url="https://boards.greenhouse.io/acme/jobs/42"
@@ -230,6 +232,11 @@ def test_source_override_updates_the_canonical_job_and_invalidates_derived_state
             params={"expected_revision": 1},
         )
         assert response.status_code == 200
+        observations = client.get(
+            f"/api/jobs/{job_id}/source-observations"
+        ).json()
+        assert observations[0]["facts"]["company"] == "Example"
+        assert observations[0]["effectiveFacts"]["company"] == "Reviewed Example"
 
     with Session(engine) as session:
         job = session.get(Job, job_id)

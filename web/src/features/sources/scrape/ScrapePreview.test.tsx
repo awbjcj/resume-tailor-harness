@@ -16,6 +16,12 @@ describe("scrape review approval", () => {
           url: "https://example.com/jobs",
           revision: 0,
           validation: { valid: true },
+          navigation: {
+            terminalReason: "partial_limit",
+            discovered: 8,
+            inspected: 3,
+            messages: ["Preview limit reached"],
+          },
           plan: {
             cardSelector: "article",
             detailMode: "inline",
@@ -49,6 +55,8 @@ describe("scrape review approval", () => {
     const approve = await screen.findByRole("button", {
       name: "Approve and save",
     });
+    expect(screen.getByText("Navigation outcome: partial limit")).toBeVisible();
+    expect(screen.getByText("8 discovered · 3 inspected")).toBeVisible();
     expect(approve).not.toBeDisabled();
     await userEvent.click(screen.getByText("Change extraction rules"));
     await userEvent.type(screen.getByLabelText("Description selector"), "-new");

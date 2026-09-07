@@ -5,12 +5,10 @@ from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy.engine import CursorResult
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col
 
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.db import make_engine
-from resume_tailor_harness.discovery.connectors.dates import parse_iso_datetime
-from resume_tailor_harness.discovery.merge import IncomingJob
 from resume_tailor_harness.discovery.scraper.browser_worker import (
     BrowserUnavailable,
     BrowserWorker,
@@ -22,9 +20,9 @@ from resume_tailor_harness.discovery.scraper.contracts import (
     Draft,
     FieldName,
     JsonValue,
-    Observation,
     OverridePatch,
     JobFacts,
+    NavigationOutcome,
     ValidationResult,
 )
 from resume_tailor_harness.discovery.scraper.extract import (
@@ -40,7 +38,6 @@ from resume_tailor_harness.discovery.scraper.replay import replay
 from resume_tailor_harness.discovery.scraper.store import RevisionConflict, ScrapeStore
 from resume_tailor_harness.discovery.scraper.tables import (
     ScrapeApprovalRow,
-    ScrapeObservationRow,
     ScrapeOverrideRow,
     ScrapeSourceRow,
     ScrapeRevisionRow,
@@ -59,11 +56,6 @@ from resume_tailor_harness.services.scrape_ingest import (
     find_observed_job,
 )
 from resume_tailor_harness.tenancy.context import current_context
-from resume_tailor_harness.tracking.repository import (
-    company_rename_collides,
-    has_progress,
-)
-from resume_tailor_harness.tracking.tables import Job, JobStatus
 
 
 def build_gateway() -> BrowserGateway:
@@ -104,30 +96,53 @@ def analyze_url(
     learner = build_understand_agent()
     extractor = build_extract_agent()
     understanding = understand(listing, learner)
+    static_sample = (
+        extract_observation(listing, draft.source_id, 0, extractor)
+        if understanding.kind == "posting"
+        else None
+    )
     with BrowserWorker(gateway) as worker:
-        if understanding.kind not in {
-            "posting",
-            "listing",
-            "empty_listing",
-            "blocked",
-        } or (understanding.kind == "listing" and understanding.plan is None):
+        needs_browser = (
+            understanding.kind not in {"posting", "listing", "blocked"}
+            or (understanding.kind == "listing" and understanding.plan is None)
+            or (understanding.kind == "posting" and not static_sample.accepted)
+        )
+        if needs_browser:
             if not allow_browser or not get_settings().public_browser_enabled:
                 raise BrowserUnavailable(
                     "Browser extraction is unavailable on this installation"
                 )
             listing = worker.snapshot(url, budget)
             understanding = understand(listing, learner)
+            static_sample = None
         store.save_snapshot(listing)
         draft.page_kind = understanding.kind
         if understanding.kind in {"empty_listing", "blocked", "unrelated"}:
             draft.state = "unverified"
+            draft.navigation = NavigationOutcome(
+                terminal_reason=(
+                    "empty"
+                    if understanding.kind == "empty_listing"
+                    else "blocked"
+                    if understanding.kind == "blocked"
+                    else "review_required"
+                )
+            )
         elif understanding.kind == "posting":
-            sample = extract_observation(listing, draft.source_id, 0, extractor)
+            sample = static_sample or extract_observation(
+                listing, draft.source_id, 0, extractor
+            )
             store.save_observation(sample)
             draft.samples = [sample]
             draft.plan = understanding.plan
             draft.validation = ValidationResult(
                 valid=sample.accepted and draft.plan is not None
+            )
+            draft.navigation = NavigationOutcome(
+                terminal_reason="complete" if sample.accepted else "review_required",
+                discovered=1,
+                inspected=1,
+                messages=[issue.message for issue in sample.issues if issue.message],
             )
         elif understanding.plan:
             if not allow_browser or not get_settings().public_browser_enabled:
@@ -139,6 +154,7 @@ def analyze_url(
                 draft, worker, store, extractor, preview=True, budget=budget
             )
             draft.samples = report.observations
+            draft.navigation = _navigation_outcome(report)
             detail_ids = {
                 item.snapshot_id for sample in draft.samples for item in sample.evidence
             }
@@ -181,6 +197,7 @@ def revalidate_draft(
             budget=_budget(draft.limits, checkpoint),
         )
     draft.samples = report.observations
+    draft.navigation = _navigation_outcome(report)
     apply_corrections(draft)
     draft.validation = ValidationResult(
         valid=bool(draft.samples)
@@ -257,106 +274,6 @@ def approve_draft(
     except Exception:
         session.rollback()
         raise
-
-
-def set_job_override(
-    session: Session, job_id: int, field: FieldName, patch: OverridePatch
-) -> int:
-    """Save a correction and immediately project its effective facts onto its job."""
-    if patch.field != field:
-        raise ValueError("Field does not match request path")
-    try:
-        row, job_key = _latest_job_observation(session, job_id)
-        store = ScrapeStore(session)
-        revision = store.set_override(job_key, patch)
-        _sync_job_source_facts(session, job_id, row, store)
-        session.commit()
-        return revision
-    except Exception:
-        session.rollback()
-        raise
-
-
-def clear_job_override(
-    session: Session, job_id: int, field: FieldName, expected_revision: int
-) -> int:
-    """Remove a correction and restore the source value on its canonical job."""
-    try:
-        row, job_key = _latest_job_observation(session, job_id)
-        store = ScrapeStore(session)
-        revision = store.remove_override(job_key, field, expected_revision)
-        _sync_job_source_facts(session, job_id, row, store)
-        session.commit()
-        return revision
-    except Exception:
-        session.rollback()
-        raise
-
-
-def _latest_job_observation(
-    session: Session, job_id: int
-) -> tuple[ScrapeObservationRow, str]:
-    row = session.exec(
-        select(ScrapeObservationRow)
-        .where(ScrapeObservationRow.job_id == job_id)
-        .order_by(col(ScrapeObservationRow.observed_at).desc())
-    ).first()
-    if row is None or row.job_key is None:
-        raise KeyError(job_id)
-    return row, row.job_key
-
-
-def _sync_job_source_facts(
-    session: Session,
-    job_id: int,
-    row: ScrapeObservationRow,
-    store: ScrapeStore,
-) -> None:
-    """Apply one observation's effective facts without discarding user artifacts."""
-    job = session.get(Job, job_id)
-    if job is None:
-        raise KeyError(job_id)
-    observation = Observation.model_validate_json(row.payload)
-    facts = store.effective_facts(observation)
-    incoming = IncomingJob.clean(
-        source=job.source,
-        url=job.url,
-        company=facts.company,
-        title=facts.title,
-        location="; ".join(facts.locations) if facts.locations else None,
-        jd_text=facts.jd_text or "",
-        posted_at=parse_iso_datetime(facts.posted_at),
-    )
-    if (
-        incoming.dedup_key != job.dedup_key
-        and company_rename_collides(
-            session, existing=job, dedup_key=incoming.dedup_key
-        )
-    ):
-        raise ValueError("Corrected title and company conflict with another active job")
-
-    job.company = incoming.company
-    job.title = incoming.title
-    job.location = incoming.location
-    job.jd_text = incoming.jd_text
-    job.posted_at = incoming.posted_at
-    job.dedup_key = incoming.dedup_key
-    job.content_fingerprint = incoming.content_fingerprint
-    job.criteria_json = None
-    job.analysis_meta_json = None
-    job.fit_score = None
-    job.fit_rationale = None
-    job.reject_reason = None
-    job.reject_category = None
-    job.industry_pending = False
-    if job.id is not None and not has_progress(session, job.id):
-        job.status = JobStatus.raw.value
-    # This explicit correction promotes the selected observation even when an
-    # earlier automatic ingest left it unapplied to protect user progress.
-    row.applied = True
-    session.add(row)
-    session.add(job)
-    session.flush()
 
 
 def pull_source(
@@ -541,6 +458,15 @@ def _budget(limits: CrawlLimits, checkpoint=None) -> CrawlBudget:
         return False
 
     return CrawlBudget(limits, cancelled=cancelled)
+
+
+def _navigation_outcome(report) -> NavigationOutcome:
+    return NavigationOutcome(
+        terminal_reason=report.terminal_reason,
+        discovered=report.discovered,
+        inspected=report.inspected,
+        messages=report.messages,
+    )
 
 
 def patch_draft(

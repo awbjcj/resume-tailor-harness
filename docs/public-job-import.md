@@ -80,8 +80,11 @@ blocking, delayed rendering, cancellation and process cleanup.
 Drafts, immutable source revisions, snapshots, observations and overrides are
 workspace database records and survive restarts/full workspace backups. Settings
 bundles export portable URL/rule/limit definitions, without observations or job
-corrections. Imported settings and legacy recipes remain disabled and unverified
-until reviewed. Account/workspace reset clears the associated scraping state.
+corrections; unverified candidates are not re-exported. Imported settings and
+legacy recipes remain disabled and unverified until reviewed. Resetting the
+Sources settings section removes scrape configurations, drafts, and caches while
+preserving evidence and corrections attached to existing jobs. Account/workspace
+reset clears all associated scraping state.
 Snapshots currently remain until reset; the 24-hour cache lifetime is freshness,
 not automatic deletion of evidence.
 

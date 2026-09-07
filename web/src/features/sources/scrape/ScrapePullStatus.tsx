@@ -30,12 +30,23 @@ export function ScrapePullStatus({ runId }: { runId: string }) {
       </p>
     );
   const report = result as Record<string, unknown>;
+  const outcome = String(report.terminalReason ?? "complete").replaceAll(
+    "_",
+    " ",
+  );
   return (
     <div role="status" className="w-full space-y-2 text-sm">
+      <p className="font-medium">Pull outcome: {outcome}</p>
       <p>
-        {String(report.imported ?? 0)} imported ·{" "}
+        {String(report.discovered ?? 0)} discovered ·{" "}
+        {String(report.inspected ?? 0)} inspected ·{" "}
+        {String(report.imported ?? 0)} imported
+      </p>
+      <p>
         {String(report.duplicate ?? 0)} duplicates ·{" "}
-        {String(report.reviewNeeded ?? 0)} need review
+        {String(report.filtered ?? 0)} filtered ·{" "}
+        {String(report.reviewNeeded ?? 0)} need review ·{" "}
+        {String(report.failed ?? 0)} failed
       </p>
       {Array.isArray(report.messages) &&
         report.messages.map((message, i) => (

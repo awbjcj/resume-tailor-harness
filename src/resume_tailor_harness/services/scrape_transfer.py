@@ -17,6 +17,7 @@ from resume_tailor_harness.discovery.scraper.tables import (
     ScrapeRevisionRow,
     ScrapeDraftRow,
     ScrapeApprovalRow,
+    ScrapeCacheRow,
 )
 
 
@@ -34,6 +35,8 @@ def export_sources(session: Session) -> str:
     sources = []
     for row in ScrapeStore(session).list_sources():
         draft = Draft.model_validate_json(row.payload)
+        if draft.state != "approved":
+            continue
         sources.append(
             PortableSource(url=draft.url, plan=draft.plan, limits=draft.limits)
         )
@@ -44,6 +47,7 @@ def reset_sources(session: Session) -> None:
     for table in (
         ScrapeApprovalRow,
         ScrapeDraftRow,
+        ScrapeCacheRow,
         ScrapeRevisionRow,
         ScrapeSourceRow,
     ):

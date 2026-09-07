@@ -84,6 +84,22 @@ function DraftEditor({
         Review these sample jobs and their evidence. Corrections stay with each
         job; extraction rules are reused for future pulls.
       </p>
+      {draft.navigation && (
+        <div className="rounded-lg border bg-muted/25 p-3 text-sm" role="status">
+          <p className="font-medium">
+            Navigation outcome: {draft.navigation.terminalReason.replaceAll("_", " ")}
+          </p>
+          <p className="text-muted-foreground">
+            {draft.navigation.discovered ?? 0} discovered ·{" "}
+            {draft.navigation.inspected ?? 0} inspected
+          </p>
+          {(draft.navigation.messages ?? []).map((message, index) => (
+            <p key={index} className="text-muted-foreground">
+              {message}
+            </p>
+          ))}
+        </div>
+      )}
       <ScrapeLimits value={limits} onChange={setLimits} />
       {plan && (
         <ScrapeRuleEditor

@@ -45,8 +45,6 @@ from resume_tailor_harness.api.schemas.runs import (
 from resume_tailor_harness.api.uploads import UploadTooLargeError, read_upload
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.db import get_session
-from resume_tailor_harness.discovery.connectors.detect import identify_host
-from resume_tailor_harness.discovery.url_ingest.fetch import fetch_static
 from resume_tailor_harness.services.cover_letter_revision import (
     revise_cover_letter_version,
 )
@@ -83,14 +81,6 @@ link_router = APIRouter()
 
 def _engine(request: Request):
     return get_engine(request)
-
-
-def _public_extraction_url(url: str) -> str | None:
-    """Return an unrecognized destination for the generic public scraper."""
-    if identify_host(url) is not None:
-        return None
-    final_url = fetch_static(url).final_url
-    return final_url if identify_host(final_url) is None else None
 
 
 def _owned_record(mgr: RunManager, run_id: str):
@@ -516,9 +506,12 @@ def launch_add_from_url(
     def do_add(session, reporter):
         reporter.begin(1, f"Fetching {params.url}")
         if params.public_extraction:
+            from resume_tailor_harness.services.public_url_routing import (
+                public_extraction_url,
+            )
             from resume_tailor_harness.services.scrape_review import import_public_url
 
-            if url := _public_extraction_url(params.url):
+            if url := public_extraction_url(params.url):
                 result = import_public_url(
                     session,
                     url,

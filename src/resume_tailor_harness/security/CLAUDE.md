@@ -10,8 +10,8 @@ that every future user-influenced fetch, download, render, or archive import
 must go through — see ADR-0008.
 
 - **One egress gateway for user-influenced URLs.** `security/outbound.py`'s
-  `fetch_public_text`/`resolve_public_url` is the only place allowed to make an
-  HTTP(S) request to a URL a user supplied. It rejects non-`http(s)` schemes,
+  `fetch_public_text`/`fetch_public_bytes`/`resolve_public_url` is the only place
+  allowed to make an HTTP(S) request to a URL a user supplied. It rejects non-`http(s)` schemes,
   embedded credentials, and any resolved address that is not globally routable
   (`ip_address(...).is_global`), then **pins the connection to the address it
   validated** while preserving the original `Host`/SNI — so a second,
@@ -25,6 +25,16 @@ must go through — see ADR-0008.
   bare `httpx.get`; `services/sources.py` re-exports its resolver rather than
   keeping its own copy. A bare `httpx.get`/`.get(follow_redirects=True)` on a
   user-supplied URL anywhere in the codebase is a regression.
+- **Browser traffic is parent-brokered and read-only.**
+  `security/browser_gateway.py::BrowserGateway` applies robots decisions,
+  cross-worker host leases, pacing, request/byte limits, redirect revalidation,
+  throttling, and a closed method policy before each request delegates to
+  `outbound.fetch_public_bytes`. The Playwright child in
+  `discovery/scraper/browser_worker.py` routes requests over bounded IPC, blocks
+  service workers and WebSockets, and uses a deny proxy for anything that misses
+  interception. It supports GET/HEAD and narrowly classified JSON job-search
+  POSTs only. Never add direct browser egress, a no-sandbox fallback, generated
+  actions/code, form submission, or a new method exception outside the gateway.
 - **Tenant-confined artifact and render paths.** `tenancy/storage.py::artifact_path`
   is the only way a download route may turn a stored `pdf_path` into a
   `FileResponse` target. In multi-user mode (a tenancy context is active) it

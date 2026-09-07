@@ -55,10 +55,22 @@ weakness.
 Introduce three narrow, mandatory seams and route every existing call site
 through them:
 
-- `security/outbound.py` (`fetch_public_text`, `resolve_public_url`,
-  `validate_public_url`) is the only code allowed to make an HTTP(S) request
-  to a user-supplied URL. `profile/intake.py` was rewritten to delegate to it
+- `security/outbound.py` (`fetch_public_text`, `fetch_public_bytes`,
+  `resolve_public_url`, `validate_public_url`) is the only code allowed to make
+  an HTTP(S) request to a user-supplied URL. `fetch_public_text` owns bounded
+  text retrieval and its redirect loop; `fetch_public_bytes` owns one pinned,
+  bounded browser-resource hop and returns redirects to its caller for another
+  policy decision. `profile/intake.py` was rewritten to delegate to this seam
   instead of keeping a parallel copy of the same logic.
+- `security/browser_gateway.py::BrowserGateway` is the policy broker for every
+  request initiated by the public-page browser. It applies robots decisions,
+  shared host leases, request/byte budgets, redirect revalidation, throttling,
+  and the closed read-only method allowlist before delegating each hop to
+  `fetch_public_bytes`. The Playwright child has no ambient egress: handled
+  requests travel over bounded parent IPC, its fallback proxy denies traffic,
+  and service workers and WebSockets are disabled. The child may navigate,
+  inspect, click declared controls, and issue narrowly classified JSON job-search
+  reads; it may not submit forms, execute generated code, or use arbitrary POSTs.
 - `tenancy/storage.py::artifact_path` is the only way a download route may
   turn a stored artifact path into a filesystem path, and is fail-closed: in
   multi-user mode it raises `TenantPathError` for anything outside the active
@@ -90,6 +102,10 @@ new URL-fetching or download-serving call site nothing to fail closed against.
 - Any new code that fetches a user-supplied URL must call through
   `security/outbound.py`; a bare `httpx.get`/`follow_redirects=True` on such a
   URL is a regression, not a style preference.
+- Browser-driven fetches additionally must pass through `BrowserGateway`; a
+  Playwright context with direct network access or an unclassified mutation is
+  a trust-boundary regression. New allowed browser methods require an explicit,
+  test-backed policy change here rather than a call-site exception.
 - Any new download or render-output route must resolve its path through
   `tenancy/storage.py::artifact_path` (or an equivalent tenant-confined
   helper) rather than trusting a stored string directly.
