@@ -157,6 +157,26 @@ class ValidationResult(Contract):
     issues: list[FieldIssue] = Field(default_factory=list)
 
 
+TerminalReason = Literal[
+    "complete",
+    "empty",
+    "partial_limit",
+    "throttled",
+    "blocked",
+    "review_required",
+    "failed",
+    "cancelled",
+    "capability_unavailable",
+]
+
+
+class NavigationOutcome(Contract):
+    terminal_reason: TerminalReason = "complete"
+    discovered: int = 0
+    inspected: int = 0
+    messages: list[str] = Field(default_factory=list)
+
+
 class Draft(Contract):
     id: str = Field(default_factory=lambda: uuid4().hex)
     source_id: str
@@ -173,6 +193,7 @@ class Draft(Contract):
     limits: CrawlLimits = Field(default_factory=CrawlLimits)
     samples: list[Observation] = Field(default_factory=list)
     validation: ValidationResult = Field(default_factory=ValidationResult)
+    navigation: NavigationOutcome | None = None
     state: Literal["draft", "validated", "approved", "unverified"] = "draft"
 
 
@@ -190,17 +211,7 @@ class OverridePatch(Contract):
 
 class PullReport(Contract):
     repair_draft_id: str | None = None
-    terminal_reason: Literal[
-        "complete",
-        "empty",
-        "partial_limit",
-        "throttled",
-        "blocked",
-        "review_required",
-        "failed",
-        "cancelled",
-        "capability_unavailable",
-    ] = "complete"
+    terminal_reason: TerminalReason = "complete"
     discovered: int = 0
     inspected: int = 0
     imported: int = 0
