@@ -29,7 +29,7 @@
     "openapi-fetch": "^0.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.8",
-    "react-i18next": "^17.0.12",
+    "react-i18next": "^17.0.13",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.2",
     "recharts": "^3.10.1",
