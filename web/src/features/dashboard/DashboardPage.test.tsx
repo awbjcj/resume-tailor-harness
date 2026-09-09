@@ -65,6 +65,12 @@ describe("DashboardPage", () => {
     expect(shortcuts.queryByRole("link", { name: /triage/i })).not.toBeInTheDocument();
     expect(shortcuts.queryByRole("link", { name: /shortlist/i })).not.toBeInTheDocument();
     expect(shortcuts.queryByRole("link", { name: /pipeline/i })).not.toBeInTheDocument();
+    const firstQueueLink = screen.getByRole("link", { name: /triage 2/i });
+    expect(
+      firstQueueLink.compareDocumentPosition(
+        shortcuts.getByRole("link", { name: /sources/i }),
+      ),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
   it("guides a fresh install with the getting-started checklist, not the drained-funnel card", async () => {

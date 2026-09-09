@@ -105,7 +105,10 @@ def analyze_url(
         needs_browser = (
             understanding.kind not in {"posting", "listing", "blocked"}
             or (understanding.kind == "listing" and understanding.plan is None)
-            or (understanding.kind == "posting" and not static_sample.accepted)
+            or (
+                understanding.kind == "posting"
+                and (static_sample is None or not static_sample.accepted)
+            )
         )
         if needs_browser:
             if not allow_browser or not get_settings().public_browser_enabled:
