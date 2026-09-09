@@ -1360,7 +1360,7 @@ run starter
 | `src/resume_tailor_harness/sessions/store.py` | Session substrate: file custody every turn-per-run session kind rides (ADR 0006) |
 ```
 
-1. In "Known design notes", find the bullet beginning "**Mock interviews are practice artifacts, not progress.**" and append to it:
+1. In "Known design notes", find the bullet beginning "**Mock Interviews are practice artifacts, not progress.**" and append to it:
 
 ```markdown
 Both the coach and interview stores are adapters of the Session substrate

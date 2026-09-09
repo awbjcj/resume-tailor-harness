@@ -41,12 +41,15 @@ const en = {
   },
   review: {
     reviewerNotes: {
-      factCheck: "Blocking — any claim not traceable to a profile fact fails the round.",
+      factCheck:
+        "Blocking — any claim not traceable to a profile fact fails the round.",
       atsKeyword: "Coverage of the job description's stated requirements.",
       recruiter: "Six-second skim: does the top of the page land?",
-      hiringManager: "Depth and credibility of the evidence for this specific role.",
+      hiringManager:
+        "Depth and credibility of the evidence for this specific role.",
       concision: "Density — cuts padding without cutting evidence.",
-      mustHaveCoverage: "Share of evidenced must-have requirements actually rendered.",
+      mustHaveCoverage:
+        "Share of evidenced must-have requirements actually rendered.",
     },
   },
   profileBuild: {
@@ -60,20 +63,30 @@ const en = {
       staleWithReason: "stale: {{reason}}",
     },
     warning: {
-      githubRateLimit: "GitHub rate limit hit; cached docs were preserved. Set GITHUB_TOKEN to raise the limit.",
-      githubHarvestFailed: "GitHub harvest failed for {{repository}}: {{reason}}",
-      projectExtractionSkipped: "project extraction skipped for {{count}} document(s): no project agent configured",
-      synthesisSkipped: "synthesis skipped for {{count}} document(s): no synthesis/entailment agent configured",
+      githubRateLimit:
+        "GitHub rate limit hit; cached docs were preserved. Set GITHUB_TOKEN to raise the limit.",
+      githubHarvestFailed:
+        "GitHub harvest failed for {{repository}}: {{reason}}",
+      projectExtractionSkipped:
+        "project extraction skipped for {{count}} document(s): no project agent configured",
+      synthesisSkipped:
+        "synthesis skipped for {{count}} document(s): no synthesis/entailment agent configured",
       githubMetadataSkipped: "GitHub metadata merge skipped: {{reason}}",
       skillInferenceFailed: "skill inference failed: {{reason}}",
-      aspectClassificationFailed: "bullet aspect classification failed: {{reason}}",
+      aspectClassificationFailed:
+        "bullet aspect classification failed: {{reason}}",
       githubListingFailed: "GitHub repository listing failed: {{reason}}",
-      dossierSkipped: "{{repository}}: dossier {{dossier}} skipped (max {{limit}} per repo)",
-      dossierWrongRepository: "{{repository}}: dossier {{dossier}} targets a different repository; skipped",
-      manualAliasNotFound: "Manual alias '{{alias}}' could not be reattached -- its target skill '{{target}}' was not found.",
+      dossierSkipped:
+        "{{repository}}: dossier {{dossier}} skipped (max {{limit}} per repo)",
+      dossierWrongRepository:
+        "{{repository}}: dossier {{dossier}} targets a different repository; skipped",
+      manualAliasNotFound:
+        "Manual alias '{{alias}}' could not be reattached -- its target skill '{{target}}' was not found.",
     },
-    conflict: "{{label}}: {{field}} {{kept}} kept over {{discarded}} from {{source}}",
-    summaryConflict: "{{label}}: {{kept}} kept over {{discarded}} from {{source}}",
+    conflict:
+      "{{label}}: {{field}} {{kept}} kept over {{discarded}} from {{source}}",
+    summaryConflict:
+      "{{label}}: {{kept}} kept over {{discarded}} from {{source}}",
     anchor: {
       missing: "{{source}}: anchor {{anchor}} not found — kept as a project",
       added: "{{source}}: +{{count}} bullets on {{target}}",
@@ -89,8 +102,10 @@ const en = {
     },
     evidencePlanner: {
       plannerUnavailable: "planner unavailable",
-      fallback: "Evidence planner unavailable ({{reason}}); deterministic fallback used.",
-      legacyFallback: "Planner unavailable; deterministic evidence selection was used.",
+      fallback:
+        "Evidence planner unavailable ({{reason}}); deterministic fallback used.",
+      legacyFallback:
+        "Planner unavailable; deterministic evidence selection was used.",
     },
   },
   common: {
@@ -130,7 +145,7 @@ const en = {
     prepare: "Prepare",
     profile: "Profile",
     profileCoach: "Profile Coach",
-    mockInterviews: "Mock interviews",
+    mockInterviews: "Mock Interviews",
     careerLab: "Career Lab",
     findAndTailor: "Find & tailor",
     discoveryScout: "Discovery Scout",
@@ -138,7 +153,7 @@ const en = {
     shortlist: "Shortlist",
     pipeline: "Pipeline",
     insight: "Insight",
-    matchGap: "Match-gap",
+    matchGap: "Match Gap",
     applications: "Applications",
     analytics: "Analytics",
     workspace: "Workspace",
@@ -150,14 +165,17 @@ const en = {
     inProgress: "in progress",
   },
   shell: {
-    productSummary: "Review, tailor, and track high-fit jobs from one operational desk.",
+    productSummary:
+      "Review, tailor, and track high-fit jobs from one operational desk.",
     operationalFlow: "Operational flow",
-    operationalFlowBody: "Move each strong fit from evidence to a finished application.",
+    operationalFlowBody:
+      "Move each strong fit from evidence to a finished application.",
     review: "Review",
     tailor: "Tailor",
     track: "Track",
     dailyFocus: "Daily focus",
-    dailyFocusBody: "Approve the best fits first, then run tailoring in batches.",
+    dailyFocusBody:
+      "Approve the best fits first, then run tailoring in batches.",
     operations: "Job search operations",
     operationsSummary: "Pull, discover, review, and ship.",
     skipToMain: "Skip to main content",
@@ -179,12 +197,14 @@ const en = {
     tailor: "Tailor",
     track: "Track",
     secureWorkspace: "Secure workspace",
-    sourceMaterialPromise: "Your source material stays at the center of every recommendation.",
+    sourceMaterialPromise:
+      "Your source material stays at the center of every recommendation.",
     welcomeBack: "Welcome back",
     signInDescription: "Sign in to continue to your private workspace.",
     newHere: "New here?",
     createAccount: "Create an account",
-    googleSignInHint: "Sign in with your Google account — no password required.",
+    googleSignInHint:
+      "Sign in with your Google account — no password required.",
     emailDivider: "or use email and password",
     email: "Email",
     password: "Password",
@@ -228,7 +248,11 @@ const en = {
   },
   adminQuota: {
     values: { unlimited: "Unlimited" },
-    targets: { member: "One member", tier: "One tier", allMembers: "All members" },
+    targets: {
+      member: "One member",
+      tier: "One tier",
+      allMembers: "All members",
+    },
     actions: {
       grantCredit: "Grant credit",
       debitCredit: "Debit credit",
@@ -282,8 +306,16 @@ const en = {
         hours: "Billing hours",
         effective: "Effective date",
       },
-      statuses: { active: "Active", scheduled: "Scheduled", historical: "Historical" },
-      periods: { all: "Every hour", peak: "Peak hours", offPeak: "Off-peak hours" },
+      statuses: {
+        active: "Active",
+        scheduled: "Scheduled",
+        historical: "Historical",
+      },
+      periods: {
+        all: "Every hour",
+        peak: "Peak hours",
+        offPeak: "Off-peak hours",
+      },
       effectiveUntil: "until {{date}}",
       noEndDate: "No end date",
     },
@@ -292,18 +324,25 @@ const en = {
     modes: {
       auto: {
         label: "Auto",
-        description: "Use the subscription gateway when its key is configured; otherwise use the direct API.",
+        description:
+          "Use the subscription gateway when its key is configured; otherwise use the direct API.",
       },
       subscription: {
         label: "Subscription",
-        description: "Require the gateway. Incomplete configuration fails before a paid API call can start.",
+        description:
+          "Require the gateway. Incomplete configuration fails before a paid API call can start.",
       },
       api: {
         label: "Direct API",
-        description: "Always use the provider's direct metered API and ignore its gateway key.",
+        description:
+          "Always use the provider's direct metered API and ignore its gateway key.",
       },
     },
-    status: { needsAttention: "Needs attention", subscription: "Subscription", api: "Direct API" },
+    status: {
+      needsAttention: "Needs attention",
+      subscription: "Subscription",
+      api: "Direct API",
+    },
     gatewayFallback: "gateway",
     routeModeFor: "{{provider}} route mode",
     summary: {
@@ -314,10 +353,14 @@ const en = {
     errors: {
       separator: "; ",
       retry: "Please try again.",
-      subscriptionBaseUrlUnset: "{{provider}} is pinned to subscription mode but SUB2API_BASE_URL is unset.",
-      subscriptionKeyUnset: "{{provider}} is pinned to subscription mode but {{setting}} is unset.",
-      keyWithoutBaseUrl: "{{setting}} is set but SUB2API_BASE_URL is unset, so there is nowhere to send the call.",
-      invalidBaseUrl: "{{setting}} must be an absolute HTTP(S) URL with no credentials, query, or fragment (current value: {{value}}).",
+      subscriptionBaseUrlUnset:
+        "{{provider}} is pinned to subscription mode but SUB2API_BASE_URL is unset.",
+      subscriptionKeyUnset:
+        "{{provider}} is pinned to subscription mode but {{setting}} is unset.",
+      keyWithoutBaseUrl:
+        "{{setting}} is set but SUB2API_BASE_URL is unset, so there is nowhere to send the call.",
+      invalidBaseUrl:
+        "{{setting}} must be an absolute HTTP(S) URL with no credentials, query, or fragment (current value: {{value}}).",
     },
   },
   applications: {
@@ -338,7 +381,8 @@ const en = {
       unknownRole: "role",
       kicker: "Stored evidence only",
       title: "Role comparison",
-      description: "Missing values stay explicit; this table does not call a model or guess an answer.",
+      description:
+        "Missing values stay explicit; this table does not call a model or guess an answer.",
       headers: {
         role: "Role",
         fit: "Fit",
@@ -352,7 +396,8 @@ const en = {
       stale: "stale",
       current: "current",
       unknownDepth: "unknown depth",
-      evidenceSummary: "{{depth}} · {{count}} sources · {{verification}} · {{freshness}}",
+      evidenceSummary:
+        "{{depth}} · {{count}} sources · {{verification}} · {{freshness}}",
       depth: { quick: "quick", standard: "standard", deep: "deep" },
       verification: {
         inferred: "inferred",
@@ -414,7 +459,12 @@ const en = {
       cancelled: "Cancelled",
       withdrew: "Withdrew",
     },
-    modalities: { onsite: "Onsite", virtual: "Virtual", phone: "Phone", async: "Async" },
+    modalities: {
+      onsite: "Onsite",
+      virtual: "Virtual",
+      phone: "Phone",
+      async: "Async",
+    },
     platforms: {
       zoom: "Zoom",
       teams: "Microsoft Teams",
@@ -434,7 +484,8 @@ const en = {
     header: {
       kicker: "Conversion",
       title: "Analytics / Funnel",
-      description: "Which sources and fit-score bands actually convert. Rates are share of submitted applications.",
+      description:
+        "Which sources and fit-score bands actually convert. Rates are share of submitted applications.",
     },
     metrics: {
       submitted: "Submitted applications",
@@ -442,10 +493,22 @@ const en = {
       sourcesTracked: "Sources tracked",
     },
     panels: {
-      stageFlow: { title: "Stage flow", description: "Where applications advance or leave the process." },
-      cycleTime: { title: "Stage timing", description: "Median elapsed days between consecutive stages." },
-      activePipeline: { title: "Active pipeline", description: "Past and upcoming events around today." },
-      offerComparison: { title: "Offer comparison", description: "Annualized components, kept separate by currency." },
+      stageFlow: {
+        title: "Stage flow",
+        description: "Where applications advance or leave the process.",
+      },
+      cycleTime: {
+        title: "Stage timing",
+        description: "Median elapsed days between consecutive stages.",
+      },
+      activePipeline: {
+        title: "Active pipeline",
+        description: "Past and upcoming events around today.",
+      },
+      offerComparison: {
+        title: "Offer comparison",
+        description: "Annualized components, kept separate by currency.",
+      },
     },
     table: {
       applications: "Applications",
@@ -461,7 +524,8 @@ const en = {
     },
     empty: {
       title: "No applications tracked yet",
-      description: "Mark applications as submitted in the Pipeline board to populate analytics.",
+      description:
+        "Mark applications as submitted in the Pipeline board to populate analytics.",
     },
     conversion: {
       applications: "Apps",
@@ -503,7 +567,8 @@ const en = {
     waiting_one: "{{count}} job is waiting on you",
     waiting_other: "{{count}} jobs are waiting on you",
     operations: "Operations",
-    subtitle: "Pull fresh listings, triage the queue, and ship tailored resumes.",
+    subtitle:
+      "Pull fresh listings, triage the queue, and ship tailored resumes.",
     systemStatus: "System status",
     queue: {
       triage: "Triage",
@@ -560,8 +625,9 @@ const en = {
       cancelled: "cancelled",
     },
     inProgress: "In progress",
-    nothingInProgress: "Nothing in progress — start a mock interview or a coaching session.",
-    mockInterview: "Mock interview",
+    nothingInProgress:
+      "Nothing in progress — start a mock interview or a coaching session.",
+    mockInterview: "Mock Interview",
     interviewProgress: "Question {{asked}} of {{total}} · started {{started}}",
     resume: "Resume",
     resumeItem: "Resume {{label}}",
@@ -655,11 +721,36 @@ const en = {
     completeSummary: "Profile · Sources · Pull · Shortlist · Tailor — all set.",
     next: "Next:",
     stages: {
-      profile: { label: "Profile", task: "Build your profile", hint: "Add your resume and build your profile so tailoring has facts to draw on.", cta: "Build your profile" },
-      sources: { label: "Sources", task: "Add job sources", hint: "Tell the agent where to look — set a search and enable at least one source.", cta: "Add sources" },
-      pull: { label: "Pull", task: "Pull your first jobs", hint: "Run your first pull to fill the funnel with fresh postings.", cta: "Pull jobs" },
-      shortlist: { label: "Shortlist", task: "Shortlist & approve", hint: "Review high-fit jobs and approve the ones worth tailoring.", cta: "Review shortlist" },
-      tailor: { label: "Tailor", task: "Tailor a resume", hint: "Tailor a resume to an approved job, then render and apply.", cta: "Tailor a resume" },
+      profile: {
+        label: "Profile",
+        task: "Build your profile",
+        hint: "Add your resume and build your profile so tailoring has facts to draw on.",
+        cta: "Build your profile",
+      },
+      sources: {
+        label: "Sources",
+        task: "Add job sources",
+        hint: "Tell the agent where to look — set a search and enable at least one source.",
+        cta: "Add sources",
+      },
+      pull: {
+        label: "Pull",
+        task: "Pull your first jobs",
+        hint: "Run your first pull to fill the funnel with fresh postings.",
+        cta: "Pull jobs",
+      },
+      shortlist: {
+        label: "Shortlist",
+        task: "Shortlist & approve",
+        hint: "Review high-fit jobs and approve the ones worth tailoring.",
+        cta: "Review shortlist",
+      },
+      tailor: {
+        label: "Tailor",
+        task: "Tailor a resume",
+        hint: "Tailor a resume to an approved job, then render and apply.",
+        cta: "Tailor a resume",
+      },
     },
   },
 } as const;
@@ -718,20 +809,28 @@ const zhCN = {
       staleWithReason: "已使用过期缓存：{{reason}}",
     },
     warning: {
-      githubRateLimit: "已达到 GitHub 速率限制；已保留缓存文档。设置 GITHUB_TOKEN 可提高限额。",
+      githubRateLimit:
+        "已达到 GitHub 速率限制；已保留缓存文档。设置 GITHUB_TOKEN 可提高限额。",
       githubHarvestFailed: "GitHub 仓库同步失败（{{repository}}）：{{reason}}",
-      projectExtractionSkipped: "已跳过 {{count}} 个文档的项目提取：未配置项目提取模型",
-      synthesisSkipped: "已跳过 {{count}} 个文档的综合提取：未配置综合/蕴含判断模型",
+      projectExtractionSkipped:
+        "已跳过 {{count}} 个文档的项目提取：未配置项目提取模型",
+      synthesisSkipped:
+        "已跳过 {{count}} 个文档的综合提取：未配置综合/蕴含判断模型",
       githubMetadataSkipped: "已跳过 GitHub 元数据合并：{{reason}}",
       skillInferenceFailed: "技能推断失败：{{reason}}",
       aspectClassificationFailed: "要点维度分类失败：{{reason}}",
       githubListingFailed: "GitHub 仓库列表获取失败：{{reason}}",
-      dossierSkipped: "{{repository}}：已跳过资料文件 {{dossier}}（每个仓库最多 {{limit}} 个）",
-      dossierWrongRepository: "{{repository}}：资料文件 {{dossier}} 指向其他仓库，已跳过",
-      manualAliasNotFound: "手动别名“{{alias}}”无法重新关联：未找到目标技能“{{target}}”。",
+      dossierSkipped:
+        "{{repository}}：已跳过资料文件 {{dossier}}（每个仓库最多 {{limit}} 个）",
+      dossierWrongRepository:
+        "{{repository}}：资料文件 {{dossier}} 指向其他仓库，已跳过",
+      manualAliasNotFound:
+        "手动别名“{{alias}}”无法重新关联：未找到目标技能“{{target}}”。",
     },
-    conflict: "{{label}}：保留 {{kept}}，未采用来自 {{source}} 的 {{discarded}}（{{field}}）",
-    summaryConflict: "{{label}}：保留 {{kept}}，未采用来自 {{source}} 的 {{discarded}}",
+    conflict:
+      "{{label}}：保留 {{kept}}，未采用来自 {{source}} 的 {{discarded}}（{{field}}）",
+    summaryConflict:
+      "{{label}}：保留 {{kept}}，未采用来自 {{source}} 的 {{discarded}}",
     anchor: {
       missing: "{{source}}：未找到锚点 {{anchor}}，已作为项目保留",
       added: "{{source}}：已将 {{count}} 条要点添加到 {{target}}",
@@ -939,7 +1038,11 @@ const zhCN = {
         hours: "计费时段",
         effective: "生效日期",
       },
-      statuses: { active: "已生效", scheduled: "待生效", historical: "历史版本" },
+      statuses: {
+        active: "已生效",
+        scheduled: "待生效",
+        historical: "历史版本",
+      },
       periods: { all: "每小时", peak: "高峰时段", offPeak: "低谷时段" },
       effectiveUntil: "截至 {{date}}",
       noEndDate: "无结束日期",
@@ -953,14 +1056,19 @@ const zhCN = {
       },
       subscription: {
         label: "订阅网关",
-        description: "强制使用网关。配置不完整时，会在发起付费 API 调用前失败。",
+        description:
+          "强制使用网关。配置不完整时，会在发起付费 API 调用前失败。",
       },
       api: {
         label: "直连 API",
         description: "始终使用服务商按量计费的直连 API，并忽略其网关密钥。",
       },
     },
-    status: { needsAttention: "需要处理", subscription: "订阅网关", api: "直连 API" },
+    status: {
+      needsAttention: "需要处理",
+      subscription: "订阅网关",
+      api: "直连 API",
+    },
     gatewayFallback: "网关",
     routeModeFor: "{{provider}} 的路由模式",
     summary: {
@@ -971,10 +1079,14 @@ const zhCN = {
     errors: {
       separator: "；",
       retry: "请重试。",
-      subscriptionBaseUrlUnset: "{{provider}} 已固定为订阅网关模式，但尚未设置 SUB2API_BASE_URL。",
-      subscriptionKeyUnset: "{{provider}} 已固定为订阅网关模式，但尚未设置 {{setting}}。",
-      keyWithoutBaseUrl: "已设置 {{setting}}，但尚未设置 SUB2API_BASE_URL，因此无法发送请求。",
-      invalidBaseUrl: "{{setting}} 必须是绝对 HTTP(S) URL，且不得包含凭据、查询参数或片段（当前值：{{value}}）。",
+      subscriptionBaseUrlUnset:
+        "{{provider}} 已固定为订阅网关模式，但尚未设置 SUB2API_BASE_URL。",
+      subscriptionKeyUnset:
+        "{{provider}} 已固定为订阅网关模式，但尚未设置 {{setting}}。",
+      keyWithoutBaseUrl:
+        "已设置 {{setting}}，但尚未设置 SUB2API_BASE_URL，因此无法发送请求。",
+      invalidBaseUrl:
+        "{{setting}} 必须是绝对 HTTP(S) URL，且不得包含凭据、查询参数或片段（当前值：{{value}}）。",
     },
   },
   applications: {
@@ -1009,7 +1121,8 @@ const zhCN = {
       stale: "已过期",
       current: "当前有效",
       unknownDepth: "深度未知",
-      evidenceSummary: "{{depth}} · {{count}} 个来源 · {{verification}} · {{freshness}}",
+      evidenceSummary:
+        "{{depth}} · {{count}} 个来源 · {{verification}} · {{freshness}}",
       depth: { quick: "快速", standard: "标准", deep: "深入" },
       verification: {
         inferred: "推断",
@@ -1071,7 +1184,12 @@ const zhCN = {
       cancelled: "已取消",
       withdrew: "已撤回",
     },
-    modalities: { onsite: "现场", virtual: "线上", phone: "电话", async: "异步" },
+    modalities: {
+      onsite: "现场",
+      virtual: "线上",
+      phone: "电话",
+      async: "异步",
+    },
     platforms: {
       zoom: "Zoom",
       teams: "Microsoft Teams",
@@ -1091,7 +1209,8 @@ const zhCN = {
     header: {
       kicker: "转化分析",
       title: "数据分析 / 转化漏斗",
-      description: "查看哪些来源和匹配度区间真正带来转化；比例以已投递申请为基准。",
+      description:
+        "查看哪些来源和匹配度区间真正带来转化；比例以已投递申请为基准。",
     },
     metrics: {
       submitted: "已投递申请",
@@ -1099,10 +1218,22 @@ const zhCN = {
       sourcesTracked: "已跟踪来源",
     },
     panels: {
-      stageFlow: { title: "阶段流转", description: "查看申请如何推进或退出流程。" },
-      cycleTime: { title: "流程周期", description: "相邻阶段之间的中位间隔天数。" },
-      activePipeline: { title: "进行中的求职流程", description: "围绕今天的已发生和即将发生事项。" },
-      offerComparison: { title: "录用通知对比", description: "按年计算的薪酬组成，按币种分别展示。" },
+      stageFlow: {
+        title: "阶段流转",
+        description: "查看申请如何推进或退出流程。",
+      },
+      cycleTime: {
+        title: "流程周期",
+        description: "相邻阶段之间的中位间隔天数。",
+      },
+      activePipeline: {
+        title: "进行中的求职流程",
+        description: "围绕今天的已发生和即将发生事项。",
+      },
+      offerComparison: {
+        title: "录用通知对比",
+        description: "按年计算的薪酬组成，按币种分别展示。",
+      },
     },
     table: {
       applications: "申请数",
@@ -1312,11 +1443,36 @@ const zhCN = {
     completeSummary: "个人资料 · 职位来源 · 获取 · 候选 · 定制，均已就绪。",
     next: "下一步：",
     stages: {
-      profile: { label: "个人资料", task: "构建个人资料", hint: "添加简历并构建个人资料，为定制提供事实依据。", cta: "构建个人资料" },
-      sources: { label: "职位来源", task: "添加职位来源", hint: "设置搜索条件并启用至少一个来源，告诉 Agent 去哪里查找。", cta: "添加来源" },
-      pull: { label: "获取", task: "获取首批职位", hint: "首次运行职位获取，用最新职位填充求职流程。", cta: "获取职位" },
-      shortlist: { label: "候选", task: "筛选并批准", hint: "审核高匹配职位，并批准值得定制的职位。", cta: "审核候选" },
-      tailor: { label: "定制", task: "定制简历", hint: "为已批准职位定制简历，然后生成并申请。", cta: "定制简历" },
+      profile: {
+        label: "个人资料",
+        task: "构建个人资料",
+        hint: "添加简历并构建个人资料，为定制提供事实依据。",
+        cta: "构建个人资料",
+      },
+      sources: {
+        label: "职位来源",
+        task: "添加职位来源",
+        hint: "设置搜索条件并启用至少一个来源，告诉 Agent 去哪里查找。",
+        cta: "添加来源",
+      },
+      pull: {
+        label: "获取",
+        task: "获取首批职位",
+        hint: "首次运行职位获取，用最新职位填充求职流程。",
+        cta: "获取职位",
+      },
+      shortlist: {
+        label: "候选",
+        task: "筛选并批准",
+        hint: "审核高匹配职位，并批准值得定制的职位。",
+        cta: "审核候选",
+      },
+      tailor: {
+        label: "定制",
+        task: "定制简历",
+        hint: "为已批准职位定制简历，然后生成并申请。",
+        cta: "定制简历",
+      },
     },
   },
 } satisfies TranslationShape<typeof en>;

@@ -1,4 +1,4 @@
-"""Mock interview endpoints: run-backed turns over durable session files."""
+"""Mock Interview endpoints: run-backed turns over durable session files."""
 
 from __future__ import annotations
 

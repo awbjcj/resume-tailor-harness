@@ -24,11 +24,11 @@ Résumé Tailor Harness 是一套面向完整求职流程的**智能体框架（
 
 随后每一轮定制都要经过**三道确定性闸门**，全部在进程内判定，不涉及任何模型：
 
-| 闸门               | 在以下情况拦截该轮结果       |
-| ------------------ | ---------------------------- |
+| 闸门               | 在以下情况拦截该轮结果           |
+| ------------------ | -------------------------------- |
 | `provenance`       | 引用的事实 id 无法对应到真实事实 |
-| `skill-naming`     | 声称了档案中并未确立的技能   |
-| `numeric-evidence` | 给出了证据无法支撑的数字     |
+| `skill-naming`     | 声称了档案中并未确立的技能       |
+| `numeric-evidence` | 给出了证据无法支撑的数字         |
 
 这三个名称是**保留名**：把评审员配置成其中任意一个会直接导致启动报错，因此修改评审名单永远无法架空闸门。闸门与模型评审意见最终汇入**唯一的**判定构造函数（`tailor/verdict.py::aggregate`），使"这一轮算不算通过"只有一个定义——任何一道闸门未通过，无论评分多高都会拦截该轮。
 
@@ -89,31 +89,31 @@ Résumé Tailor Harness 是一套面向完整求职流程的**智能体框架（
                                 sync-status 提议 Gmail 状态变更
 ```
 
-| 阶段 | 命令或入口 | 作用 |
-| --- | --- | --- |
-| 获取职位 | `pull` / `scrape` / `addjob` | 从已启用的招聘来源、LinkedIn 或手动输入中写入职位，并按 URL 或职位描述去重。 |
-| 发现与评分 | `discover` | 提取结构化职位要求，应用硬性筛选条件，并计算匹配度。 |
-| 人工批准 | 网页界面或 `approve` | 只批准值得进入定制流程的职位。 |
-| 定制简历 | `tailor` | 由写作智能体起草、评审面板批注，并循环修订到通过事实门禁。 |
-| 求职信 | `cover-letter` | 根据事实锁定资料生成求职信，并进行确定性的来源校验。 |
-| PDF 渲染 | `render` | 使用 Typst 将指定版本渲染为 PDF。 |
-| 申请跟踪 | 网页界面或 `sync-status` | 记录申请事件、结果、复盘和薪酬信息；Gmail 只提出状态变更建议，不会静默修改。 |
+| 阶段       | 命令或入口                   | 作用                                                                         |
+| ---------- | ---------------------------- | ---------------------------------------------------------------------------- |
+| 获取职位   | `pull` / `scrape` / `addjob` | 从已启用的招聘来源、LinkedIn 或手动输入中写入职位，并按 URL 或职位描述去重。 |
+| 发现与评分 | `discover`                   | 提取结构化职位要求，应用硬性筛选条件，并计算匹配度。                         |
+| 人工批准   | 网页界面或 `approve`         | 只批准值得进入定制流程的职位。                                               |
+| 定制简历   | `tailor`                     | 由写作智能体起草、评审面板批注，并循环修订到通过事实门禁。                   |
+| 求职信     | `cover-letter`               | 根据事实锁定资料生成求职信，并进行确定性的来源校验。                         |
+| PDF 渲染   | `render`                     | 使用 Typst 将指定版本渲染为 PDF。                                            |
+| 申请跟踪   | 网页界面或 `sync-status`     | 记录申请事件、结果、复盘和薪酬信息；Gmail 只提出状态变更建议，不会静默修改。 |
 
 ## 主要功能
 
 把一份简历改好并不难，难的是投五十家。由于下列每个界面都建立在同一套框架之上——同一份事实锁定档案、同一个校验过的技能注册表、同样的只读工具循环、同一套持久运行机制——那些通常会把求职拖垮的琐碎工作变得可以承受：
 
-| 界面                 | 它替你消除的负担                                                     |
-| -------------------- | -------------------------------------------------------------------- |
-| **Profile Coach**    | 从未被记录下来的经历证据。每次只问一个问题，且只根据你的回答起草。   |
-| **Mock interviews**  | 盲目练习。针对*具体某个*已定制职位演练，并给出带评分的复盘。         |
-| **Career Lab**       | 谈薪准备、转行、作品集撰写——每轮只用一个已校验技能，输出始终是草稿。 |
-| **Match-gap**        | 不知道下一步该学什么。按目标职位的需求程度排出你档案里缺失的技能。   |
-| **担保证据**         | 盲投不支持签证的雇主。以历史备案作为参考信号——绝不当作承诺。         |
-| **公司研究**         | 面试准备不足。生成带引用的雇主简报，且只在你主动触发时刷新。         |
-| **申请时间线**       | 进度失控。所有轮次、结果和截止日期汇入一份数据集，可导出 CSV 或日历。 |
-| **Gmail 同步**       | 手动追踪状态。读取收件箱并*提议*状态变更，由你确认。                 |
-| **Analytics**        | 重复无效的做法。显示哪些来源和匹配分档真正能转化。                   |
+| 界面                | 它替你消除的负担                                                      |
+| ------------------- | --------------------------------------------------------------------- |
+| **Profile Coach**   | 从未被记录下来的经历证据。每次只问一个问题，且只根据你的回答起草。    |
+| **Mock Interviews** | 盲目练习。针对*具体某个*已定制职位演练，并给出带评分的复盘。          |
+| **Career Lab**      | 谈薪准备、转行、作品集撰写——每轮只用一个已校验技能，输出始终是草稿。  |
+| **Match-gap**       | 不知道下一步该学什么。按目标职位的需求程度排出你档案里缺失的技能。    |
+| **担保证据**        | 盲投不支持签证的雇主。以历史备案作为参考信号——绝不当作承诺。          |
+| **公司研究**        | 面试准备不足。生成带引用的雇主简报，且只在你主动触发时刷新。          |
+| **申请时间线**      | 进度失控。所有轮次、结果和截止日期汇入一份数据集，可导出 CSV 或日历。 |
+| **Gmail 同步**      | 手动追踪状态。读取收件箱并*提议*状态变更，由你确认。                  |
+| **Analytics**       | 重复无效的做法。显示哪些来源和匹配分档真正能转化。                    |
 
 ### 职位看板
 
@@ -306,23 +306,23 @@ uv run resume-tailor-harness sync-status --apply
 
 ## 常用命令
 
-| 命令 | 说明 |
-| --- | --- |
-| `resume-tailor-harness setup` | 交互式创建本地配置。 |
-| `resume-tailor-harness profile build` | 从配置的来源构建事实锁定资料。 |
-| `resume-tailor-harness addjob` | 手动添加一个职位。 |
-| `resume-tailor-harness pull` | 运行所有已启用的职位连接器。 |
-| `resume-tailor-harness scrape` | 使用本地浏览器获取 LinkedIn 职位。 |
-| `resume-tailor-harness sources` | 查看职位来源和连接器运行历史。 |
-| `resume-tailor-harness discover` | 提取职位要求、应用筛选条件并评分。 |
-| `resume-tailor-harness match-gap` | 查看目标职位需要但资料中缺乏证据的技能。 |
-| `resume-tailor-harness approve JOB_ID` | 从命令行批准职位。 |
-| `resume-tailor-harness tailor` | 生成并评审事实锁定简历。 |
-| `resume-tailor-harness cover-letter` | 生成经过来源校验的求职信。 |
-| `resume-tailor-harness render VERSION_ID` | 将简历版本渲染为 PDF。 |
-| `resume-tailor-harness sync-status` | 从 Gmail 生成申请状态建议。 |
-| `resume-tailor-harness career-lab` | 使用一个已校验的职业技能创建草稿。 |
-| `resume-tailor-harness serve` | 启动 API 和已构建的网页应用。 |
+| 命令                                      | 说明                                     |
+| ----------------------------------------- | ---------------------------------------- |
+| `resume-tailor-harness setup`             | 交互式创建本地配置。                     |
+| `resume-tailor-harness profile build`     | 从配置的来源构建事实锁定资料。           |
+| `resume-tailor-harness addjob`            | 手动添加一个职位。                       |
+| `resume-tailor-harness pull`              | 运行所有已启用的职位连接器。             |
+| `resume-tailor-harness scrape`            | 使用本地浏览器获取 LinkedIn 职位。       |
+| `resume-tailor-harness sources`           | 查看职位来源和连接器运行历史。           |
+| `resume-tailor-harness discover`          | 提取职位要求、应用筛选条件并评分。       |
+| `resume-tailor-harness match-gap`         | 查看目标职位需要但资料中缺乏证据的技能。 |
+| `resume-tailor-harness approve JOB_ID`    | 从命令行批准职位。                       |
+| `resume-tailor-harness tailor`            | 生成并评审事实锁定简历。                 |
+| `resume-tailor-harness cover-letter`      | 生成经过来源校验的求职信。               |
+| `resume-tailor-harness render VERSION_ID` | 将简历版本渲染为 PDF。                   |
+| `resume-tailor-harness sync-status`       | 从 Gmail 生成申请状态建议。              |
+| `resume-tailor-harness career-lab`        | 使用一个已校验的职业技能创建草稿。       |
+| `resume-tailor-harness serve`             | 启动 API 和已构建的网页应用。            |
 
 完整参数与示例见 [英文命令参考](README.md#command-reference)。
 
@@ -387,15 +387,15 @@ API schema 发生变化后，运行 `bash scripts/gen_ts_client.sh` 更新前端
 
 复制 `.env.example` 为 `.env`。环境变量用于密钥、模型、认证、配额和外部集成；YAML 文件用于搜索、连接器、评审和渲染策略。
 
-| 文件 | 作用 |
-| --- | --- |
-| `.env` | 模型密钥、服务模式、认证、Gmail 和外部集成。 |
-| `config/search.yaml` | 地点、关键词、排除条件和其他搜索偏好。 |
-| `config/connectors.yaml` | 职位来源、招聘网站和每个来源的限制。 |
-| `config/profile_sources.yaml` | 简历、补充材料和 GitHub 资料来源。 |
-| `config/review.yaml` | 默认快速评审流程。 |
-| `config/review_deep.yaml` | 更完整的深度评审流程。 |
-| `config/render.yaml` | Typst 模板和渲染设置。 |
+| 文件                          | 作用                                         |
+| ----------------------------- | -------------------------------------------- |
+| `.env`                        | 模型密钥、服务模式、认证、Gmail 和外部集成。 |
+| `config/search.yaml`          | 地点、关键词、排除条件和其他搜索偏好。       |
+| `config/connectors.yaml`      | 职位来源、招聘网站和每个来源的限制。         |
+| `config/profile_sources.yaml` | 简历、补充材料和 GitHub 资料来源。           |
+| `config/review.yaml`          | 默认快速评审流程。                           |
+| `config/review_deep.yaml`     | 更完整的深度评审流程。                       |
+| `config/render.yaml`          | Typst 模板和渲染设置。                       |
 
 模型 ID 使用提供商前缀：
 
@@ -411,15 +411,15 @@ PREMIUM_MODEL=claude-opus-5
 
 ## 数据位置
 
-| 路径 | 内容 |
-| --- | --- |
+| 路径                            | 内容                                           |
+| ------------------------------- | ---------------------------------------------- |
 | `data/resume_tailor_harness.db` | 本地模式下的职位、简历版本、求职信和申请记录。 |
-| `data/profile/facts.json` | 事实锁定资料。 |
-| `data/connector_runs.json` | 连接器运行历史。 |
-| `data/gmail_token.json` | 本地 CLI 使用的 Gmail OAuth token。 |
-| `output/` | 渲染后的简历和求职信 PDF。 |
-| `.linkedin_profile/` | 本地 LinkedIn 浏览器会话。 |
-| `templates/` | Typst 简历与求职信模板。 |
+| `data/profile/facts.json`       | 事实锁定资料。                                 |
+| `data/connector_runs.json`      | 连接器运行历史。                               |
+| `data/gmail_token.json`         | 本地 CLI 使用的 Gmail OAuth token。            |
+| `output/`                       | 渲染后的简历和求职信 PDF。                     |
+| `.linkedin_profile/`            | 本地 LinkedIn 浏览器会话。                     |
+| `templates/`                    | Typst 简历与求职信模板。                       |
 
 托管模式下，每个用户的数据位于独立工作区中。工作区导出和平台级数据根导出属于敏感资料，因为其中可能包含运行所需的密钥。
 

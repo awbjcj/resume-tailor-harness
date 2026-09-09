@@ -6,7 +6,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from resume_tailor_harness.cover_letter import agents as cover_letter_agents
-from resume_tailor_harness.company_intelligence import agents as company_intelligence_agents
+from resume_tailor_harness.company_intelligence import (
+    agents as company_intelligence_agents,
+)
 from resume_tailor_harness.discovery import (
     extract,
     fit,
@@ -346,7 +348,7 @@ PROMPT_SPECS = (
     ),
     _spec(
         "interviewer",
-        "Mock interviewer",
+        "Mock Interviewer",
         "interview",
         "Core rules for in-character interview turns.",
         interview_agent._PERSONA_CORE,

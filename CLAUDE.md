@@ -24,7 +24,7 @@ branch as-is, with their original messages, instead of a synthetic merge or
 squash commit. Because GitHub's rebase-and-merge replays each commit onto
 the base's current tip, the replayed commits get fresh SHAs even though
 their content is unchanged — so after a `dev` → `main` promotion, `dev` and
-`main` hold identical content under *different* commit hashes and would
+`main` hold identical content under _different_ commit hashes and would
 drift a little further apart on every single promotion if left alone.
 `.github/workflows/sync-dev-with-main.yml` runs on every push to `main` and
 force-updates `dev`'s ref to `main`'s new tip whenever their trees already
@@ -163,7 +163,7 @@ before changing code near the invariant.
 | `src/resume_tailor_harness/profile/depth.py`                  | Evidence-owner supply, agenda seeds, and safe unmined-source question material                                            |
 | `src/resume_tailor_harness/profile/aspects.py`                | Closed bullet-aspect vocabulary shared by extraction and depth measurement                                                |
 | `src/resume_tailor_harness/tailor/depth.py`                   | Advisory rendered-depth measurement against the source-clamped owner plan                                                 |
-| `src/resume_tailor_harness/interview/agent.py`                | Mock interviewer persona, turn/debrief validation, transcript elision                                                     |
+| `src/resume_tailor_harness/interview/agent.py`                | Mock Interviewer persona, turn/debrief validation, transcript elision                                                     |
 | `src/resume_tailor_harness/services/profile_coach.py`         | Coach session turns, draft approval, recap, rebuild, and impact orchestration                                             |
 | `src/resume_tailor_harness/sessions/store.py`                 | Session substrate: file custody every turn-per-run session kind rides (ADR 0006)                                          |
 | `src/resume_tailor_harness/discovery/connectors/detect.py`    | ATS detection (singleton → L1 → L2)                                                                                       |

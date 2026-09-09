@@ -1,4 +1,4 @@
-"""Mock interview request and response schemas."""
+"""Mock Interview request and response schemas."""
 
 from __future__ import annotations
 

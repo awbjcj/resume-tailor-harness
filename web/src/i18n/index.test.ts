@@ -48,7 +48,7 @@ describe("i18n locale resolution", () => {
 
     const terms = [
       { navKey: "nav.profileCoach", english: /Profile Coach/, chinese: "个人资料教练" },
-      { navKey: "nav.mockInterviews", english: /Mock interviews?/i, chinese: "模拟面试" },
+      { navKey: "nav.mockInterviews", english: /Mock Interviews?/i, chinese: "模拟面试" },
       { navKey: "nav.careerLab", english: /Career Lab/, chinese: "职业实验室" },
       { navKey: "nav.discoveryScout", english: /Scout/, chinese: "职位探索助手" },
     ] as const;

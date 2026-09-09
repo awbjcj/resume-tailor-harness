@@ -336,7 +336,7 @@ PROMPT_SPECS: tuple[PromptSpec, ...] = (
           "Assigns new clusters to existing domains.",
           canonicalize._INCREMENTAL_DOMAIN_INSTRUCTIONS),
     # --- interview ---
-    _spec("interviewer", "Mock interviewer", "interview",
+    _spec("interviewer", "Mock Interviewer", "interview",
           "In-character interviewer core (stage/difficulty lines are added per session).",
           interview_agent._PERSONA_CORE),
     _spec("interview-debrief", "Interview debrief", "interview",

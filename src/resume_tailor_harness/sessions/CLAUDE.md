@@ -2,7 +2,7 @@
 
 Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loads only when working under `src/resume_tailor_harness/sessions/`.
 
-- **Mock interviews are practice artifacts, not progress.** `interview/store.py`
+- **Mock Interviews are practice artifacts, not progress.** `interview/store.py`
   keeps one durable session JSON per interview under `data/interview/`
   (turn-per-run, ADR 0006), with the JD + tailored-resume snapshot frozen at
   opening. The interviewer stays in character (no mid-session coaching); the

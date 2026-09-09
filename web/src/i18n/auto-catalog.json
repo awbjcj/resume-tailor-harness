@@ -5464,19 +5464,19 @@
     "en": "Mixed currencies are shown in separate panels; no currency conversion is implied.",
     "zh-CN": "不同币种分别显示在各自面板中，不涉及汇率换算。"
   },
-  "Mock interview": {
+  "Mock Interview": {
     "key": "ui_ebcd9f79db04",
-    "en": "Mock interview",
+    "en": "Mock Interview",
     "zh-CN": "模拟面试"
   },
-  "Mock interview in progress": {
+  "Mock Interview in progress": {
     "key": "ui_bdaf5c8dfc29",
-    "en": "Mock interview in progress",
+    "en": "Mock Interview in progress",
     "zh-CN": "模拟面试进行中"
   },
-  "Mock interviews": {
+  "Mock Interviews": {
     "key": "ui_3434fc9593b3",
-    "en": "Mock interviews",
+    "en": "Mock Interviews",
     "zh-CN": "模拟面试"
   },
   "Modality": {

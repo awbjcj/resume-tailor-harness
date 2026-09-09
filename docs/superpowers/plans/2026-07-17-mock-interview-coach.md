@@ -666,7 +666,7 @@ Expected: FAIL — `ModuleNotFoundError: No module named 'resume_tailor_harness.
 
 ```python
 # src/resume_tailor_harness/interview/agent.py
-"""Mock interviewer schemas, validation, context assembly, and agent builders."""
+"""Mock Interviewer schemas, validation, context assembly, and agent builders."""
 
 from __future__ import annotations
 
@@ -1010,7 +1010,7 @@ git commit -m "feat: add interviewer schemas, validation, and agent builders"
 
 ---
 
-### Task 3: Mock interview service
+### Task 3: Mock Interview service
 
 **Files:**
 
@@ -1205,7 +1205,7 @@ Note: if `make_engine`/`init_db`/`get_session` import paths differ, mirror the i
 
 ```python
 # src/resume_tailor_harness/services/mock_interview.py
-"""Mock interview turns, debrief, and camelCase session views."""
+"""Mock Interview turns, debrief, and camelCase session views."""
 
 from __future__ import annotations
 
@@ -1664,7 +1664,7 @@ Expected: FAIL — 404s on `/api/interview/...` (router not registered)
 
 ```python
 # src/resume_tailor_harness/api/schemas/interview.py
-"""Mock interview request and response schemas."""
+"""Mock Interview request and response schemas."""
 
 from __future__ import annotations
 
@@ -1764,7 +1764,7 @@ class InterviewSessionsOut(CamelModel):
 
 ```python
 # src/resume_tailor_harness/api/routers/interview.py
-"""Mock interview endpoints: run-backed turns over durable session files."""
+"""Mock Interview endpoints: run-backed turns over durable session files."""
 
 from __future__ import annotations
 
@@ -2749,7 +2749,7 @@ delete_sessions_for_job(get_interview_dir(request), job_id)
 - [ ] **Step 4: Update `CLAUDE.md`** — add one known-design-note bullet and one hot-path row:
 
 ```markdown
-- **Mock interviews are practice artifacts, not progress.** `interview/store.py`
+- **Mock Interviews are practice artifacts, not progress.** `interview/store.py`
   keeps one durable session JSON per interview under `data/interview/`
   (turn-per-run, ADR 0006), with the JD + tailored-resume snapshot frozen at
   opening. The interviewer stays in character (no mid-session coaching); the
@@ -2764,7 +2764,7 @@ delete_sessions_for_job(get_interview_dir(request), job_id)
 Hot-path table row:
 
 ```markdown
-| `src/resume_tailor_harness/interview/agent.py` | Mock interviewer persona, turn/debrief validation, transcript elision |
+| `src/resume_tailor_harness/interview/agent.py` | Mock Interviewer persona, turn/debrief validation, transcript elision |
 ```
 
 - [ ] **Step 5: Run the full suites**
