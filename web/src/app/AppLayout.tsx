@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
@@ -106,6 +106,31 @@ const NAV_GROUPS: { labelKey?: NavGroupKey; items: NavItem[] }[] = [
   },
 ];
 
+const WORKSPACE_ITEMS: NavItem[] = [
+  { to: "/settings", labelKey: "nav.settings", icon: Settings },
+  { to: "/account", labelKey: "nav.account", icon: CircleUserRound },
+];
+
+const ADMIN_ITEMS: NavItem[] = [
+  { to: "/admin", labelKey: "nav.admin", end: true, icon: ShieldCheck },
+  { to: "/admin/quotas", labelKey: "nav.costQuotas", icon: Banknote },
+  { to: "/admin/routing", labelKey: "nav.providerRouting", icon: Network },
+];
+
+const ALL_NAV_ITEMS = [
+  ...NAV_GROUPS.flatMap((group) => group.items),
+  ...WORKSPACE_ITEMS,
+  ...ADMIN_ITEMS,
+].sort((a, b) => b.to.length - a.to.length);
+
+function activeNavItem(pathname: string): NavItem | undefined {
+  return ALL_NAV_ITEMS.find((item) =>
+    item.end || item.to === "/"
+      ? pathname === item.to
+      : pathname === item.to || pathname.startsWith(`${item.to}/`),
+  );
+}
+
 function NavMenuItem({ item, badge }: { item: NavItem; badge?: number }) {
   const { t } = useTranslation();
   // base-ui render prop keeps a single interactive element (the NavLink);
@@ -140,11 +165,16 @@ function NavMenuItem({ item, badge }: { item: NavItem; badge?: number }) {
 
 export function AppLayout() {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   // Registered before the first reconciliation so a completion recovered on
   // load cannot be dispatched to an empty listener set.
   useRunCompletionEffects();
   useRehydrateRuns();
   const me = useMe();
+  const currentNavItem = activeNavItem(pathname);
+  const currentLabel = currentNavItem
+    ? t(currentNavItem.labelKey)
+    : t("shell.operations");
   // Shares the cached query the interview banner already runs, so the nav count
   // costs no extra request.
   const interviewSessions = useInterviewSessions();
@@ -155,6 +185,12 @@ export function AppLayout() {
   };
   return (
     <SidebarProvider className="command-shell">
+      <a
+        href="#main-content"
+        className="fixed left-4 top-3 z-50 -translate-y-20 rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background shadow-lg transition-transform focus:translate-y-0 motion-reduce:transition-none"
+      >
+        {t("shell.skipToMain")}
+      </a>
       <Sidebar className="border-r border-sidebar-border/80 bg-sidebar">
         <div className="command-panel flex min-h-0 flex-1 flex-col">
           <SidebarHeader className="relative gap-5 border-b border-sidebar-border/70 p-5 pb-4">
@@ -202,15 +238,14 @@ export function AppLayout() {
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="gap-1">
-                  <NavMenuItem item={{ to: "/settings", labelKey: "nav.settings", icon: Settings }} />
-                  <NavMenuItem item={{ to: "/account", labelKey: "nav.account", icon: CircleUserRound }} />
-                  {me.data?.role === "admin" && (
-                    <>
-                      <NavMenuItem item={{ to: "/admin", labelKey: "nav.admin", end: true, icon: ShieldCheck }} />
-                      <NavMenuItem item={{ to: "/admin/quotas", labelKey: "nav.costQuotas", icon: Banknote }} />
-                      <NavMenuItem item={{ to: "/admin/routing", labelKey: "nav.providerRouting", icon: Network }} />
-                    </>
-                  )}
+                  {WORKSPACE_ITEMS.map((item) => (
+                    <NavMenuItem key={item.to} item={item} />
+                  ))}
+                  {me.data?.role === "admin"
+                    ? ADMIN_ITEMS.map((item) => (
+                        <NavMenuItem key={item.to} item={item} />
+                      ))
+                    : null}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -236,10 +271,10 @@ export function AppLayout() {
           <div className="flex min-h-16 items-center gap-3 px-5 py-3 md:px-8 lg:px-10">
             <SidebarTrigger className="md:hidden" />
             <div className="min-w-0 md:hidden">
-              <div className="truncate text-sm font-semibold leading-tight">Résumé Tailor Harness</div>
+              <div className="truncate text-sm font-semibold leading-tight">{currentLabel}</div>
             </div>
             <div className="hidden min-w-0 md:block">
-              <div className="text-sm font-medium">{t("shell.operations")}</div>
+              <div className="text-sm font-medium">{currentLabel}</div>
               <div className="text-xs text-muted-foreground">{t("shell.operationsSummary")}</div>
             </div>
             <RunActions className="ml-auto hidden flex-nowrap xl:flex" />
@@ -256,7 +291,11 @@ export function AppLayout() {
         </header>
         <RunPanel />
         <ActiveInterviewBanner />
-        <main className="flex-1 px-4 py-5 sm:px-5 sm:py-6 md:px-8 lg:px-10 2xl:px-12">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 scroll-mt-28 px-4 py-5 outline-none sm:px-5 sm:py-6 md:px-8 lg:px-10 2xl:px-12"
+        >
           <div className="mx-auto w-full max-w-[1680px]">
             <Outlet />
           </div>

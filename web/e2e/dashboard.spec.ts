@@ -6,6 +6,8 @@ import { mockEmptyRuns } from "./support";
 // pattern in e2e/smoke.spec.ts and e2e/setup-wizard.spec.ts.
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/notifications", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/run-completions", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/errors?*", (route) => route.fulfill({ json: { records: [] } }));
   await mockEmptyRuns(page);
   await page.route("**/api/setup/status", (route) =>
     route.fulfill({
@@ -53,6 +55,15 @@ test("dashboard is home and queue cards deep-link", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: /waiting on you/i }),
   ).toBeVisible();
+  await expect(
+    page.getByText("Dashboard", { exact: true }).first(),
+  ).toBeVisible();
+  const skipLink = page.getByRole("link", { name: "Skip to main content" });
+  await page.keyboard.press("Tab");
+  await expect(skipLink).toBeFocused();
+  await expect(skipLink).toBeVisible();
+  await skipLink.press("Enter");
+  await expect(page.locator("main#main-content")).toBeFocused();
 
   await page.getByRole("link", { name: "Shortlist", exact: true }).click();
   await expect(page).toHaveURL(/\/shortlist/);
@@ -69,7 +80,7 @@ test("mobile chrome keeps launch actions compact and horizontally contained", as
   await page.goto("/");
 
   const chrome = page.locator("header.app-chrome");
-  await expect(chrome.getByText("Résumé Tailor Harness", { exact: true })).toBeVisible();
+  await expect(chrome.getByText("Dashboard", { exact: true }).first()).toBeVisible();
   await expect(chrome.getByText("Command Center", { exact: true })).toHaveCount(0);
 
   const chromeBox = await chrome.boundingBox();

@@ -48,20 +48,15 @@ export function DashboardPage() {
             : t("dashboard.waiting_other", { count: waiting })}
         sub={t("dashboard.subtitle")}
       />
-      <QuickAccess />
       <GettingStartedChecklist />
+      {totalJobs > 0 && <ActionQueue summary={summary} />}
+      <JourneyRail />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="stagger-children flex min-w-0 flex-col gap-6">
-          <JourneyRail />
           {/* When the funnel has no active jobs the JourneyRail already carries
               the right next step (add sources, or pull), so no separate empty
               card is needed — it would only duplicate that guidance. */}
-          {totalJobs > 0 && (
-            <>
-              <ActionQueue summary={summary} />
-              <StageRail summary={summary} />
-            </>
-          )}
+          {totalJobs > 0 && <StageRail summary={summary} />}
           <InProgressCard summary={summary} />
           <InsightsCard summary={summary} />
           <UpcomingCard events={summary.upcomingEvents ?? []} />
@@ -85,6 +80,7 @@ export function DashboardPage() {
           <RecentRuns />
         </aside>
       </div>
+      <QuickAccess />
     </div>
   );
 }

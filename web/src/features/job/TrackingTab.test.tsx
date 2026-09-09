@@ -49,6 +49,21 @@ describe("TrackingTab", () => {
     expect(screen.getByRole("button", { name: /delete/i })).toBeEnabled();
   });
 
+  it("offers every persisted pipeline stage, including discovery stages", async () => {
+    const user = userEvent.setup();
+    render(<TrackingTab job={{ ...baseJob, status: "filtered" }} onDeleted={vi.fn()} />, {
+      wrapper,
+    });
+
+    const stage = screen.getByLabelText("Stage");
+    expect(stage).toHaveTextContent("Filtered");
+
+    await user.click(stage);
+
+    expect(screen.getByRole("option", { name: "Extracted" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Filtered" })).toBeInTheDocument();
+  });
+
   it("disables delete when the job has progress", () => {
     render(
       <TrackingTab job={{ ...baseJob, hasProgress: true }} onDeleted={vi.fn()} />,

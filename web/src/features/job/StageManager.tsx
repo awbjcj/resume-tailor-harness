@@ -13,9 +13,24 @@ import {
 import { useSetStage } from "./use-job-mutations";
 import type { JobDetail } from "./use-job-detail";
 
-const STAGE_VALUES = ["raw", "shortlisted", "approved", "tailored", "rendered", "rejected"] as const;
+// Keep the job-detail selector aligned with every status the PATCH endpoint
+// accepts. In particular, discovery can leave a job in `extracted` or
+// `filtered`; omitting either makes the controlled select lose its visible
+// current value.
+const STAGE_VALUES = [
+  "raw",
+  "extracted",
+  "filtered",
+  "shortlisted",
+  "approved",
+  "tailored",
+  "rendered",
+  "rejected",
+] as const;
 const STAGE_LABEL_KEYS = {
   raw: "job.stages.raw",
+  extracted: "job.stages.extracted",
+  filtered: "job.stages.filtered",
   shortlisted: "job.stages.shortlisted",
   approved: "job.stages.approved",
   tailored: "job.stages.tailored",
@@ -31,14 +46,19 @@ export function StageManager({ job }: { job: JobDetail }) {
     const labelKey = STAGE_LABEL_KEYS[value as keyof typeof STAGE_LABEL_KEYS];
     return labelKey ? t(labelKey) : value;
   };
+  const stageChanged = stage !== job.status;
 
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="mng-stage">Stage</Label>
-        <Select value={stage} onValueChange={(v) => setStage(v ?? job.status)}>
+        <Select
+          value={stage}
+          disabled={setStageMut.isPending}
+          onValueChange={(v) => setStage(v ?? job.status)}
+        >
           <SelectTrigger id="mng-stage" className="w-full">
-            <SelectValue />
+            <SelectValue>{(value: string) => stageLabel(value)}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {STAGE_VALUES.map((s) => (
@@ -50,7 +70,13 @@ export function StageManager({ job }: { job: JobDetail }) {
         </Select>
       </div>
       <div className="flex gap-2">
-        <Button onClick={() => setStageMut.mutate(stage)}>Set stage</Button>
+        <Button
+          type="button"
+          disabled={!stageChanged || setStageMut.isPending}
+          onClick={() => setStageMut.mutate(stage)}
+        >
+          Set stage
+        </Button>
       </div>
       {(job.status === "filtered" || job.status === "rejected") &&
         stage !== "filtered" &&
