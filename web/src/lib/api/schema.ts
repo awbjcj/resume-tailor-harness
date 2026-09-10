@@ -2238,7 +2238,8 @@ export interface paths {
         get: operations["list_notifications_api_notifications_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Clear History */
+        delete: operations["clear_history_api_notifications_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2913,7 +2914,8 @@ export interface paths {
         get: operations["list_completions_api_run_completions_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Clear Operations */
+        delete: operations["clear_operations_api_run_completions_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2930,6 +2932,23 @@ export interface paths {
         put?: never;
         /** Mark All Read */
         post: operations["mark_all_read_api_run_completions_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/run-completions/{completion_id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Logs */
+        get: operations["get_logs_api_run_completions__completion_id__logs_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -14895,6 +14914,39 @@ export interface operations {
             };
         };
     };
+    clear_history_api_notifications_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     accept_api_notifications__notification_id__accept_post: {
         parameters: {
             query?: never;
@@ -16500,6 +16552,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 unread_only?: boolean;
+                surface?: "operations" | "notifications";
             };
             header?: {
                 authorization?: string | null;
@@ -16516,6 +16569,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunCompletionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_operations_api_run_completions_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -16547,6 +16633,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunCompletionsReadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_logs_api_run_completions__completion_id__logs_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                completion_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    }[];
                 };
             };
             /** @description Validation Error */
