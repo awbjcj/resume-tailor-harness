@@ -1234,11 +1234,6 @@
     "en": "Approve what fits",
     "zh-CN": "批准合适的职位"
   },
-  "approved": {
-    "key": "ui_2687f86ed678",
-    "en": "approved",
-    "zh-CN": "已批准"
-  },
   "Approved": {
     "key": "ui_87b42e40c2a2",
     "en": "Approved",
@@ -7499,11 +7494,6 @@
     "en": "Render",
     "zh-CN": "生成"
   },
-  "rendered": {
-    "key": "ui_69d0044d65bc",
-    "en": "rendered",
-    "zh-CN": "已生成"
-  },
   "Rendered": {
     "key": "ui_331e25aab7ff",
     "en": "Rendered",
@@ -8839,11 +8829,6 @@
     "en": "Shortlist or approve jobs to populate the demand graph.",
     "zh-CN": "将职位加入候选清单或批准，以填充需求图。"
   },
-  "shortlisted": {
-    "key": "ui_a60a1cd6d5bb",
-    "en": "shortlisted",
-    "zh-CN": "已加入候选"
-  },
   "shortlisted picks": {
     "key": "ui_f1dd8be56a8f",
     "en": "shortlisted picks",
@@ -9473,11 +9458,6 @@
     "key": "ui_9b34b1a84b20",
     "en": "Tailor resumes",
     "zh-CN": "定制简历"
-  },
-  "tailored": {
-    "key": "ui_742729e752bd",
-    "en": "tailored",
-    "zh-CN": "已定制"
   },
   "Tailored": {
     "key": "ui_03f7fdcb2a7f",
