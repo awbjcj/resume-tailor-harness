@@ -401,3 +401,17 @@ class ErrorRecord(SQLModel, table=True):
     first_seen_at: datetime = Field(default_factory=utcnow)
     last_seen_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+
+
+class RunOperationLog(SQLModel, table=True):
+    """Bounded progress messages retained independently of transient run files."""
+
+    run_id: str = Field(primary_key=True)
+    entries: list[dict[str, str]] = Field(default_factory=list, sa_column=Column(JSON))
+
+
+class ClearedRunHistory(SQLModel, table=True):
+    """Independent history visibility; preserves terminal callback idempotency."""
+
+    run_id: str = Field(primary_key=True)
+    surface: str = Field(primary_key=True)

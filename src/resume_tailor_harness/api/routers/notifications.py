@@ -8,6 +8,7 @@ from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.schemas.notifications import NotificationOut
 from resume_tailor_harness.services.notifications import (
     accept_notification,
+    clear_notification_history,
     dismiss_notification,
     list_pending,
 )
@@ -51,3 +52,8 @@ def dismiss(notification_id: int, session: Session = Depends(get_session)):
             404, "NOT_FOUND", f"Notification #{notification_id} not found"
         )
     return _to_out(session, notification)
+
+
+@router.delete("/notifications", response_model=dict[str, int])
+def clear_history(session: Session = Depends(get_session)):
+    return {"cleared": clear_notification_history(session)}

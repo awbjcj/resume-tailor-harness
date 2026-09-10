@@ -17,7 +17,7 @@ import {
 } from "@/features/pipeline/pipeline-stages";
 import { fieldLabel } from "@/lib/format";
 import { useTranslation } from "react-i18next";
-import { TARGET_STATUSES, type Filters as FilterValue } from "./aggregate";
+import { TARGET_STAGE_VALUES, type Filters as FilterValue } from "./aggregate";
 
 const ALL = "__all__";
 
@@ -49,7 +49,7 @@ export function Filters({
     ...seniorities.map((seniority) => ({ label: fieldLabel(seniority), value: seniority })),
   ];
   const normalizedStatusCounts: Record<string, number> = Object.fromEntries(
-    TARGET_STATUSES.map((status) => [status, 0]),
+    TARGET_STAGE_VALUES.map((status) => [status, 0]),
   );
   for (const [status, count] of Object.entries(statusCounts)) {
     const normalizedStatus = normalizePipelineStage(status);
