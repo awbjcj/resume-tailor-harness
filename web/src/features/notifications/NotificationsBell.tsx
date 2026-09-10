@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { EmailDraftDialog } from "@/features/job/EmailDraftDialog";
 import {
+  useClearNotificationHistory,
   useAcceptNotification,
   useDismissNotification,
   useGmailSync,
@@ -18,6 +19,8 @@ import {
   useRunCompletions,
 } from "./use-run-completions";
 import { localizeRunError, localizeRunKind } from "@/i18n/dynamic-labels";
+
+import { ClearHistoryButton } from "./ClearHistoryButton";
 
 function isEventNudge(kind: string): boolean {
   return kind === "interview_soon" || kind === "offer_deadline_soon";
@@ -40,6 +43,7 @@ export function NotificationsBell() {
   const markRunRead = useMarkRunCompletionRead();
   const markAllRunsRead = useMarkAllRunCompletionsRead();
   const sync = useGmailSync();
+  const clear = useClearNotificationHistory();
   const [draftJobId, setDraftJobId] = useState<number | null>(null);
   const unreadRuns = runItems.filter((item) => item.readAt == null);
   const count = items.length + unreadRuns.length;
@@ -85,6 +89,11 @@ export function NotificationsBell() {
             )}
             Sync Gmail
           </Button>
+        </div>
+        <div className="mb-3">
+          <ClearHistoryButton label={t("runHistory.clearNotifications")} pending={clear.isPending}
+            disabled={isLoading || runsLoading || items.length + runItems.length === 0} error={clear.error}
+            onClear={(onSuccess) => clear.mutate(undefined, { onSuccess })} />
         </div>
         {isLoading || runsLoading ? (
           <p className="text-sm text-muted-foreground">Loading notifications...</p>
