@@ -60,8 +60,12 @@ describe("TrackingTab", () => {
 
     await user.click(stage);
 
-    expect(screen.getByRole("option", { name: "Extracted" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Filtered" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("option", { name: "Extracted" }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("option", { name: "Filtered" }),
+    ).toBeInTheDocument();
   });
 
   it("disables delete when the job has progress", () => {
