@@ -659,6 +659,13 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
         ),
     ],
     "openai": [
+        # Astra does not accept `none`. Its lowest supported effort is therefore
+        # the non-reasoning bound; it is not an off switch like GPT-5.6's `none`.
+        ModelCatalogEntry(
+            "openai:gpt-6-astra",
+            "GPT-6 Astra",
+            ("low", "medium", "high", "xhigh", "max"),
+        ),
         ModelCatalogEntry(
             "openai:gpt-5.6-luna",
             "GPT-5.6 Luna",
@@ -691,12 +698,17 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
         ),
     ],
     "gemini": [
-        # 3.7 Flash drops `minimal` -- 3.6 Flash has it, 3.7's documented levels
-        # are low/medium/high only (default medium, thinking always on). The
-        # tuple is the whole guard: `_gemini_interactions_thinking_level_for`
-        # can only return "minimal" for an effort that is *in* this tuple, and
+        # 3.8 and 3.7 Flash both reject `minimal`: their documented levels are
+        # low/medium/high only (default medium, thinking always on). The tuple
+        # is the whole guard: `_gemini_interactions_thinking_level_for` can only
+        # return "minimal" for an effort that is *in* this tuple, and
         # `build_model`'s non-reasoning Gemini-3 branch bounds at "low", which
-        # 3.7 accepts. So no generation check is needed here.
+        # both snapshots accept. So no generation check is needed here.
+        ModelCatalogEntry(
+            "gemini:gemini-3.8-flash",
+            "Gemini 3.8 Flash",
+            ("low", "medium", "high"),
+        ),
         ModelCatalogEntry(
             "gemini:gemini-3.7-flash",
             "Gemini 3.7 Flash",
@@ -743,7 +755,19 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
         ),
         ModelCatalogEntry(
             "deepseek:deepseek-v4-pro",
-            "DeepSeek V4 Pro",
+            # DeepSeek's customer pricing notice says this documented API route
+            # is served by V4.1 Flash from 2026-09-10T04:00Z until V4.1 Pro is
+            # released. It does not name a direct V4.1 API identifier, so keep
+            # this known route rather than inventing one.
+            "DeepSeek V4.1 Flash (via V4 Pro API)",
+            ("none", "low", "high", "max"),
+        ),
+        # This officially released Vision snapshot is experimental, but its
+        # documented text-agent and Responses controls match V4 Flash. Do not
+        # substitute an unannounced direct V4.1 id for it.
+        ModelCatalogEntry(
+            "deepseek:deepseek-v4-flash-vision-exp",
+            "DeepSeek V4 Flash Vision (Experimental)",
             ("none", "low", "high", "max"),
         ),
     ],
@@ -901,7 +925,9 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
         return ProviderCapabilities(reasoning, True, True)
     if provider == "openai" and folded.startswith(("gpt-", "o1", "o3", "o4")):
         return ProviderCapabilities(
-            folded.startswith(("gpt-5", "o1", "o3", "o4")), True, True
+            (folded.startswith(("gpt-5", "o1", "o3", "o4")) or folded == "gpt-6-astra"),
+            True,
+            True,
         )
     if provider == "gemini" and folded.startswith("gemini-"):
         return ProviderCapabilities(

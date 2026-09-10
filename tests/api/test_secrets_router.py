@@ -129,6 +129,25 @@ def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
     openai = next(row for row in body if row["provider"] == "openai")
     gpt = next(m for m in openai["models"] if m["id"] == "openai:gpt-5.5")
     assert gpt["reasoningEfforts"] == ["none", "low", "medium", "high", "xhigh"]
+    astra = next(m for m in openai["models"] if m["id"] == "openai:gpt-6-astra")
+    assert astra["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
+
+    gemini = next(row for row in body if row["provider"] == "gemini")
+    gemini_38 = next(
+        m for m in gemini["models"] if m["id"] == "gemini:gemini-3.8-flash"
+    )
+    assert gemini_38["reasoningEfforts"] == ["low", "medium", "high"]
+
+    vision = next(
+        m
+        for m in deepseek["models"]
+        if m["id"] == "deepseek:deepseek-v4-flash-vision-exp"
+    )
+    assert vision["label"] == "DeepSeek V4 Flash Vision (Experimental)"
+    v41_route = next(
+        m for m in deepseek["models"] if m["id"] == "deepseek:deepseek-v4-pro"
+    )
+    assert v41_route["label"] == "DeepSeek V4.1 Flash (via V4 Pro API)"
 
 
 def test_put_models_rejects_capabilities_the_selected_model_does_not_support(client):

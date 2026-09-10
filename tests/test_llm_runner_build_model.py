@@ -23,11 +23,22 @@ def test_reasoning_parameters_are_attached_for_capable_models():
     openai = build_model("openai:gpt-5.6-terra", api_key="k", reasoning=True)
     assert openai.reasoning == {"effort": "high"}
 
+    astra = build_model("openai:gpt-6-astra", api_key="k", reasoning=True)
+    assert astra.reasoning == {"effort": "high"}
+
     gemini = build_model("gemini:gemini-3.5-flash", api_key="k", reasoning=True)
     assert gemini.thinking_level == "high"
 
+    gemini_38 = build_model("gemini:gemini-3.8-flash", api_key="k", reasoning=True)
+    assert gemini_38.thinking_level == "high"
+
     deepseek = build_model("deepseek:deepseek-v4-pro", api_key="k", reasoning=True)
     assert deepseek.reasoning == {"effort": "max"}
+
+    vision = build_model(
+        "deepseek:deepseek-v4-flash-vision-exp", api_key="k", reasoning=True
+    )
+    assert vision.reasoning == {"effort": "max"}
 
 
 def test_builder_refuses_reasoning_for_incapable_model():
@@ -72,6 +83,14 @@ def test_openai_asks_for_a_reasoning_summary_whenever_it_sends_a_reasoning_confi
     assert unknown.reasoning_summary is None
 
 
+def test_astra_uses_low_as_its_non_reasoning_floor_not_an_unsupported_none():
+    # GPT-6 Astra rejects `none`, unlike GPT-5.6. Its catalog's exact floor is
+    # low, so a non-reasoning agent stays within the documented vocabulary.
+    astra = build_model("openai:gpt-6-astra", api_key="k")
+    assert astra.reasoning == {"effort": "low"}
+    assert astra.reasoning_summary == "auto"
+
+
 def test_non_reasoning_deepseek_disables_thinking_rather_than_omitting_it():
     # Fourth instance of the "unset means provider decides" trap, after Gemini,
     # Anthropic and OpenAI. Verified live: omitting `reasoning` entirely on
@@ -82,7 +101,11 @@ def test_non_reasoning_deepseek_disables_thinking_rather_than_omitting_it():
     # `none` disables thinking outright (verified: zero reasoning tokens, no
     # reasoning output item) -- so the Chat Completions
     # `extra_body={"thinking": {"type": "disabled"}}` side-channel is gone.
-    for model_id in ("deepseek:deepseek-v4-pro", "deepseek:deepseek-v4-flash"):
+    for model_id in (
+        "deepseek:deepseek-v4-pro",
+        "deepseek:deepseek-v4-flash",
+        "deepseek:deepseek-v4-flash-vision-exp",
+    ):
         model = build_model(model_id, api_key="k")
         assert model.reasoning == {"effort": "none"}, model_id
         assert model.get_request_params()["reasoning"] == {
@@ -412,9 +435,9 @@ def test_responses_shim_strips_unsupported_decimal_lookaround():
     )
     params = model.get_request_params(messages=[], response_format=Observation)
 
-    minimum = params["text"]["format"]["schema"]["$defs"]["SalaryBand"][
-        "properties"
-    ]["minimum"]
+    minimum = params["text"]["format"]["schema"]["$defs"]["SalaryBand"]["properties"][
+        "minimum"
+    ]
     assert minimum["anyOf"] == [
         {"minimum": 0.0, "type": "number"},
         {"type": "string"},
