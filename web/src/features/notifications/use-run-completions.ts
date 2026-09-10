@@ -6,10 +6,11 @@ import type { components } from "@/lib/api/schema";
 export type RunCompletionItem = components["schemas"]["RunCompletionOut"];
 export const RUN_COMPLETIONS_KEY = ["run-completions"] as const;
 
-export function useRunCompletions() {
+export function useRunCompletions(surface: "operations" | "notifications" = "notifications") {
   return useQuery<RunCompletionItem[]>({
-    queryKey: RUN_COMPLETIONS_KEY,
-    queryFn: () => unwrap(api.GET("/api/run-completions")),
+    queryKey: [...RUN_COMPLETIONS_KEY, surface],
+    refetchInterval: 15_000,
+    queryFn: () => unwrap(api.GET("/api/run-completions", { params: { query: { surface } } })),
   });
 }
 
@@ -33,5 +34,14 @@ export function useMarkAllRunCompletionsRead() {
     mutationFn: () => unwrap(api.POST("/api/run-completions/read-all")),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: RUN_COMPLETIONS_KEY }),
+  });
+}
+
+
+export function useClearOperationHistory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(api.DELETE("/api/run-completions")),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: RUN_COMPLETIONS_KEY }),
   });
 }

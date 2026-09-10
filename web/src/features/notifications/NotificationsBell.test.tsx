@@ -159,3 +159,23 @@ describe("NotificationsBell", () => {
     expect(accepted).toBe(false);
   });
 });
+
+
+it("clears notification history after confirmation", async () => {
+  let cleared = false;
+  server.use(
+    http.get("*/api/notifications", () => HttpResponse.json([])),
+    http.get("*/api/run-completions", () => HttpResponse.json(cleared ? [] : [{
+      id: 1, runId: "saved", kind: "discover", label: "Done", status: "succeeded",
+      error: null, completedAt: "2026-09-09T12:00:00Z", readAt: null,
+    }])),
+    http.delete("*/api/notifications", () => { cleared = true; return HttpResponse.json({ cleared: 1 }); }),
+  );
+  const user = userEvent.setup();
+  render(<NotificationsBell />, { wrapper: withQueryClient });
+  await user.click(await screen.findByRole("button", { name: /notifications \(1 pending\)/i }));
+  await user.click(screen.getByRole("button", { name: "Clear notification history" }));
+  await user.click(screen.getByRole("button", { name: "Clear history" }));
+  expect(await screen.findByText("Nothing pending.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+});

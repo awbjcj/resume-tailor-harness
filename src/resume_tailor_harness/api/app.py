@@ -321,6 +321,7 @@ def create_app(
                     str(payload["error"]) if payload.get("error") is not None else None
                 ),
                 completed_at=completed_at,
+                logs=payload.get("logs"),
             )
 
     app.state.run_manager = RunManager(
