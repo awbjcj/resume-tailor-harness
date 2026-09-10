@@ -39,7 +39,7 @@ describe("ActiveInterviewBanner", () => {
 
   it("surfaces a resumable active interview from any page", () => {
     renderAt("/dashboard", [activeSession]);
-    expect(screen.getByText(/Mock interview in progress/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mock Interview in progress/i)).toBeInTheDocument();
     expect(screen.getByText(/Acme · Engineer/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /resume/i })).toHaveAttribute(
       "href",

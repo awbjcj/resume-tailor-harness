@@ -1826,7 +1826,7 @@ function SessionRow({
   const archive = useArchiveInterviewSession();
   const unarchive = useUnarchiveInterviewSession();
   const label =
-    [row.company, row.title].filter(Boolean).join(" · ") || "Mock interview";
+    [row.company, row.title].filter(Boolean).join(" · ") || "Mock Interview";
   return (
     <li
       className={cn(
@@ -2250,7 +2250,7 @@ export function ActiveInterviewBanner() {
       />
       <span className="min-w-0">
         <span className="font-medium">
-          {single ? "Mock interview in progress" : label}
+          {single ? "Mock Interview in progress" : label}
         </span>
         {single && label ? (
           <span className="text-muted-foreground"> — {label}</span>
@@ -2437,7 +2437,7 @@ export function InProgressCard({ summary }: { summary: DashboardSummary }) {
                 <div className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">
                     {[row.company, row.title].filter(Boolean).join(" · ") ||
-                      "Mock interview"}
+                      "Mock Interview"}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     Question {row.askedCount} of {row.questionCount} · started{" "}

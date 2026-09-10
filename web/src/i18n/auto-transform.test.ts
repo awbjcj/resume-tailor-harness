@@ -1,11 +1,15 @@
 /// <reference types="node" />
 
-import { transformAsync, type PluginItem } from "@babel/core";
+import { transformAsync, type NodePath, type PluginItem } from "@babel/core";
+import type { StringLiteral } from "@babel/types";
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
 const autoI18nPlugin = require("../../i18n-auto-plugin.cjs") as PluginItem;
+const { isLocalizableStringPath } = require("../../i18n-classifier.cjs") as {
+  isLocalizableStringPath: (path: NodePath<StringLiteral>) => boolean;
+};
 
 describe("automatic i18n build transform", () => {
   it("uses the selected language for implicit and fixed English locale formatting", async () => {
@@ -31,6 +35,7 @@ describe("automatic i18n build transform", () => {
     const result = await transformAsync(
       `
         const STATUSES = ["ready", "submitted"];
+        const TARGET_STAGE_VALUES = ["tailored", "rendered", "approved", "shortlisted"];
         const JOURNEY_COPY = ["journey.stages.profile.label"];
         const options = [{ value: "ready", label: "Ready" }];
       `,
@@ -43,6 +48,9 @@ describe("automatic i18n build transform", () => {
 
     expect(result?.code).toContain('"ready"');
     expect(result?.code).toContain('"submitted"');
+    expect(result?.code).toContain(
+      'TARGET_STAGE_VALUES = ["tailored", "rendered", "approved", "shortlisted"]',
+    );
     expect(result?.code).toContain('"journey.stages.profile.label"');
     expect(result?.code?.match(/\.t\("auto\./g)).toHaveLength(1);
   });
@@ -65,5 +73,25 @@ describe("automatic i18n build transform", () => {
 
     expect(result?.code).toContain('"block text-sm"');
     expect(result?.code?.match(/\.t\("auto\./g)).toHaveLength(1);
+  });
+
+  it("does not classify canonical stage values as display copy", async () => {
+    const localized: string[] = [];
+    await transformAsync(
+      `const TARGET_STAGE_VALUES = ["tailored", "rendered", "approved", "shortlisted"];`,
+      {
+        babelrc: false,
+        configFile: false,
+        plugins: [{
+          visitor: {
+            StringLiteral(path: NodePath<StringLiteral>) {
+              if (isLocalizableStringPath(path)) localized.push(path.node.value);
+            },
+          },
+        } as unknown as PluginItem],
+      },
+    );
+
+    expect(localized).toEqual([]);
   });
 });

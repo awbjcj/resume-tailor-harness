@@ -22,7 +22,7 @@ export function SessionsRail({ selectedId }: { selectedId: string | null }) {
   const remove = useDeleteInterviewSession();
   const rename = useRenameInterviewSession();
   const items = useMemo<ChatSessionHistoryItem[]>(() => (sessions.data?.sessions ?? []).map((row) => {
-    const fallbackTitle = [row.company, row.title].filter(Boolean).join(" · ") || "Mock interview";
+    const fallbackTitle = [row.company, row.title].filter(Boolean).join(" · ") || "Mock Interview";
     const title = row.sessionTitle || fallbackTitle;
     const progress = row.status === "active"
       ? `Question ${row.askedCount} of ${row.questionCount}`

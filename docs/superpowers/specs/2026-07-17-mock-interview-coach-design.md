@@ -199,7 +199,7 @@ An orthogonal, shared capability — a fast synchronous call, **not** a Run.
 
 ## Part 5 — Web UI
 
-- **Launch point: job detail page.** A "Mock interview" action, enabled when
+- **Launch point: job detail page.** A "Mock Interview" action, enabled when
   the job has `jd_text` and ≥1 resume version (otherwise disabled with a
   "Tailor a resume first" hint). It opens a **setup dialog**: stage, demeanor,
   difficulty, question count (default 8), resume-version picker (default

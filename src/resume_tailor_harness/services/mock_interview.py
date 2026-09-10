@@ -1,4 +1,4 @@
-"""Mock interview turns, debrief, and camelCase session views."""
+"""Mock Interview turns, debrief, and camelCase session views."""
 
 from __future__ import annotations
 
@@ -42,7 +42,11 @@ from resume_tailor_harness.interview.store import (
 )
 from resume_tailor_harness.llm_runner import Runner, UnparsedAgentOutput, expect_text
 from resume_tailor_harness.sessions.stream import Notice, NullSink, StreamSink
-from resume_tailor_harness.sessions.turns import TurnRejected, format_with_retry, persona_output
+from resume_tailor_harness.sessions.turns import (
+    TurnRejected,
+    format_with_retry,
+    persona_output,
+)
 
 _MAX_MESSAGE_CHARS = 100_000
 _EMPTY_DEBRIEF_SUMMARY = (
@@ -104,8 +108,12 @@ _OPENING_INSTRUCTION = (
 
 def load_context(engine, job_id: int, resume_version_id: int) -> InterviewContext:
     from resume_tailor_harness.db import get_session
-    from resume_tailor_harness.services.company_intelligence import load_company_intelligence
-    from resume_tailor_harness.services.role_preparation import load_role_preparation_brief
+    from resume_tailor_harness.services.company_intelligence import (
+        load_company_intelligence,
+    )
+    from resume_tailor_harness.services.role_preparation import (
+        load_role_preparation_brief,
+    )
     from resume_tailor_harness.tracking.event_vocab import INTERVIEW_KINDS
     from resume_tailor_harness.tracking.tables import (
         Application,
@@ -146,7 +154,9 @@ def load_context(engine, job_id: int, resume_version_id: int) -> InterviewContex
                     if event.custom_label and event.custom_label.strip()
                     else event.kind.replace("_", " ").title()
                 ),
-                occurred_at=(event.occurred_at.isoformat() if event.occurred_at else ""),
+                occurred_at=(
+                    event.occurred_at.isoformat() if event.occurred_at else ""
+                ),
                 result=event.result,
                 reflection=(event.reflection or "").strip()[:_REFLECTION_CHAR_CAP],
             )

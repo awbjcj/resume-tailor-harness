@@ -30,7 +30,7 @@ export function InterviewTab({
     <div className="space-y-5">
       <div className="space-y-2">
         <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Mock interview
+          Mock Interview
         </h3>
         <p className="text-sm text-muted-foreground">
           Rehearse against this job description and one of your tailored resumes, then get a scored debrief.

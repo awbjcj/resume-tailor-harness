@@ -152,7 +152,7 @@ export function InterviewPage() {
   if (session.isLoading && displayedSessionId) {
     return (
       <div className={cn("space-y-6", CHAT_PAGE_WIDTH)}>
-        <GuidedWorkspaceHeader tone="interview" icon={<MessagesSquare />} eyebrow="Focused rehearsal" title="Mock interviews" description="Practise realistic questions, stay in the moment, and turn the conversation into a scored debrief." />
+        <GuidedWorkspaceHeader tone="interview" icon={<MessagesSquare />} eyebrow="Focused rehearsal" title="Mock Interviews" description="Practise realistic questions, stay in the moment, and turn the conversation into a scored debrief." />
         <div className="flex flex-col gap-6">
           <div className="flex min-w-0 flex-col gap-4">
             <Skeleton className="h-16 w-full" />
@@ -174,7 +174,7 @@ export function InterviewPage() {
           tone="interview"
           icon={<MessagesSquare />}
           eyebrow="Focused rehearsal"
-          title="Mock interviews"
+          title="Mock Interviews"
           description="Practise realistic questions, stay in the moment, and turn the conversation into a scored debrief."
           meta={<Badge variant="outline">{noSessions ? "No sessions yet" : "Choose a session"}</Badge>}
         />
@@ -259,8 +259,8 @@ export function InterviewPage() {
       <GuidedWorkspaceHeader
         tone="interview"
         icon={<MessagesSquare />}
-        eyebrow="Mock interview"
-        title={<>{active.company || "Mock interview"} — {active.title}</>}
+        eyebrow="Mock Interview"
+        title={<>{active.company || "Mock Interview"} — {active.title}</>}
         description="Answer as you would in the real room. The interviewer adapts, then turns the completed rehearsal into practical coaching."
         meta={<>
           <Badge variant={ended ? "outline" : "secondary"}>{ended ? "Rehearsal complete" : "Interview live"}</Badge>

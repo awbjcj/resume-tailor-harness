@@ -1,4 +1,4 @@
-"""Mock interviewer schemas, validation, context assembly, and agent builders."""
+"""Mock Interviewer schemas, validation, context assembly, and agent builders."""
 
 from __future__ import annotations
 

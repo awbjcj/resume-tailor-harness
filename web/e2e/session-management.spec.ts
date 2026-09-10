@@ -37,13 +37,13 @@ test("dashboard attention and in-progress cards lead into the interview hub", as
 
 test("the sidebar is a direct entry point to the interview hub", async ({ page }) => {
   await page.goto("/");
-  const navLink = page.getByRole("link", { name: "Mock interviews" });
+  const navLink = page.getByRole("link", { name: "Mock Interviews" });
   await expect(navLink).toBeVisible();
   // The badge counts sessions still in progress, centred on the taller nav row
   // (its own default offset assumes a shorter button).
   await expect(page.getByText("1 in progress")).toBeVisible();
   const centres = await page.evaluate(() => {
-    const label = [...document.querySelectorAll("a span")].find((s) => s.textContent === "Mock interviews")!;
+    const label = [...document.querySelectorAll("a span")].find((s) => s.textContent === "Mock Interviews")!;
     const badge = document.querySelector("[data-slot=sidebar-menu-badge]")!;
     const box = (el: Element) => { const r = el.getBoundingClientRect(); return r.top + r.height / 2; };
     return { label: box(label), badge: box(badge) };

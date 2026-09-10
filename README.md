@@ -362,7 +362,7 @@ weight becomes tractable:
 | Surface                  | What it removes from the job hunt                                                                   |
 | ------------------------ | --------------------------------------------------------------------------------------------------- |
 | **Profile Coach**        | Evidence you never wrote down. Interviews you one question at a time and drafts only what you said. |
-| **Mock interviews**      | Rehearsing blind. Practises against a _specific_ tailored role and scores the debrief.              |
+| **Mock Interviews**      | Rehearsing blind. Practises against a _specific_ tailored role and scores the debrief.              |
 | **Career Lab**           | Negotiation prep, pivots, portfolio write-ups — one verified skill per turn, output stays a draft.  |
 | **Match-gap**            | Guessing what to learn next. Ranks the skills your target jobs demand and your profile lacks.       |
 | **Sponsorship evidence** | Applying blind to visa-hostile employers, using historical filings as a signal — never a promise.   |
@@ -371,7 +371,7 @@ weight becomes tractable:
 | **Gmail sync**           | Manual status chasing. Reads your inbox and _proposes_ status moves you approve.                    |
 | **Analytics**            | Repeating what does not work. Shows which sources and fit bands actually convert.                   |
 
-### Career coaching: Profile Coach, Mock interviews, and Career Lab
+### Career coaching: Profile Coach, Mock Interviews, and Career Lab
 
 Three coaching surfaces sit alongside the tailoring pipeline in the sidebar,
 each scoped to a different moment in the job hunt.
@@ -382,11 +382,11 @@ have left out, and drafts only claims grounded in what you actually answered:
 
 ![Profile Coach — guided evidence discovery](docs/screenshots/profile-coach.png)
 
-**Mock interviews** (`/interview`) runs a focused rehearsal against a
+**Mock Interviews** (`/interview`) runs a focused rehearsal against a
 specific tailored role, then turns the conversation into a scored debrief you
 can act on:
 
-![Mock interviews — set up a rehearsal against a tailored role](docs/screenshots/mock-interview.png)
+![Mock Interviews — set up a rehearsal against a tailored role](docs/screenshots/mock-interview.png)
 
 **Career Lab** (`/career-lab`) is a draft-only workspace also available
 through the `career-lab` CLI command and the `/api/career-lab` REST
