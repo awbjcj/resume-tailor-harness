@@ -63,3 +63,17 @@ export function useGmailSync() {
     },
   });
 }
+
+
+export function useClearNotificationHistory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => unwrap(api.DELETE("/api/notifications")),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: KEY }),
+        qc.invalidateQueries({ queryKey: ["run-completions"] }),
+      ]);
+    },
+  });
+}

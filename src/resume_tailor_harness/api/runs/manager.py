@@ -126,6 +126,20 @@ class RunProgressReporter(ProgressReporter):
         # record remains the source of truth; this only removes the poll delay
         # between the write and a client seeing it.
         self._notify = notify
+        self._history: list[dict[str, str]] = []
+
+    def _flush(self, *, force: bool) -> None:
+        message = str(
+            self._record.get("error") or self._record.get("label") or self.kind
+        )[:2000]
+        state = str(self._record.get("state") or "running")
+        if not self._history or (message, state) != (
+            self._history[-1]["message"], self._history[-1]["state"]
+        ):
+            self._history.append({"timestamp": _now(), "message": message, "state": state})
+            self._history = self._history[-200:]
+        self._record["logs"] = self._history
+        super()._flush(force=force)
 
     def _wake(self) -> None:
         if self._notify is not None:
@@ -266,6 +280,7 @@ class RunManager:
                     "status": status,
                     "error": snapshot.error,
                     "completedAt": snapshot.updated_at,
+                    "logs": (self._read_record(run_id) or {}).get("logs", []),
                     "userId": snapshot.user_id,
                 }
             )

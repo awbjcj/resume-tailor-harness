@@ -11,10 +11,12 @@ export const UNASSIGNED_ID = "__unassigned__";
 // Mirrors tracking/match_gap.py's TARGET_STATUSES -- every status a job in
 // this payload can have, ordered most- to least-progressed like
 // features/pipeline/pipeline-stages.ts's PIPELINE_STAGE_ORDER.
-export const TARGET_STATUSES = ["tailored", "rendered", "approved", "shortlisted"] as const;
+// Keep the frontend constant named as protocol values: the production i18n
+// transform treats `*STATUSES` collections as display copy.
+export const TARGET_STAGE_VALUES = ["tailored", "rendered", "approved", "shortlisted"] as const;
 
 export function defaultTargetStatuses(): Set<string> {
-  return new Set(TARGET_STATUSES);
+  return new Set(TARGET_STAGE_VALUES);
 }
 
 export interface Filters {
@@ -66,13 +68,13 @@ export interface SkillRow {
  * visible and therefore becomes the server-side regroup scope.
  */
 export function hasActiveScopeFilters(filters: Filters): boolean {
-  const configuredTargets = new Set<string>(TARGET_STATUSES);
+  const configuredTargets = new Set<string>(TARGET_STAGE_VALUES);
   return (
     Boolean(filters.q.trim()) ||
     filters.company !== null ||
     filters.seniority !== null ||
     filters.gapsOnly ||
-    TARGET_STATUSES.some((status) => !filters.statuses.has(status)) ||
+    TARGET_STAGE_VALUES.some((status) => !filters.statuses.has(status)) ||
     [...filters.statuses].some((status) => !configuredTargets.has(status))
   );
 }
