@@ -268,7 +268,11 @@ def seed_llm_rates(engine: Engine) -> None:
     # 2026-08-27. Keep the former Sol rate for historical usage, then make the
     # new rate effective from this catalog refresh rather than rewriting it.
     openai_sol_price_update = datetime(2026, 8, 27, tzinfo=timezone.utc)
+    # GPT-6 Astra prices short and long requests differently; preserve the
+    # release boundary rather than making this new model billable before launch.
+    openai_astra_release = datetime(2026, 9, 3, tzinfo=timezone.utc)
     gemini_price_update = datetime(2026, 8, 15, tzinfo=timezone.utc)
+    gemini_38_release = datetime(2026, 9, 2, tzinfo=timezone.utc)
     # Google publishes both Flash models' current rate as promotional "through
     # 2026-12-31", doubling on 2027-01-01. Seeding only the promo left the
     # quota system under-billing shared-key spend 2x from January, on a date
@@ -279,8 +283,15 @@ def seed_llm_rates(engine: Engine) -> None:
     # only to repair databases that already contain the cancelled future row.
     sonnet_cancelled_increase = datetime(2026, 9, 1, tzinfo=timezone.utc)
     deepseek_price_update = datetime(2026, 8, 16, 16, 0, tzinfo=timezone.utc)
+    deepseek_vision_release = datetime(2026, 8, 21, tzinfo=timezone.utc)
+    # DeepSeek's authenticated customer notice says requests made through the
+    # documented V4 Pro API route are billed as V4.1 Flash from this instant.
+    # It does not name a direct V4.1 model ID, so preserve the V4 Pro route and
+    # model the provider-announced billing cutover as an effective-dated rate.
+    deepseek_v41_flash_route = datetime(2026, 9, 10, 4, tzinfo=timezone.utc)
     openai = "https://developers.openai.com/api/docs/pricing"
     openai_sol = "https://developers.openai.com/api/docs/models/gpt-5.6-sol"
+    openai_astra = "https://developers.openai.com/api/docs/models/gpt-6-astra"
     anthropic = "https://platform.claude.com/docs/en/about-claude/pricing"
     gemini = "https://ai.google.dev/gemini-api/docs/pricing"
     deepseek = "https://api-docs.deepseek.com/quick_start/pricing"
@@ -390,6 +401,58 @@ def seed_llm_rates(engine: Engine) -> None:
             (row.provider, row.model, row.context_min_tokens, stamp(row.effective_from))
             for row in session.execute(select(LlmRate)).scalars()
         }
+
+        def upsert_rate(
+            *,
+            provider: str,
+            model: str,
+            effective_from: datetime,
+            input_rate: float,
+            cache_read: float | None,
+            cache_write: float | None,
+            output_rate: float,
+            tool: int | None,
+            source: str,
+            minimum: int = 0,
+            maximum: int | None = None,
+            rate_period: str | None = None,
+        ) -> LlmRate:
+            """Create or repair one exact provider-published rate row."""
+            statement = select(LlmRate).where(
+                LlmRate.provider == provider,
+                LlmRate.model == model,
+                LlmRate.context_min_tokens == minimum,
+                LlmRate.effective_from == effective_from,
+            )
+            if rate_period is None:
+                statement = statement.where(LlmRate.rate_period.is_(None))
+            else:
+                statement = statement.where(LlmRate.rate_period == rate_period)
+            rate = session.execute(statement).scalars().first()
+            if rate is None:
+                rate = LlmRate(
+                    id=uuid.uuid4().hex,
+                    provider=provider,
+                    model=model,
+                    effective_from=effective_from,
+                    rate_period=rate_period,
+                )
+                session.add(rate)
+            rate.context_min_tokens = minimum
+            rate.context_max_tokens = maximum
+            rate.input_micros_per_million = _micros_per_million(input_rate)
+            rate.cache_read_micros_per_million = (
+                _micros_per_million(cache_read) if cache_read is not None else None
+            )
+            rate.cache_write_micros_per_million = (
+                _micros_per_million(cache_write) if cache_write is not None else None
+            )
+            rate.output_micros_per_million = _micros_per_million(output_rate)
+            rate.tool_micros_per_unit = tool
+            rate.effective_to = None
+            rate.source_url = source
+            return rate
+
         for (
             provider,
             model,
@@ -533,6 +596,27 @@ def seed_llm_rates(engine: Engine) -> None:
         current_sol_rate.tool_micros_per_unit = 10_000
         current_sol_rate.source_url = openai_sol
 
+        # GPT-6 Astra's Standard rate doubles the input/cache rates and raises
+        # output 1.5x when a request has more than 272K input tokens. Its cache
+        # write rates are published separately, so preserve both context bands.
+        for minimum, maximum, input_rate, cache_read, cache_write, output_rate in (
+            (0, 272_000, 10, 1, 12.5, 50),
+            (272_001, None, 20, 2, 25, 75),
+        ):
+            upsert_rate(
+                provider="openai",
+                model="gpt-6-astra",
+                effective_from=openai_astra_release,
+                input_rate=input_rate,
+                cache_read=cache_read,
+                cache_write=cache_write,
+                output_rate=output_rate,
+                tool=10_000,
+                source=openai_astra,
+                minimum=minimum,
+                maximum=maximum,
+            )
+
         # Google changed Gemini 3.6 Flash's standard pricing on 2026-08-15.
         # Keep the former rate for historical usage, then add the current row
         # rather than silently repricing the usage events recorded before the
@@ -588,7 +672,22 @@ def seed_llm_rates(engine: Engine) -> None:
             current_rate.tool_micros_per_unit = 14_000
             current_rate.source_url = gemini
 
-        # Close both Flash promos on 2027-01-01 and schedule the doubled rate
+        # Gemini 3.8 Flash launched directly at the same documented promotional
+        # rate as 3.7 Flash. It must be effective from its release, not the
+        # historical July seed date, so shared-key budgets never price it early.
+        upsert_rate(
+            provider="gemini",
+            model="gemini-3.8-flash",
+            effective_from=gemini_38_release,
+            input_rate=0.75,
+            cache_read=0.075,
+            cache_write=None,
+            output_rate=3.75,
+            tool=14_000,
+            source=gemini,
+        )
+
+        # Close all promotional Flash rates on 2027-01-01 and schedule the doubled rate
         # from that moment. `find_rate` filters `effective_from <= moment <
         # effective_to`, so the future row is inert until the promo lapses and
         # authoritative the instant it does -- no dated migration to remember.
@@ -597,6 +696,7 @@ def seed_llm_rates(engine: Engine) -> None:
         for model, promo_from, input_rate, cache_read, output_rate in (
             ("gemini-3.6-flash", gemini_price_update, 1.5, 0.15, 7.5),
             ("gemini-3.7-flash", start, 1.5, 0.15, 7.5),
+            ("gemini-3.8-flash", gemini_38_release, 1.5, 0.15, 7.5),
         ):
             promo_rate = (
                 session.execute(
@@ -683,6 +783,63 @@ def seed_llm_rates(engine: Engine) -> None:
             current_rate.cache_read_micros_per_million = _micros_per_million(cache_read)
             current_rate.output_micros_per_million = _micros_per_million(output_rate)
             current_rate.source_url = deepseek
+
+        # The provider's V4.1 Flash announcement changes only V4 Pro traffic:
+        # it is transparently routed to V4.1 Flash until V4.1 Pro exists. Close
+        # the historical V4 Pro rows at the announced instant and seed exact
+        # peak/off-peak replacements under the still-documented API model ID.
+        for period in (RATE_PERIOD_OFF_PEAK, RATE_PERIOD_PEAK):
+            prior_pro_rate = (
+                session.execute(
+                    select(LlmRate).where(
+                        LlmRate.provider == "deepseek",
+                        LlmRate.model == "deepseek-v4-pro",
+                        LlmRate.context_min_tokens == 0,
+                        LlmRate.effective_from == deepseek_price_update,
+                        LlmRate.rate_period == period,
+                    )
+                )
+                .scalars()
+                .first()
+            )
+            if prior_pro_rate is not None:
+                prior_pro_rate.effective_to = deepseek_v41_flash_route
+        for period, input_rate, cache_read, output_rate in (
+            (RATE_PERIOD_OFF_PEAK, 0.15, 0.003, 0.60),
+            (RATE_PERIOD_PEAK, 0.30, 0.006, 1.20),
+        ):
+            upsert_rate(
+                provider="deepseek",
+                model="deepseek-v4-pro",
+                effective_from=deepseek_v41_flash_route,
+                input_rate=input_rate,
+                cache_read=cache_read,
+                cache_write=None,
+                output_rate=output_rate,
+                tool=None,
+                source=deepseek,
+                rate_period=period,
+            )
+
+        # The officially released Vision snapshot is experimental, but DeepSeek
+        # publishes its text-token rate as V4 Flash's peak/off-peak schedule.
+        # Add only that documented ID; no direct V4.1 API SKU has been published.
+        for period, input_rate, cache_read, output_rate in (
+            (RATE_PERIOD_OFF_PEAK, 0.22, 0.007, 0.66),
+            (RATE_PERIOD_PEAK, 0.44, 0.014, 1.32),
+        ):
+            upsert_rate(
+                provider="deepseek",
+                model="deepseek-v4-flash-vision-exp",
+                effective_from=deepseek_vision_release,
+                input_rate=input_rate,
+                cache_read=cache_read,
+                cache_write=None,
+                output_rate=output_rate,
+                tool=None,
+                source=deepseek,
+                rate_period=period,
+            )
 
         sonnet_standard_rate = (
             session.execute(

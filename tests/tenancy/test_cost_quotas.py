@@ -14,7 +14,10 @@ from resume_tailor_harness.tenancy.costs import (
     find_rate,
     seed_llm_rates,
 )
-from resume_tailor_harness.tenancy.limits import CostRateUnavailableError, enforce_agent_budget
+from resume_tailor_harness.tenancy.limits import (
+    CostRateUnavailableError,
+    enforce_agent_budget,
+)
 from resume_tailor_harness.tenancy.quotas import (
     CostQuotaExceededError,
     GlobalCostQuotaExceededError,
@@ -143,6 +146,137 @@ def test_seeded_model_prices_use_current_provider_rates(tmp_path):
             rate.output_micros_per_million,
             rate.tool_micros_per_unit,
         ) == expected
+
+
+def test_new_model_rates_are_effective_dated_and_exact(tmp_path):
+    engine = _engine(tmp_path)
+    current = datetime(2026, 9, 9, 12, 0, tzinfo=UTC)
+
+    assert (
+        find_rate(
+            engine,
+            "openai",
+            "gpt-6-astra",
+            now=datetime(2026, 9, 2, 23, 59, tzinfo=UTC),
+        )
+        is None
+    )
+    assert (
+        find_rate(
+            engine,
+            "gemini",
+            "gemini-3.8-flash",
+            now=datetime(2026, 9, 1, 23, 59, tzinfo=UTC),
+        )
+        is None
+    )
+
+    astra_short = find_rate(
+        engine,
+        "openai",
+        "gpt-6-astra",
+        input_tokens=272_000,
+        now=current,
+    )
+    assert astra_short is not None
+    assert (
+        astra_short.context_min_tokens,
+        astra_short.context_max_tokens,
+        astra_short.input_micros_per_million,
+        astra_short.cache_read_micros_per_million,
+        astra_short.cache_write_micros_per_million,
+        astra_short.output_micros_per_million,
+        astra_short.tool_micros_per_unit,
+    ) == (0, 272_000, 10_000_000, 1_000_000, 12_500_000, 50_000_000, 10_000)
+
+    astra_long = find_rate(
+        engine,
+        "openai",
+        "gpt-6-astra",
+        input_tokens=272_001,
+        now=current,
+    )
+    assert astra_long is not None
+    assert (
+        astra_long.context_min_tokens,
+        astra_long.context_max_tokens,
+        astra_long.input_micros_per_million,
+        astra_long.cache_read_micros_per_million,
+        astra_long.cache_write_micros_per_million,
+        astra_long.output_micros_per_million,
+    ) == (272_001, None, 20_000_000, 2_000_000, 25_000_000, 75_000_000)
+
+    gemini_38 = find_rate(engine, "gemini", "gemini-3.8-flash", now=current)
+    assert gemini_38 is not None
+    assert (
+        gemini_38.input_micros_per_million,
+        gemini_38.cache_read_micros_per_million,
+        gemini_38.cache_write_micros_per_million,
+        gemini_38.output_micros_per_million,
+        gemini_38.tool_micros_per_unit,
+    ) == (750_000, 75_000, None, 3_750_000, 14_000)
+
+    gemini_38_after_promo = find_rate(
+        engine,
+        "gemini",
+        "gemini-3.8-flash",
+        now=datetime(2027, 1, 1, tzinfo=UTC),
+    )
+    assert gemini_38_after_promo is not None
+    assert (
+        gemini_38_after_promo.input_micros_per_million,
+        gemini_38_after_promo.cache_read_micros_per_million,
+        gemini_38_after_promo.output_micros_per_million,
+    ) == (1_500_000, 150_000, 7_500_000)
+
+    for moment, expected in (
+        (datetime(2026, 9, 9, 2, 0, tzinfo=UTC), (440_000, 14_000, 1_320_000)),
+        (datetime(2026, 9, 9, 12, 0, tzinfo=UTC), (220_000, 7_000, 660_000)),
+    ):
+        vision = find_rate(
+            engine,
+            "deepseek",
+            "deepseek-v4-flash-vision-exp",
+            now=moment,
+        )
+        assert vision is not None
+        assert (
+            vision.input_micros_per_million,
+            vision.cache_read_micros_per_million,
+            vision.output_micros_per_million,
+        ) == expected
+
+    # DeepSeek did not publish a direct V4.1 API ID. Its authenticated notice
+    # instead routes the documented V4 Pro ID to V4.1 Flash at 04:00 UTC on
+    # September 10. Preserve the historical V4 Pro price until that instant.
+    before_v41_route = find_rate(
+        engine,
+        "deepseek",
+        "deepseek-v4-pro",
+        now=datetime(2026, 9, 10, 3, 59, tzinfo=UTC),
+    )
+    assert before_v41_route is not None
+    assert (
+        before_v41_route.input_micros_per_million,
+        before_v41_route.cache_read_micros_per_million,
+        before_v41_route.output_micros_per_million,
+    ) == (1_320_000, 44_000, 3_960_000)
+
+    for moment, expected in (
+        (datetime(2026, 9, 10, 4, 0, tzinfo=UTC), (150_000, 3_000, 600_000)),
+        (datetime(2026, 9, 10, 6, 0, tzinfo=UTC), (300_000, 6_000, 1_200_000)),
+    ):
+        v41_route = find_rate(engine, "deepseek", "deepseek-v4-pro", now=moment)
+        assert v41_route is not None
+        assert (
+            v41_route.input_micros_per_million,
+            v41_route.cache_read_micros_per_million,
+            v41_route.output_micros_per_million,
+        ) == expected
+
+    # A plausible-looking direct V4.1 string remains unpriced: the provider
+    # has not published it as a model ID, so the catalog cannot safely guess.
+    assert find_rate(engine, "deepseek", "deepseek-v4.1-flash", now=current) is None
 
 
 def test_seed_corrects_previously_scheduled_sonnet_increase(tmp_path):
