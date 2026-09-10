@@ -6,7 +6,7 @@ import { mockEmptyRuns } from "./support";
 // pattern in e2e/smoke.spec.ts and e2e/setup-wizard.spec.ts.
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/notifications", (route) => route.fulfill({ json: [] }));
-  await page.route("**/api/run-completions", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/run-completions*", (route) => route.fulfill({ json: [] }));
   await page.route("**/api/errors?*", (route) => route.fulfill({ json: { records: [] } }));
   await mockEmptyRuns(page);
   await page.route("**/api/setup/status", (route) =>
@@ -97,3 +97,47 @@ test("mobile chrome keeps launch actions compact and horizontally contained", as
     await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
   ).toBe(true);
 });
+
+
+for (const width of [1440, 390]) {
+  test(`recent runs retains operations and clears histories independently at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    let operationsCleared = false;
+    let notificationsCleared = false;
+    const operation = { id: 1, runId: "saved", kind: "discover", label: "Imported source documents",
+      status: "succeeded", error: null, completedAt: "2026-09-09T12:00:00Z", readAt: null };
+    await page.route("**/api/run-completions*", (route) => {
+      if (route.request().method() === "DELETE") {
+        operationsCleared = true;
+        return route.fulfill({ json: { cleared: 1 } });
+      }
+      const notifications = new URL(route.request().url()).searchParams.get("surface") === "notifications";
+      return route.fulfill({ json: (notifications ? notificationsCleared : operationsCleared) ? [] : [operation] });
+    });
+    await page.route("**/api/run-completions/1/logs", (route) => route.fulfill({ json: [
+      { timestamp: "2026-09-09T12:00:00Z", message: "Reading source documents", state: "running" },
+    ] }));
+    await page.route("**/api/notifications", (route) => {
+      if (route.request().method() === "DELETE") {
+        notificationsCleared = true;
+        return route.fulfill({ json: { cleared: 1 } });
+      }
+      return route.fulfill({ json: [] });
+    });
+    await page.goto("/");
+    await expect(page.getByText("Imported source documents", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "View logs" }).click();
+    await expect(page.getByText("Reading source documents")).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("Imported source documents", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Clear operation history" }).click();
+    await page.getByRole("button", { name: "Clear history", exact: true }).click();
+    await expect(page.getByText("No completed operations in your history.")).toBeVisible();
+    await page.getByRole("button", { name: /Notifications/ }).click();
+    await expect(page.getByText("Discovery succeeded")).toBeVisible();
+    await page.getByRole("button", { name: "Clear notification history" }).click();
+    await page.getByRole("button", { name: "Clear history", exact: true }).click();
+    await expect(page.getByText("Nothing pending.")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}
