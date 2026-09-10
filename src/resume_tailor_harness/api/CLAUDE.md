@@ -33,7 +33,15 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   callback failures are logged and must never replace the worker's real outcome.
   `GET /api/run-completions` returns newest-first history (50 by default), while
   the read endpoints mutate only `read_at`. These records are independent from
-  Gmail-derived application notifications.
+  Gmail-derived application notifications. `surface=operations|notifications`
+  selects independently clearable history. DELETE `/api/run-completions` hides
+  completed operations; DELETE `/api/notifications` hides run notifications and
+  clears application notifications without removing their deduplication identities.
+  `ClearedRunHistory` tombstones preserve terminal callback idempotency. Progress
+  messages (last 200, each bounded to 2000 characters) are retained in
+  `RunOperationLog`; GET `/api/run-completions/{id}/logs` reads these from the
+  workspace database even after transient run files expire. Older runs may have
+  no recorded logs. The dashboard reuses its Recent runs card for this history.
 - **Saved board views store the existing URL contract.** `/api/board-views`
   provides workspace-scoped CRUD for triage, shortlist, and pipeline. Its
   `queryString` is the canonical `stateToParams` representation, including any

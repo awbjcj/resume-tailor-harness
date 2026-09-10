@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
@@ -11,6 +13,8 @@ from resume_tailor_harness.api.schemas.run_completions import (
 )
 from resume_tailor_harness.services.run_completions import (
     list_run_completions,
+    clear_run_history,
+    operation_logs,
     mark_all_run_completions_read,
     mark_run_completion_read,
 )
@@ -22,9 +26,12 @@ router = APIRouter()
 def list_completions(
     limit: int = Query(default=50, ge=1, le=100),
     unread_only: bool = Query(default=False),
+    surface: Literal["operations", "notifications"] = "operations",
     session: Session = Depends(get_session),
 ):
-    return list_run_completions(session, limit=limit, unread_only=unread_only)
+    return list_run_completions(
+        session, limit=limit, unread_only=unread_only, surface=surface
+    )
 
 
 @router.post("/run-completions/{completion_id}/read", response_model=RunCompletionOut)
@@ -39,6 +46,19 @@ def mark_read(completion_id: int, session: Session = Depends(get_session)):
 
 @router.post("/run-completions/read-all", response_model=RunCompletionsReadOut)
 def mark_all_read(session: Session = Depends(get_session)):
-    return RunCompletionsReadOut(
-        marked_read=mark_all_run_completions_read(session)
-    )
+    return RunCompletionsReadOut(marked_read=mark_all_run_completions_read(session))
+
+
+@router.delete("/run-completions", response_model=dict[str, int])
+def clear_operations(session: Session = Depends(get_session)):
+    return {"cleared": clear_run_history(session, surface="operations")}
+
+
+@router.get(
+    "/run-completions/{completion_id}/logs", response_model=list[dict[str, str]]
+)
+def get_logs(completion_id: int, session: Session = Depends(get_session)):
+    entries = operation_logs(session, completion_id)
+    if entries is None:
+        raise ApiException(404, "NOT_FOUND", "Operation history not found")
+    return entries
