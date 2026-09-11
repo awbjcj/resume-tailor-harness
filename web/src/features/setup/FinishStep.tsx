@@ -47,7 +47,7 @@ export function FinishStep() {
         )}
         {built && (
           <p className="text-sm text-primary">
-            Profile built — {buildResult?.experiences ?? 0} experiences,{" "}
+            Profile built: {buildResult?.experiences ?? 0} experiences,{" "}
             {buildResult?.projects ?? 0} projects extracted.
           </p>
         )}

@@ -48,7 +48,7 @@ export function RolePreparationPanel({ jobId }: { jobId: number }) {
         icon={<BookOpenCheck className="size-5" aria-hidden="true" />}
         eyebrow="Job-specific planning"
         title="Role preparation"
-        description="Turn the frozen company dossier, exact job description, selected documents, and earlier-round notes into an interview-ready brief."
+        description="Create an interview brief from the frozen company dossier, job description, selected documents, and earlier interview notes."
         context="Generation is explicit. Existing briefs stay frozen until you regenerate them."
         action={
           <Button

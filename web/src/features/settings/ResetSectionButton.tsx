@@ -51,8 +51,8 @@ export function ResetSectionButton({
           <AlertDialogTitle>Reset {label} to defaults?</AlertDialogTitle>
           <AlertDialogDescription>
             This replaces your {label.toLowerCase()} with the shipped default.
-            Your current values are lost — export a settings bundle first if you
-            want them back.
+            Your current values will be lost. Export a settings bundle first if
+            you may need them later.
             {note ? ` ${note}` : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>

@@ -89,7 +89,7 @@ function profileBuildWarningLabel(t: TFunction, warning: string): string {
     });
   }
 
-  const manualAlias = /^Manual alias '(.+)' could not be reattached -- its target skill '(.+)' was not found\.$/.exec(warning);
+  const manualAlias = /^Manual alias '(.+)' could not be reattached\. Its target skill '(.+)' was not found\.$/.exec(warning);
   if (manualAlias) {
     return t("profileBuild.warning.manualAliasNotFound", {
       alias: manualAlias[1],
@@ -126,7 +126,7 @@ function profileBuildConflictLabel(t: TFunction, conflict: string): string {
 }
 
 function profileBuildAnchorLabel(t: TFunction, decision: string): string {
-  const missing = /^(.+): anchor (.+) not found — kept as a project$/.exec(decision);
+  const missing = /^(.+): anchor (.+) was not found\. It remains a project$/.exec(decision);
   if (missing) return t("profileBuild.anchor.missing", { source: missing[1], anchor: missing[2] });
 
   const added = /^(.+): \+(\d+) bullets on (.+)$/.exec(decision);
@@ -140,7 +140,7 @@ function profileBuildAnchorLabel(t: TFunction, decision: string): string {
 }
 
 function profileBuildVerificationDropLabel(t: TFunction, drop: string): string {
-  const match = /^(.+): (.+) — (.+)$/.exec(drop);
+  const match = /^(.+): (.+) \((.+)\)$/.exec(drop);
   if (!match) return drop;
 
   return t("profileBuild.verification.drop", {

@@ -101,7 +101,7 @@ def launch_profile_build(request: Request, mgr: RunManager = Depends(get_run_man
         raise ApiException(
             400,
             "SETUP_INCOMPLETE",
-            "No funded LLM key is available — add one in Settings > API Keys",
+            "No funded LLM key is available. Add one in Settings > API Keys.",
         )
     return _launch_build(request, mgr)
 
@@ -425,7 +425,7 @@ def get_skeleton(request: Request):
     rows: list[SkeletonEntryOut] = []
     for row in profile_skeleton(facts):
         label = (
-            f"{row['company']} — {row['title']}"
+            f"{row['company']}: {row['title']}"
             if row["kind"] == "experience"
             else row["name"]
         )

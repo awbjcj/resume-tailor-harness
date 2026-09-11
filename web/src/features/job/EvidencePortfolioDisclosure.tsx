@@ -204,7 +204,7 @@ export function EvidencePortfolioDisclosure({
 
               <div className="grid gap-5 p-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(16rem,0.75fr)]">
                 <div>
-                  <h4 className="font-semibold">Experience used — and why</h4>
+                  <h4 className="font-semibold">Experience used and why</h4>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
                     These are the strongest profile-backed examples for this job.
                   </p>

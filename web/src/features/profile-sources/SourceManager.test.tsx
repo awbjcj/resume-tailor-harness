@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
     { id: "p1", filename: "portfolio-dossier.md", mode: "project", primary: false,
       anchor: null, addedAt: "2026-07-03", fragmentStatus: "cached", origin: "upload" },
   ],
-  skeleton: [{ id: "exp1", kind: "experience", label: "Acme — Engineer" }],
+  skeleton: [{ id: "exp1", kind: "experience", label: "Acme: Engineer" }],
   patch: vi.fn(),
   remove: vi.fn(),
   uploadAll: vi.fn(),

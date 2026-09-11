@@ -395,6 +395,6 @@ def test_profile_depth_reports_supply_and_aspect_gaps(tmp_path):
     result = runner.invoke(cli.app, ["profile", "depth", "--facts", str(facts_path)])
 
     assert result.exit_code == 0, result.output
-    assert "GAP Acme — Engineer (experience): 1/10 bullets" in result.output
+    assert "GAP Acme: Engineer (experience): 1/10 bullets" in result.output
     assert "missing aspects:" in result.output
     assert "Run `profile coach`" in result.output

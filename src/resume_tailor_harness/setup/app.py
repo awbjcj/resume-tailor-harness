@@ -20,7 +20,7 @@ from resume_tailor_harness.setup.writer import atomic_write_all, load_existing_s
 class SetupApp(App[None]):
     """Wizard application. ``writer`` is injected for testability."""
 
-    TITLE = "Résumé Tailor Harness — Setup"
+    TITLE = "Résumé Tailor Harness Setup"
 
     def __init__(
         self,

@@ -29,7 +29,7 @@ export function JobFailureRow({
   // A job record without details is a legacy or unparseable row; fall back to
   // the flat message rather than rendering an empty shell.
   const heading = details
-    ? `${details.company ?? t("dashboard.unknownCompany")} — ${details.title ?? t("dashboard.untitledRole")}`
+    ? `${details.company ?? t("dashboard.unknownCompany")}: ${details.title ?? t("dashboard.untitledRole")}`
     : record.sourceLabel;
 
   return (

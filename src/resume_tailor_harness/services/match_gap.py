@@ -104,7 +104,7 @@ def floor_domain(category: str) -> tuple[str, str]:
     """Return the id and label of the general domain backing a category."""
 
     label = SKILL_GROUPS.get(category, SKILL_GROUPS["other"])
-    return f"{FLOOR_DOMAIN_PREFIX}{category}", f"{label} — General"
+    return f"{FLOOR_DOMAIN_PREFIX}{category}", f"{label}: General"
 
 
 def _unassigned(cmap: ClusterMap, tokens: set[str]) -> set[str]:

@@ -167,7 +167,7 @@ export function HiringContactsPanel({ jobId }: { jobId: number }) {
           <UserSearch className="size-8 text-muted-foreground" aria-hidden="true" />
           <h3 className="mt-3 text-base font-semibold">No contact research yet</h3>
           <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-            {resource?.message ?? "Loading hiring-contact intelligence…"}
+            {resource?.message ?? "Loading hiring contacts…"}
           </p>
         </Card>
       )}

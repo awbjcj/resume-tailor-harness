@@ -183,7 +183,7 @@ def test_writer_and_reviser_receive_unfenced_fact_clamped_depth_plan():
 
     for text in (writer, reviser):
         assert "BULLET DEPTH PLAN" in text
-        assert 'e1 "Acme — Engineer": 5 source -> render 5' in text
+        assert 'e1 "Acme: Engineer": 5 source -> render 5' in text
         assert "BULLET DEPTH PLAN" not in _fenced(text)
 
 

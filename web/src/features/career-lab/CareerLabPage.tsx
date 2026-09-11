@@ -354,7 +354,7 @@ export function CareerLabPage() {
         isLoading={sessions.isPending}
         isError={sessions.isError}
         onRetry={() => void sessions.refetch()}
-        emptyMessage="No saved Career Lab sessions yet. Start one when you are ready to draft."
+        emptyMessage="No saved Career Lab sessions yet. Start one to create a draft."
         createLabel={unanchoredActive ? undefined : "New Career Lab session"}
         onCreate={unanchoredActive ? undefined : () => setNewOpen(true)}
         onRename={(sessionId, title) => void rename.mutateAsync({ sessionId, title })}

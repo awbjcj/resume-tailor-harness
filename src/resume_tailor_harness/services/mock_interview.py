@@ -373,7 +373,7 @@ def run_opening_turn(
 ) -> dict:
     root = Path(interview_dir)
     parsed_style = InterviewStyle.model_validate(style)
-    reporter.begin(1, "Preparing your interviewer")
+    reporter.begin(1, "Preparing the interview")
     context = load_context(engine, job_id, resume_version_id)
     interviewer = interviewer_agent or _build_interviewer(
         parsed_style,
@@ -453,7 +453,7 @@ def run_answer_turn(
         raise ValueError("session ended")
     if session["concluded"]:
         raise ValueError("interview concluded; end the session for your debrief")
-    reporter.begin(1, "Interviewer is thinking")
+    reporter.begin(1, "Preparing a response")
     style = InterviewStyle.model_validate(session["style"])
     interviewer = interviewer_agent or _build_interviewer(
         style,
@@ -568,7 +568,7 @@ def run_debrief_turn(
     # LLM to debrief an empty transcript yields an empty summary that
     # normalize_debrief rejects ("empty debrief summary"). Close it deterministically.
     if not _has_candidate_answer(session):
-        reporter.begin(1, "Closing your interview")
+        reporter.begin(1, "Finishing the interview")
         end_with_debrief(
             root, session_id, InterviewDebrief(summary=_EMPTY_DEBRIEF_SUMMARY)
         )

@@ -16,7 +16,7 @@ const CONNECT_OUTCOMES: Record<string, { ok: boolean; message: string }> = {
   connected: { ok: true, message: "Gmail connected." },
   error: {
     ok: false,
-    message: "Couldn’t connect Gmail — the sign-in didn’t complete. Please try again.",
+    message: "Couldn’t connect Gmail. The sign-in didn’t complete. Please try again.",
   },
   invalid: {
     ok: false,

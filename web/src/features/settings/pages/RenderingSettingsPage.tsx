@@ -66,7 +66,7 @@ export function RenderingSettingsPage() {
           sectionId="render"
           label="Rendering options"
           buttonLabel="Reset options"
-          note="Custom uploaded templates are kept — reset those separately below."
+          note="Custom uploaded templates are kept. Reset them separately below."
         />
       </header>
 

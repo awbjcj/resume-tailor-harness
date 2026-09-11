@@ -247,7 +247,7 @@ def test_build_corpus_profile_backfills_only_missing_bullet_aspects(tmp_path):
 
 
 def test_build_corpus_profile_requires_sources(tmp_path):
-    with pytest.raises(ValueError, match="no sources"):
+    with pytest.raises(ValueError, match="No sources are registered"):
         build_corpus_profile(tmp_path / "empty", github_username="")
 
 

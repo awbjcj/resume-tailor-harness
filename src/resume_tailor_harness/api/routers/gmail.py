@@ -94,7 +94,7 @@ def _exchange_token(flow: Any, code: str) -> str:
     granted = _granted_scopes(session.token)
     if gmail_auth.SCOPE_READONLY not in granted:
         raise GmailScopeMissing(
-            "Gmail access was not granted — approve the Gmail permissions to connect."
+            "Gmail access was not granted. Approve the Gmail permissions to connect."
         )
     session.scope = granted
     return flow.credentials.to_json()

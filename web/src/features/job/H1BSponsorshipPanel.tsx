@@ -386,7 +386,7 @@ export function H1BSponsorshipPanel({
           icon={<CalendarClock className="size-4" />}
           className="mt-4" tone="warning"
         >
-          Checked {formatDate(evidence.retrievedAt)} — may be out of date
+          Checked {formatDate(evidence.retrievedAt)} (may be out of date)
         </ResearchNotice>
       )}
 

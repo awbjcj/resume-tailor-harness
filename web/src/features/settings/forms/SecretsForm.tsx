@@ -25,7 +25,7 @@ const SECRET_DESCRIPTIONS: Record<string, string> = {
   googleOauthClientId:
     "Overrides the platform Gmail sign-in client for your workspace only. Must be a Web application OAuth client, not a Desktop app client.",
   googleOauthClientSecret:
-    "Paired secret for the client ID above — both must be set together.",
+    "This secret pairs with the client ID above. Set both together.",
 };
 
 // The client ID is meant to be public (it's sent to Google in the browser), so

@@ -41,7 +41,7 @@ def evidence_owners(facts: ProfileFacts) -> list[OwnerRef]:
             OwnerRef(
                 id=experience.id,
                 kind="experience",
-                label=f"{experience.company} — {experience.title}",
+                label=f"{experience.company}: {experience.title}",
                 bullets=tuple(experience.bullets),
             )
             for experience in facts.experience

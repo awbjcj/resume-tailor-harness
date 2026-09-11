@@ -282,7 +282,7 @@ def _post_process(
     # out N resolver calls under the research phase's total of 1 pinned the bar
     # at 100% and displayed "8 of 1".
     if uncached:
-        reporter.begin(len(uncached), "Discovery Scout is verifying source ownership")
+        reporter.begin(len(uncached), "Verifying source ownership")
     resolved = asyncio.run(resolve_all()) if uncached else []
     results = {item[0]: result for item, result in zip(uncached, resolved, strict=True)}
     for index, proposal in fresh:
@@ -376,7 +376,7 @@ def _run_turn(
     )
     if session["status"] != "active":
         raise ValueError("session ended")
-    reporter.begin(1, "Discovery Scout is researching")
+    reporter.begin(1, "Researching sources")
     resolution_cache: dict[tuple[str, str], CompanySourceResolution] = {}
     source_resolver = CompanySourceResolver(search_path)
     search_budget = SearchBudget()
@@ -563,7 +563,7 @@ def run_recap_turn(
     session = load_session(workspace_root, session_id)
     if session["status"] != "active":
         raise ValueError("session ended")
-    reporter.begin(1, "Discovery Scout is writing a recap")
+    reporter.begin(1, "Writing a recap")
     if scout_agent is not None:
         researcher = scout_agent
     else:

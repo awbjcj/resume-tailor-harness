@@ -91,7 +91,7 @@ function PromptRow({ item }: { item: AgentPromptItem }) {
         ) : (
           <Badge variant="secondary" className="w-fit">
             <LockKeyhole data-icon="inline-start" aria-hidden="true" />
-            Integrity gate — read-only
+            Integrity gate (read-only)
           </Badge>
         )}
       </AccordionContent>
@@ -121,8 +121,8 @@ export function AgentPromptsPage() {
         <div>
           <h1 className="text-lg font-semibold">Agent prompts</h1>
           <p className="text-sm text-muted-foreground">
-            Read every built-in prompt and add subordinate guidance. Guidance can
-            steer tone, emphasis, and process, never facts or integrity rules.
+            Review each built-in prompt and add supporting guidance. Guidance can
+            shape tone, emphasis, and process. It cannot change facts or integrity rules.
           </p>
         </div>
         <ResetSectionButton sectionId="agent_guidance" label="Agent prompts" />

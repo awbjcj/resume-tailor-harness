@@ -59,7 +59,7 @@ export function TrackingTab({
             onConfirm={() => del.mutate(job.id, { onSuccess: onDeleted })}
           />
           {job.hasProgress && (
-            <p className="text-xs text-muted-foreground">Has progress — delete disabled.</p>
+            <p className="text-xs text-muted-foreground">This job has progress, so you cannot delete it.</p>
           )}
         </div>
       </section>

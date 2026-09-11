@@ -180,7 +180,7 @@ function LaunchDialogBody({
                     }
                   />
                   <FieldLabel htmlFor={inputId}>
-                    {job.company ?? "Unknown company"} — {job.title ?? "Untitled role"}
+                    {job.company ?? "Unknown company"} · {job.title ?? "Untitled role"}
                   </FieldLabel>
                 </Field>
               );

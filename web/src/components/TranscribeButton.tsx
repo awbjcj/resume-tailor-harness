@@ -57,7 +57,7 @@ export function TranscribeButton({
       blobRef.current = null;
       setPhase("idle");
     } catch {
-      toast.error("Transcription failed — tap retry");
+      toast.error("Transcription failed. Tap Retry.");
       setPhase("failed");
     }
   };

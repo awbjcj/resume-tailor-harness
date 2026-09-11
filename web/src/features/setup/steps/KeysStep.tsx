@@ -21,7 +21,7 @@ export function KeysStep() {
       <CardHeader>
         <CardTitle>API keys</CardTitle>
         <CardDescription>
-          Needed for tailoring — everything else works without it.
+          Needed for tailoring. Everything else works without it.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

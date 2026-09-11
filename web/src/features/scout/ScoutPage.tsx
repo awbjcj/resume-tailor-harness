@@ -122,7 +122,7 @@ export function ScoutPage() {
       icon={<Compass />}
       eyebrow="Guided discovery"
       title="Discovery Scout"
-      description="Talk through the companies, roles, locations, and boundaries that should shape your search. Nothing is added until you approve it."
+      description="Describe the companies, roles, locations, and boundaries for your search. Nothing is added until you approve it."
       meta={<><Badge variant={active?.status === "active" ? "secondary" : "outline"}>{active?.status === "active" ? "Scout researching" : active ? "Session complete" : "Ready to explore"}</Badge>{active ? <Badge variant="outline">{pendingProposals} pending</Badge> : null}{active ? <Badge variant="outline">{addedProposals} added</Badge> : null}</>}
       actions={active?.status === "active" ? <Button variant="outline" disabled={busy} onClick={endSession}>End session</Button> : active ? <Button variant="outline" onClick={() => setSelectedId(null)}>New session</Button> : undefined}
     />
@@ -147,7 +147,7 @@ export function ScoutPage() {
           </CardHeader>
         ) : null}
         <CardContent className={cn("flex flex-col gap-4", active || busy ? "p-4 sm:p-6" : "p-0", CHAT_SURFACE_HEIGHT)}>
-          {!active && !busy ? <WorkspaceEmptyState icon={Compass} title="Shape a smarter search" description="Tell the Scout what you want to find. It will research companies and search terms, then wait for your approval before changing anything." actionLabel="Create Scout session" onAction={() => setNewOpen(true)} steps={[{ icon: MessageCircleQuestion, title: "Describe the search", description: "Share roles, locations, industries, and boundaries in plain language." }, { icon: Search, title: "Review the research", description: "The Scout returns separate, cited proposals instead of changing settings silently." }, { icon: CheckCircle2, title: "Approve what fits", description: "Add or dismiss each company and search term while keeping full control." }]} /> : <ChatThread messages={messages} streaming={streaming?.length ? streaming : null} streamingActive={stream.status === "streaming"} showReasoning assistantName="Discovery Scout" assistantIcon={<Compass className="size-4" aria-hidden="true" />} />}
+          {!active && !busy ? <WorkspaceEmptyState icon={Compass} title="Set your search direction" description="Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything." actionLabel="Create Scout session" onAction={() => setNewOpen(true)} steps={[{ icon: MessageCircleQuestion, title: "Describe the search", description: "Share roles, locations, industries, and boundaries in plain language." }, { icon: Search, title: "Review the research", description: "The Scout returns separate proposals with citations. It waits for your approval before changing settings." }, { icon: CheckCircle2, title: "Approve what fits", description: "Add or dismiss each company and search term yourself." }]} /> : <ChatThread messages={messages} streaming={streaming?.length ? streaming : null} streamingActive={stream.status === "streaming"} showReasoning assistantName="Discovery Scout" assistantIcon={<Compass className="size-4" aria-hidden="true" />} />}
           {active?.recap ? <div className="rounded-xl border bg-muted/35 p-3 text-sm"><span className="font-medium">Recap: </span>{active.recap}</div> : null}
           {active?.status === "active" ? <ChatComposer value={composer} onChange={setComposer} onSend={() => launchMessage()} onStop={stop} busy={busy} settling={stream.status === "settled"} ariaLabel="Discovery request" placeholder="Ask for a change…" /> : active ? <p className="rounded-xl bg-muted/50 p-3 text-center text-sm text-muted-foreground">This conversation has ended. Pending proposals remain available to review.</p> : null}
         </CardContent>
@@ -164,7 +164,7 @@ export function ScoutPage() {
       isLoading={sessions.isPending}
       isError={sessions.isError}
       onRetry={() => void sessions.refetch()}
-      emptyMessage="No Scout sessions yet. Start one when you are ready to shape your search."
+        emptyMessage="No Scout sessions yet. Start one to refine your search."
       createLabel="New Scout session"
       onCreate={() => setNewOpen(true)}
       onRename={(sessionId, title) => rename.mutate({ sessionId, title })}

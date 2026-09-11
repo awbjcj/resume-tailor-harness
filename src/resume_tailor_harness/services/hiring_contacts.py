@@ -139,7 +139,7 @@ def generate_hiring_contact_intelligence(
         generic_email_draft=result.generic_email_draft.strip()
         or f"Hello {company} recruiting team,\n\nI'm interested in the {title} role and would value any public guidance you can share about the team and hiring process.",
         generic_short_message_draft=result.generic_short_message_draft.strip()
-        or f"Hello {company} recruiting team — I'm interested in the {title} role and would appreciate any public guidance about the team or process.",
+        or f"Hello {company} recruiting team,\n\nI'm interested in the {title} role and would appreciate any public guidance about the team or process.",
         caveat=HIRING_CONTACT_CAVEAT,
     )
     with _WRITE_LOCK:

@@ -1,14 +1,4 @@
 {
-  "— may be out of date": {
-    "key": "ui_28a27ad3577a",
-    "en": "— may be out of date",
-    "zh-CN": "——可能已过时"
-  },
-  "— unavailable": {
-    "key": "ui_928ad892e520",
-    "en": "— unavailable",
-    "zh-CN": "——不可用"
-  },
   ", whatever their status. Existing resume versions and PDFs are kept.": {
     "key": "ui_45077700e30c",
     "en": ", whatever their status. Existing resume versions and PDFs are kept.",
@@ -79,20 +69,25 @@
     "en": "(if required)",
     "zh-CN": "（如需要）"
   },
+  "(may be out of date)": {
+    "key": "ui_83fb57a4b195",
+    "en": "(may be out of date)",
+    "zh-CN": "（可能已过时）"
+  },
   "(optional)": {
     "key": "ui_0059798b7f70",
     "en": "(optional)",
     "zh-CN": "（可选）"
   },
+  "(unavailable)": {
+    "key": "ui_db4a103d0d02",
+    "en": "(unavailable)",
+    "zh-CN": "（不可用）"
+  },
   "{{v0}}": {
     "key": "ui_bc3d13e87c79",
     "en": "{{v0}}",
     "zh-CN": "{{v0}}"
-  },
-  "{{v0}} — {{v1}}": {
-    "key": "ui_7a11adefd68f",
-    "en": "{{v0}} — {{v1}}",
-    "zh-CN": "{{v0}} — {{v1}}"
   },
   "{{v0}} ·": {
     "key": "ui_33b1db25f669",
@@ -424,11 +419,6 @@
     "en": "% fit",
     "zh-CN": "% 匹配"
   },
-  "Add job URL": {
-    "key": "ui_71cde23f79bb",
-    "en": "Add job URL",
-    "zh-CN": "添加职位网址"
-  },
   "+ days": {
     "key": "ui_e7d3add15a3a",
     "en": "+ days",
@@ -519,10 +509,10 @@
     "en": "A company is required",
     "zh-CN": "请填写公司名称"
   },
-  "A gated reviewer blocks the round outright, so it is never scored — its weight and score bands are disabled rather than silently ignored.": {
-    "key": "ui_862adc2b722d",
-    "en": "A gated reviewer blocks the round outright, so it is never scored — its weight and score bands are disabled rather than silently ignored.",
-    "zh-CN": "启用硬性门槛的评审会直接阻断本轮，因此不参与评分；其权重和评分区间会被禁用，而非悄然忽略。"
+  "A gated reviewer blocks the round before scoring. Its weight and score bands are disabled.": {
+    "key": "ui_8d3c21997cf2",
+    "en": "A gated reviewer blocks the round before scoring. Its weight and score bands are disabled.",
+    "zh-CN": "硬性门槛评审会在评分前阻断本轮。系统会禁用其权重和评分区间。"
   },
   "A new code is on its way.": {
     "key": "ui_8f5c29c43fff",
@@ -534,15 +524,10 @@
     "en": "A stronger answer",
     "zh-CN": "更有力的回答"
   },
-  "A target, not a cap. The skills section renders one comma-joined line per category, so about 40 entries cost roughly five lines — trimming it saves almost no space and loses keyword coverage.": {
-    "key": "ui_6e087af13541",
-    "en": "A target, not a cap. The skills section renders one comma-joined line per category, so about 40 entries cost roughly five lines — trimming it saves almost no space and loses keyword coverage.",
-    "zh-CN": "这是目标值，而非上限。技能部分按类别以逗号分隔渲染成一行，约 40 个条目也只占五行左右——精简技能几乎省不出多少空间，反而会损失关键词覆盖率。"
-  },
-  "A thread for this job is open — continue it from the list below.": {
-    "key": "ui_5bd5678ff3a1",
-    "en": "A thread for this job is open — continue it from the list below.",
-    "zh-CN": "该职位已有进行中的对话——可在下方列表中继续。"
+  "A thread for this job is open. Continue it from the list below.": {
+    "key": "ui_0e159e56929c",
+    "en": "A thread for this job is open. Continue it from the list below.",
+    "zh-CN": "该职位已有正在进行的对话。可在下方列表继续。"
   },
   "A typed confirmation is required before anything is erased.": {
     "key": "ui_645021574ba2",
@@ -689,6 +674,11 @@
     "en": "Add a profile skill and pin it to this category.",
     "zh-CN": "添加一项个人资料技能，并将其固定到此类别。"
   },
+  "Add a public careers page, review a sample of its postings, and save reusable import rules.": {
+    "key": "ui_8cd92302f5b9",
+    "en": "Add a public careers page, review a sample of its postings, and save reusable import rules.",
+    "zh-CN": "添加公开招聘页面，检查职位样本并保存可复用的导入规则。"
+  },
   "Add a public page": {
     "key": "ui_f8a0eb17f400",
     "en": "Add a public page",
@@ -734,6 +724,11 @@
     "en": "Add job",
     "zh-CN": "添加职位"
   },
+  "Add job board URL": {
+    "key": "ui_127ffc162bf3",
+    "en": "Add job board URL",
+    "zh-CN": "添加招聘列表网址"
+  },
   "Add job by URL": {
     "key": "ui_6e5ffcfbf3f3",
     "en": "Add job by URL",
@@ -743,6 +738,11 @@
     "key": "ui_84a8f30dc96d",
     "en": "Add job sources",
     "zh-CN": "添加职位来源"
+  },
+  "Add job URL": {
+    "key": "ui_71cde23f79bb",
+    "en": "Add job URL",
+    "zh-CN": "添加职位网址"
   },
   "Add note": {
     "key": "ui_63565c0485fe",
@@ -754,15 +754,20 @@
     "en": "Add only the material that should shape the next draft.",
     "zh-CN": "仅添加应影响下一版草稿的内容。"
   },
-  "Add or dismiss each company and search term while keeping full control.": {
-    "key": "ui_6aa8b056ed4d",
-    "en": "Add or dismiss each company and search term while keeping full control.",
-    "zh-CN": "逐一添加或忽略公司和搜索词，全程由你掌控。"
+  "Add or dismiss each company and search term yourself.": {
+    "key": "ui_3ccdc08b73ab",
+    "en": "Add or dismiss each company and search term yourself.",
+    "zh-CN": "自行添加或忽略每个公司和搜索词。"
   },
   "Add page": {
     "key": "ui_ae764a4a4d8b",
     "en": "Add page",
     "zh-CN": "添加页面"
+  },
+  "Add salary band": {
+    "key": "ui_b03aa6f6307e",
+    "en": "Add salary band",
+    "zh-CN": "添加薪资区间"
   },
   "Add skill": {
     "key": "ui_bc4db5d33761",
@@ -939,6 +944,11 @@
     "en": "AI-generated voice",
     "zh-CN": "AI 生成语音"
   },
+  "Aim for this number. It is not a hard cap. The skills section renders one comma-separated line per category. About 40 entries use roughly five lines, so trimming them saves little space and can reduce keyword coverage.": {
+    "key": "ui_866df9a2c91e",
+    "en": "Aim for this number. It is not a hard cap. The skills section renders one comma-separated line per category. About 40 entries use roughly five lines, so trimming them saves little space and can reduce keyword coverage.",
+    "zh-CN": "建议以此数量为目标，并非硬性上限。技能部分按类别呈现为一行，条目以逗号分隔。约 40 个条目只占五行左右，删减它们省不了多少空间，还可能减少关键词覆盖率。"
+  },
   "All": {
     "key": "ui_a52ace420f21",
     "en": "All",
@@ -1039,10 +1049,15 @@
     "en": "Amount (USD)",
     "zh-CN": "金额（美元）"
   },
-  "An interview for this job is in progress — resume it from the list below.": {
-    "key": "ui_b6f3119d7f6f",
-    "en": "An interview for this job is in progress — resume it from the list below.",
-    "zh-CN": "该职位的面试正在进行中——可在下方列表中继续。"
+  "An interview for this job is in progress. Resume it from the list below.": {
+    "key": "ui_5093ebcb8c45",
+    "en": "An interview for this job is in progress. Resume it from the list below.",
+    "zh-CN": "该职位的面试正在进行中。可在下方列表继续。"
+  },
+  "Analyze job board": {
+    "key": "ui_260c4674f8b9",
+    "en": "Analyze job board",
+    "zh-CN": "分析招聘列表"
   },
   "Anchor": {
     "key": "ui_a4ae750b610e",
@@ -1074,10 +1089,15 @@
     "en": "Answer as you would in a real interview…",
     "zh-CN": "像在真实面试中一样作答……"
   },
-  "Answer as you would in the real room. The interviewer adapts, then turns the completed rehearsal into practical coaching.": {
-    "key": "ui_bc3f74e59d29",
-    "en": "Answer as you would in the real room. The interviewer adapts, then turns the completed rehearsal into practical coaching.",
-    "zh-CN": "像在真实面试现场一样作答。面试官会随之调整，并在演练结束后给出切实可行的辅导建议。"
+  "Answer as you would in an interview. The questions adapt to your responses, and the completed rehearsal includes coaching.": {
+    "key": "ui_979f06db9daa",
+    "en": "Answer as you would in an interview. The questions adapt to your responses, and the completed rehearsal includes coaching.",
+    "zh-CN": "像参加正式面试一样作答。问题会根据你的回答调整，演练结束后会提供辅导建议。"
+  },
+  "Answer each question while the coach follows up on useful details.": {
+    "key": "ui_729ac6349b1f",
+    "en": "Answer each question while the coach follows up on useful details.",
+    "zh-CN": "逐一回答问题，教练会根据有用的细节继续追问。"
   },
   "Answer failed": {
     "key": "ui_a9c8a2eebac9",
@@ -1169,6 +1189,11 @@
     "en": "Application submitted",
     "zh-CN": "申请已提交"
   },
+  "Application URL": {
+    "key": "ui_96884337d874",
+    "en": "Application URL",
+    "zh-CN": "申请网址"
+  },
   "Applications": {
     "key": "ui_98e33b0f3104",
     "en": "Applications",
@@ -1219,6 +1244,11 @@
     "en": "Approve a job before writing its cover letter.",
     "zh-CN": "撰写求职信前，请先批准该职位。"
   },
+  "Approve and save": {
+    "key": "ui_1b9b961ef4ce",
+    "en": "Approve and save",
+    "zh-CN": "批准并保存"
+  },
   "Approve for tailoring": {
     "key": "ui_a9112387807c",
     "en": "Approve for tailoring",
@@ -1258,6 +1288,11 @@
     "key": "ui_c23a9db56867",
     "en": "Approved jobs unavailable",
     "zh-CN": "已批准的职位不可用"
+  },
+  "Approved revision": {
+    "key": "ui_d023634bf26a",
+    "en": "Approved revision",
+    "zh-CN": "已批准版本"
   },
   "archive": {
     "key": "ui_0eb3e36bfb24",
@@ -1333,11 +1368,6 @@
     "key": "ui_0a1c8fde28ed",
     "en": "Ashby",
     "zh-CN": "Ashby"
-  },
-  "Ask about this role with the job description in context — application answers, outreach, negotiation prep — and keep every thread here.": {
-    "key": "ui_7149089f59e4",
-    "en": "Ask about this role with the job description in context — application answers, outreach, negotiation prep — and keep every thread here.",
-    "zh-CN": "结合职位描述提问这个职位——申请回复、外联沟通、谈判准备，所有对话都保存在这里。"
   },
   "Ask Career Lab about this role": {
     "key": "ui_646c0b4e03a7",
@@ -1518,16 +1548,6 @@
     "key": "ui_5a3b1c04239c",
     "en": "Billing hours",
     "zh-CN": "计费时长"
-  },
-  "Billing off-peak rates now — cheaper until {{v0}} UTC. Weekday peak hours: 01:00–04:00 and 06:00–10:00 UTC.": {
-    "key": "ui_cca5376867de",
-    "en": "Billing off-peak rates now — cheaper until {{v0}} UTC. Weekday peak hours: 01:00–04:00 and 06:00–10:00 UTC.",
-    "zh-CN": "当前为非高峰计费时段——{{v0}} UTC 前价格更低。工作日高峰时段：01:00–04:00 及 06:00–10:00 UTC。"
-  },
-  "Billing peak rates now — pricier until {{v0}} UTC.": {
-    "key": "ui_76ebb46d6430",
-    "en": "Billing peak rates now — pricier until {{v0}} UTC.",
-    "zh-CN": "当前为高峰计费时段——{{v0}} UTC 前价格更高。"
   },
   "Board": {
     "key": "ui_4816cbfd74aa",
@@ -1794,6 +1814,11 @@
     "en": "Change category",
     "zh-CN": "更改分类"
   },
+  "Change extraction rules": {
+    "key": "ui_0d33a2bd6474",
+    "en": "Change extraction rules",
+    "zh-CN": "修改提取规则"
+  },
   "Change group for {{v0}}": {
     "key": "ui_72363b30fb72",
     "en": "Change group for {{v0}}",
@@ -1984,6 +2009,11 @@
     "en": "Choose jobs that have passed approval, including tailored or rendered jobs. All jobs start selected.",
     "zh-CN": "选择已通过批准的职位，包括已定制或已生成的职位。默认全部选中。"
   },
+  "Choose observed page content for a field.": {
+    "key": "ui_89d5522cbc72",
+    "en": "Choose observed page content for a field.",
+    "zh-CN": "为字段选择页面中实际出现的内容。"
+  },
   "Choose the hiring platform, verify the live board, then add it to discovery.": {
     "key": "ui_4034d9b4230c",
     "en": "Choose the hiring platform, verify the live board, then add it to discovery.",
@@ -2073,6 +2103,16 @@
     "key": "ui_7d9eb7acb13e",
     "en": "Close",
     "zh-CN": "关闭"
+  },
+  "Close detail selector": {
+    "key": "ui_80c9f880d6aa",
+    "en": "Close detail selector",
+    "zh-CN": "关闭详情选择器"
+  },
+  "Closing date": {
+    "key": "ui_d34f597093df",
+    "en": "Closing date",
+    "zh-CN": "截止日期"
   },
   "Coaching · {{v0}}": {
     "key": "ui_0faa8c9a2210",
@@ -2229,6 +2269,11 @@
     "en": "Compare each version, understand its evidence choices, and pick what you will send.",
     "zh-CN": "比较每个版本，了解其证据选取方式，并选择要发送的版本。"
   },
+  "Compare role requirements with evidence in your profile, then identify skills to develop.": {
+    "key": "ui_f960e0be8814",
+    "en": "Compare role requirements with evidence in your profile, then identify skills to develop.",
+    "zh-CN": "比较目标职位要求与个人资料中已有的证据，然后找出需要提升的技能。"
+  },
   "Compare roles": {
     "key": "ui_5aaa9cf62552",
     "en": "Compare roles",
@@ -2369,15 +2414,15 @@
     "en": "Connect model providers",
     "zh-CN": "连接模型提供商"
   },
-  "Connected ({{v0}} client) — reconnect to enable drafts.": {
-    "key": "ui_42a41b8552b7",
-    "en": "Connected ({{v0}} client) — reconnect to enable drafts.",
-    "zh-CN": "已连接（{{v0}} 客户端）——重新连接以启用草稿功能。"
+  "Connected ({{v0}} client). Reconnect to enable drafts.": {
+    "key": "ui_d9c917b31abd",
+    "en": "Connected ({{v0}} client). Reconnect to enable drafts.",
+    "zh-CN": "已连接（{{v0}} 客户端）。重新连接后可启用草稿功能。"
   },
-  "Connected ({{v0}} client) — sync and drafts enabled.": {
-    "key": "ui_da1f6d919c9c",
-    "en": "Connected ({{v0}} client) — sync and drafts enabled.",
-    "zh-CN": "已连接（{{v0}} 客户端）——同步与草稿功能已启用。"
+  "Connected ({{v0}} client). Sync and drafts are enabled.": {
+    "key": "ui_2c16e6e04bcb",
+    "en": "Connected ({{v0}} client). Sync and drafts are enabled.",
+    "zh-CN": "已连接（{{v0}} 客户端）。已启用同步和草稿功能。"
   },
   "Connected accounts": {
     "key": "ui_2fc385cd2008",
@@ -2529,10 +2574,10 @@
     "en": "Couldn't cancel run: {{v0}}",
     "zh-CN": "无法取消任务：{{v0}}"
   },
-  "Couldn’t connect Gmail — the sign-in didn’t complete. Please try again.": {
-    "key": "ui_08747b01458f",
-    "en": "Couldn’t connect Gmail — the sign-in didn’t complete. Please try again.",
-    "zh-CN": "无法连接 Gmail——登录未完成，请重试。"
+  "Couldn’t connect Gmail. The sign-in didn’t complete. Please try again.": {
+    "key": "ui_0767d878d184",
+    "en": "Couldn’t connect Gmail. The sign-in didn’t complete. Please try again.",
+    "zh-CN": "无法连接 Gmail。登录未完成，请重试。"
   },
   "Couldn't load agent prompts": {
     "key": "ui_111d706f331c",
@@ -2644,6 +2689,11 @@
     "en": "Covered by your profile",
     "zh-CN": "已在你的个人资料中覆盖"
   },
+  "Crawl limits": {
+    "key": "ui_f9f5074fc20c",
+    "en": "Crawl limits",
+    "zh-CN": "抓取限制"
+  },
   "Create a tier to start granting members a recurring allowance.": {
     "key": "ui_0d6b1c46c1dc",
     "en": "Create a tier to start granting members a recurring allowance.",
@@ -2653,6 +2703,11 @@
     "key": "ui_798ca2ce18bf",
     "en": "Create account",
     "zh-CN": "创建账户"
+  },
+  "Create an interview brief from the frozen company dossier, job description, selected documents, and earlier interview notes.": {
+    "key": "ui_e3266e68c3a1",
+    "en": "Create an interview brief from the frozen company dossier, job description, selected documents, and earlier interview notes.",
+    "zh-CN": "根据冻结的公司档案、职位描述、已选文档和前序面试记录创建面试准备简报。"
   },
   "Create another invite": {
     "key": "ui_2bf0b3ccd53c",
@@ -2759,10 +2814,10 @@
     "en": "Custom resume templates",
     "zh-CN": "自定义简历模板"
   },
-  "Custom uploaded templates are kept — reset those separately below.": {
-    "key": "ui_071085817824",
-    "en": "Custom uploaded templates are kept — reset those separately below.",
-    "zh-CN": "自定义上传的模板会保留——请在下方单独重置。"
+  "Custom uploaded templates are kept. Reset them separately below.": {
+    "key": "ui_8f5611f36c46",
+    "en": "Custom uploaded templates are kept. Reset them separately below.",
+    "zh-CN": "自定义上传的模板会保留。请在下方单独重置。"
   },
   "Customizable settings": {
     "key": "ui_edcb30f337b7",
@@ -2833,11 +2888,6 @@
     "key": "ui_21b111cbfe6e",
     "en": "Default",
     "zh-CN": "默认"
-  },
-  "Defaults are sensible — change reviewer weights only if you know why.": {
-    "key": "ui_037c1ee97ed5",
-    "en": "Defaults are sensible — change reviewer weights only if you know why.",
-    "zh-CN": "默认值已经过校准——仅在明确原因时才调整审阅者权重。"
   },
   "Defaults could not be saved": {
     "key": "ui_28a58a6d413b",
@@ -2954,6 +3004,11 @@
     "en": "Depth",
     "zh-CN": "深度"
   },
+  "Describe the companies, roles, locations, and boundaries for your search. Nothing is added until you approve it.": {
+    "key": "ui_b7a54f90fda2",
+    "en": "Describe the companies, roles, locations, and boundaries for your search. Nothing is added until you approve it.",
+    "zh-CN": "说明你希望搜索的公司、职位、地点和边界。在你批准前不会添加任何内容。"
+  },
   "Describe the search": {
     "key": "ui_315a61a380a0",
     "en": "Describe the search",
@@ -2963,6 +3018,16 @@
     "key": "ui_d03648e6dd1e",
     "en": "Describe the search you want to explore. You can refine it throughout the conversation.",
     "zh-CN": "描述你想探索的搜索内容，之后可以在对话中不断完善。"
+  },
+  "Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything.": {
+    "key": "ui_e15f70f4ad1d",
+    "en": "Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything.",
+    "zh-CN": "说明你想找什么。职位探索助手会调研公司和搜索词，并在更改设置前等待你的批准。"
+  },
+  "Description selector": {
+    "key": "ui_5d7d99a9418a",
+    "en": "Description selector",
+    "zh-CN": "职位描述选择器"
   },
   "Details": {
     "key": "ui_45989de49fb7",
@@ -3019,6 +3084,11 @@
     "en": "Discover",
     "zh-CN": "发现"
   },
+  "discovered ·": {
+    "key": "ui_424f57e9f061",
+    "en": "discovered ·",
+    "zh-CN": "已发现 ·"
+  },
   "Discovery": {
     "key": "ui_80fc40213320",
     "en": "Discovery",
@@ -3048,6 +3118,11 @@
     "key": "ui_c940882dc310",
     "en": "Discovery Scout sessions",
     "zh-CN": "职位探索助手会话"
+  },
+  "Discuss this role with the job description as context. Use this thread for application answers, outreach, or negotiation preparation.": {
+    "key": "ui_724fa59089b3",
+    "en": "Discuss this role with the job description as context. Use this thread for application answers, outreach, or negotiation preparation.",
+    "zh-CN": "结合职位描述讨论这个职位。可在此对话中处理申请回复、外联沟通或谈判准备。"
   },
   "Dismiss": {
     "key": "ui_48845bff334a",
@@ -3088,11 +3163,6 @@
     "key": "ui_2a174a65adee",
     "en": "Displays the mobile sidebar.",
     "zh-CN": "显示移动端侧边栏。"
-  },
-  "Distinct kinds of contribution — scope, impact, technique — per entry.": {
-    "key": "ui_cee6eb215509",
-    "en": "Distinct kinds of contribution — scope, impact, technique — per entry.",
-    "zh-CN": "每条条目呈现不同类型的贡献——范围、影响、技术。"
   },
   "Distinct skills": {
     "key": "ui_a2386c85d61b",
@@ -3194,15 +3264,20 @@
     "en": "Drafting studio",
     "zh-CN": "起草工作室"
   },
-  "Drop a document here — PDF, DOCX, TXT, or Markdown, up to 15 MB": {
-    "key": "ui_c30eb165b28a",
-    "en": "Drop a document here — PDF, DOCX, TXT, or Markdown, up to 15 MB",
-    "zh-CN": "将文档拖放到此处——支持 PDF、DOCX、TXT 或 Markdown，最大 15 MB"
+  "Drop a document here. Accepted formats: PDF, DOCX, TXT, or Markdown. Maximum size: 15 MB.": {
+    "key": "ui_79bfb5e08052",
+    "en": "Drop a document here. Accepted formats: PDF, DOCX, TXT, or Markdown. Maximum size: 15 MB.",
+    "zh-CN": "将文档拖放到此处。支持 PDF、DOCX、TXT 或 Markdown。最大 15 MB。"
   },
   "Dropped claims": {
     "key": "ui_a12ffea3766d",
     "en": "Dropped claims",
     "zh-CN": "被剔除的表述"
+  },
+  "duplicates ·": {
+    "key": "ui_353d65ed5ec1",
+    "en": "duplicates ·",
+    "zh-CN": "重复 ·"
   },
   "Durable credits": {
     "key": "ui_c20037a412c5",
@@ -3244,6 +3319,11 @@
     "en": "e.g. TypeScript",
     "zh-CN": "例如：TypeScript"
   },
+  "Each entry should cover different types of contribution, such as scope, impact, or technique.": {
+    "key": "ui_edbf2a4d21d0",
+    "en": "Each entry should cover different types of contribution, such as scope, impact, or technique.",
+    "zh-CN": "每条经历应覆盖不同类型的贡献，例如范围、影响或技术。"
+  },
   "Each tier grants a recurring allowance to every member assigned to it. Edit a tier in place; changes are audited.": {
     "key": "ui_fefff7093a00",
     "en": "Each tier grants a recurring allowance to every member assigned to it. Edit a tier in place; changes are audited.",
@@ -3273,6 +3353,11 @@
     "key": "ui_a5eca6bbab46",
     "en": "Edit event",
     "zh-CN": "编辑事件"
+  },
+  "Edit or relearn": {
+    "key": "ui_54303c034fe2",
+    "en": "Edit or relearn",
+    "zh-CN": "编辑或重新学习"
   },
   "Edit profile note": {
     "key": "ui_7d8447ef4a00",
@@ -3329,6 +3414,11 @@
     "en": "Employee or community",
     "zh-CN": "员工或社区来源"
   },
+  "Employment type": {
+    "key": "ui_ea8972863d1c",
+    "en": "Employment type",
+    "zh-CN": "雇佣类型"
+  },
   "Enable": {
     "key": "ui_5342e09f2729",
     "en": "Enable",
@@ -3359,10 +3449,10 @@
     "en": "End the interview now?",
     "zh-CN": "现在结束面试？"
   },
-  "End the loop when a round scores worse than the best so far, instead of spending the remaining rounds.": {
-    "key": "ui_296dcc178e02",
-    "en": "End the loop when a round scores worse than the best so far, instead of spending the remaining rounds.",
-    "zh-CN": "当某一轮得分低于目前最佳分数时结束循环，不再消耗剩余轮次。"
+  "End the loop when a round scores below the best so far. This preserves the remaining rounds.": {
+    "key": "ui_e9eb10ad6ed6",
+    "en": "End the loop when a round scores below the best so far. This preserves the remaining rounds.",
+    "zh-CN": "某一轮得分低于当前最佳分数时结束循环，以保留剩余轮次。"
   },
   "End this Career Lab session?": {
     "key": "ui_5065790ee52a",
@@ -3378,6 +3468,11 @@
     "key": "ui_29740326eaef",
     "en": "Engineering culture",
     "zh-CN": "工程文化"
+  },
+  "Enter a complete http(s) URL.": {
+    "key": "ui_bfb2fb3e5468",
+    "en": "Enter a complete http(s) URL.",
+    "zh-CN": "输入完整的 http(s) 网址。"
   },
   "Enter a complete HTTP(S) URL.": {
     "key": "ui_7f3b503a7fdd",
@@ -3554,10 +3649,10 @@
     "en": "Expand a category to see its domains, then a domain to inspect skills and evidence status.",
     "zh-CN": "展开分类查看其领域，再展开领域查看技能与证据状态。"
   },
-  "Experience used — and why": {
-    "key": "ui_af66f10d44fa",
-    "en": "Experience used — and why",
-    "zh-CN": "使用的经历——及其原因"
+  "Experience used and why": {
+    "key": "ui_6749e9e7e5ad",
+    "en": "Experience used and why",
+    "zh-CN": "使用的经历及其原因"
   },
   "experiences,": {
     "key": "ui_da264f4f26a1",
@@ -3654,10 +3749,10 @@
     "en": "Fact-lock failed",
     "zh-CN": "事实锁定失败"
   },
-  "Fact-lock failed — {{v0}}": {
-    "key": "ui_7cf90748d58e",
-    "en": "Fact-lock failed — {{v0}}",
-    "zh-CN": "事实锁定失败——{{v0}}"
+  "Fact-lock failed: {{v0}}": {
+    "key": "ui_9f434b03e39a",
+    "en": "Fact-lock failed: {{v0}}",
+    "zh-CN": "事实锁定失败：{{v0}}"
   },
   "Fact-lock passed": {
     "key": "ui_6eece8a7f21e",
@@ -3729,6 +3824,11 @@
     "en": "Fetching preview count...",
     "zh-CN": "正在获取预览数量……"
   },
+  "Field": {
+    "key": "ui_f45fc1dfdc96",
+    "en": "Field",
+    "zh-CN": "字段"
+  },
   "File": {
     "key": "ui_50009ce1da4d",
     "en": "File",
@@ -3783,6 +3883,11 @@
     "key": "ui_0ba993b39efb",
     "en": "Filtered",
     "zh-CN": "已筛选"
+  },
+  "filtered ·": {
+    "key": "ui_4ce9dd0701c5",
+    "en": "filtered ·",
+    "zh-CN": "已筛选 ·"
   },
   "Filtered jobs": {
     "key": "ui_51e0d4456793",
@@ -3944,6 +4049,11 @@
     "en": "Fulfilled",
     "zh-CN": "已完成"
   },
+  "Full description": {
+    "key": "ui_37ab0c4fffd2",
+    "en": "Full description",
+    "zh-CN": "完整职位描述"
+  },
   "Full job description": {
     "key": "ui_d5669c2e3b7e",
     "en": "Full job description",
@@ -3963,11 +4073,6 @@
     "key": "ui_cb129306bc6f",
     "en": "Gap",
     "zh-CN": "差距"
-  },
-  "Gap — not in your profile yet": {
-    "key": "ui_01fdb18411c7",
-    "en": "Gap — not in your profile yet",
-    "zh-CN": "差距——尚未出现在你的个人资料中"
   },
   "gaps": {
     "key": "ui_11fb0b5a56e5",
@@ -4279,11 +4384,6 @@
     "en": "HackerRank",
     "zh-CN": "HackerRank"
   },
-  "Handed to the writer, the reviser, and the advisory panel. Floors are clamped to what your profile can actually support, so a minimum never asks for invented evidence.": {
-    "key": "ui_75c30dd59aa5",
-    "en": "Handed to the writer, the reviser, and the advisory panel. Floors are clamped to what your profile can actually support, so a minimum never asks for invented evidence.",
-    "zh-CN": "会提供给撰写智能体、修订智能体和顾问小组使用。下限会被限制在你的个人资料实际能够支撑的范围内，因此最低要求绝不会需要捏造证据。"
-  },
   "Hard": {
     "key": "ui_9e73f8fa9cb7",
     "en": "Hard",
@@ -4293,11 +4393,6 @@
     "key": "ui_6d1e12cce316",
     "en": "Hard skill",
     "zh-CN": "硬技能"
-  },
-  "Has progress — delete disabled.": {
-    "key": "ui_e797604f8d5e",
-    "en": "Has progress — delete disabled.",
-    "zh-CN": "已有进度 — 无法删除。"
   },
   "Help me compare these offers and draft a decision checklist…": {
     "key": "ui_cceb05a7a9ce",
@@ -4334,10 +4429,10 @@
     "en": "Historical H-1B sponsorship",
     "zh-CN": "历史 H-1B 担保情况"
   },
-  "House style for tailored bullets — the tailor and reviewers read this.": {
-    "key": "ui_49063e2a33a7",
-    "en": "House style for tailored bullets — the tailor and reviewers read this.",
-    "zh-CN": "定制要点的统一文风规范 — 定制智能体与审阅智能体都会参考此内容。"
+  "House style for tailored bullets. The tailor and reviewers use it.": {
+    "key": "ui_aa96bf647a56",
+    "en": "House style for tailored bullets. The tailor and reviewers use it.",
+    "zh-CN": "定制简历要点的写作规范。定制智能体和评审员都会使用它。"
   },
   "How many write-and-review passes before the best attempt is kept.": {
     "key": "ui_44e46588aba0",
@@ -4439,6 +4534,21 @@
     "en": "Import text from a public HTTP or HTTPS page as profile evidence.",
     "zh-CN": "从公开的 HTTP 或 HTTPS 页面导入文本作为个人资料证据。"
   },
+  "imported": {
+    "key": "ui_5f54227b74fb",
+    "en": "imported",
+    "zh-CN": "已导入"
+  },
+  "Imported": {
+    "key": "ui_321f179c80ba",
+    "en": "Imported",
+    "zh-CN": "已导入"
+  },
+  "Importing job…": {
+    "key": "ui_1a4f7bfcfb42",
+    "en": "Importing job…",
+    "zh-CN": "正在导入职位…"
+  },
   "Improvements": {
     "key": "ui_c3eb9e6f2b69",
     "en": "Improvements",
@@ -4499,14 +4609,29 @@
     "en": "Inputs changed",
     "zh-CN": "输入已变更"
   },
+  "inspected": {
+    "key": "ui_5cfc694a09a2",
+    "en": "inspected",
+    "zh-CN": "已检查"
+  },
+  "inspected ·": {
+    "key": "ui_5d8fddca6c59",
+    "en": "inspected ·",
+    "zh-CN": "已检查 ·"
+  },
+  "Inspecting public page…": {
+    "key": "ui_efb59caf6e53",
+    "en": "Inspecting public page…",
+    "zh-CN": "正在检查公开页面…"
+  },
   "Intake": {
     "key": "ui_6b627d1cb766",
     "en": "Intake",
     "zh-CN": "信息采集"
   },
-  "Integrity gate — read-only": {
-    "key": "ui_09d9284c9bdd",
-    "en": "Integrity gate — read-only",
+  "Integrity gate (read-only)": {
+    "key": "ui_07765e43f461",
+    "en": "Integrity gate (read-only)",
     "zh-CN": "完整性校验（只读）"
   },
   "Interview": {
@@ -4649,10 +4774,20 @@
     "en": "Job archived",
     "zh-CN": "职位已归档"
   },
+  "Job board URL": {
+    "key": "ui_72732b35d91c",
+    "en": "Job board URL",
+    "zh-CN": "招聘列表网址"
+  },
   "Job Brief": {
     "key": "ui_e976a6595735",
     "en": "Job Brief",
     "zh-CN": "职位简报"
+  },
+  "Job card selector": {
+    "key": "ui_c475649c9c8f",
+    "en": "Job card selector",
+    "zh-CN": "职位卡片选择器"
   },
   "Job deleted": {
     "key": "ui_9e4701d38f65",
@@ -4663,6 +4798,11 @@
     "key": "ui_096db5f10bf7",
     "en": "Job details",
     "zh-CN": "职位详情"
+  },
+  "job details per pull": {
+    "key": "ui_c0c3ee94ef63",
+    "en": "job details per pull",
+    "zh-CN": "每次抓取的职位详情数"
   },
   "Job discovery actions": {
     "key": "ui_10150bb71389",
@@ -4678,6 +4818,11 @@
     "key": "ui_c173501e4f4e",
     "en": "Job import",
     "zh-CN": "职位导入"
+  },
+  "Job link selector": {
+    "key": "ui_ee1cf56aa1c7",
+    "en": "Job link selector",
+    "zh-CN": "职位链接选择器"
   },
   "Job posting URL": {
     "key": "ui_439c4534082d",
@@ -4889,6 +5034,11 @@
     "en": "Latest pull result",
     "zh-CN": "最近一次获取结果"
   },
+  "Latest source:": {
+    "key": "ui_ea7b0b45801f",
+    "en": "Latest source:",
+    "zh-CN": "最新来源："
+  },
   "Learning resources": {
     "key": "ui_b2a7b53ba105",
     "en": "Learning resources",
@@ -4969,6 +5119,11 @@
     "en": "Listen first, with interviewer text hidden until you reveal it.",
     "zh-CN": "先收听；在你主动显示前，面试官文字将保持隐藏。"
   },
+  "Listing pages": {
+    "key": "ui_a2c84d98289b",
+    "en": "Listing pages",
+    "zh-CN": "列表页数"
+  },
   "Live interview": {
     "key": "ui_0c3f94ba823e",
     "en": "Live interview",
@@ -5024,15 +5179,20 @@
     "en": "Loading audio…",
     "zh-CN": "正在加载音频……"
   },
+  "Loading extraction preview…": {
+    "key": "ui_8b5cd6256f47",
+    "en": "Loading extraction preview…",
+    "zh-CN": "正在加载提取预览…"
+  },
   "Loading gap-closing advice": {
     "key": "ui_37df0b854374",
     "en": "Loading gap-closing advice",
     "zh-CN": "正在加载弥补差距建议"
   },
-  "Loading hiring-contact intelligence…": {
-    "key": "ui_72b94991dd38",
-    "en": "Loading hiring-contact intelligence…",
-    "zh-CN": "正在加载招聘联系人情报…"
+  "Loading hiring contacts…": {
+    "key": "ui_d9c5f41f97ac",
+    "en": "Loading hiring contacts…",
+    "zh-CN": "正在加载招聘联系人…"
   },
   "Loading history…": {
     "key": "ui_a960c435c77f",
@@ -5154,6 +5314,11 @@
     "en": "Locations",
     "zh-CN": "地点"
   },
+  "Locations (one per line)": {
+    "key": "ui_8045f91edbb7",
+    "en": "Locations (one per line)",
+    "zh-CN": "工作地点（每行一个）"
+  },
   "Make {{v0}} primary": {
     "key": "ui_ea3af0396711",
     "en": "Make {{v0}} primary",
@@ -5274,6 +5439,11 @@
     "en": "Max work and project entries",
     "zh-CN": "工作与项目条目上限"
   },
+  "Maximum": {
+    "key": "ui_66c9ab177708",
+    "en": "Maximum",
+    "zh-CN": "最高值"
+  },
   "Maximum ranked repositories to import, from 1 to 100.": {
     "key": "ui_24e59ec418e0",
     "en": "Maximum ranked repositories to import, from 1 to 100.",
@@ -5359,10 +5529,10 @@
     "en": "Merge skill",
     "zh-CN": "合并技能"
   },
-  "Merges, splits, renames and recategorizes domains. Doesn't assign unassigned skills — use Regroup for that.": {
-    "key": "ui_abdfd66d3ee1",
-    "en": "Merges, splits, renames and recategorizes domains. Doesn't assign unassigned skills — use Regroup for that.",
-    "zh-CN": "合并、拆分、重命名并重新分类各技能领域。不会分配未归类的技能 — 如需分配，请使用「重新分组」。"
+  "Merges, splits, renames, and recategorizes domains. Use Regroup to assign unassigned skills.": {
+    "key": "ui_2c779ac7a456",
+    "en": "Merges, splits, renames, and recategorizes domains. Use Regroup to assign unassigned skills.",
+    "zh-CN": "合并、拆分、重命名并重新分类技能领域。请使用“重新分组”来分配未归类技能。"
   },
   "Message": {
     "key": "ui_2f77668a9dfb",
@@ -5428,6 +5598,11 @@
     "key": "ui_dc4869d330b9",
     "en": "Min salary (USD)",
     "zh-CN": "最低年薪（美元）"
+  },
+  "Minimum": {
+    "key": "ui_735beee2e390",
+    "en": "Minimum",
+    "zh-CN": "最低值"
   },
   "Minimum cannot exceed the maximum.": {
     "key": "ui_1a692aeb97da",
@@ -5574,10 +5749,10 @@
     "en": "Move to…",
     "zh-CN": "移动到…"
   },
-  "Move your customizations between installs. A bundle carries only the settings below — never your jobs, your profile, or your API keys.": {
-    "key": "ui_ac2209a67a48",
-    "en": "Move your customizations between installs. A bundle carries only the settings below — never your jobs, your profile, or your API keys.",
-    "zh-CN": "在不同安装之间迁移你的自定义设置。配置包仅包含以下设置——不包含你的职位、个人资料或 API 密钥。"
+  "Move your customizations between installs. A bundle includes only the settings below. It never includes your jobs, profile, or API keys.": {
+    "key": "ui_41d4a0976eeb",
+    "en": "Move your customizations between installs. A bundle includes only the settings below. It never includes your jobs, profile, or API keys.",
+    "zh-CN": "在不同安装之间迁移你的自定义设置。配置包仅包含以下设置，不包含你的职位、个人资料或 API 密钥。"
   },
   "Moving this job forward overrides its discovery filter or rejection so it can be scored on the next discovery or shortlist re-score run.": {
     "key": "ui_8fa494e5213a",
@@ -5609,15 +5784,30 @@
     "en": "Name your first token above to connect an automation.",
     "zh-CN": "在上方为你的第一个令牌命名，以连接自动化。"
   },
-  "Needed for tailoring — everything else works without it.": {
-    "key": "ui_6acc508eb76a",
-    "en": "Needed for tailoring — everything else works without it.",
-    "zh-CN": "定制简历需要此项——其他功能无需它也能正常使用。"
+  "Navigation outcome:": {
+    "key": "ui_2e05920a8762",
+    "en": "Navigation outcome:",
+    "zh-CN": "导航结果："
+  },
+  "need review ·": {
+    "key": "ui_420ab49c3cfb",
+    "en": "need review ·",
+    "zh-CN": "需审核 ·"
+  },
+  "Needed for tailoring. Everything else works without it.": {
+    "key": "ui_ec7ce69c9a03",
+    "en": "Needed for tailoring. Everything else works without it.",
+    "zh-CN": "定制简历需要此项。其他功能无需它也能正常使用。"
   },
   "Needs approval": {
     "key": "ui_db0e960b68b5",
     "en": "Needs approval",
     "zh-CN": "待批准"
+  },
+  "Needs review": {
+    "key": "ui_07297fa94a99",
+    "en": "Needs review",
+    "zh-CN": "需要检查"
   },
   "Neutral": {
     "key": "ui_1c6ac69f1e5d",
@@ -5729,6 +5919,11 @@
     "en": "Next reset",
     "zh-CN": "下次重置"
   },
+  "Next results selector": {
+    "key": "ui_7afe1856f8e8",
+    "en": "Next results selector",
+    "zh-CN": "下一页结果选择器"
+  },
   "Nice": {
     "key": "ui_fdc96ffbf256",
     "en": "Nice",
@@ -5774,10 +5969,10 @@
     "en": "No approved jobs",
     "zh-CN": "暂无已批准的职位"
   },
-  "No coaching sessions yet. Start one when you are ready to uncover stronger evidence.": {
-    "key": "ui_c59af7e5fa94",
-    "en": "No coaching sessions yet. Start one when you are ready to uncover stronger evidence.",
-    "zh-CN": "还没有辅导会话。准备好挖掘更有力的证据时，就开始一次吧。"
+  "No coaching sessions yet. Start one to explore evidence for your profile.": {
+    "key": "ui_beb0da18cbeb",
+    "en": "No coaching sessions yet. Start one to explore evidence for your profile.",
+    "zh-CN": "暂无辅导会话。开始一次会话，补充个人资料中的证据。"
   },
   "No committed quota operations yet.": {
     "key": "ui_4bf520c1a9df",
@@ -5804,10 +5999,10 @@
     "en": "No date",
     "zh-CN": "无日期"
   },
-  "No documents yet — your resume is the one that matters most.": {
-    "key": "ui_1a2624b0e6da",
-    "en": "No documents yet — your resume is the one that matters most.",
-    "zh-CN": "还没有任何文档——简历是最重要的一份。"
+  "No documents yet. Add your resume to get started.": {
+    "key": "ui_be5fa27aa4a2",
+    "en": "No documents yet. Add your resume to get started.",
+    "zh-CN": "暂无文档。先添加简历即可开始。"
   },
   "No eligible jobs": {
     "key": "ui_47b79ab567af",
@@ -5839,15 +6034,15 @@
     "en": "No interview sessions yet. Start one when you are ready to practice.",
     "zh-CN": "还没有面试会话。准备好练习时，就开始一次吧。"
   },
-  "No interviewable jobs yet — tailor a resume first.": {
-    "key": "ui_20e4a4afc12c",
-    "en": "No interviewable jobs yet — tailor a resume first.",
-    "zh-CN": "还没有可面试的职位——请先定制一份简历。"
-  },
   "No job selected": {
     "key": "ui_ab46f41be179",
     "en": "No job selected",
     "zh-CN": "未选择职位"
+  },
+  "No jobs are ready for interview practice. Tailor a resume first.": {
+    "key": "ui_717572df5fa9",
+    "en": "No jobs are ready for interview practice. Tailor a resume first.",
+    "zh-CN": "暂无可用于面试练习的职位。请先定制一份简历。"
   },
   "No jobs in the pipeline": {
     "key": "ui_559c2183244b",
@@ -5909,6 +6104,11 @@
     "en": "No private enrichment, login-gated scraping, or automatic outreach.",
     "zh-CN": "不使用私人数据补全、登录后抓取或自动联系。"
   },
+  "No public-page extraction evidence is saved for this job.": {
+    "key": "ui_11bc0543b57a",
+    "en": "No public-page extraction evidence is saved for this job.",
+    "zh-CN": "此职位没有已保存的公开页面提取证据。"
+  },
   "No quota ledger entries yet.": {
     "key": "ui_0d7461eacfa8",
     "en": "No quota ledger entries yet.",
@@ -5944,10 +6144,10 @@
     "en": "No role brief yet",
     "zh-CN": "尚无职位准备简报"
   },
-  "No saved Career Lab sessions yet. Start one when you are ready to draft.": {
-    "key": "ui_487d613a452f",
-    "en": "No saved Career Lab sessions yet. Start one when you are ready to draft.",
-    "zh-CN": "还没有已保存的职业实验室会话。准备好起草时，就开始一次吧。"
+  "No saved Career Lab sessions yet. Start one to create a draft.": {
+    "key": "ui_6cc63a708b9a",
+    "en": "No saved Career Lab sessions yet. Start one to create a draft.",
+    "zh-CN": "暂无已保存的职业实验室会话。开始一次会话来创建草稿。"
   },
   "No saved research": {
     "key": "ui_2a0fbe4496f5",
@@ -5959,10 +6159,10 @@
     "en": "No saved views yet.",
     "zh-CN": "尚无已保存的视图。"
   },
-  "No Scout sessions yet. Start one when you are ready to shape your search.": {
-    "key": "ui_f968a0ce95f2",
-    "en": "No Scout sessions yet. Start one when you are ready to shape your search.",
-    "zh-CN": "还没有职位探索助手会话。准备好明确求职方向时，即可开始一次探索。"
+  "No Scout sessions yet. Start one to refine your search.": {
+    "key": "ui_712bbeec7c0b",
+    "en": "No Scout sessions yet. Start one to refine your search.",
+    "zh-CN": "暂无职位探索助手会话。开始一次会话来完善搜索条件。"
   },
   "No sessions yet": {
     "key": "ui_f502267deff4",
@@ -5989,10 +6189,10 @@
     "en": "No skills match these filters",
     "zh-CN": "没有技能符合这些筛选条件"
   },
-  "No sources yet — add your resume first; it becomes the primary.": {
-    "key": "ui_d83cbb7783f9",
-    "en": "No sources yet — add your resume first; it becomes the primary.",
-    "zh-CN": "还没有来源——请先添加你的简历，它将成为主要来源。"
+  "No sources yet. Add your resume first; it becomes your primary source.": {
+    "key": "ui_9cf51ce702be",
+    "en": "No sources yet. Add your resume first; it becomes your primary source.",
+    "zh-CN": "暂无来源。请先添加简历，它将成为主要来源。"
   },
   "no sponsor": {
     "key": "ui_49a33760e91c",
@@ -6034,6 +6234,11 @@
     "en": "No usage ceiling",
     "zh-CN": "无使用上限"
   },
+  "No verified job samples are available. This source cannot be approved yet.": {
+    "key": "ui_02cda37e9b58",
+    "en": "No verified job samples are available. This source cannot be approved yet.",
+    "zh-CN": "暂无已验证的职位样本，尚不能批准此来源。"
+  },
   "No work or project entries were selected for this version.": {
     "key": "ui_869fcfd2dfc7",
     "en": "No work or project entries were selected for this version.",
@@ -6064,26 +6269,6 @@
     "en": "Not connected. Connect to sync application status and draft emails.",
     "zh-CN": "未连接。连接后可同步申请状态并生成邮件草稿。"
   },
-  "Not detected on your profile yet — add it and this gap clears immediately.": {
-    "key": "ui_2617f47977c8",
-    "en": "Not detected on your profile yet — add it and this gap clears immediately.",
-    "zh-CN": "个人资料中尚未检测到——添加后这一差距会立即消除。"
-  },
-  "Not enough forward stage history yet — repeated and out-of-order entries stay in the timeline without distorting this chart.": {
-    "key": "ui_0632b3abcfe4",
-    "en": "Not enough forward stage history yet — repeated and out-of-order entries stay in the timeline without distorting this chart.",
-    "zh-CN": "前进阶段的历史记录还不够——重复或乱序的记录会保留在时间线中，但不会影响此图表。"
-  },
-  "Not enough history yet — consecutive dated stages will appear here.": {
-    "key": "ui_a33b433ede3a",
-    "en": "Not enough history yet — consecutive dated stages will appear here.",
-    "zh-CN": "历史记录还不够——连续的带日期阶段将显示在此处。"
-  },
-  "Not enough history yet — log a few stages to see where applications go.": {
-    "key": "ui_1b2b81e11a8c",
-    "en": "Not enough history yet — log a few stages to see where applications go.",
-    "zh-CN": "历史记录还不够——记录几个阶段即可查看申请的走向。"
-  },
   "Not generated": {
     "key": "ui_83a66d4d4a15",
     "en": "Not generated",
@@ -6113,6 +6298,11 @@
     "key": "ui_dc12bec5d71f",
     "en": "Not specified",
     "zh-CN": "未指定"
+  },
+  "Not stated": {
+    "key": "ui_068109fd3f73",
+    "en": "Not stated",
+    "zh-CN": "未说明"
   },
   "Not sure": {
     "key": "ui_dca5fa430c12",
@@ -6199,6 +6389,11 @@
     "en": "Notifications{{v0}}",
     "zh-CN": "通知{{v0}}"
   },
+  "Observed content": {
+    "key": "ui_906008ed5845",
+    "en": "Observed content",
+    "zh-CN": "页面中的内容"
+  },
   "of": {
     "key": "ui_28391d3bc64e",
     "en": "of",
@@ -6208,6 +6403,11 @@
     "key": "ui_9015aef84257",
     "en": "Off-peak",
     "zh-CN": "非高峰"
+  },
+  "Off-peak rates are active until {{v0}} UTC. Weekday peak hours are 01:00–04:00 and 06:00–10:00 UTC.": {
+    "key": "ui_88cd5acecb43",
+    "en": "Off-peak rates are active until {{v0}} UTC. Weekday peak hours are 01:00–04:00 and 06:00–10:00 UTC.",
+    "zh-CN": "当前为非高峰计费时段，持续至 {{v0}} UTC。工作日高峰时段为 01:00–04:00 和 06:00–10:00 UTC。"
   },
   "Offer application ids": {
     "key": "ui_9ce3151db6b1",
@@ -6233,6 +6433,11 @@
     "key": "ui_6016a1133036",
     "en": "Offer received",
     "zh-CN": "已收到录用通知"
+  },
+  "Office attendance": {
+    "key": "ui_1720dc40fd5e",
+    "en": "Office attendance",
+    "zh-CN": "到岗要求"
   },
   "Official pricing source": {
     "key": "ui_dd80cd931ddf",
@@ -6304,6 +6509,11 @@
     "en": "Open coach",
     "zh-CN": "打开教练"
   },
+  "Open detail selector": {
+    "key": "ui_9dd905ea4bff",
+    "en": "Open detail selector",
+    "zh-CN": "打开详情选择器"
+  },
   "Open details": {
     "key": "ui_67d16bb1d5a7",
     "en": "Open details",
@@ -6349,11 +6559,6 @@
     "en": "OpenAI API key",
     "zh-CN": "OpenAI API 密钥"
   },
-  "Optional — pulls public repos into project facts.": {
-    "key": "ui_fff305af7d68",
-    "en": "Optional — pulls public repos into project facts.",
-    "zh-CN": "可选——将公开仓库纳入项目事实。"
-  },
   "Optional cache and tool rates": {
     "key": "ui_1413347d8593",
     "en": "Optional cache and tool rates",
@@ -6374,6 +6579,11 @@
     "en": "Optional instructions (e.g. mention the take-home score)",
     "zh-CN": "可选说明（例如提及笔试评分）"
   },
+  "Optional. Adds public repositories to your project facts.": {
+    "key": "ui_21441b86e527",
+    "en": "Optional. Adds public repositories to your project facts.",
+    "zh-CN": "可选。将公开仓库纳入项目事实。"
+  },
   "or register with email": {
     "key": "ui_c8c7c5cd25a5",
     "en": "or register with email",
@@ -6383,6 +6593,11 @@
     "key": "ui_590cc4562fdb",
     "en": "Organization slug",
     "zh-CN": "组织标识（slug）"
+  },
+  "Original salary text": {
+    "key": "ui_f76dd677a9ae",
+    "en": "Original salary text",
+    "zh-CN": "薪资原文"
   },
   "Other": {
     "key": "ui_f97e9da0e3b8",
@@ -6449,11 +6664,6 @@
     "en": "Page target",
     "zh-CN": "页面目标"
   },
-  "Paired secret for the client ID above — both must be set together.": {
-    "key": "ui_ae96c612f8d2",
-    "en": "Paired secret for the client ID above — both must be set together.",
-    "zh-CN": "与上方客户端 ID 配对的密钥——两者必须同时设置。"
-  },
   "Password": {
     "key": "ui_e7cf3ef4f17c",
     "en": "Password",
@@ -6469,10 +6679,25 @@
     "en": "Paste any supported career page",
     "zh-CN": "粘贴任意受支持的招聘页面链接"
   },
+  "Paste one public job posting. We’ll import its details and flag anything that needs your review.": {
+    "key": "ui_81ce659420bc",
+    "en": "Paste one public job posting. We’ll import its details and flag anything that needs your review.",
+    "zh-CN": "粘贴一个公开职位页面。我们将导入职位详情，并标记需要你检查的内容。"
+  },
+  "Pay period": {
+    "key": "ui_31e4b79f2ead",
+    "en": "Pay period",
+    "zh-CN": "薪资周期"
+  },
   "Peak": {
     "key": "ui_a57feec7a920",
     "en": "Peak",
     "zh-CN": "高峰"
+  },
+  "Peak rates are active until {{v0}} UTC.": {
+    "key": "ui_bf87d9ce1a4b",
+    "en": "Peak rates are active until {{v0}} UTC.",
+    "zh-CN": "当前为高峰计费时段，持续至 {{v0}} UTC。"
   },
   "pending": {
     "key": "ui_62a2fed3d6e0",
@@ -6639,15 +6864,25 @@
     "en": "Posted age",
     "zh-CN": "发布时长"
   },
+  "Posted date": {
+    "key": "ui_fc29afe115be",
+    "en": "Posted date",
+    "zh-CN": "发布日期"
+  },
   "Postings older than the stale window": {
     "key": "ui_d8347c2dd21c",
     "en": "Postings older than the stale window",
     "zh-CN": "超出有效期窗口的职位发布"
   },
-  "Practice against a tailored role, answer naturally, and finish with a scored debrief you can act on.": {
-    "key": "ui_4f27970db35c",
-    "en": "Practice against a tailored role, answer naturally, and finish with a scored debrief you can act on.",
-    "zh-CN": "针对定制角色进行练习，自然作答，并在结束后获得可付诸行动的评分复盘。"
+  "Practice questions for a role with a tailored resume, then review a scored debrief.": {
+    "key": "ui_6c9d7bce729e",
+    "en": "Practice questions for a role with a tailored resume, then review a scored debrief.",
+    "zh-CN": "围绕一份已定制简历对应的职位练习问题，然后查看评分复盘。"
+  },
+  "Practice realistic questions and review a scored debrief.": {
+    "key": "ui_d5562ec3c9a2",
+    "en": "Practice realistic questions and review a scored debrief.",
+    "zh-CN": "练习贴近真实情境的问题，并查看评分复盘。"
   },
   "Practise realistic questions, stay in the moment, and turn the conversation into a scored debrief.": {
     "key": "ui_95970d4e826b",
@@ -6689,6 +6924,11 @@
     "en": "Preview impact",
     "zh-CN": "预览影响"
   },
+  "Preview public page": {
+    "key": "ui_7ceaa0808534",
+    "en": "Preview public page",
+    "zh-CN": "预览公开页面"
+  },
   "Preview required": {
     "key": "ui_851262ce28e5",
     "en": "Preview required",
@@ -6729,15 +6969,15 @@
     "en": "Profile build progress",
     "zh-CN": "个人资料构建进度"
   },
-  "Profile built —": {
-    "key": "ui_da129a573b90",
-    "en": "Profile built —",
-    "zh-CN": "个人资料已构建 —"
-  },
   "Profile built {{v0}}": {
     "key": "ui_efec11a797fd",
     "en": "Profile built {{v0}}",
     "zh-CN": "个人资料已构建 {{v0}}"
+  },
+  "Profile built:": {
+    "key": "ui_e3de055128d7",
+    "en": "Profile built:",
+    "zh-CN": "个人资料已构建："
   },
   "Profile Coach": {
     "key": "ui_b471e831c7e6",
@@ -6768,6 +7008,11 @@
     "key": "ui_6ec927ed95d1",
     "en": "Profile facts built",
     "zh-CN": "个人资料事实已生成"
+  },
+  "Profile gap: not yet in your profile": {
+    "key": "ui_06a340786bcf",
+    "en": "Profile gap: not yet in your profile",
+    "zh-CN": "个人资料差距：尚未在个人资料中体现。"
   },
   "Profile note saved": {
     "key": "ui_f5520c1e93e3",
@@ -6908,6 +7153,11 @@
     "key": "ui_ca3140a2d6af",
     "en": "Pull jobs",
     "zh-CN": "获取职位"
+  },
+  "Pull outcome:": {
+    "key": "ui_e2a42d7746ad",
+    "en": "Pull outcome:",
+    "zh-CN": "拉取结果："
   },
   "Pull selected (": {
     "key": "ui_90e299fba2f1",
@@ -7099,6 +7349,11 @@
     "en": "Re-harvest",
     "zh-CN": "重新采集"
   },
+  "Re-pull": {
+    "key": "ui_e89bbdc790b4",
+    "en": "Re-pull",
+    "zh-CN": "重新抓取"
+  },
   "Re-pull job description": {
     "key": "ui_63701bd0fa40",
     "en": "Re-pull job description",
@@ -7124,10 +7379,10 @@
     "en": "Re-run any stage on",
     "zh-CN": "重新运行任意阶段于"
   },
-  "Re-run the full funnel over one scope. Can change fit + status. Jobs with progress are never touched.": {
-    "key": "ui_6443c4bb2ad7",
-    "en": "Re-run the full funnel over one scope. Can change fit + status. Jobs with progress are never touched.",
-    "zh-CN": "对某一范围重新运行完整求职流程。可能会更改匹配度和状态。已有进展的职位不会被修改。"
+  "Re-run the full funnel for one scope. Fit scores and statuses may change. Jobs with progress are not changed.": {
+    "key": "ui_78c2163b0df8",
+    "en": "Re-run the full funnel for one scope. Fit scores and statuses may change. Jobs with progress are not changed.",
+    "zh-CN": "对一个范围重新运行完整流程。匹配度和状态可能会变化。已有进展的职位不会被修改。"
   },
   "Re-score shortlist": {
     "key": "ui_cd8c0a69258a",
@@ -7148,11 +7403,6 @@
     "key": "ui_03389e57d82f",
     "en": "Read every application across the same timeline, then export the complete event history.",
     "zh-CN": "查看同一时间线上的每个申请，然后导出完整事件历史。"
-  },
-  "Read every built-in prompt and add subordinate guidance. Guidance can steer tone, emphasis, and process, never facts or integrity rules.": {
-    "key": "ui_111b0c164f9a",
-    "en": "Read every built-in prompt and add subordinate guidance. Guidance can steer tone, emphasis, and process, never facts or integrity rules.",
-    "zh-CN": "查看每个内置提示词并添加附加指导。指导可以调整语气、侧重点和流程，但不能更改事实或诚信规则。"
   },
   "Read-only": {
     "key": "ui_72bb90897ab1",
@@ -7329,6 +7579,11 @@
     "en": "Refresh",
     "zh-CN": "刷新"
   },
+  "Refresh cached pages": {
+    "key": "ui_070135bd8c50",
+    "en": "Refresh cached pages",
+    "zh-CN": "刷新缓存页面"
+  },
   "Refresh check": {
     "key": "ui_d0521c5f6836",
     "en": "Refresh check",
@@ -7419,6 +7674,11 @@
     "en": "Related experience",
     "zh-CN": "相关经验"
   },
+  "Relearn page structure": {
+    "key": "ui_e09e8a68ceff",
+    "en": "Relearn page structure",
+    "zh-CN": "重新识别页面结构"
+  },
   "Relevance tuning": {
     "key": "ui_6fb83a6e821e",
     "en": "Relevance tuning",
@@ -7444,6 +7704,11 @@
     "en": "Remote",
     "zh-CN": "远程"
   },
+  "Remote geographic restrictions": {
+    "key": "ui_2cf17e18344c",
+    "en": "Remote geographic restrictions",
+    "zh-CN": "远程工作的地域限制"
+  },
   "Remote policy": {
     "key": "ui_705d49ecc132",
     "en": "Remote policy",
@@ -7463,6 +7728,11 @@
     "key": "ui_86790c6d4f11",
     "en": "Remove {{v0}}",
     "zh-CN": "移除 {{v0}}"
+  },
+  "Remove salary band": {
+    "key": "ui_e4961354e8ab",
+    "en": "Remove salary band",
+    "zh-CN": "删除薪资区间"
   },
   "Remove skill": {
     "key": "ui_a8597db6f24b",
@@ -7593,6 +7863,11 @@
     "key": "ui_cfce761befa8",
     "en": "Request failed",
     "zh-CN": "请求失败"
+  },
+  "Requests are paced to respect the website. This may take several minutes.": {
+    "key": "ui_059f28b405dc",
+    "en": "Requests are paced to respect the website. This may take several minutes.",
+    "zh-CN": "系统会控制请求频率，避免给网站造成负担。这可能需要几分钟。"
   },
   "Requires rate coverage": {
     "key": "ui_fbbae92fd4c8",
@@ -7814,6 +8089,11 @@
     "en": "Restore job",
     "zh-CN": "恢复职位"
   },
+  "Restore revision": {
+    "key": "ui_e276237699c9",
+    "en": "Restore revision",
+    "zh-CN": "恢复版本"
+  },
   "Restored the previous taxonomy maintenance generation.": {
     "key": "ui_de55a5343277",
     "en": "Restored the previous taxonomy maintenance generation.",
@@ -7833,16 +8113,6 @@
     "key": "ui_d640c7421da0",
     "en": "Resume",
     "zh-CN": "简历"
-  },
-  "Résumé Tailor Harness": {
-    "key": "ui_a9535a6d3f05",
-    "en": "Résumé Tailor Harness",
-    "zh-CN": "Résumé Tailor Harness"
-  },
-  "Résumé Tailor Harness · First-run setup": {
-    "key": "ui_39486d338cd3",
-    "en": "Résumé Tailor Harness · First-run setup",
-    "zh-CN": "Résumé Tailor Harness · 首次运行设置"
   },
   "Resume document": {
     "key": "ui_9cac888763ac",
@@ -7878,6 +8148,16 @@
     "key": "ui_fd350dbf812a",
     "en": "Resume shape",
     "zh-CN": "简历结构"
+  },
+  "Résumé Tailor Harness": {
+    "key": "ui_a9535a6d3f05",
+    "en": "Résumé Tailor Harness",
+    "zh-CN": "Résumé Tailor Harness"
+  },
+  "Résumé Tailor Harness · First-run setup": {
+    "key": "ui_39486d338cd3",
+    "en": "Résumé Tailor Harness · First-run setup",
+    "zh-CN": "Résumé Tailor Harness · 首次运行设置"
   },
   "Resume template": {
     "key": "ui_f366f92022f3",
@@ -7969,6 +8249,11 @@
     "en": "Review access, live usage, and account status from one roster.",
     "zh-CN": "在同一份名册中查看访问权限、实时使用情况和账户状态。"
   },
+  "Review each built-in prompt and add supporting guidance. Guidance can shape tone, emphasis, and process. It cannot change facts or integrity rules.": {
+    "key": "ui_b85f1fe09106",
+    "en": "Review each built-in prompt and add supporting guidance. Guidance can shape tone, emphasis, and process. It cannot change facts or integrity rules.",
+    "zh-CN": "查看每个内置提示词，并添加补充指导。指导可以调整语气、侧重点和流程，但不能更改事实或诚信规则。"
+  },
   "Review every claim and its supporting words before saving.": {
     "key": "ui_b6c6fa64abe8",
     "en": "Review every claim and its supporting words before saving.",
@@ -7994,10 +8279,25 @@
     "en": "Review proposals",
     "zh-CN": "审核提案"
   },
+  "Review public job page": {
+    "key": "ui_91f249db09d7",
+    "en": "Review public job page",
+    "zh-CN": "检查公开职位页面"
+  },
   "Review shortlist": {
     "key": "ui_a165d3f014af",
     "en": "Review shortlist",
     "zh-CN": "查看候选清单"
+  },
+  "Review source fields": {
+    "key": "ui_dccb64330de4",
+    "en": "Review source fields",
+    "zh-CN": "检查来源字段"
+  },
+  "Review strengths, gaps, and better answer patterns after the rehearsal.": {
+    "key": "ui_1a69a0a1bb00",
+    "en": "Review strengths, gaps, and better answer patterns after the rehearsal.",
+    "zh-CN": "演练结束后查看优势、差距和更好的回答方式。"
   },
   "Review the agent's summarized approach": {
     "key": "ui_6f2a2283eef8",
@@ -8019,10 +8319,20 @@
     "en": "Review the research",
     "zh-CN": "查看调研结果"
   },
+  "Review these sample jobs and their evidence. Corrections stay with each job; extraction rules are reused for future pulls.": {
+    "key": "ui_c5a3c1bdd64b",
+    "en": "Review these sample jobs and their evidence. Corrections stay with each job; extraction rules are reused for future pulls.",
+    "zh-CN": "检查这些职位样本及其证据。字段修正会保存在对应职位中；提取规则将用于后续抓取。"
+  },
   "Review this grounded note before adding it to your profile.": {
     "key": "ui_d17e84a4a81c",
     "en": "Review this grounded note before adding it to your profile.",
     "zh-CN": "在添加到个人资料前，请查看这条有据可查的笔记。"
+  },
+  "Review updated rules": {
+    "key": "ui_fc8c37ce8335",
+    "en": "Review updated rules",
+    "zh-CN": "审核更新后的规则"
   },
   "Review usage, update sign-in credentials, and issue automation tokens.": {
     "key": "ui_7c80b41d2bb3",
@@ -8249,10 +8559,20 @@
     "en": "Salary >= {{v0}}",
     "zh-CN": "薪资 ≥ {{v0}}"
   },
+  "Salary locations": {
+    "key": "ui_046ff2b54189",
+    "en": "Salary locations",
+    "zh-CN": "薪资适用地点"
+  },
   "Same as a skill I have": {
     "key": "ui_0a09a53711df",
     "en": "Same as a skill I have",
     "zh-CN": "与我已有的技能相同"
+  },
+  "Sample {{v0}}": {
+    "key": "ui_e6e10401c9fb",
+    "en": "Sample {{v0}}",
+    "zh-CN": "样本 {{v0}}"
   },
   "Save": {
     "key": "ui_1509f561f241",
@@ -8264,10 +8584,20 @@
     "en": "Save & continue",
     "zh-CN": "保存并继续"
   },
+  "Save and validate rules": {
+    "key": "ui_f71ba5aa9bcd",
+    "en": "Save and validate rules",
+    "zh-CN": "保存并验证规则"
+  },
   "Save changes": {
     "key": "ui_dd0ae7a5cbcf",
     "en": "Save changes",
     "zh-CN": "保存更改"
+  },
+  "Save corrections": {
+    "key": "ui_12515ba5bfd3",
+    "en": "Save corrections",
+    "zh-CN": "保存修正"
   },
   "Save defaults": {
     "key": "ui_a91af2a1efd1",
@@ -8318,6 +8648,21 @@
     "key": "ui_b5c120b316c2",
     "en": "Saved",
     "zh-CN": "已保存"
+  },
+  "Saved correction:": {
+    "key": "ui_02bce86c21e8",
+    "en": "Saved correction:",
+    "zh-CN": "已保存的更正："
+  },
+  "Saved public boards": {
+    "key": "ui_752ddfe07a76",
+    "en": "Saved public boards",
+    "zh-CN": "已保存的公开招聘列表"
+  },
+  "Saved revision": {
+    "key": "ui_6694ccd98f12",
+    "en": "Saved revision",
+    "zh-CN": "已保存的版本"
   },
   "Saved to Gmail": {
     "key": "ui_bd25bb7a6cbc",
@@ -8479,20 +8824,10 @@
     "en": "Security and access",
     "zh-CN": "安全与访问"
   },
-  "See strengths, gaps, and stronger answer patterns after the rehearsal.": {
-    "key": "ui_b4af4b265d61",
-    "en": "See strengths, gaps, and stronger answer patterns after the rehearsal.",
-    "zh-CN": "排练结束后查看优势、差距和更佳的回答模式。"
-  },
   "See the job needs this version emphasizes and the evidence used.": {
     "key": "ui_0d6a2493b9a7",
     "en": "See the job needs this version emphasizes and the evidence used.",
     "zh-CN": "查看此版本强调的职位需求及所用证据。"
-  },
-  "See what target roles demand, what your profile already proves, and where focused learning has the most leverage.": {
-    "key": "ui_f17a430eb149",
-    "en": "See what target roles demand, what your profile already proves, and where focused learning has the most leverage.",
-    "zh-CN": "了解目标职位的要求、你的个人资料已证明的能力，以及集中学习最能带来提升的方向。"
   },
   "Select {{v0}}": {
     "key": "ui_58661820dfdc",
@@ -8509,10 +8844,10 @@
     "en": "Select {{v0}} domain",
     "zh-CN": "选择 {{v0}} 领域"
   },
-  "Select a job with a tailored resume so the questions match the real opportunity.": {
-    "key": "ui_b9f81857660f",
-    "en": "Select a job with a tailored resume so the questions match the real opportunity.",
-    "zh-CN": "选择一个已定制简历的职位，以便问题与真实机会相符。"
+  "Select a job with a tailored resume so the questions reflect the role.": {
+    "key": "ui_e9485973b3ab",
+    "en": "Select a job with a tailored resume so the questions reflect the role.",
+    "zh-CN": "选择已有定制简历的职位，让问题贴合该职位。"
   },
   "Select a target before previewing the operation": {
     "key": "ui_2b41b9956f32",
@@ -8538,6 +8873,11 @@
     "key": "ui_47ee3601b7aa",
     "en": "Select any domain or skill to research it.",
     "zh-CN": "选择任意领域或技能进行研究。"
+  },
+  "Select content": {
+    "key": "ui_4526f6864ae5",
+    "en": "Select content",
+    "zh-CN": "选择内容"
   },
   "Select cover letter #{{v0}} for deletion": {
     "key": "ui_d4b76776c7d7",
@@ -8569,6 +8909,11 @@
     "en": "Select options to narrow this view.",
     "zh-CN": "选择选项以缩小此视图范围。"
   },
+  "Select revision": {
+    "key": "ui_4c84315133f7",
+    "en": "Select revision",
+    "zh-CN": "选择版本"
+  },
   "Select round {{v0}} for deletion": {
     "key": "ui_535a4df62c9c",
     "en": "Select round {{v0}} for deletion",
@@ -8593,6 +8938,11 @@
     "key": "ui_980f82e3fbbc",
     "en": "Selection (",
     "zh-CN": "已选（"
+  },
+  "Selector for {{v0}}": {
+    "key": "ui_c75eda9fcb9d",
+    "en": "Selector for {{v0}}",
+    "zh-CN": "{{v0}} 的选择器"
   },
   "Selects every matching job so you can archive or delete it below.": {
     "key": "ui_0af037be022a",
@@ -8694,6 +9044,11 @@
     "en": "Set {{v0}} selected job(s) to {{v1}}?",
     "zh-CN": "将已选择的 {{v0}} 个职位设为 {{v1}}？"
   },
+  "Set a search and enable at least one source so the agent knows where to look.": {
+    "key": "ui_9eed174da69e",
+    "en": "Set a search and enable at least one source so the agent knows where to look.",
+    "zh-CN": "设置搜索条件并启用至少一个来源，让智能体知道去哪里查找。"
+  },
   "Set context when needed": {
     "key": "ui_39608d0f3a45",
     "en": "Set context when needed",
@@ -8719,6 +9074,11 @@
     "en": "Set up your mock interview",
     "zh-CN": "设置你的模拟面试"
   },
+  "Set your search direction": {
+    "key": "ui_2a1c2438eb1b",
+    "en": "Set your search direction",
+    "zh-CN": "明确求职方向"
+  },
   "Settings": {
     "key": "ui_74a883a037bc",
     "en": "Settings",
@@ -8743,11 +9103,6 @@
     "key": "ui_1eba90226b10",
     "en": "Setup steps",
     "zh-CN": "设置步骤"
-  },
-  "Shape a smarter search": {
-    "key": "ui_d8094d91f828",
-    "en": "Shape a smarter search",
-    "zh-CN": "让搜索更精准"
   },
   "Shape how the workspace discovers, reviews, and renders work.": {
     "key": "ui_b2ee49fa15cd",
@@ -9079,10 +9434,25 @@
     "en": "Source documents",
     "zh-CN": "来源文档"
   },
+  "Source evidence": {
+    "key": "ui_e86636feeb00",
+    "en": "Source evidence",
+    "zh-CN": "来源证据"
+  },
   "Source mix": {
     "key": "ui_55c61594fcf0",
     "en": "Source mix",
     "zh-CN": "来源构成"
+  },
+  "Source settings and history": {
+    "key": "ui_108155b99edb",
+    "en": "Source settings and history",
+    "zh-CN": "来源设置与历史记录"
+  },
+  "Source snapshot": {
+    "key": "ui_98c0faa0e62d",
+    "en": "Source snapshot",
+    "zh-CN": "来源快照"
   },
   "sources": {
     "key": "ui_878a52fc5ff6",
@@ -9283,11 +9653,6 @@
     "key": "ui_920e413c7d41",
     "en": "Status",
     "zh-CN": "状态"
-  },
-  "Stay focused while the coach follows the strongest thread.": {
-    "key": "ui_b6b8044c8587",
-    "en": "Stay focused while the coach follows the strongest thread.",
-    "zh-CN": "教练会沿着最有价值的线索深入，你只需保持专注。"
   },
   "Stay in the conversation while the interviewer adapts its follow-ups.": {
     "key": "ui_f9dbbdc1c1c4",
@@ -9494,11 +9859,6 @@
     "en": "Takes effect on your next profile build.",
     "zh-CN": "将在下次构建个人资料时生效。"
   },
-  "Talk through the companies, roles, locations, and boundaries that should shape your search. Nothing is added until you approve it.": {
-    "key": "ui_cffc884850c1",
-    "en": "Talk through the companies, roles, locations, and boundaries that should shape your search. Nothing is added until you approve it.",
-    "zh-CN": "说说应该影响你搜索方向的公司、角色、地点和边界。在你批准之前不会添加任何内容。"
-  },
   "target": {
     "key": "ui_34a04005bcaf",
     "en": "target",
@@ -9603,16 +9963,6 @@
     "key": "ui_78256d57e226",
     "en": "Technical round",
     "zh-CN": "技术面试轮"
-  },
-  "Tell the agent where to look — set a search and enable at least one source.": {
-    "key": "ui_b48b4854f966",
-    "en": "Tell the agent where to look — set a search and enable at least one source.",
-    "zh-CN": "告诉智能体去哪里查找——设置搜索条件并启用至少一个来源。"
-  },
-  "Tell the Scout what you want to find. It will research companies and search terms, then wait for your approval before changing anything.": {
-    "key": "ui_dea00aeccf5e",
-    "en": "Tell the Scout what you want to find. It will research companies and search terms, then wait for your approval before changing anything.",
-    "zh-CN": "告诉职位探索助手你想寻找什么。它会调研公司和搜索词，并在更改任何设置前等待你的批准。"
   },
   "Template deleted": {
     "key": "ui_8fa9d4a8b827",
@@ -9754,6 +10104,11 @@
     "en": "The cost gate before the premium tailoring step. Approve only the jobs worth the spend.",
     "zh-CN": "高级定制步骤前的成本关口，只批准值得投入的职位。"
   },
+  "The default weights are calibrated. Change them only when you have a clear reason.": {
+    "key": "ui_21aaf548a03e",
+    "en": "The default weights are calibrated. Change them only when you have a clear reason.",
+    "zh-CN": "默认权重已经过校准。只有在理由明确时才调整它们。"
+  },
   "The file is removed permanently. Facts already extracted stay until the next profile build.": {
     "key": "ui_649a5cfbf6a6",
     "en": "The file is removed permanently. Facts already extracted stay until the next profile build.",
@@ -9824,10 +10179,10 @@
     "en": "The Scout could not finish that step",
     "zh-CN": "职位探索助手未能完成这一步"
   },
-  "The Scout returns separate, cited proposals instead of changing settings silently.": {
-    "key": "ui_cfd4933c7641",
-    "en": "The Scout returns separate, cited proposals instead of changing settings silently.",
-    "zh-CN": "职位探索助手会给出彼此独立且附带引用的建议，不会在未告知的情况下更改设置。"
+  "The Scout returns separate proposals with citations. It waits for your approval before changing settings.": {
+    "key": "ui_2718b53bd297",
+    "en": "The Scout returns separate proposals with citations. It waits for your approval before changing settings.",
+    "zh-CN": "职位探索助手会返回独立且附有引用的建议。它会在更改设置前等待你的批准。"
   },
   "The short ID is permanent. Use A–Z, 0–9 and underscores, starting with a letter.": {
     "key": "ui_93ef2bc64e54",
@@ -9884,20 +10239,35 @@
     "en": "The transcript stays available, and no synthetic recap will be added.",
     "zh-CN": "记录将继续保留，且不会添加自动生成的回顾。"
   },
+  "There is not enough forward stage history to show this chart. Repeated and out-of-order entries remain in the timeline without affecting it.": {
+    "key": "ui_b82c525e0625",
+    "en": "There is not enough forward stage history to show this chart. Repeated and out-of-order entries remain in the timeline without affecting it.",
+    "zh-CN": "前进阶段的历史记录不足，暂无法显示此图表。重复或乱序的记录会保留在时间线中，不会影响图表。"
+  },
+  "There is not enough history yet. Consecutive dated stages will appear here.": {
+    "key": "ui_7b198d3366b4",
+    "en": "There is not enough history yet. Consecutive dated stages will appear here.",
+    "zh-CN": "历史记录不足。连续且带日期的阶段会显示在这里。"
+  },
+  "There is not enough history yet. Log a few stages to see where applications go.": {
+    "key": "ui_5868f6ad247c",
+    "en": "There is not enough history yet. Log a few stages to see where applications go.",
+    "zh-CN": "历史记录不足。记录几个阶段后即可查看申请的进展。"
+  },
   "These are the strongest profile-backed examples for this job.": {
     "key": "ui_d97c1ae87a07",
     "en": "These are the strongest profile-backed examples for this job.",
     "zh-CN": "这些是针对该职位、最有力的个人资料支持案例。"
   },
+  "These entries did not name a skill, so they no longer use a classification call. Restore any valid entries.": {
+    "key": "ui_21b365ac05cc",
+    "en": "These entries did not name a skill, so they no longer use a classification call. Restore any valid entries.",
+    "zh-CN": "这些条目未指明任何技能，因此不再消耗分类调用。如有有效条目，可将其恢复。"
+  },
   "These stay removed across profile rebuilds until you restore them.": {
     "key": "ui_3ead37341fbd",
     "en": "These stay removed across profile rebuilds until you restore them.",
     "zh-CN": "在个人资料重建后，这些内容仍保持删除状态，直到你恢复它们。"
-  },
-  "These were judged to name no skill, so they no longer consume a classification call. Restore any that are real.": {
-    "key": "ui_52befa754ebd",
-    "en": "These were judged to name no skill, so they no longer consume a classification call. Restore any that are real.",
-    "zh-CN": "这些被判定为未指明任何技能，因此不再消耗分类调用。如有误判，可将其恢复。"
   },
   "This {{v0}} and its rendered PDF will be removed. This cannot be undone.": {
     "key": "ui_568fd8e87aaf",
@@ -9949,10 +10319,10 @@
     "en": "This draft session has ended. Start a new session when you are ready to explore another question.",
     "zh-CN": "此草稿会话已结束。准备好探索新问题后，可以开始新的会话。"
   },
-  "This interview is still in progress — deleting it abandons it without a debrief. This cannot be undone.": {
-    "key": "ui_2f3bfdf6b766",
-    "en": "This interview is still in progress — deleting it abandons it without a debrief. This cannot be undone.",
-    "zh-CN": "此次面试仍在进行中——删除后将直接放弃，不会生成汇报。此操作无法撤消。"
+  "This interview is still in progress. Deleting it ends the interview without a debrief. This cannot be undone.": {
+    "key": "ui_6978e3eb4c28",
+    "en": "This interview is still in progress. Deleting it ends the interview without a debrief. This cannot be undone.",
+    "zh-CN": "此次面试仍在进行中。删除后将结束面试，且不会生成复盘。此操作无法撤销。"
   },
   "This job has no description to interview against.": {
     "key": "ui_3a121e01680d",
@@ -9968,6 +10338,11 @@
     "key": "ui_51a3b4dc4e71",
     "en": "This job has no tailored resume versions yet.",
     "zh-CN": "该职位尚无定制简历版本。"
+  },
+  "This job has progress, so you cannot delete it.": {
+    "key": "ui_fba4e2a47b0f",
+    "en": "This job has progress, so you cannot delete it.",
+    "zh-CN": "该职位已有进展，因此无法删除。"
   },
   "This key will be cleared when you save.": {
     "key": "ui_3267e9e77592",
@@ -10018,6 +10393,16 @@
     "key": "ui_b4aaebe2738b",
     "en": "This saved research is past its freshness window. It remains visible until you choose to refresh it.",
     "zh-CN": "此调研已超过新鲜度期限。在你选择刷新之前，它仍会继续显示。"
+  },
+  "This secret pairs with the client ID above. Set both together.": {
+    "key": "ui_ed4e9f568bbb",
+    "en": "This secret pairs with the client ID above. Set both together.",
+    "zh-CN": "此密钥与上方客户端 ID 配对。请同时设置两者。"
+  },
+  "This skill is not yet detected on your profile. Add it to clear the gap.": {
+    "key": "ui_3ba75f08d8cc",
+    "en": "This skill is not yet detected on your profile. Add it to clear the gap.",
+    "zh-CN": "该技能尚未在个人资料中检测到。添加后即可消除此差距。"
   },
   "This skill is unavailable.": {
     "key": "ui_bf75c9ed017d",
@@ -10078,6 +10463,11 @@
     "key": "ui_33b93476cf59",
     "en": "Time",
     "zh-CN": "时间"
+  },
+  "Time limit (seconds)": {
+    "key": "ui_cf9965b51940",
+    "en": "Time limit (seconds)",
+    "zh-CN": "时间上限（秒）"
   },
   "Timeline": {
     "key": "ui_9dcff98e275f",
@@ -10194,10 +10584,10 @@
     "en": "Transcription failed",
     "zh-CN": "转录失败"
   },
-  "Transcription failed — tap retry": {
-    "key": "ui_68e1522abb94",
-    "en": "Transcription failed — tap retry",
-    "zh-CN": "转录失败——点按重试"
+  "Transcription failed. Tap Retry.": {
+    "key": "ui_01c3c7f75aff",
+    "en": "Transcription failed. Tap Retry.",
+    "zh-CN": "转录失败。请点按“重试”。"
   },
   "Treat tokens like passwords.": {
     "key": "ui_f97c5ee5cdc7",
@@ -10253,11 +10643,6 @@
     "key": "ui_be4ea093d4d6",
     "en": "Turn overlooked outcomes, scope, and project evidence into grounded profile notes.",
     "zh-CN": "把被忽略的成果、职责范围和项目证据转化为有依据的个人资料笔记。"
-  },
-  "Turn the frozen company dossier, exact job description, selected documents, and earlier-round notes into an interview-ready brief.": {
-    "key": "ui_a5d1f6888dce",
-    "en": "Turn the frozen company dossier, exact job description, selected documents, and earlier-round notes into an interview-ready brief.",
-    "zh-CN": "根据冻结的公司档案、准确的职位描述、已选文档和前序面试记录生成可直接用于面试的准备简报。"
   },
   "Type": {
     "key": "ui_baaddf70fb5d",
@@ -10429,20 +10814,20 @@
     "en": "upgraded ·",
     "zh-CN": "已升级 ·"
   },
-  "Upload a resume — this is what the profile is built from.": {
-    "key": "ui_f64657890d44",
-    "en": "Upload a resume — this is what the profile is built from.",
-    "zh-CN": "上传一份简历——个人资料将基于它构建。"
+  "Upload a resume. The profile is built from it.": {
+    "key": "ui_6c25b5aa213c",
+    "en": "Upload a resume. The profile is built from it.",
+    "zh-CN": "上传一份简历。个人资料将以此为基础构建。"
   },
   "Upload failed": {
     "key": "ui_6efc5d27f30b",
     "en": "Upload failed",
     "zh-CN": "上传失败"
   },
-  "Upload files, add direct notes or public pages, and sync GitHub projects into one evidence-backed profile.": {
-    "key": "ui_8f7178264394",
-    "en": "Upload files, add direct notes or public pages, and sync GitHub projects into one evidence-backed profile.",
-    "zh-CN": "上传文件、添加笔记或公开页面，并同步 GitHub 项目，汇总为一份有据可查的个人资料。"
+  "Upload files, add notes or public pages, and sync GitHub projects. Your profile keeps the source evidence.": {
+    "key": "ui_0b5e5c1af2f5",
+    "en": "Upload files, add notes or public pages, and sync GitHub projects. Your profile keeps the source evidence.",
+    "zh-CN": "上传文件，添加笔记或公开页面，并同步 GitHub 项目。个人资料会保留这些来源证据。"
   },
   "Upload Typst template": {
     "key": "ui_4aa19173b3e4",
@@ -10464,6 +10849,11 @@
     "en": "Use a concise label that describes the grouped skills.",
     "zh-CN": "使用简洁的标签来描述这组技能。"
   },
+  "Use a direct, public http(s) link. Up to 8,192 characters.": {
+    "key": "ui_d96c3a015deb",
+    "en": "Use a direct, public http(s) link. Up to 8,192 characters.",
+    "zh-CN": "使用直接的公开 http(s) 链接，最多 8,192 个字符。"
+  },
   "Use a native connection when you know the hiring platform.": {
     "key": "ui_9eced1972b58",
     "en": "Use a native connection when you know the hiring platform.",
@@ -10478,6 +10868,16 @@
     "key": "ui_d26348eba5f6",
     "en": "Use for application",
     "zh-CN": "用于此申请"
+  },
+  "Use selected content": {
+    "key": "ui_e11534b38e04",
+    "en": "Use selected content",
+    "zh-CN": "使用所选内容"
+  },
+  "Use source value": {
+    "key": "ui_7c0aad783e57",
+    "en": "Use source value",
+    "zh-CN": "使用来源值"
   },
   "Use the current profile as a bounded draft reference.": {
     "key": "ui_6ec64e418f59",
@@ -10509,10 +10909,15 @@
     "en": "Used by default when tailoring a resume.",
     "zh-CN": "定制简历时默认使用。"
   },
-  "Used when \"Deep review\" is checked at tailor time — a separate roster, saved separately.": {
-    "key": "ui_1b0b22f18be2",
-    "en": "Used when \"Deep review\" is checked at tailor time — a separate roster, saved separately.",
-    "zh-CN": "在定制时勾选“深度审查”时使用——这是一份单独保存的名单。"
+  "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims.": {
+    "key": "ui_0183ac1b9046",
+    "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims.",
+    "zh-CN": "供撰写、修订和顾问评审使用。最低要求会限制在个人资料已有的证据范围内，不会要求虚构事实。"
+  },
+  "Used when \"Deep review\" is selected while tailoring. It has a separate saved roster.": {
+    "key": "ui_dd333618e89e",
+    "en": "Used when \"Deep review\" is selected while tailoring. It has a separate saved roster.",
+    "zh-CN": "在定制时选择“深度审查”后使用。它有一套单独保存的评审名单。"
   },
   "user": {
     "key": "ui_04f8996da763",
@@ -10764,10 +11169,10 @@
     "en": "Why this tier is changing",
     "zh-CN": "此等级发生变化的原因"
   },
-  "with the shipped default. Your current values are lost — export a settings bundle first if you want them back.": {
-    "key": "ui_fb5f33fe007a",
-    "en": "with the shipped default. Your current values are lost — export a settings bundle first if you want them back.",
-    "zh-CN": "恢复为出厂默认值。你当前的设置将丢失——如需找回，请先导出设置包。"
+  "with the shipped default. Your current values will be lost. Export a settings bundle first if you may need them later.": {
+    "key": "ui_22603c7a6e7d",
+    "en": "with the shipped default. Your current values will be lost. Export a settings bundle first if you may need them later.",
+    "zh-CN": "恢复为出厂默认值。你当前的设置将丢失。如有可能需要恢复，请先导出设置包。"
   },
   "Withdrawal": {
     "key": "ui_d2987dcd1e4e",
@@ -10788,6 +11193,11 @@
     "key": "ui_189b4e11cdad",
     "en": "Work arrangement",
     "zh-CN": "工作方式"
+  },
+  "Work policy": {
+    "key": "ui_9cc453eed269",
+    "en": "Work policy",
+    "zh-CN": "办公方式"
   },
   "Work through a career question with one verified skill at a time. Every output stays a draft until you decide what to do next.": {
     "key": "ui_e4c7b9169ea6",
@@ -10943,415 +11353,5 @@
     "key": "ui_bc7b631a689b",
     "en": "Zoom out",
     "zh-CN": "缩小"
-  },
-  "Save corrections": {
-    "key": "ui_12515ba5bfd3",
-    "en": "Save corrections",
-    "zh-CN": "保存修正"
-  },
-  "Use source value": {
-    "key": "ui_7c0aad783e57",
-    "en": "Use source value",
-    "zh-CN": "使用来源值"
-  },
-  "Review source fields": {
-    "key": "ui_dccb64330de4",
-    "en": "Review source fields",
-    "zh-CN": "检查来源字段"
-  },
-  "No public-page extraction evidence is saved for this job.": {
-    "key": "ui_11bc0543b57a",
-    "en": "No public-page extraction evidence is saved for this job.",
-    "zh-CN": "此职位没有已保存的公开页面提取证据。"
-  },
-  "Preview public page": {
-    "key": "ui_7ceaa0808534",
-    "en": "Preview public page",
-    "zh-CN": "预览公开页面"
-  },
-  "Add job board URL": {
-    "key": "ui_127ffc162bf3",
-    "en": "Add job board URL",
-    "zh-CN": "添加招聘列表网址"
-  },
-  "Review public job page": {
-    "key": "ui_91f249db09d7",
-    "en": "Review public job page",
-    "zh-CN": "检查公开职位页面"
-  },
-  "Add a public careers page, review a sample of its postings, and save reusable import rules.": {
-    "key": "ui_8cd92302f5b9",
-    "en": "Add a public careers page, review a sample of its postings, and save reusable import rules.",
-    "zh-CN": "添加公开招聘页面，检查职位样本并保存可复用的导入规则。"
-  },
-  "Job board URL": {
-    "key": "ui_72732b35d91c",
-    "en": "Job board URL",
-    "zh-CN": "招聘列表网址"
-  },
-  "Analyze job board": {
-    "key": "ui_260c4674f8b9",
-    "en": "Analyze job board",
-    "zh-CN": "分析招聘列表"
-  },
-  "Inspecting public page…": {
-    "key": "ui_efb59caf6e53",
-    "en": "Inspecting public page…",
-    "zh-CN": "正在检查公开页面…"
-  },
-  "Requests are paced to respect the website. This may take several minutes.": {
-    "key": "ui_059f28b405dc",
-    "en": "Requests are paced to respect the website. This may take several minutes.",
-    "zh-CN": "系统会控制请求频率，避免给网站造成负担。这可能需要几分钟。"
-  },
-  "Employment type": {
-    "key": "ui_ea8972863d1c",
-    "en": "Employment type",
-    "zh-CN": "雇佣类型"
-  },
-  "Remote geographic restrictions": {
-    "key": "ui_2cf17e18344c",
-    "en": "Remote geographic restrictions",
-    "zh-CN": "远程工作的地域限制"
-  },
-  "Office attendance": {
-    "key": "ui_1720dc40fd5e",
-    "en": "Office attendance",
-    "zh-CN": "到岗要求"
-  },
-  "Posted date": {
-    "key": "ui_fc29afe115be",
-    "en": "Posted date",
-    "zh-CN": "发布日期"
-  },
-  "Closing date": {
-    "key": "ui_d34f597093df",
-    "en": "Closing date",
-    "zh-CN": "截止日期"
-  },
-  "Application URL": {
-    "key": "ui_96884337d874",
-    "en": "Application URL",
-    "zh-CN": "申请网址"
-  },
-  "Not stated": {
-    "key": "ui_068109fd3f73",
-    "en": "Not stated",
-    "zh-CN": "未说明"
-  },
-  "Work policy": {
-    "key": "ui_9cc453eed269",
-    "en": "Work policy",
-    "zh-CN": "办公方式"
-  },
-  "Locations (one per line)": {
-    "key": "ui_8045f91edbb7",
-    "en": "Locations (one per line)",
-    "zh-CN": "工作地点（每行一个）"
-  },
-  "Minimum": {
-    "key": "ui_735beee2e390",
-    "en": "Minimum",
-    "zh-CN": "最低值"
-  },
-  "Maximum": {
-    "key": "ui_66c9ab177708",
-    "en": "Maximum",
-    "zh-CN": "最高值"
-  },
-  "Pay period": {
-    "key": "ui_31e4b79f2ead",
-    "en": "Pay period",
-    "zh-CN": "薪资周期"
-  },
-  "Original salary text": {
-    "key": "ui_f76dd677a9ae",
-    "en": "Original salary text",
-    "zh-CN": "薪资原文"
-  },
-  "Salary locations": {
-    "key": "ui_046ff2b54189",
-    "en": "Salary locations",
-    "zh-CN": "薪资适用地点"
-  },
-  "Remove salary band": {
-    "key": "ui_e4961354e8ab",
-    "en": "Remove salary band",
-    "zh-CN": "删除薪资区间"
-  },
-  "Add salary band": {
-    "key": "ui_b03aa6f6307e",
-    "en": "Add salary band",
-    "zh-CN": "添加薪资区间"
-  },
-  "Full description": {
-    "key": "ui_37ab0c4fffd2",
-    "en": "Full description",
-    "zh-CN": "完整职位描述"
-  },
-  "Crawl limits": {
-    "key": "ui_f9f5074fc20c",
-    "en": "Crawl limits",
-    "zh-CN": "抓取限制"
-  },
-  "Listing pages": {
-    "key": "ui_a2c84d98289b",
-    "en": "Listing pages",
-    "zh-CN": "列表页数"
-  },
-  "Time limit (seconds)": {
-    "key": "ui_cf9965b51940",
-    "en": "Time limit (seconds)",
-    "zh-CN": "时间上限（秒）"
-  },
-  "Review these sample jobs and their evidence. Corrections stay with each job; extraction rules are reused for future pulls.": {
-    "key": "ui_c5a3c1bdd64b",
-    "en": "Review these sample jobs and their evidence. Corrections stay with each job; extraction rules are reused for future pulls.",
-    "zh-CN": "检查这些职位样本及其证据。字段修正会保存在对应职位中；提取规则将用于后续抓取。"
-  },
-  "Sample {{v0}}": {
-    "key": "ui_e6e10401c9fb",
-    "en": "Sample {{v0}}",
-    "zh-CN": "样本 {{v0}}"
-  },
-  "Source evidence": {
-    "key": "ui_e86636feeb00",
-    "en": "Source evidence",
-    "zh-CN": "来源证据"
-  },
-  "No verified job samples are available. This source cannot be approved yet.": {
-    "key": "ui_02cda37e9b58",
-    "en": "No verified job samples are available. This source cannot be approved yet.",
-    "zh-CN": "暂无已验证的职位样本，尚不能批准此来源。"
-  },
-  "Save and validate rules": {
-    "key": "ui_f71ba5aa9bcd",
-    "en": "Save and validate rules",
-    "zh-CN": "保存并验证规则"
-  },
-  "Approve and save": {
-    "key": "ui_1b9b961ef4ce",
-    "en": "Approve and save",
-    "zh-CN": "批准并保存"
-  },
-  "Loading extraction preview…": {
-    "key": "ui_8b5cd6256f47",
-    "en": "Loading extraction preview…",
-    "zh-CN": "正在加载提取预览…"
-  },
-  "Change extraction rules": {
-    "key": "ui_0d33a2bd6474",
-    "en": "Change extraction rules",
-    "zh-CN": "修改提取规则"
-  },
-  "Job card selector": {
-    "key": "ui_c475649c9c8f",
-    "en": "Job card selector",
-    "zh-CN": "职位卡片选择器"
-  },
-  "Description selector": {
-    "key": "ui_5d7d99a9418a",
-    "en": "Description selector",
-    "zh-CN": "职位描述选择器"
-  },
-  "Job link selector": {
-    "key": "ui_ee1cf56aa1c7",
-    "en": "Job link selector",
-    "zh-CN": "职位链接选择器"
-  },
-  "Open detail selector": {
-    "key": "ui_9dd905ea4bff",
-    "en": "Open detail selector",
-    "zh-CN": "打开详情选择器"
-  },
-  "Close detail selector": {
-    "key": "ui_80c9f880d6aa",
-    "en": "Close detail selector",
-    "zh-CN": "关闭详情选择器"
-  },
-  "Next results selector": {
-    "key": "ui_7afe1856f8e8",
-    "en": "Next results selector",
-    "zh-CN": "下一页结果选择器"
-  },
-  "Selector for {{v0}}": {
-    "key": "ui_c75eda9fcb9d",
-    "en": "Selector for {{v0}}",
-    "zh-CN": "{{v0}} 的选择器"
-  },
-  "Saved public boards": {
-    "key": "ui_752ddfe07a76",
-    "en": "Saved public boards",
-    "zh-CN": "已保存的公开招聘列表"
-  },
-  "Approved revision": {
-    "key": "ui_d023634bf26a",
-    "en": "Approved revision",
-    "zh-CN": "已批准版本"
-  },
-  "job details per pull": {
-    "key": "ui_c0c3ee94ef63",
-    "en": "job details per pull",
-    "zh-CN": "每次抓取的职位详情数"
-  },
-  "Edit or relearn": {
-    "key": "ui_54303c034fe2",
-    "en": "Edit or relearn",
-    "zh-CN": "编辑或重新学习"
-  },
-  "Re-pull": {
-    "key": "ui_e89bbdc790b4",
-    "en": "Re-pull",
-    "zh-CN": "重新抓取"
-  },
-  "Imported": {
-    "key": "ui_321f179c80ba",
-    "en": "Imported",
-    "zh-CN": "已导入"
-  },
-  "Choose observed page content for a field.": {
-    "key": "ui_89d5522cbc72",
-    "en": "Choose observed page content for a field.",
-    "zh-CN": "为字段选择页面中实际出现的内容。"
-  },
-  "Source snapshot": {
-    "key": "ui_98c0faa0e62d",
-    "en": "Source snapshot",
-    "zh-CN": "来源快照"
-  },
-  "Field": {
-    "key": "ui_f45fc1dfdc96",
-    "en": "Field",
-    "zh-CN": "字段"
-  },
-  "Observed content": {
-    "key": "ui_906008ed5845",
-    "en": "Observed content",
-    "zh-CN": "页面中的内容"
-  },
-  "Select content": {
-    "key": "ui_4526f6864ae5",
-    "en": "Select content",
-    "zh-CN": "选择内容"
-  },
-  "Use selected content": {
-    "key": "ui_e11534b38e04",
-    "en": "Use selected content",
-    "zh-CN": "使用所选内容"
-  },
-  "Needs review": {
-    "key": "ui_07297fa94a99",
-    "en": "Needs review",
-    "zh-CN": "需要检查"
-  },
-  "Latest source:": {
-    "key": "ui_ea7b0b45801f",
-    "en": "Latest source:",
-    "zh-CN": "最新来源："
-  },
-  "Saved correction:": {
-    "key": "ui_02bce86c21e8",
-    "en": "Saved correction:",
-    "zh-CN": "已保存的更正："
-  },
-  "Navigation outcome:": {
-    "key": "ui_2e05920a8762",
-    "en": "Navigation outcome:",
-    "zh-CN": "导航结果："
-  },
-  "Pull outcome:": {
-    "key": "ui_e2a42d7746ad",
-    "en": "Pull outcome:",
-    "zh-CN": "拉取结果："
-  },
-  "discovered ·": {
-    "key": "ui_424f57e9f061",
-    "en": "discovered ·",
-    "zh-CN": "已发现 ·"
-  },
-  "inspected": {
-    "key": "ui_5cfc694a09a2",
-    "en": "inspected",
-    "zh-CN": "已检查"
-  },
-  "inspected ·": {
-    "key": "ui_5d8fddca6c59",
-    "en": "inspected ·",
-    "zh-CN": "已检查 ·"
-  },
-  "imported": {
-    "key": "ui_5f54227b74fb",
-    "en": "imported",
-    "zh-CN": "已导入"
-  },
-  "duplicates ·": {
-    "key": "ui_353d65ed5ec1",
-    "en": "duplicates ·",
-    "zh-CN": "重复 ·"
-  },
-  "filtered ·": {
-    "key": "ui_4ce9dd0701c5",
-    "en": "filtered ·",
-    "zh-CN": "已筛选 ·"
-  },
-  "need review ·": {
-    "key": "ui_420ab49c3cfb",
-    "en": "need review ·",
-    "zh-CN": "需审核 ·"
-  },
-  "Review updated rules": {
-    "key": "ui_fc8c37ce8335",
-    "en": "Review updated rules",
-    "zh-CN": "审核更新后的规则"
-  },
-  "Source settings and history": {
-    "key": "ui_108155b99edb",
-    "en": "Source settings and history",
-    "zh-CN": "来源设置与历史记录"
-  },
-  "Relearn page structure": {
-    "key": "ui_e09e8a68ceff",
-    "en": "Relearn page structure",
-    "zh-CN": "重新识别页面结构"
-  },
-  "Saved revision": {
-    "key": "ui_6694ccd98f12",
-    "en": "Saved revision",
-    "zh-CN": "已保存的版本"
-  },
-  "Select revision": {
-    "key": "ui_4c84315133f7",
-    "en": "Select revision",
-    "zh-CN": "选择版本"
-  },
-  "Restore revision": {
-    "key": "ui_e276237699c9",
-    "en": "Restore revision",
-    "zh-CN": "恢复版本"
-  },
-  "Refresh cached pages": {
-    "key": "ui_070135bd8c50",
-    "en": "Refresh cached pages",
-    "zh-CN": "刷新缓存页面"
-  },
-  "Use a direct, public http(s) link. Up to 8,192 characters.": {
-    "key": "ui_d96c3a015deb",
-    "en": "Use a direct, public http(s) link. Up to 8,192 characters.",
-    "zh-CN": "使用直接的公开 http(s) 链接，最多 8,192 个字符。"
-  },
-  "Enter a complete http(s) URL.": {
-    "key": "ui_bfb2fb3e5468",
-    "en": "Enter a complete http(s) URL.",
-    "zh-CN": "输入完整的 http(s) 网址。"
-  },
-  "Paste one public job posting. We’ll import its details and flag anything that needs your review.": {
-    "key": "ui_81ce659420bc",
-    "en": "Paste one public job posting. We’ll import its details and flag anything that needs your review.",
-    "zh-CN": "粘贴一个公开职位页面。我们将导入职位详情，并标记需要你检查的内容。"
-  },
-  "Importing job…": {
-    "key": "ui_1a4f7bfcfb42",
-    "en": "Importing job…",
-    "zh-CN": "正在导入职位…"
   }
 }

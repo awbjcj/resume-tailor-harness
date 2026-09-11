@@ -225,7 +225,7 @@ def normalize_turn(
         except DraftRejected:
             if strict:
                 raise
-            notice = "Note not attached — quote check failed."
+            notice = "Note not attached: quote check failed."
     elif turn.draft_note is not None:
         raise TurnRejected("draft note on a non-draft turn")
 

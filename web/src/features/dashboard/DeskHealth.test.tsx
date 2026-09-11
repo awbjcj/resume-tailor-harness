@@ -63,7 +63,7 @@ describe("DeskHealth", () => {
     );
     renderHealth();
     await waitFor(() =>
-      expect(screen.getByText(/desk is ready/i)).toBeInTheDocument(),
+      expect(screen.getByText(/workspace is ready/i)).toBeInTheDocument(),
     );
     expect(
       screen.queryByRole("link", { name: /resume setup/i }),
@@ -86,7 +86,7 @@ describe("DeskHealth", () => {
     );
     renderHealth();
     await waitFor(() =>
-      expect(screen.getByText(/desk is ready/i)).toBeInTheDocument(),
+      expect(screen.getByText(/workspace is ready/i)).toBeInTheDocument(),
     );
   });
 

@@ -1,22 +1,23 @@
 # Environment configuration
 
-`resume-tailor-harness` loads process settings from environment variables and then from
-the repository-root `.env` file. Copy `.env.example` to `.env` for local use;
-hosted deployments should set the same names in the platform environment.
+`resume-tailor-harness` reads process settings from environment variables first,
+then from the repository-root `.env` file. Copy `.env.example` to `.env` for
+local use. Hosted deployments should set the same names in the platform
+environment.
 
-This page is the complete reference for the environment-backed fields in
-`resume_tailor_harness.config.Settings`. Blank values mean that the integration or
-override is disabled. Boolean values accept the normal Pydantic settings forms,
-including `true` and `false`. Restart the API and workers after changing a
-setting because process settings are cached.
+This page lists every environment-backed field in
+`resume_tailor_harness.config.Settings`. A blank value disables its integration
+or override. Boolean values accept the normal Pydantic settings forms,
+including `true` and `false`. The app caches process settings, so restart the
+API and workers after changing one.
 
-The Docker image always defaults `BROWSER_ENABLED=false`. Its other defaults are
-mode-aware: a zero-config image starts in local mode with API docs enabled and
-non-secure localhost cookies; hosted mode defaults `SECURE_COOKIES=true`,
+The Docker image defaults `BROWSER_ENABLED=false`. Its other defaults depend on
+the mode. With no configuration, it starts in local mode with API docs enabled
+and non-secure localhost cookies. Hosted mode defaults `SECURE_COOKIES=true`,
 `DISABLE_API_DOCS=true`, and `REGISTRATION_MODE=open`. Set `APP_MODE` to `local`
-or `hosted`; `auto` (the image default) selects hosted mode when hosted-only
-settings such as `APP_BASE_URL`, `AUTH_PASSWORD_HASH`, or `SESSION_SECRET` are
-present.
+or `hosted`. The image defaults to `auto`, which selects hosted mode when
+hosted-only settings such as `APP_BASE_URL`, `AUTH_PASSWORD_HASH`, or
+`SESSION_SECRET` are present.
 
 ## LLM providers and models
 
@@ -53,16 +54,16 @@ present.
 | `RUN_ANNOUNCE_WINDOW_SECONDS` | `3600` | How recently a background run must have finished to be announced on reconnect; integer seconds from 0 through 86400. |
 
 Model IDs can use `openai:`, `gemini:`, or `deepseek:` prefixes. A bare model
-ID uses Anthropic. Reasoning-effort strings are deliberately provider-specific;
-leave them unset unless the selected provider/model documents support for the
-chosen value.
+ID uses Anthropic. Reasoning-effort strings are provider-specific. Leave them
+unset unless the selected provider and model document support for the chosen
+value.
 
-For OpenAI and Anthropic, every routing decision selects the credential and
+For OpenAI and Anthropic, every routing decision selects a credential and
 endpoint together. `subscription` uses `SUB2API_<PROVIDER>_KEY` with
-`SUB2API_BASE_URL`; `api` uses the provider's normal `*_API_KEY` with its
-`*_BASE_URL`; and `auto` chooses between those complete pairs based on whether
-the provider has a Sub2API key. SDK process defaults are never allowed to mix
-one route's key with the other route's endpoint.
+`SUB2API_BASE_URL`. `api` uses the provider's normal `*_API_KEY` with its
+`*_BASE_URL`. `auto` chooses between those pairs based on whether the provider
+has a Sub2API key. SDK process defaults cannot mix one route's key with another
+route's endpoint.
 
 ## API, storage, and runtime
 
@@ -149,8 +150,8 @@ units and rollout behavior.
 | `COMPANY_INTELLIGENCE_TTL_DAYS` | `30` | Source-backed company-dossier freshness window; integer from 1 through 365 days. Expiry marks saved evidence stale but never refreshes it automatically. |
 | `H1B_ENRICH_MAX_COMPANIES_PER_RUN` | `50` | Maximum uncached companies researched per run; non-negative integer, with `0` meaning unlimited. |
 
-Historical H-1B data is an advisory signal only. It never confirms current
-sponsorship policy and never hard-rejects a job.
+Historical H-1B data is advisory evidence. It cannot confirm a current
+sponsorship policy or hard-reject a job.
 
 For the bundled Docker service, leave these values at their defaults in `.env`
 and start the `h1b` profile with:
@@ -160,7 +161,7 @@ docker compose -f compose.yaml -f compose.h1b.yaml --profile h1b up --build
 ```
 
 The override injects a private `http://h1b-job-search-mcp:8000/mcp` URL only
-for that profile; a container must not use `localhost` to reach its companion
+for that profile. A container cannot use `localhost` to reach its companion
 service.
 
 ## Gmail and platform mail
@@ -184,5 +185,5 @@ service.
 | `SMTP_STARTTLS` | `true` | Enables SMTP STARTTLS. |
 
 The local CLI Gmail flow uses `config/gmail_credentials.json` instead of the
-platform OAuth variables. Railway plans below Pro block outbound SMTP; use the
-Resend backend there unless the deployment plan supports SMTP egress.
+platform OAuth variables. Railway plans below Pro block outbound SMTP. Use the
+Resend backend unless the deployment plan supports SMTP egress.

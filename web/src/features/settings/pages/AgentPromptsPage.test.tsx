@@ -62,7 +62,7 @@ describe("AgentPromptsPage", () => {
     });
 
     await userEvent.click(screen.getByText("Fact-check gate"));
-    expect(screen.getByText("Integrity gate — read-only")).toBeInTheDocument();
+    expect(screen.getByText("Integrity gate (read-only)")).toBeInTheDocument();
     expect(screen.queryByLabelText(/guidance for Fact-check/i)).not.toBeInTheDocument();
   });
 

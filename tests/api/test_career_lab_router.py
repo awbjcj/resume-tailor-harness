@@ -458,7 +458,7 @@ def test_ambiguous_route_starts_a_session_with_a_clarifying_question(
             "assistant",
         ]
         clarification = result["result"]["turns"][-1]
-        assert clarification["text"].endswith("a career decision?")
+        assert clarification["text"].endswith("a career decision.")
         assert clarification["skillRef"] is None
         assert clarification["agentMeta"]["prompt_policy_version"] == (
             "career-lab-router-v2"

@@ -120,7 +120,7 @@ def test_skeleton_lists_anchor_candidates(client):
     save_facts(facts, data_dir / "profile" / "facts.json")
 
     rows = c.get("/api/profile/skeleton").json()
-    assert {"id": "exp1", "kind": "experience", "label": "Acme — Engineer"} in rows
+    assert {"id": "exp1", "kind": "experience", "label": "Acme: Engineer"} in rows
     assert {"id": "proj1", "kind": "project", "label": "Engine"} in rows
 
 

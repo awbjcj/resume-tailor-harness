@@ -554,7 +554,7 @@ def apply_synthesis_fragments(
                     )
                 )
                 anchor_decisions.append(
-                    f"{doc.id}: anchor {stub.id} not found — kept as a project"
+                    f"{doc.id}: anchor {stub.id} was not found. It remains a project"
                 )
                 continue
             seen = {normalize_skill(bullet.text) for bullet in target.bullets}

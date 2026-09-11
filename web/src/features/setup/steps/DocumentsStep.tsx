@@ -26,7 +26,7 @@ export function DocumentsStep() {
     <Card>
       <CardHeader>
         <CardTitle>Documents</CardTitle>
-        <CardDescription>Upload a resume — this is what the profile is built from.</CardDescription>
+        <CardDescription>Upload a resume. The profile is built from it.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <DocumentManager />

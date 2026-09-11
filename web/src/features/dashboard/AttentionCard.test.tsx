@@ -100,7 +100,7 @@ describe("AttentionCard", () => {
   it("formats a job failure instead of showing the raw label", async () => {
     renderAttentionCard([jobRecord]);
 
-    expect(await screen.findByText(/Acme — Staff Engineer/)).toBeInTheDocument();
+    expect(await screen.findByText(/Acme: Staff Engineer/)).toBeInTheDocument();
     expect(screen.getByText("tailor")).toBeInTheDocument();
     expect(screen.getByText(/openai:gpt-5/)).toBeInTheDocument();
     expect(screen.getByText(/×3/)).toBeInTheDocument();

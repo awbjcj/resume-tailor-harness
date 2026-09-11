@@ -19,7 +19,7 @@ export function StyleGuideSettingsPage() {
         <div>
           <h1 className="text-lg font-semibold">Style guide</h1>
           <p className="text-sm text-muted-foreground">
-            House style for tailored bullets — the tailor and reviewers read this.
+            House style for tailored bullets. The tailor and reviewers use it.
           </p>
         </div>
         <ResetSectionButton sectionId="style_guide" label="Style guide" />

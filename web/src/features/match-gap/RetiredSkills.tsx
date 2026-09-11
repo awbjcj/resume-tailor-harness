@@ -33,8 +33,8 @@ export function RetiredSkills({ skills }: { skills: RetiredSkill[] }) {
         <PopoverHeader className="gap-1 p-4 pb-2">
           <PopoverTitle>Retired as non-skills</PopoverTitle>
           <p className="text-xs text-muted-foreground">
-            These were judged to name no skill, so they no longer consume a
-            classification call. Restore any that are real.
+            These entries did not name a skill, so they no longer use a
+            classification call. Restore any valid entries.
           </p>
         </PopoverHeader>
         <ul className="max-h-72 overflow-y-auto border-t">

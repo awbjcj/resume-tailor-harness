@@ -37,7 +37,7 @@ def _job() -> Job:
 
 def test_event_mapping_preserves_actionable_calendar_details() -> None:
     entry = entry_for_event(_event(notes="LRU cache"), _job())
-    assert entry.summary == "Technical round 2 — Acme"
+    assert entry.summary == "Technical round 2: Acme"
     assert entry.end is not None
     assert entry.end - entry.start == timedelta(minutes=90)
     assert entry.url == entry.location == "https://zoom.us/j/123"

@@ -372,11 +372,11 @@ def _drop_failed(
 ) -> list[str]:
     tech_failures = tech_failures or {}
     drops = [
-        f"{fragment.entries[entry_index].claims[claim_index].text!r} — {reason}"
+        f"{fragment.entries[entry_index].claims[claim_index].text!r} ({reason})"
         for (entry_index, claim_index), reason in sorted(failures.items())
     ]
     drops += [
-        f"tech {token!r} — {reason}"
+        f"tech {token!r} ({reason})"
         for entry_index, bad in sorted(tech_failures.items())
         for token, reason in bad.items()
     ]

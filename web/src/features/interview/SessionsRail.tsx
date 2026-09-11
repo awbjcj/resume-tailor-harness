@@ -66,7 +66,7 @@ export function SessionsRail({ selectedId }: { selectedId: string | null }) {
         renamePending={rename.isPending}
         deletePending={remove.isPending}
         deleteDescription={(item) => item.status === "active"
-          ? "This interview is still in progress — deleting it abandons it without a debrief. This cannot be undone."
+          ? "This interview is still in progress. Deleting it ends the interview without a debrief. This cannot be undone."
           : "The transcript and debrief will be permanently removed. This cannot be undone."}
       />
       <NewInterviewDialog open={newOpen} onOpenChange={setNewOpen} />

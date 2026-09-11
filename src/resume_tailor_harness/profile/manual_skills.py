@@ -125,8 +125,8 @@ def apply_manual_skill_entry(
     found = _find_skill(updated, entry.target_skill_token)
     if found is None:
         return facts, (
-            f"Manual alias '{entry.alias_text}' could not be reattached -- "
-            f"its target skill '{entry.target_skill_display}' was not found."
+            f"Manual alias '{entry.alias_text}' could not be reattached. "
+            f"Its target skill '{entry.target_skill_display}' was not found."
         )
     _bucket, skill = found
     if normalize_skill(entry.alias_text) in {

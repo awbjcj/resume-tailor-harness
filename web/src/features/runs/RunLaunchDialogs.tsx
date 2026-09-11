@@ -106,8 +106,8 @@ export function ReprocessDialog() {
         <DialogHeader>
           <DialogTitle>Reprocess</DialogTitle>
           <DialogDescription>
-            Re-run the full funnel over one scope. Can change fit + status. Jobs with
-            progress are never touched.
+            Re-run the full funnel for one scope. Fit scores and statuses may change.
+            Jobs with progress are not changed.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-1.5">
