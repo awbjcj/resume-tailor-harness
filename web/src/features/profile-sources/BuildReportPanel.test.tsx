@@ -25,7 +25,7 @@ describe("BuildReportPanel", () => {
         experiences: 3, projects: 2,
         docStatus: { "resume-1": "cached", "deck-1": "extracted" },
         anchorDecisions: ["deck-1: +2 bullets on Acme/Engineer"],
-        verificationDrops: ["deck-1: 'Cut latency 45%' — number '45%' not in source"],
+        verificationDrops: ["deck-1: 'Cut latency 45%' (number '45%' not in source)"],
         warnings: ["skill inference failed: boom"],
       },
     });
@@ -47,11 +47,11 @@ describe("BuildReportPanel", () => {
             experiences: 3, projects: 2,
             docStatus: { "resume-1": "failed: parser unavailable" },
             anchorDecisions: ["deck-1: +2 bullets on Acme/Engineer"],
-            verificationDrops: ["deck-1: 'Cut latency 45%' — number '45%' not in source"],
+            verificationDrops: ["deck-1: 'Cut latency 45%' (number '45%' not in source)"],
             conflicts: ["summary: 'Current' kept over 'Other' from deck-1"],
             warnings: [
               "skill inference failed: boom",
-              "Manual alias 'TS' could not be reattached -- its target skill 'TypeScript' was not found.",
+              "Manual alias 'TS' could not be reattached. Its target skill 'TypeScript' was not found.",
             ],
           },
         },

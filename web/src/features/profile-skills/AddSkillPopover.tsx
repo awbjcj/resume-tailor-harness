@@ -78,7 +78,7 @@ export function AddSkillPopover({ skillName }: { skillName: string }) {
         <PopoverHeader>
           <PopoverTitle>Add &ldquo;{skillName}&rdquo;</PopoverTitle>
           <PopoverDescription>
-            Not detected on your profile yet — add it and this gap clears immediately.
+            This skill is not yet detected on your profile. Add it to clear the gap.
           </PopoverDescription>
         </PopoverHeader>
 

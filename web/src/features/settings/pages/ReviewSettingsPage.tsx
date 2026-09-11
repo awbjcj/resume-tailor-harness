@@ -63,7 +63,7 @@ const ROSTERS = [
     id: "deep",
     label: "Deep",
     endpoint: "/api/config/review-deep" as ConfigPath,
-    description: "Used when \"Deep review\" is checked at tailor time — a separate roster, saved separately.",
+    description: "Used when \"Deep review\" is selected while tailoring. It has a separate saved roster.",
   },
 ] as const;
 
@@ -158,7 +158,7 @@ export function ReviewSettingsPage() {
 
       <Alert>
         <AlertDescription>
-          Defaults are sensible — change reviewer weights only if you know why.
+          The default weights are calibrated. Change them only when you have a clear reason.
         </AlertDescription>
       </Alert>
 
@@ -392,8 +392,8 @@ function ReviewRosterForm({
       <FieldSet>
         <FieldLegend>Reviewers</FieldLegend>
         <FieldDescription>
-          A gated reviewer blocks the round outright, so it is never scored —
-          its weight and score bands are disabled rather than silently ignored.
+          A gated reviewer blocks the round before scoring. Its weight and score
+          bands are disabled.
         </FieldDescription>
         <Table>
           <TableHeader>
@@ -477,9 +477,8 @@ function ReviewRosterForm({
       <FieldSet>
         <FieldLegend>Resume shape</FieldLegend>
         <FieldDescription>
-          Handed to the writer, the reviser, and the advisory panel. Floors are
-          clamped to what your profile can actually support, so a minimum never
-          asks for invented evidence.
+          Used by the writer, reviser, and advisory panel. Minimums stay within
+          the evidence in your profile, so they do not require invented claims.
         </FieldDescription>
 
         <FieldSet className="gap-3">
@@ -541,7 +540,7 @@ function ReviewRosterForm({
             />
             <NumberField
               id="minAspectsPerOwner" label="Min aspects per entry"
-              description="Distinct kinds of contribution — scope, impact, technique — per entry."
+              description="Each entry should cover different types of contribution, such as scope, impact, or technique."
               value={budget.minAspectsPerOwner}
               onChange={(v) => setBudget({ minAspectsPerOwner: v })}
             />
@@ -551,9 +550,10 @@ function ReviewRosterForm({
         <FieldSet className="gap-3">
           <FieldLegend variant="label">Skills</FieldLegend>
           <FieldDescription>
-            A target, not a cap. The skills section renders one comma-joined line
-            per category, so about 40 entries cost roughly five lines — trimming
-            it saves almost no space and loses keyword coverage.
+            Aim for this number. It is not a hard cap. The skills section renders
+            one comma-separated line per category. About 40 entries use roughly
+            five lines, so trimming them saves little space and can reduce
+            keyword coverage.
           </FieldDescription>
           <div className={GRID}>
             <NumberField
@@ -610,7 +610,7 @@ function ReviewRosterForm({
               <SwitchField
                 id="early-stop-on-regression"
                 label="Stop early on regression"
-                description="End the loop when a round scores worse than the best so far, instead of spending the remaining rounds."
+                description="End the loop when a round scores below the best so far. This preserves the remaining rounds."
                 checked={draft.earlyStopOnRegression}
                 onChange={(v) => setDraft({ ...draft, earlyStopOnRegression: v })}
               />

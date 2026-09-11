@@ -24,8 +24,8 @@ export function GmailCard() {
               ? "Checking connection…"
               : status?.connected
                 ? status.draftCapable
-                  ? `Connected (${status.clientSource} client) — sync and drafts enabled.`
-                  : `Connected (${status.clientSource} client) — reconnect to enable drafts.`
+                  ? `Connected (${status.clientSource} client). Sync and drafts are enabled.`
+                  : `Connected (${status.clientSource} client). Reconnect to enable drafts.`
                 : "Not connected. Connect to sync application status and draft emails."}
           </p>
         </div>

@@ -22,7 +22,7 @@ function Chip({
       data-active={active}
       style={{ "--rise-i": index } as React.CSSProperties}
       title={
-        tag.covered ? "Covered by your profile" : "Gap — not in your profile yet"
+        tag.covered ? "Covered by your profile" : "Profile gap: not yet in your profile"
       }
     >
       <span aria-hidden className="text-[0.7em] opacity-80">

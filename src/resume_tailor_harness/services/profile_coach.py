@@ -242,7 +242,7 @@ def run_message_turn(
     session = load_session(root, session_id)
     if session["status"] != "active":
         raise ValueError("session ended")
-    reporter.begin(1, "Coach is thinking")
+    reporter.begin(1, "Preparing a response")
     coach, formatter = _agents(root, coach_agent, formatter_agent, CoachTurn)
     prompt = "\n\n".join(
         [
@@ -375,7 +375,7 @@ def approve_draft(
         topic = next((row for row in session["topics"] if row["id"] == topic_id), None)
         anchor = (topic or {}).get("owner_id") or None
         doc = add_note_source(
-            root, f"Coach — {title.strip() or topic_id}", body, anchor=anchor
+            root, f"Coach: {title.strip() or topic_id}", body, anchor=anchor
         )
         set_draft_status(root, session_id, topic_id, "saved", note_doc_id=doc.id)
         return doc.id

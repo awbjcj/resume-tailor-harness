@@ -36,7 +36,7 @@ export function InterviewTab({
           Rehearse against this job description and one of your tailored resumes, then get a scored debrief.
         </p>
         {activeRow ? (
-          <p className="text-sm text-muted-foreground">An interview for this job is in progress — resume it from the list below.</p>
+          <p className="text-sm text-muted-foreground">An interview for this job is in progress. Resume it from the list below.</p>
         ) : (
           <Button disabled={!canStart} onClick={() => setOpen(true)}><MessagesSquare aria-hidden="true" />Start mock interview</Button>
         )}

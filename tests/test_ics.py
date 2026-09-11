@@ -9,7 +9,7 @@ STAMP = datetime(2026, 3, 1, 12, 0, tzinfo=timezone.utc)
 def _entry(**over) -> CalendarEntry:
     values = {
         "uid": "event-1@resume-tailor-harness",
-        "summary": "Technical round — Acme",
+        "summary": "Technical round: Acme",
         "start": START,
         "end": datetime(2026, 3, 9, 20, 0, tzinfo=timezone.utc),
         "all_day": False,

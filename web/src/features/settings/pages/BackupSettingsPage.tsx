@@ -98,8 +98,8 @@ export function BackupSettingsPage() {
             <h3>Settings bundle</h3>
           </CardTitle>
           <CardDescription>
-            Move your customizations between installs. A bundle carries only the
-            settings below — never your jobs, your profile, or your API keys.
+            Move your customizations between installs. A bundle includes only the
+            settings below. It never includes your jobs, profile, or API keys.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

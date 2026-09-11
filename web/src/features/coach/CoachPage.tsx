@@ -358,7 +358,7 @@ export function CoachPage() {
                 onAction={() => void startSession()}
                 steps={[
                   { icon: SearchCheck, title: "Review gaps", description: "Start with evidence your current profile does not yet show." },
-                  { icon: MessageCircleQuestion, title: "Answer one question", description: "Stay focused while the coach follows the strongest thread." },
+                  { icon: MessageCircleQuestion, title: "Answer one question", description: "Answer each question while the coach follows up on useful details." },
                   { icon: FileCheck2, title: "Approve grounded notes", description: "Review every claim and its supporting words before saving." },
                 ]}
               />
@@ -466,7 +466,7 @@ export function CoachPage() {
         isError={sessions.isError}
         onRetry={() => void sessions.refetch()}
         description="Resume or manage a coaching session."
-        emptyMessage="No coaching sessions yet. Start one when you are ready to uncover stronger evidence."
+        emptyMessage="No coaching sessions yet. Start one to explore evidence for your profile."
         createLabel="New coaching session"
         createDisabled={starting || start.isPending}
         onCreate={() => void startSession()}

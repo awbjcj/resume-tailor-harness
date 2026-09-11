@@ -91,7 +91,7 @@ def do_whoami() -> None:
     typer.echo(
         "Not logged in."
         if credentials is None
-        else f"{credentials['username']} -> {credentials['apiUrl']}"
+        else f"{credentials['username']}: {credentials['apiUrl']}"
     )
 
 

@@ -72,11 +72,11 @@ function edgeColor(target: string): string {
 export function StageFlowChart({ flows }: { flows: Flow[] }) {
   const { t } = useTranslation();
   if (flows.length === 0) {
-    return <p className="text-sm text-muted-foreground">Not enough history yet — log a few stages to see where applications go.</p>;
+    return <p className="text-sm text-muted-foreground">There is not enough history yet. Log a few stages to see where applications go.</p>;
   }
   const data = toSankeyData(flows, t);
   if (data.links.length === 0) {
-    return <p className="text-sm text-muted-foreground">Not enough forward stage history yet — repeated and out-of-order entries stay in the timeline without distorting this chart.</p>;
+    return <p className="text-sm text-muted-foreground">There is not enough forward stage history to show this chart. Repeated and out-of-order entries remain in the timeline without affecting it.</p>;
   }
   return (
     <div className="space-y-4">

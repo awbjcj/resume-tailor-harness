@@ -62,7 +62,7 @@ export function CareerLabSkillPicker({
         <option value="">Let Career Lab route it</option>
         {rows.map((row) => (
           <option key={row.name} value={row.name} disabled={!row.isAvailable}>
-            {row.name}{row.isAvailable ? "" : " — unavailable"}
+            {row.name}{row.isAvailable ? "" : " (unavailable)"}
           </option>
         ))}
       </select>
@@ -302,7 +302,7 @@ export function CareerLabContextRail({
                   className="h-9 w-full rounded-lg border border-input bg-background px-2 text-sm"
                 >
                   <option value="">No job selected</option>
-                  {filteredJobs.map((job) => <option key={job.jobId} value={job.jobId}>{[job.company, job.title].filter(Boolean).join(" · ") || `Job ${job.jobId}`} — {job.status}</option>)}
+                  {filteredJobs.map((job) => <option key={job.jobId} value={job.jobId}>{[job.company, job.title].filter(Boolean).join(" · ") || `Job ${job.jobId}`} · {job.status}</option>)}
                 </select>
                 {jobs.isPending ? <p className="text-xs text-muted-foreground">Loading jobs…</p> : null}
                 {jobs.isError ? <p className="text-xs text-destructive">Jobs could not be loaded.</p> : null}

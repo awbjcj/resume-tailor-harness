@@ -175,7 +175,7 @@ export function InterviewPage() {
           icon={<MessagesSquare />}
           eyebrow="Focused rehearsal"
           title="Mock Interviews"
-          description="Practise realistic questions, stay in the moment, and turn the conversation into a scored debrief."
+          description="Practice realistic questions and review a scored debrief."
           meta={<Badge variant="outline">{noSessions ? "No sessions yet" : "Choose a session"}</Badge>}
         />
         <div className="flex flex-col gap-6">
@@ -185,13 +185,13 @@ export function InterviewPage() {
                 <WorkspaceEmptyState
                   icon={MessagesSquare}
                   title={noSessions ? "Start a focused rehearsal" : "Choose a rehearsal to continue"}
-                  description="Practice against a tailored role, answer naturally, and finish with a scored debrief you can act on."
+                  description="Practice questions for a role with a tailored resume, then review a scored debrief."
                   actionLabel="Start a mock interview"
                   onAction={() => setNewOpen(true)}
                   steps={[
-                    { icon: BriefcaseBusiness, title: "Choose a role", description: "Select a job with a tailored resume so the questions match the real opportunity." },
+                    { icon: BriefcaseBusiness, title: "Choose a role", description: "Select a job with a tailored resume so the questions reflect the role." },
                     { icon: MessageCircleQuestion, title: "Answer one at a time", description: "Stay in the conversation while the interviewer adapts its follow-ups." },
-                    { icon: ChartNoAxesColumnIncreasing, title: "Review the debrief", description: "See strengths, gaps, and stronger answer patterns after the rehearsal." },
+                    { icon: ChartNoAxesColumnIncreasing, title: "Review the debrief", description: "Review strengths, gaps, and better answer patterns after the rehearsal." },
                   ]}
                 />
               </CardContent>
@@ -260,8 +260,8 @@ export function InterviewPage() {
         tone="interview"
         icon={<MessagesSquare />}
         eyebrow="Mock Interview"
-        title={<>{active.company || "Mock Interview"} — {active.title}</>}
-        description="Answer as you would in the real room. The interviewer adapts, then turns the completed rehearsal into practical coaching."
+        title={<>{active.company || "Mock Interview"} · {active.title}</>}
+        description="Answer as you would in an interview. The questions adapt to your responses, and the completed rehearsal includes coaching."
         meta={<>
           <Badge variant={ended ? "outline" : "secondary"}>{ended ? "Rehearsal complete" : "Interview live"}</Badge>
           <Badge variant="outline" className="capitalize">{active.style.stage.replace("_", " ")}</Badge>

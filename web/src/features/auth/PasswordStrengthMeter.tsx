@@ -19,7 +19,7 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
     <div className="mt-2" data-slot="password-strength">
       <Progress value={score * 25} aria-label={t("auth.passwordStrength.ariaLabel", { label })} />
       <p className="mt-1.5 text-xs text-muted-foreground" role="status">
-        {label} — {t(hintKey)}
+        {label}: {t(hintKey)}
       </p>
     </div>
   );

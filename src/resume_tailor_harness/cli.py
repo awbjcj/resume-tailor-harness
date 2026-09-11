@@ -54,8 +54,8 @@ from resume_tailor_harness.tracking.repository import (
 )
 from resume_tailor_harness.tracking.tables import Job, JobStatus
 
-app = typer.Typer(help="Résumé Tailor Harness — personal job-hunt automation pipeline.")
-profile_app = typer.Typer(help="Build and manage your fact-lock profile.")
+app = typer.Typer(help="Résumé Tailor Harness: automation tools for a personal job search.")
+profile_app = typer.Typer(help="Build and manage your fact-locked profile.")
 app.add_typer(profile_app, name="profile")
 app.add_typer(admin_app, name="admin")
 
@@ -122,12 +122,12 @@ def profile_add(
     mode: str | None = typer.Option(
         None,
         "--mode",
-        help="'literal', 'synthesis', or 'project' (default: .pptx → synthesis; dossier .md → project).",
+        help="Choose 'literal', 'synthesis', or 'project'. .pptx files default to synthesis; dossier .md files default to project.",
     ),
     anchor: str | None = typer.Option(
         None,
         "--anchor",
-        help="Experience/project fact id synthesized entries attach to.",
+        help="Fact ID for synthesized experience or project entries.",
     ),
 ) -> None:
     """Register a source document in the profile corpus."""
@@ -180,7 +180,7 @@ def profile_sources(dir: str = typer.Option(DEFAULT_PROFILE_DIR, "--dir")) -> No
 def profile_depth_cmd(
     facts: str = typer.Option(DEFAULT_FACTS, help="Path to facts.json."),
     target: int = typer.Option(
-        SUPPLY_TARGET, help="Source bullets an owner needs to clear the bar."
+        SUPPLY_TARGET, help="Minimum source bullets required for each evidence owner."
     ),
 ) -> None:
     """Show per-owner bullet supply and aspect coverage."""
@@ -424,7 +424,7 @@ def profile_coach_cmd(
         for draft in view["draftNotes"]:
             if draft["status"] != "pending":
                 continue
-            typer.echo(f"\nDRAFT NOTE — {draft['title']}\n{draft['summary']}")
+            typer.echo(f"\nDRAFT NOTE: {draft['title']}\n{draft['summary']}")
             for quote in draft["quotes"]:
                 typer.echo(f'  "{quote}"')
             choice = (
@@ -713,7 +713,7 @@ def scout_cmd(
         typer.echo(str(exc))
         raise typer.Exit(code=1) from exc
     if search_plan.strategy == "none":
-        typer.echo("Discovery Scout needs web search; change search_mode from off.")
+        typer.echo("Discovery Scout requires web search. Set search_mode to a mode other than off.")
         raise typer.Exit(code=1)
 
     class EchoReporter:
@@ -912,7 +912,7 @@ def addjob(
     title: str | None = typer.Option(None, help="Job title (overrides extracted)."),
     location: str | None = typer.Option(None, help="Location (overrides extracted)."),
     jd_file: str | None = typer.Option(
-        None, help="Read the JD from this file instead of stdin/URL."
+        None, help="Path to a file containing the job description. This takes precedence over stdin or URL input."
     ),
     no_browser: bool = typer.Option(
         False,
@@ -973,7 +973,7 @@ def addjob(
     if job is None:
         typer.echo("Duplicate job (same URL or JD already present); not added.")
         raise typer.Exit(code=0)
-    typer.echo(f"Added job #{job.id} ({company or '?'} — status={job.status}).")
+    typer.echo(f"Added job #{job.id} ({company or '?'}; status={job.status}).")
 
 
 @app.command("discover")
@@ -1005,7 +1005,7 @@ def reprocess_cmd(
     facts: str = typer.Option(DEFAULT_FACTS, help="Path to facts.json."),
     db_url: str | None = typer.Option(None, help="Override the database URL."),
 ) -> None:
-    """Re-run the full funnel over chosen scopes (can flip fit + status)."""
+    """Re-run the full funnel for selected scopes. This can update fit scores and statuses."""
     engine = _engine(db_url)
     with get_session(engine) as session:
         counts = reprocess_jobs(
@@ -1093,12 +1093,12 @@ def pull_cmd(
     refresh: bool = typer.Option(
         False,
         "--refresh",
-        help="Re-fetch jobs already known instead of skipping their expensive detail work.",
+        help="Re-fetch known jobs and repeat their detail processing.",
     ),
     relearn: bool = typer.Option(
         False,
         "--relearn",
-        help="Force scrape connectors to learn fresh selector recipes this run.",
+        help="Re-scrape connectors to refresh their selector recipes.",
     ),
     db_url: str | None = typer.Option(None, help="Override the database URL."),
 ) -> None:
@@ -1177,7 +1177,7 @@ def sources_cmd() -> None:
 @app.command("match-gap")
 def match_gap_cmd(
     job_id: int | None = typer.Option(
-        None, help="Show gaps for one job instead of the aggregate."
+        None, help="Show gaps for one job. Omit this option for the aggregate."
     ),
     facts: str = typer.Option(DEFAULT_FACTS, help="Path to facts.json."),
     llm: bool = typer.Option(
@@ -1241,7 +1241,7 @@ def approve(
     job_id: int = typer.Argument(..., help="Job id to approve for tailoring."),
     db_url: str | None = typer.Option(None, help="Override the database URL."),
 ) -> None:
-    """Mark a shortlisted job as approved (the human checkpoint before tailoring)."""
+    """Approve a shortlisted job before tailoring."""
     engine = _engine(db_url)
     with get_session(engine) as session:
         job = get_job(session, job_id)
@@ -1269,7 +1269,7 @@ def tailor_cmd(
     skill: str | None = typer.Option(None, "--skill", help="Resume authoring skill."),
     db_url: str | None = typer.Option(None, help="Override the database URL."),
 ) -> None:
-    """Run the tailor + review loop over approved job(s)."""
+    """Tailor and review approved jobs."""
     engine = _engine(db_url)
     with get_session(engine) as session:
         if job_id is None and not approved:
@@ -1300,7 +1300,7 @@ def tailor_cmd(
                 f"Job #{jid}: {len(versions)} version(s); final fact_check_passed={versions[-1].fact_check_passed}"
             )
         for jid, failure in outcome.failures.items():
-            typer.echo(f"Job #{jid}: failed -- {failure.error_type}: {failure.message}")
+            typer.echo(f"Job #{jid} failed: {failure.error_type}: {failure.message}")
 
 
 @app.command("cover-letter")
@@ -1339,7 +1339,7 @@ def cover_letter_cmd(
         for r in results:
             typer.echo(
                 f"Job #{r.job_id}: cover letter #{r.cover_letter_id} "
-                f"(fact_check_passed={r.fact_check_passed}) -> {r.pdf_path}"
+                f"(fact_check_passed={r.fact_check_passed}): {r.pdf_path}"
             )
 
 
@@ -1359,7 +1359,7 @@ def render_cmd(
     if path is None:
         typer.echo(f"Resume version #{version_id} not found.")
         raise typer.Exit(code=1)
-    typer.echo(f"Rendered version #{version_id} -> {path}")
+    typer.echo(f"Rendered version #{version_id}: {path}")
 
 
 @app.command("export")
@@ -1454,7 +1454,7 @@ def delete_cover_letters_cmd(
 
 @app.command("setup")
 def setup_cmd() -> None:
-    """Launch the interactive setup wizard (zero → configured → ready)."""
+    """Launch the interactive setup wizard."""
     from resume_tailor_harness.setup.app import SetupApp
 
     SetupApp().run()
@@ -1479,7 +1479,7 @@ def prune(
         None, "--retention-days", help="Override retention_days."
     ),
 ) -> None:
-    """Archive junk jobs (rejected / low-fit / stale) and expire old archived ones."""
+    """Archive rejected, low-fit, or stale jobs and expire older archived jobs."""
     with get_session(_engine(db_url)) as session:
         report = run_prune(
             session,
@@ -1492,7 +1492,7 @@ def prune(
     if dry_run:
         typer.echo(
             f"[dry-run] {report.rejected} rejected, {report.low_fit} low-fit, "
-            f"{report.stale} stale -> {report.archived} to archive; "
+            f"{report.stale} stale; {report.archived} would be archived; "
             f"{report.expired} to expire, {report.skipped} skipped (have progress)"
         )
     else:
@@ -1579,7 +1579,7 @@ def sync_status_cmd(
             raise typer.Exit(code=0)
         for proposal in proposals:
             typer.echo(
-                f"  {proposal.label}: {proposal.current_status} -> "
+                f"  {proposal.label}: {proposal.current_status} changes to "
                 f"{proposal.proposed_status} ({proposal.evidence})"
             )
         if apply:
@@ -1617,7 +1617,7 @@ def serve_cmd(
     db_url: str | None = typer.Option(None, help="Override the database URL."),
     mode: ServeMode = typer.Option(
         ServeMode.local,
-        help="Local bypasses account auth; hosted enables login and tenants.",
+        help="Local mode does not require account authentication. Hosted mode enables login and user workspaces.",
     ),
 ) -> None:
     """Run the FastAPI backend (for the React frontend / API clients)."""

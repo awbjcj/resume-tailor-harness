@@ -147,7 +147,7 @@ def build_evidence_catalog(
             EvidenceOwnerCandidate(
                 owner_id=experience.id,
                 owner_kind="experience",
-                label=f"{experience.company} — {experience.title}",
+                label=f"{experience.company}: {experience.title}",
                 start=experience.start,
                 end=experience.end,
                 current=experience.current,

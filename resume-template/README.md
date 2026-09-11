@@ -1,41 +1,35 @@
-# Software Engineer Resume Template
+# Software engineer resume template
 
-This repository contains a LaTeX template for a professional software engineer resume that I have personally used to secure numerous interviews. This template is designed to highlight technical skills, project experience, and achievements in a clean and organized format.
+This directory contains a LaTeX resume template for software engineers. The
+author has used it to secure interviews. It includes focused sections for
+technical skills, experience, projects, and education.
 
-## Overview
+## What it includes
 
-### Features
+- A simple layout for skills, work experience, projects, and education.
+- Editable content and styling for each application.
+- A PDF output that you can review before sharing.
 
-- Clean and modern design.
-- Easy to customize and tailor for different job applications.
-- Sections for technical skills, work experience, projects, and education.
-- Structured layout to emphasize key information.
+## Use the template
 
-## How to Use
+1. Install a LaTeX distribution such as TeX Live or MiKTeX, or create an
+   Overleaf account.
 
-1. **Prerequisites:** Install LaTeX distribution (e.g., TeX Live, MiKTeX), or create an Overleaf account.
+2. Clone the repository:
 
-2. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/yourusername/software-engineer-resume.git
+   cd software-engineer-resume
+   ```
 
-    ```bash
-    git clone https://github.com/yourusername/software-engineer-resume.git
-    cd software-engineer-resume
-    ```
+   You can also copy the files into Overleaf.
 
-    - You can also simply copy paste this into Overleaf!
+3. Open `main.tex` in your preferred LaTeX editor. Replace the sample
+   content in each section with your own skills, experience, projects, and
+   education. Adjust the styling, fonts, or colors if needed.
 
-3. **Edit the Resume:**
+4. Compile `main.tex` with your LaTeX distribution. It produces
+   `resume.pdf`.
 
-    - Open `main.tex` in your preferred LaTeX editor.
-    - Customize the content under each section (skills, experience, projects, education) according to your own details.
-    - Modify the styling, fonts, or colors as needed.
-
-4. **Compile the Resume:**
-
-    - Compile the LaTeX file (`main.tex`) using your LaTeX distribution.
-    - This will generate the PDF output (`resume.pdf`) with your updated resume.
-
-5. **Preview and Print:**
-
-    - Review the `resume.pdf` to ensure everything appears as expected.
-    - Print or save the PDF to share with potential employers.
+5. Review `resume.pdf`, then save or print the version you want to
+   share.

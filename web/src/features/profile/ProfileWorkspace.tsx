@@ -128,7 +128,7 @@ export function ProfileWorkspace() {
               <FieldLabel htmlFor="githubUsername">GitHub username</FieldLabel>
               <Input id="githubUsername" value={draft.githubUsername ?? ""}
                 onChange={(e) => setDraft({ ...draft, githubUsername: e.target.value || null })} />
-              <FieldDescription>Optional — pulls public repos into project facts.</FieldDescription>
+              <FieldDescription>Optional. Adds public repositories to your project facts.</FieldDescription>
             </Field>
             <Field>
               <FieldLabel htmlFor="githubRepoAllow">Always include repositories</FieldLabel>

@@ -34,12 +34,12 @@ export function CareerLabTab({
           Career Lab
         </h3>
         <p className="text-sm text-muted-foreground">
-          Ask about this role with the job description in context — application
-          answers, outreach, negotiation prep — and keep every thread here.
+          Discuss this role with the job description as context. Use this thread
+          for application answers, outreach, or negotiation preparation.
         </p>
         {activeRow ? (
           <p className="text-sm text-muted-foreground">
-            A thread for this job is open — continue it from the list below.
+            A thread for this job is open. Continue it from the list below.
           </p>
         ) : (
           <Button onClick={() => setOpen(true)}>

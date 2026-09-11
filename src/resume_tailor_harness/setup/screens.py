@@ -77,7 +77,7 @@ class WelcomeScreen(Screen[None]):
             with Horizontal(classes="nav"):
                 yield Button("Quit", id="quit")
                 yield Button(
-                    "Continue →", id="continue", variant="primary", disabled=True
+                    "Continue", id="continue", variant="primary", disabled=True
                 )
         yield Footer()
 
@@ -153,13 +153,13 @@ class SecretsScreen(Screen[None]):
                         id="anthropic_key", placeholder="sk-ant-api03-…", password=True
                     )
 
-                    yield Static("Optional — GitHub", classes="section")
+                    yield Static("GitHub (optional)", classes="section")
                     yield Label(
                         "GitHub token  (public repos used if omitted)", classes="hint"
                     )
                     yield Input(id="github_token", placeholder="ghp_…", password=True)
 
-                    yield Static("Optional — Adzuna connector", classes="section")
+                    yield Static("Adzuna connector (optional)", classes="section")
                     yield Label("App ID", classes="hint")
                     yield Input(id="adzuna_app_id", placeholder="xxxxxxxx")
                     yield Label("App key", classes="hint")
@@ -169,7 +169,7 @@ class SecretsScreen(Screen[None]):
                         password=True,
                     )
 
-                    yield Static("Optional — LinkedIn scraper", classes="section")
+                    yield Static("LinkedIn scraper (optional)", classes="section")
                     yield Label("Email", classes="hint")
                     yield Input(id="linkedin_email", placeholder="you@example.com")
                     yield Label("Password", classes="hint")
@@ -180,10 +180,10 @@ class SecretsScreen(Screen[None]):
                     yield Static("", id="status")
 
             with Horizontal(classes="nav"):
-                yield Button("← Back", id="back")
+                yield Button("Back", id="back")
                 yield Button("Validate key", id="validate")
                 yield Button(
-                    "Continue →", id="continue", variant="primary", disabled=True
+                    "Continue", id="continue", variant="primary", disabled=True
                 )
         yield Footer()
 
@@ -279,15 +279,15 @@ class ProfileSourcesScreen(Screen[None]):
                     yield Static("", id="resume_status")
 
                     yield Label(
-                        "GitHub username  (optional — mines public repos)",
+                        "GitHub username (optional; scans public repositories)",
                         classes="hint",
                     )
                     yield Input(id="github_username", placeholder="octocat")
 
             with Horizontal(classes="nav"):
-                yield Button("← Back", id="back")
+                yield Button("Back", id="back")
                 yield Button(
-                    "Continue →", id="continue", variant="primary", disabled=True
+                    "Continue", id="continue", variant="primary", disabled=True
                 )
         yield Footer()
 
@@ -314,7 +314,7 @@ class ProfileSourcesScreen(Screen[None]):
             status.update("[green]✓ file found[/green]")
         else:
             status.update(
-                "[yellow]⚠ no file at that path yet (you can fix it later)[/yellow]"
+                "[yellow]⚠ No file found at that path. You can update it later.[/yellow]"
             )
         self.query_one("#continue", Button).disabled = not path
 
@@ -409,9 +409,9 @@ class SearchScreen(Screen[None]):
                     )
 
             with Horizontal(classes="nav"):
-                yield Button("← Back", id="back")
+                yield Button("Back", id="back")
                 yield Button(
-                    "Continue →", id="continue", variant="primary", disabled=True
+                    "Continue", id="continue", variant="primary", disabled=True
                 )
         yield Footer()
 
@@ -504,8 +504,8 @@ class ConnectorsScreen(Screen[None]):
                 with Vertical(id="panel"):
                     yield Static("Job-source connectors", id="heading")
                     yield Static(
-                        "Enable any sources you want `resume-tailor-harness pull` to hit. "
-                        "All are optional — you can also add jobs manually.",
+                        "Choose the sources used by `resume-tailor-harness pull`. "
+                        "All sources are optional, and you can add jobs manually.",
                         classes="hint",
                     )
 
@@ -513,7 +513,7 @@ class ConnectorsScreen(Screen[None]):
                         "Greenhouse  (company job boards)", id="greenhouse_enabled"
                     )
                     yield Label(
-                        "Boards — one per line: `token` or `token, Company Name`",
+                        "Boards: one per line: `token` or `token, Company Name`",
                         classes="hint",
                     )
                     yield TextArea(id="gh_boards")
@@ -527,13 +527,13 @@ class ConnectorsScreen(Screen[None]):
 
                     yield Checkbox("RemoteOK  (remote job feed)", id="remoteok_enabled")
                     yield Checkbox(
-                        "LinkedIn  (browser scrape — needs chromium)",
+                        "LinkedIn (browser scraping; requires Chromium)",
                         id="linkedin_enabled",
                     )
 
             with Horizontal(classes="nav"):
-                yield Button("← Back", id="back")
-                yield Button("Continue →", id="continue", variant="primary")
+                yield Button("Back", id="back")
+                yield Button("Continue", id="continue", variant="primary")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -562,8 +562,8 @@ class ConnectorsScreen(Screen[None]):
         enabled = self.query_one("#adzuna_enabled", Checkbox).value
         if enabled and not (app.state.adzuna_app_id and app.state.adzuna_app_key):
             warn.update(
-                "[yellow]⚠ Adzuna needs ADZUNA_APP_ID + ADZUNA_APP_KEY "
-                "(set them on the Secrets screen) or its pulls will fail.[/yellow]"
+                "[yellow]⚠ Adzuna pulls require ADZUNA_APP_ID + ADZUNA_APP_KEY. "
+                "Set them on the Secrets screen.[/yellow]"
             )
         else:
             warn.update("")
@@ -630,7 +630,7 @@ class ConfirmScreen(Screen[None]):
                     yield DataTable(id="plan", show_cursor=False)
                     yield Static("Nothing has been written yet.", id="status")
             with Horizontal(classes="nav"):
-                yield Button("← Back", id="back")
+                yield Button("Back", id="back")
                 yield Button("Write all config", id="write", variant="primary")
         yield Footer()
 
@@ -656,7 +656,7 @@ class ConfirmScreen(Screen[None]):
         errors = {p: s for p, s in report.items() if s != "written"}
         if errors:
             self.query_one("#status", Static).update(
-                f"[bold red]✗ {len(errors)} file(s) failed — see handoff for details.[/bold red]"
+                f"[bold red]✗ {len(errors)} file(s) failed. See the final screen for details.[/bold red]"
             )
         else:
             self.query_one("#status", Static).update(
@@ -706,7 +706,7 @@ class HandoffScreen(Screen[None]):
         for path, status in report.items():
             ok = status == "written"
             icon = Text("✓", style="bold green") if ok else Text("✗", style="bold red")
-            label = path if ok else f"{path} — {status}"
+            label = path if ok else f"{path}: {status}"
             table.add_row(icon, label)
 
         commands = []

@@ -37,7 +37,7 @@ describe("dynamic Chinese labels", () => {
   it("formats API ETA values in Chinese without leaking English units", () => {
     expect(localizeRunEta("10m 14s", "zh-CN")).toBe("约剩 10 分 14 秒");
     expect(localizeRunEta("1h 2m 3s", "zh-CN")).toBe("约剩 1 小时 2 分 3 秒");
-    expect(localizeRunEta("soon", "zh-CN")).toBe("即将完成");
+    expect(localizeRunEta("soon", "zh-CN")).toBe("无法预计完成时间");
     expect(localizeRunEta("2m", "en")).toBe("~2m left");
   });
 });

@@ -51,7 +51,7 @@ def check_chromium(which: Callable[[str], str | None] = shutil.which) -> CheckRe
         "playwright available" if found else "playwright CLI not found",
         remedy=""
         if found
-        else "Only needed for LinkedIn scrape: run 'uv run playwright install chromium'.",
+        else "Install Chromium for LinkedIn scraping: run 'uv run playwright install chromium'.",
     )
 
 
@@ -61,9 +61,9 @@ def check_examples_present(root: str | Path = ".") -> CheckResult:
     return CheckResult(
         "examples",
         not missing,
-        "all example configs present"
+        "All example configs are present"
         if not missing
-        else f"missing: {', '.join(missing)}",
+        else f"Missing: {', '.join(missing)}",
         remedy=""
         if not missing
         else "Re-clone the repo; config/*.example files are tracked.",

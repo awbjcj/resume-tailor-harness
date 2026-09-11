@@ -1,73 +1,56 @@
-# React + TypeScript + Vite
+# Web client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the React and TypeScript client for Résumé Tailor
+Harness. It provides the browser workspace for job discovery, tailoring,
+application tracking, and the rest of the product workflow.
 
-Currently, two official plugins are available:
+## Run it locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Install the frontend dependencies, then start the development server:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open the address Vite prints, usually <http://localhost:5173>. Requests to
+`/api` are proxied to <http://127.0.0.1:8000> by default. Set
+`VITE_API_PROXY_TARGET` when your local API uses another address.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Useful commands
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite development server. |
+| `npm run lint` | Run the frontend lint checks. |
+| `npm run test:run` | Run the Vitest suite once. |
+| `npm run e2e` | Run the Playwright browser tests. |
+| `npm run build` | Check translations, type-check, and build the production client. |
+
+## English and Simplified Chinese copy
+
+The client supports English and Simplified Chinese. User-facing copy in
+components is collected into the checked-in catalog at
+`src/i18n/auto-catalog.json`. Every entry has a hand-written Chinese
+translation; the app does not fall back to machine translation.
+
+After changing visible copy, keep its Chinese counterpart clear and equivalent,
+then run:
+
+```
+npm run i18n:check
+npm run i18n:generate
+```
+
+The check reports missing or stale entries. The generation step refreshes the
+compact runtime catalogs that the app loads for English and Chinese.
+
+## Before you open a pull request
+
+Run the checks that match your change. For most frontend work, that means:
+
+```
+npm run lint
+npm run test:run
+npm run build
 ```

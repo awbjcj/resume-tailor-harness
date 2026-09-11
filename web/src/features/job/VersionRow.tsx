@@ -37,7 +37,7 @@ type ResumeVersion = components["schemas"]["ResumeVersionOut"] & {
  */
 export function failedGateLabel(failedGates: readonly string[] | undefined) {
   if (!failedGates?.length) return "Fact-lock failed";
-  return `Fact-lock failed — ${failedGates.join(", ")}`;
+  return `Fact-lock failed: ${failedGates.join(", ")}`;
 }
 
 export function VersionRow({

@@ -42,14 +42,14 @@ const en = {
   review: {
     reviewerNotes: {
       factCheck:
-        "Blocking — any claim not traceable to a profile fact fails the round.",
+        "Blocking: any claim not traceable to a profile fact fails the round.",
       atsKeyword: "Coverage of the job description's stated requirements.",
       recruiter: "Six-second skim: does the top of the page land?",
       hiringManager:
         "Depth and credibility of the evidence for this specific role.",
-      concision: "Density — cuts padding without cutting evidence.",
+      concision: "Concision: remove padding while keeping evidence.",
       mustHaveCoverage:
-        "Share of evidenced must-have requirements actually rendered.",
+        "Share of evidenced must-have requirements rendered.",
     },
   },
   profileBuild: {
@@ -81,18 +81,18 @@ const en = {
       dossierWrongRepository:
         "{{repository}}: dossier {{dossier}} targets a different repository; skipped",
       manualAliasNotFound:
-        "Manual alias '{{alias}}' could not be reattached -- its target skill '{{target}}' was not found.",
+        "Manual alias '{{alias}}' could not be reattached. Its target skill '{{target}}' was not found.",
     },
     conflict:
       "{{label}}: {{field}} {{kept}} kept over {{discarded}} from {{source}}",
     summaryConflict:
       "{{label}}: {{kept}} kept over {{discarded}} from {{source}}",
     anchor: {
-      missing: "{{source}}: anchor {{anchor}} not found — kept as a project",
+      missing: "{{source}}: anchor {{anchor}} was not found. It remains a project.",
       added: "{{source}}: +{{count}} bullets on {{target}}",
     },
     verification: {
-      drop: "{{source}}: {{claim}} — {{reason}}",
+      drop: "{{source}}: {{claim}} ({{reason}})",
       noSupportingExcerpt: "no supporting excerpt",
       excerptNotFound: "excerpt not found in source: {{excerpt}}",
       numberNotFound: "number {{token}} not in source",
@@ -166,18 +166,19 @@ const en = {
   },
   shell: {
     productSummary:
-      "Review, tailor, and track high-fit jobs from one operational desk.",
-    operationalFlow: "Operational flow",
+      "Review jobs, tailor your materials, and track applications in one place.",
+    operationalFlow: "Job-search workflow",
     operationalFlowBody:
-      "Move each strong fit from evidence to a finished application.",
+      "Use your evidence to review strong fits, then tailor and track them.",
     review: "Review",
     tailor: "Tailor",
     track: "Track",
     dailyFocus: "Daily focus",
     dailyFocusBody:
-      "Approve the best fits first, then run tailoring in batches.",
-    operations: "Job search operations",
-    operationsSummary: "Pull, discover, review, and ship.",
+      "Approve the strongest fits first. Then tailor them in batches.",
+    operations: "Job-search workflow",
+    operationsSummary:
+      "Pull jobs, score them, review them, and tailor the approved ones.",
     skipToMain: "Skip to main content",
     systemStatus: "System status",
     toggleTheme: "Toggle theme",
@@ -186,25 +187,25 @@ const en = {
     signingOut: "Signing out…",
   },
   auth: {
-    privateCareerWorkspace: "Private career workspace",
-    evidenceLedOperations: "Evidence-led career operations",
-    brandPromise: "Every bullet traces back to a fact you actually wrote.",
+    privateCareerWorkspace: "Private job-search workspace",
+    evidenceLedOperations: "Evidence-based job search",
+    brandPromise: "Every resume bullet must trace back to a fact you provided.",
     brandSummary:
-      "Discover roles, tailor with provenance, and track every application from one workspace.",
-    privateCommandCenter: "Your private command center.",
-    privateCommandCenterShort: "Your private command center",
+      "Find roles, tailor your materials with traceable evidence, and track each application in one workspace.",
+    privateCommandCenter: "Your private job-search workspace.",
+    privateCommandCenterShort: "Your private job-search workspace",
     discover: "Discover",
     tailor: "Tailor",
     track: "Track",
     secureWorkspace: "Secure workspace",
     sourceMaterialPromise:
-      "Your source material stays at the center of every recommendation.",
+      "Every recommendation uses your source material.",
     welcomeBack: "Welcome back",
     signInDescription: "Sign in to continue to your private workspace.",
     newHere: "New here?",
     createAccount: "Create an account",
     googleSignInHint:
-      "Sign in with your Google account — no password required.",
+      "Sign in with your Google account. No password required.",
     emailDivider: "or use email and password",
     email: "Email",
     password: "Password",
@@ -224,7 +225,7 @@ const en = {
         tooShort: "Use at least 12 characters.",
         predictable: "Avoid repeated characters and simple sequences.",
         addVariety: "Mix uppercase, digits, or symbols.",
-        reasonable: "Looks reasonable — the server makes the final call.",
+        reasonable: "This password looks reasonable. The server makes the final decision.",
       },
     },
   },
@@ -358,7 +359,7 @@ const en = {
       subscriptionKeyUnset:
         "{{provider}} is pinned to subscription mode but {{setting}} is unset.",
       keyWithoutBaseUrl:
-        "{{setting}} is set but SUB2API_BASE_URL is unset, so there is nowhere to send the call.",
+        "{{setting}} is set but SUB2API_BASE_URL is unset, so no endpoint is configured for the call.",
       invalidBaseUrl:
         "{{setting}} must be an absolute HTTP(S) URL with no credentials, query, or fragment (current value: {{value}}).",
     },
@@ -485,7 +486,7 @@ const en = {
       kicker: "Conversion",
       title: "Analytics / Funnel",
       description:
-        "Which sources and fit-score bands actually convert. Rates are share of submitted applications.",
+        "Which sources and fit-score bands convert. Rates are share of submitted applications.",
     },
     metrics: {
       submitted: "Submitted applications",
@@ -607,7 +608,7 @@ const en = {
       applied: "Applied",
     },
     deskHealth: "Desk health",
-    deskReady: "Desk is ready — every setup check passes.",
+    deskReady: "Your workspace is ready. Every setup check passes.",
     resumeSetup: "Resume setup",
     health: {
       apiKey: "LLM API key",
@@ -617,7 +618,7 @@ const en = {
       sources: "Sources enabled",
     },
     recentRuns: "Recent runs",
-    noRuns: "No runs yet — pull or discover to get things moving.",
+    noRuns: "No runs yet. Pull jobs or run discovery to get started.",
     runProgress: "{{kind}} progress",
     outcomes: {
       done: "done",
@@ -626,7 +627,7 @@ const en = {
     },
     inProgress: "In progress",
     nothingInProgress:
-      "Nothing in progress — start a mock interview or a coaching session.",
+      "Nothing is in progress. Start a mock interview or coaching session.",
     mockInterview: "Mock Interview",
     interviewProgress: "Question {{asked}} of {{total}} · started {{started}}",
     resume: "Resume",
@@ -735,7 +736,7 @@ const en = {
     dismiss: "Dismiss getting started",
     waiting: "{{count}} waiting",
     completeTitle: "You're running the full loop.",
-    completeSummary: "Profile · Sources · Pull · Shortlist · Tailor — all set.",
+    completeSummary: "Profile, Sources, Pull, Shortlist, and Tailor are set up.",
     next: "Next:",
     stages: {
       profile: {
@@ -747,7 +748,7 @@ const en = {
       sources: {
         label: "Sources",
         task: "Add job sources",
-        hint: "Tell the agent where to look — set a search and enable at least one source.",
+        hint: "Set a search and enable at least one source so the agent knows where to look.",
         cta: "Add sources",
       },
       pull: {
@@ -807,12 +808,12 @@ const zhCN = {
   },
   review: {
     reviewerNotes: {
-      factCheck: "阻断项——任何无法追溯到个人资料事实的表述都将导致本轮不通过。",
+      factCheck: "阻断项：任何无法追溯到个人资料事实的表述都将导致本轮不通过。",
       atsKeyword: "职位描述中明确要求的覆盖程度。",
       recruiter: "六秒快速浏览：页面顶部是否抓住重点？",
       hiringManager: "针对该职位的证据深度与可信度。",
-      concision: "信息密度——精简冗余，同时保留证据。",
-      mustHaveCoverage: "有证据支持且实际呈现的必备要求占比。",
+      concision: "简洁性：删去冗余，同时保留证据。",
+      mustHaveCoverage: "有证据支持且已呈现的必备要求占比。",
     },
   },
   profileBuild: {
@@ -849,7 +850,7 @@ const zhCN = {
     summaryConflict:
       "{{label}}：保留 {{kept}}，未采用来自 {{source}} 的 {{discarded}}",
     anchor: {
-      missing: "{{source}}：未找到锚点 {{anchor}}，已作为项目保留",
+      missing: "{{source}}：未找到锚点 {{anchor}}。已作为项目保留。",
       added: "{{source}}：已将 {{count}} 条要点添加到 {{target}}",
     },
     verification: {
@@ -924,16 +925,16 @@ const zhCN = {
     inProgress: "进行中",
   },
   shell: {
-    productSummary: "在一个工作台中审核、定制并跟踪高匹配度职位。",
+    productSummary: "在同一处审核职位、定制材料并跟踪申请。",
     operationalFlow: "求职流程",
-    operationalFlowBody: "将每个高匹配职位从事实依据推进到完成申请。",
+    operationalFlowBody: "依据你的资料审核高匹配职位，再定制材料并跟踪申请。",
     review: "审核",
     tailor: "定制",
     track: "跟踪",
     dailyFocus: "今日重点",
-    dailyFocusBody: "先批准最匹配的职位，再批量生成定制材料。",
-    operations: "求职运营",
-    operationsSummary: "获取、发现、审核并提交。",
+    dailyFocusBody: "先批准最匹配的职位，再批量定制材料。",
+    operations: "求职流程",
+    operationsSummary: "获取职位、评分、审核，并定制已批准的职位。",
     skipToMain: "跳到主要内容",
     systemStatus: "系统状态",
     toggleTheme: "切换主题",
@@ -942,22 +943,22 @@ const zhCN = {
     signingOut: "正在退出…",
   },
   auth: {
-    privateCareerWorkspace: "私人职业工作区",
-    evidenceLedOperations: "以事实为依据的求职运营",
-    brandPromise: "每一条简历要点都能追溯到你亲自提供的事实。",
-    brandSummary: "在一个工作区中发现职位、基于事实定制材料，并跟踪每份申请。",
-    privateCommandCenter: "你的私人求职指挥中心。",
-    privateCommandCenterShort: "你的私人求职指挥中心",
+    privateCareerWorkspace: "私密求职工作区",
+    evidenceLedOperations: "基于事实的求职管理",
+    brandPromise: "每一条简历要点都必须追溯到你提供的事实。",
+    brandSummary: "在同一个工作区寻找职位、依据可追溯的事实定制材料，并跟踪每份申请。",
+    privateCommandCenter: "你的私密求职工作区。",
+    privateCommandCenterShort: "你的私密求职工作区",
     discover: "发现",
     tailor: "定制",
     track: "跟踪",
     secureWorkspace: "安全工作区",
-    sourceMaterialPromise: "每一项建议都以你的原始资料为核心。",
+    sourceMaterialPromise: "每一项建议都基于你的原始资料。",
     welcomeBack: "欢迎回来",
     signInDescription: "登录以继续使用你的私人工作区。",
     newHere: "第一次使用？",
     createAccount: "创建账户",
-    googleSignInHint: "使用 Google 账户登录，无需密码。",
+    googleSignInHint: "使用 Google 账号登录，无需密码。",
     emailDivider: "或使用邮箱和密码",
     email: "邮箱",
     password: "密码",
@@ -977,7 +978,7 @@ const zhCN = {
         tooShort: "请至少使用 12 个字符。",
         predictable: "请避免重复字符和简单连续字符。",
         addVariety: "请混用大写字母、数字或符号。",
-        reasonable: "强度看起来合适，最终结果以服务器校验为准。",
+        reasonable: "密码强度看起来合适，最终由服务器确认。",
       },
     },
   },
@@ -1101,7 +1102,7 @@ const zhCN = {
       subscriptionKeyUnset:
         "{{provider}} 已固定为订阅网关模式，但尚未设置 {{setting}}。",
       keyWithoutBaseUrl:
-        "已设置 {{setting}}，但尚未设置 SUB2API_BASE_URL，因此无法发送请求。",
+        "已设置 {{setting}}，但尚未设置 SUB2API_BASE_URL，因此未配置请求端点。",
       invalidBaseUrl:
         "{{setting}} 必须是绝对 HTTP(S) URL，且不得包含凭据、查询参数或片段（当前值：{{value}}）。",
     },
@@ -1227,7 +1228,7 @@ const zhCN = {
       kicker: "转化分析",
       title: "数据分析 / 转化漏斗",
       description:
-        "查看哪些来源和匹配度区间真正带来转化；比例以已投递申请为基准。",
+        "查看哪些来源和匹配度区间带来转化；比例以已投递申请为基准。",
     },
     metrics: {
       submitted: "已投递申请",
@@ -1347,7 +1348,7 @@ const zhCN = {
       applied: "已申请",
     },
     deskHealth: "工作台状态",
-    deskReady: "工作台已就绪，所有设置检查均已通过。",
+    deskReady: "工作区已准备就绪。所有设置检查均已通过。",
     resumeSetup: "继续设置",
     health: {
       apiKey: "大模型 API 密钥",
@@ -1357,7 +1358,7 @@ const zhCN = {
       sources: "职位来源已启用",
     },
     recentRuns: "最近任务",
-    noRuns: "暂无任务，可先获取或发现职位。",
+    noRuns: "暂无任务。先获取职位或运行职位发现即可开始。",
     runProgress: "{{kind}}进度",
     outcomes: {
       done: "已完成",
@@ -1365,7 +1366,7 @@ const zhCN = {
       cancelled: "已取消",
     },
     inProgress: "进行中",
-    nothingInProgress: "暂无进行中的项目，可开始模拟面试或资料辅导。",
+    nothingInProgress: "暂无进行中的任务。可开始模拟面试或个人资料辅导。",
     mockInterview: "模拟面试",
     interviewProgress: "第 {{asked}} / {{total}} 题 · 开始于{{started}}",
     resume: "继续",
@@ -1474,7 +1475,7 @@ const zhCN = {
     dismiss: "关闭开始使用指南",
     waiting: "{{count}} 项待处理",
     completeTitle: "完整求职闭环正在运行。",
-    completeSummary: "个人资料 · 职位来源 · 获取 · 候选 · 定制，均已就绪。",
+    completeSummary: "个人资料、职位来源、获取、候选和定制均已就绪。",
     next: "下一步：",
     stages: {
       profile: {
@@ -1486,7 +1487,7 @@ const zhCN = {
       sources: {
         label: "职位来源",
         task: "添加职位来源",
-        hint: "设置搜索条件并启用至少一个来源，告诉 Agent 去哪里查找。",
+        hint: "设置搜索条件并启用至少一个来源，让智能体知道去哪里查找。",
         cta: "添加来源",
       },
       pull: {

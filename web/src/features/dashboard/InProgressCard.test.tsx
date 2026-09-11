@@ -17,6 +17,6 @@ describe("InProgressCard", () => {
 
   it("renders a quiet empty line when nothing is in progress", () => {
     render(<MemoryRouter><InProgressCard summary={SUMMARY} /></MemoryRouter>);
-    expect(screen.getByText(/Nothing in progress/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nothing is in progress/i)).toBeInTheDocument();
   });
 });

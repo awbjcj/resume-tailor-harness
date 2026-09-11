@@ -35,7 +35,8 @@ export function DocumentManager() {
       >
         <FileUp className="size-6 text-muted-foreground" aria-hidden="true" />
         <p className="text-sm text-muted-foreground">
-          Drop a document here — PDF, DOCX, TXT, or Markdown, up to 15 MB
+          Drop a document here. Accepted formats: PDF, DOCX, TXT, or Markdown.
+          Maximum size: 15 MB.
         </p>
         <div className="flex items-center gap-2">
           <Select value={docType} onValueChange={(v) => v && setDocType(v)}>
@@ -57,7 +58,7 @@ export function DocumentManager() {
       </div>
 
       {docs.data && docs.data.length === 0 && (
-        <Empty>No documents yet — your resume is the one that matters most.</Empty>
+        <Empty>No documents yet. Add your resume to get started.</Empty>
       )}
       {docs.data && docs.data.length > 0 && (
         <Table>

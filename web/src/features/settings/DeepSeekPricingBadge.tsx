@@ -42,8 +42,8 @@ export function DeepSeekPricingBadge() {
         {weekendOffPeak
           ? "Weekend billing is off-peak all day. Weekday peak hours are 01:00–04:00 and 06:00–10:00 UTC."
           : isPeak
-            ? `Billing peak rates now — pricier until ${formatUtcClock(changesAt)} UTC.`
-            : `Billing off-peak rates now — cheaper until ${formatUtcClock(changesAt)} UTC. Weekday peak hours: 01:00–04:00 and 06:00–10:00 UTC.`}
+            ? `Peak rates are active until ${formatUtcClock(changesAt)} UTC.`
+            : `Off-peak rates are active until ${formatUtcClock(changesAt)} UTC. Weekday peak hours are 01:00–04:00 and 06:00–10:00 UTC.`}
       </TooltipContent>
     </Tooltip>
   );

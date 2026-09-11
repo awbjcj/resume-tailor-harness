@@ -25,7 +25,7 @@ export function ActiveInterviewBanner() {
       <MessagesSquare className="shrink-0 text-primary" aria-hidden="true" />
       <span className="min-w-0">
         <span className="font-medium">{single ? "Mock Interview in progress" : label}</span>
-        {single && label ? <span className="text-muted-foreground"> — {label}</span> : null}
+        {single && label ? <span className="text-muted-foreground"> · {label}</span> : null}
       </span>
       <Link className={cn(buttonVariants({ size: "sm" }), "ml-auto")} to={single ? `/interview?session=${single.sessionId}` : "/interview"}>{single ? "Resume" : "Open interviews"}</Link>
     </div>

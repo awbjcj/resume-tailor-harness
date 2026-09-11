@@ -76,8 +76,8 @@ export function RefreshClustersButton({
           {busy === "maintain" ? "Reorganizing…" : "Reorganize domains"}
         </TooltipTrigger>
         <TooltipContent>
-          Merges, splits, renames and recategorizes domains. Doesn't assign
-          unassigned skills — use Regroup for that.
+          Merges, splits, renames, and recategorizes domains. Use Regroup to
+          assign unassigned skills.
         </TooltipContent>
       </Tooltip>
 

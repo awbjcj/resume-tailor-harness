@@ -89,8 +89,8 @@ def test_planned_owners_skip_kinds_with_a_zero_render_floor():
 def test_depth_plan_clamps_each_floor_to_its_source_supply():
     text = format_depth_plan(_facts(), LengthBudget(max_evidence_owners=8))
 
-    assert '"One — Engineer": 6 source -> render 5–6' in text
-    assert '"Two — Engineer": 2 source -> render 2 (supply-limited' in text
+    assert '"One: Engineer": 6 source -> render 5–6' in text
+    assert '"Two: Engineer": 2 source -> render 2 (supply-limited' in text
     assert '"One project": 4 source -> render 4' in text
     assert "Empty project" not in text
 

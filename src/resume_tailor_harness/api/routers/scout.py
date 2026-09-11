@@ -87,7 +87,7 @@ def _guard_setup(settings: Settings) -> None:
         raise ApiException(
             400,
             "SEARCH_DISABLED",
-            "Discovery Scout needs web search; change search_mode from off.",
+            "Discovery Scout requires web search. Set search_mode to a mode other than off.",
         )
 
 

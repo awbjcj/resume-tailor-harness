@@ -82,7 +82,7 @@ export const JOURNEY_STAGES: readonly JourneyStageDef[] = [
     id: "sources",
     label: "Sources",
     task: "Add job sources",
-    hint: "Tell the agent where to look — set a search and enable at least one source.",
+    hint: "Set a search and enable at least one source so the agent knows where to look.",
     cta: { label: "Add sources", to: "/settings/sources" },
     done: (s) => s.search.configured && s.sources.enabledCount > 0,
     count: (s) => s.sources.enabledCount,

@@ -82,7 +82,7 @@ def entry_for_event(event: ApplicationEvent, job: Job) -> CalendarEntry:
     )
     return CalendarEntry(
         uid=f"application-event-{event.id}@resume-tailor-harness",
-        summary=f"{label} — {job.company or 'Company'}",
+        summary=f"{label}: {job.company or 'Company'}",
         start=start,
         end=end,
         all_day=event.all_day,

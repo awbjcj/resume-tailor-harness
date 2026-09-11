@@ -72,7 +72,7 @@ def create_follow_up_reminders(
                     kind=FOLLOW_UP_KIND,
                     proposed_status="",
                     evidence=(
-                        f"No activity for {(now - anchor).days} days — "
+                        f"No activity for {(now - anchor).days} days: "
                         f"{job.company} · {job.title}"
                     ),
                     message_id=key,
@@ -156,7 +156,7 @@ def create_event_reminders(
                         kind=kind,
                         proposed_status="",
                         evidence=(
-                            f"{label} {occurred.strftime('%b %d, %H:%M UTC')} — "
+                            f"{label} {occurred.strftime('%b %d, %H:%M UTC')}: "
                             f"{job.company} · {job.title}"
                         ),
                         message_id=key,

@@ -117,7 +117,7 @@ export function MatchGapContainer() {
       <PageHeader
         kicker="Demand intelligence"
         title="Match / Gap"
-        sub="See what target roles demand, what your profile already proves, and where focused learning has the most leverage."
+        sub="Compare role requirements with evidence in your profile, then identify skills to develop."
       />
 
       {!data || data.targetTotal === 0 || !view ? (

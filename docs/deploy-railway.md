@@ -1,8 +1,8 @@
 # Deploying to Railway
 
-This is a public multi-user deployment: one service, one persistent volume,
-one replica, an owner/admin account, and email-verified self-registration.
-SQLite plus a Railway volume still requires a single replica.
+This guide covers a public multi-user deployment with one service, one
+persistent volume, one replica, an owner/admin account, and email-verified
+self-registration. SQLite on a Railway volume requires a single replica.
 
 Set `APP_MODE=hosted` for Railway. The container also infers hosted mode from
 `APP_BASE_URL` and the bootstrap credentials for compatibility, but the explicit
@@ -42,10 +42,10 @@ tenant isolation independent from the auth-free local container default.
    | `GLOBAL_MONTHLY_COST_QUOTA_MICROS` | Shared-key UTC calendar-month cap in USD micro-units; defaults to `$500`                        |
    | `GLOBAL_WEEKLY_TOKEN_BUDGET`       | Deprecated stage-one token circuit breaker; used only while cost quotas are in `shadow` mode    |
 
-   This table highlights deployment-critical values and intentional Docker
+   This table lists deployment-critical values and intentional Docker
    overrides. The [complete environment reference](configuration.md) documents
-   every supported variable, default, accepted value, and bound; `.env.example`
-   contains the corresponding copy-ready local example.
+   every supported variable, default, accepted value, and bound. `.env.example`
+   contains the matching local example.
 
    Add `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, and/or
    `DEEPSEEK_API_KEY` as Railway variables. Every admin, free member, and
@@ -63,8 +63,9 @@ deploying.
 
 > **Railway blocks outbound SMTP below the Pro plan.** Port 587 fails with
 > `[Errno 101] Network is unreachable` regardless of the credentials, because
-> the egress is null-routed rather than refused. Use the HTTPS backend below
-> unless you are on Pro — and note Railway requires a redeploy after upgrading
+> Railway null-routes that egress; it does not return a refused connection.
+> Use the HTTPS backend below
+> unless you are on Pro. Railway requires a redeploy after upgrading
 > before SMTP starts working.
 
 ### Resend (works on every plan)
@@ -73,7 +74,7 @@ deploying.
    3,000 emails/month).
 2. Verify a sending domain under **Domains**. Without one you can only send
    from `onboarding@resend.dev`, and only to the address that owns the Resend
-   account — enough to test, not enough to invite anyone.
+   account. That is enough to test, but not enough to invite anyone.
 3. Add Railway variables:
 
    | Variable         | Value                              |
@@ -90,8 +91,8 @@ if you already set that.
 Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, and
 `SMTP_FROM`. All five matter: **omitting `SMTP_USERNAME` silently skips
 authentication entirely**, and Gmail refuses unauthenticated relay with
-`530 5.7.0 Authentication Required`. The failure log names which one you hit —
-it reports `auth=off` when the username is missing.
+`530 5.7.0 Authentication Required`. The failure log names the issue. It reports
+`auth=off` when the username is missing.
 
 If `SMTP_HOST` is unset and no Resend key is present, the app falls back to
 `NullMailer` and **logs verification codes to the console instead of sending
@@ -101,13 +102,14 @@ them**, which is a working local setup but not a working deployment.
 
 One Google OAuth client covers two separate features:
 
-- **Google sign-in** — "Continue with Google" on the login and register pages.
+- **Google sign-in:** "Continue with Google" on the login and register pages.
   Identity scopes only (`openid`, `userinfo.email`, `userinfo.profile`).
   Until it is configured, `GET /api/health` reports
   `"googleOauthConfigured": false` and the button renders disabled with
   "Google sign-in is not configured on this server."
-- **Gmail** — scheduled inbox sync, stale-application reminders, and the
-  email-draft writer (readonly + compose scopes only — it never sends mail).
+- **Gmail:** scheduled inbox sync, stale-application reminders, and the
+  email-draft writer. It uses only readonly and compose scopes, and never sends
+  mail.
   This is a separate, incremental consent the user grants later from
   Settings → Keys.
 
@@ -121,12 +123,12 @@ client type from the **Desktop app** client used by the local CLI's
    screen): External user type, with the `gmail.readonly` and `gmail.compose`
    scopes added. While the app is in **Testing** publishing status (the
    default, and fine for personal/family use), add every Gmail address that
-   will connect as a **test user** — Google caps testing apps at 100
+   will connect as a **test user**. Google caps testing apps at 100
    explicitly-added users and refuses sign-in for anyone else.
 3. Create credentials (APIs & Services → Credentials → Create Credentials →
    OAuth client ID) of type **Web application**.
-4. Add **both** Authorized redirect URIs — the two features use different
-   callbacks, and registering only one fails the other with
+4. Add **both** Authorized redirect URIs. The two features use different
+   callbacks, so registering only one fails the other with
    `redirect_uri_mismatch`:
 
    ```
@@ -154,8 +156,8 @@ client type from the **Desktop app** client used by the local CLI's
 6. Sign in to the app, open **Settings → Keys**, and click **Connect Gmail**
    on the Gmail card to run the consent flow.
 
-Skip this entirely if you'd rather track application statuses by hand — the
-rest of the app works fine without it.
+Skip this if you prefer to track application statuses by hand. The rest of the
+app works without it.
 
 ## Seed data
 

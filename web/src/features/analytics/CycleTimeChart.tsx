@@ -26,7 +26,7 @@ export function toCycleRows(cycleTimes: CycleTime[], t?: Parameters<typeof stage
 export function CycleTimeChart({ cycleTimes }: { cycleTimes: CycleTime[] }) {
   const { t } = useTranslation();
   if (cycleTimes.length === 0) {
-    return <p className="text-sm text-muted-foreground">Not enough history yet — consecutive dated stages will appear here.</p>;
+    return <p className="text-sm text-muted-foreground">There is not enough history yet. Consecutive dated stages will appear here.</p>;
   }
   const rows = toCycleRows(cycleTimes, t);
   return (

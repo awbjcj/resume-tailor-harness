@@ -163,7 +163,7 @@ def test_run_panel_routes_gate_to_evidence_and_others_to_lean():
     assert coverage in agents["ats-keyword"].received
     assert "BULLET DEPTH PLAN" in agents["ats-keyword"].received
     assert (
-        'e1 "AE — Eng": 1 source -> render 1 (supply-limited'
+        'e1 "AE: Eng": 1 source -> render 1 (supply-limited'
         in agents["ats-keyword"].received
     )
 

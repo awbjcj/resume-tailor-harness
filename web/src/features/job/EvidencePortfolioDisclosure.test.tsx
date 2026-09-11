@@ -86,7 +86,7 @@ describe("EvidencePortfolioDisclosure", () => {
     expect(await screen.findByRole("region", { name: "Evidence selection explanation" })).toBeInTheDocument();
     expect(await screen.findByText("Rule-based selection")).toBeInTheDocument();
     expect(screen.getByText("How this version was tailored")).toBeInTheDocument();
-    expect(screen.getByText("Experience used — and why")).toBeInTheDocument();
+    expect(screen.getByText("Experience used and why")).toBeInTheDocument();
     expect(screen.getByText("What the job asks for")).toBeInTheDocument();
     expect(screen.getByText("Why chosen:")).toBeInTheDocument();
     expect(screen.getByText("Built Python services")).toBeInTheDocument();

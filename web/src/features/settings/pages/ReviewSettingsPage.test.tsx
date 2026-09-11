@@ -77,7 +77,7 @@ describe("ReviewSettingsPage pipeline controls", () => {
     render(<ReviewSettingsPage />, { wrapper: withQueryClient });
 
     expect(screen.getByText("硬性门槛")).toBeInTheDocument();
-    expect(screen.getByText(/启用硬性门槛的评审会直接阻断本轮/)).toBeInTheDocument();
+    expect(screen.getByText(/硬性门槛评审会在评分前阻断本轮/)).toBeInTheDocument();
     expect(screen.getByText(/阻断项/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "写作模型档位：标准型" }));
     await userEvent.click(screen.getByRole("button", { name: "保存更改" }));
@@ -213,7 +213,7 @@ describe("ReviewSettingsPage roster switching", () => {
     // hidden from assistive tech rather than removed.
     render(<ReviewSettingsPage />, { wrapper: withQueryClient });
     const fast = screen.getByText(/used by default when tailoring/i);
-    const deep = screen.getByText(/a separate roster, saved separately/i);
+    const deep = screen.getByText(/separate saved roster/i);
 
     expect(fast).not.toHaveAttribute("aria-hidden", "true");
     expect(deep).toHaveAttribute("aria-hidden", "true");

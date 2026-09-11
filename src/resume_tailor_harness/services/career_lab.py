@@ -220,7 +220,7 @@ def _clarifying_question(route: CareerLabRoute) -> str:
     question = route.question.strip()
     if question.endswith(("?", "？")):
         return question
-    return "What outcome would you like help with—for example, interview preparation, resume tailoring, outreach, or a career decision?"
+    return "What outcome would you like help with? For example, interview preparation, resume tailoring, outreach, or a career decision."
 
 
 def _route(
@@ -502,7 +502,7 @@ def _start_or_message(
         artifact=artifact,
         notice=notice,
     )
-    reporter.step(2, label="Draft ready")
+    reporter.step(2, label="Draft is ready")
     return session_view(root, session["session_id"])
 
 
@@ -588,7 +588,7 @@ def run_start_turn(
         artifact=artifact,
         notice=notice,
     )
-    reporter.step(2, label="Draft ready")
+    reporter.step(2, label="Draft is ready")
     return session_view(root, created["session_id"])
 
 

@@ -75,8 +75,8 @@ export function SourceManager() {
         <div>
           <div className="text-sm font-medium">Source documents</div>
           <p className="text-sm text-muted-foreground">
-            Upload files, add direct notes or public pages, and sync GitHub
-            projects into one evidence-backed profile.
+            Upload files, add notes or public pages, and sync GitHub projects.
+            Your profile keeps the source evidence.
           </p>
         </div>
         <input
@@ -163,7 +163,7 @@ export function SourceManager() {
       </div>
 
       {sources.length === 0 ? (
-        <Empty>No sources yet — add your resume first; it becomes the primary.</Empty>
+        <Empty>No sources yet. Add your resume first; it becomes your primary source.</Empty>
       ) : (
         <Table>
           <TableHeader>

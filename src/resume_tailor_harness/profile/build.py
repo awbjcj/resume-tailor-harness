@@ -105,7 +105,7 @@ def build_corpus_profile(
     manifest = load_manifest(profile_dir)
     if not manifest.docs:
         raise ValueError(
-            "no sources registered — run 'resume-tailor-harness profile add <file>' first"
+            "No sources are registered. Run 'resume-tailor-harness profile add <file>' first."
         )
     agent = extractor_agent if extractor_agent is not None else build_extractor_agent()
     extraction = extract_fragments(profile_dir, manifest, agent)
