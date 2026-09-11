@@ -27,14 +27,13 @@ their content is unchanged — so after a `dev` → `main` promotion, `dev` and
 `main` hold identical content under _different_ commit hashes and would
 drift a little further apart on every single promotion if left alone.
 `.github/workflows/sync-dev-with-main.yml` runs on every push to `main` and
-force-updates `dev`'s ref to `main`'s new tip whenever their trees already
-match (verified via `git diff`, so it never fires when it would lose
-commits) — keeping the two branches genuinely in sync, not just
-content-equivalent. It intentionally does nothing when the trees differ
-(e.g. right after a `hotfix/*` merge, or if new work landed on `dev` while
-the promotion PR was merging); the documented manual "merge hotfix back into
-dev" step (above) still applies for that path, after which the next push to
-`main` fast-forwards `dev` normally.
+joins the two histories with an empty merge commit whenever their trees already
+match (verified via `git diff`, so it never fires when it would lose commits).
+The resulting push is a normal fast-forward of `dev` and therefore respects the
+branch ruleset's force-push prohibition. It intentionally does nothing when the
+trees differ (e.g. right after a `hotfix/*` merge, or if new work landed on
+`dev` while the promotion PR was merging); the documented manual "merge hotfix
+back into dev" step (above) still applies for that path.
 
 CI is split by branch so `dev` gets fast feedback and `main` gets the full
 gate before a deploy-triggering merge: `.github/workflows/_reusable-ci.yml`
