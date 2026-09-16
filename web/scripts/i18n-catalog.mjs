@@ -362,7 +362,6 @@ const FIXED_ZH_CN_TRANSLATIONS = {
 };
 
 const UNCHANGED_ZH_CN_SOURCES = new Set([
-  "00:00 UTC",
   "acme",
   "Acme",
   "America/New_York",

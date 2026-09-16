@@ -65,6 +65,13 @@ import {
 } from "@/features/admin/admin-quota-rates";
 import { api, unwrap } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
+import { zonedDateTimeToIso } from "@/lib/calendar-date";
+import {
+  formatUserDate,
+  formatUserDateTime,
+  formatUserTime,
+  userTimeZone,
+} from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 
 type QuotaAccount = components["schemas"]["QuotaAccountOut"];
@@ -168,6 +175,16 @@ function positiveMicros(value: string): number | undefined {
   const amount = Number(value);
   if (!Number.isFinite(amount) || amount <= 0) return undefined;
   return Math.round(amount * MICROS_PER_USD);
+}
+
+function localDateTimeToIso(value: string): string | null {
+  const [date, time] = value.split("T");
+  if (!date || !time) return null;
+  try {
+    return zonedDateTimeToIso(date, time, userTimeZone());
+  } catch {
+    return null;
+  }
 }
 
 function usdInputValue(micros: number | null): string {
@@ -379,12 +396,12 @@ function RateVersionsTable({ rates }: { rates: LlmRate[] }) {
               <TableCell>{t(RATE_PERIOD_LABEL_KEYS[rate.ratePeriod ?? "all"])}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono">{new Date(rate.effectiveFrom).toLocaleDateString()}</span>
+                  <span className="font-mono">{formatUserDate(rate.effectiveFrom)}</span>
                   <Badge variant="outline" className="h-5 px-1.5 text-[0.65rem]">{t(RATE_VERSION_STATUS_LABEL_KEYS[status])}</Badge>
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
                   {rate.effectiveTo
-                    ? t("adminQuota.rate.effectiveUntil", { date: new Date(rate.effectiveTo).toLocaleDateString() })
+                    ? t("adminQuota.rate.effectiveUntil", { date: formatUserDate(rate.effectiveTo) })
                     : t("adminQuota.rate.noEndDate")}
                 </div>
               </TableCell>
@@ -573,7 +590,7 @@ function AccountDrawer({
                         <span className="font-mono">{usd(t, entry.amountMicros)}</span>
                       </div>
                       <div className="mt-1 text-muted-foreground">
-                        {entry.reason ?? "Automated usage accounting"} · {new Date(entry.createdAt).toLocaleString()}
+                        {entry.reason ?? "Automated usage accounting"} · {formatUserDateTime(entry.createdAt)}
                       </div>
                     </li>
                   ))}
@@ -807,7 +824,7 @@ function QuotaOperationCard({
                 {`${preview.affectedCount} account${preview.affectedCount === 1 ? "" : "s"} frozen for review`}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
-                Total effect {usd(t, preview.totalEffectMicros)} · preview expires {new Date(preview.expiresAt).toLocaleTimeString()}
+                Total effect {usd(t, preview.totalEffectMicros)} · preview expires {formatUserTime(preview.expiresAt)}
               </div>
             </div>
             <Button
@@ -1324,8 +1341,8 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
   const cacheReadMicros = optionalMicros(cacheRead);
   const cacheWriteMicros = optionalMicros(cacheWrite);
   const toolFeeMicros = optionalMicros(toolFee);
-  const effectiveDate = effective ? new Date(effective) : null;
-  const effectiveIsValid = effectiveDate != null && !Number.isNaN(effectiveDate.getTime());
+  const effectiveAt = localDateTimeToIso(effective);
+  const effectiveIsValid = effectiveAt != null;
   const optionalRatesAreValid = [cacheReadMicros, cacheWriteMicros, toolFeeMicros].every((value) => value !== undefined);
   const canCreate = Boolean(
     model
@@ -1347,7 +1364,7 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
 
   const create = useMutation({
     mutationFn: () => {
-      if (!effectiveDate || inputMicros == null || outputMicros == null) {
+      if (!effectiveAt || inputMicros == null || outputMicros == null) {
         throw new Error("Complete the required rate fields");
       }
       return unwrap(api.POST("/api/admin/llm-rates", {
@@ -1362,7 +1379,7 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
           outputMicrosPerMillion: outputMicros,
           toolMicrosPerUnit: toolFeeMicros ?? null,
           ratePeriod: ratePeriod === "all" ? null : ratePeriod,
-          effectiveFrom: effectiveDate.toISOString(),
+          effectiveFrom: effectiveAt,
           effectiveTo: null,
           sourceUrl: source.trim(),
           reason,
@@ -1569,7 +1586,17 @@ export function AdminQuotasPage() {
             <Metric label="Platform cap" value={usd(t, summary.data.monthlyCapMicros)} detail="UTC calendar month" />
             <Metric label="Runway" value={usd(t, summary.data.remainingMicros)} detail={`${Math.max(0, 100 - runway).toFixed(1)}% remains`} warning={runway >= 80} />
             <Metric label="Unpriced calls" value={String(summary.data.unpricedCallCount)} detail="Requires rate coverage" warning={summary.data.unpricedCallCount > 0} />
-            <Metric label="Next reset" value={new Date(summary.data.nextResetAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })} detail="00:00 UTC" />
+            <Metric
+              label="Next reset"
+              value={formatUserDateTime(summary.data.nextResetAt, undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                timeZoneName: "short",
+              })}
+              detail={userTimeZone()}
+            />
           </dl>
           <Progress className="mt-6" value={Math.min(100, runway)}>
             <ProgressLabel>Shared-key monthly cap</ProgressLabel>
@@ -1641,7 +1668,7 @@ export function AdminQuotasPage() {
                       <TableCell className="font-mono">{usd(t, account.creditBalanceMicros)}</TableCell>
                       <TableCell className="font-mono">{usd(t, account.sharedCostMicros)} / {usd(t, account.byokCostMicros)}</TableCell>
                       <TableCell className="font-mono">{tokens(account.totalTokens)}</TableCell>
-                      <TableCell className="font-mono">{new Date(account.periodEnd).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-mono">{formatUserDate(account.periodEnd)}</TableCell>
                       <TableCell><Button size="sm" variant="ghost" onClick={() => setSelected(account)}>Manage</Button></TableCell>
                     </TableRow>
                   ))}
@@ -1699,7 +1726,7 @@ export function AdminQuotasPage() {
               <dl className="grid gap-4 sm:grid-cols-3">
                 <Metric label="Recorded operations" value={String(auditRows.length)} detail="Most recent results" />
                 <Metric label="Accounts affected" value={String(auditedAccounts)} detail="Across listed operations" />
-                <Metric label="Latest activity" value={auditRows[0] ? new Date(auditRows[0].createdAt).toLocaleDateString() : "—"} detail="Committed only" />
+                <Metric label="Latest activity" value={auditRows[0] ? formatUserDate(auditRows[0].createdAt) : "—"} detail="Committed only" />
               </dl>
               <Card>
                 <CardHeader>
@@ -1718,7 +1745,7 @@ export function AdminQuotasPage() {
                           <TableCell>{operation.affectedCount}</TableCell>
                           <TableCell className="max-w-xs">{operation.reason}</TableCell>
                           <TableCell className="font-mono text-xs">{operation.actorUserId}</TableCell>
-                          <TableCell className="text-xs"><Clock3 className="mr-1 inline size-3" />{new Date(operation.createdAt).toLocaleString()}</TableCell>
+                          <TableCell className="text-xs"><Clock3 className="mr-1 inline size-3" />{formatUserDateTime(operation.createdAt)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

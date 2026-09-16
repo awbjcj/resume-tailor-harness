@@ -29,6 +29,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useChatStream } from "@/lib/chat/useChatStream";
+import { formatUserDate, formatUserDateTime } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 import type { RunRecord } from "@/lib/runs/store";
 import { useRunStore } from "@/lib/runs/store";
@@ -239,7 +240,7 @@ export function CoachPage() {
   const pendingDrafts = active?.draftNotes?.filter((note) => note.status === "pending") ?? [];
   const savedDrafts = active?.draftNotes?.filter((note) => note.status === "saved") ?? [];
   const historyItems: ChatSessionHistoryItem[] = (sessions.data?.sessions ?? []).map((row) => {
-    const date = new Date(row.startedAt).toLocaleDateString();
+    const date = formatUserDate(row.startedAt);
     const topicLabel = `${row.topicCount} topic${row.topicCount === 1 ? "" : "s"}`;
     const savedLabel = `${row.savedNoteCount} saved`;
     return {
@@ -373,7 +374,7 @@ export function CoachPage() {
                 <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Bot className="size-5" aria-hidden="true" /></span>
                 {active.sessionTitle || "Coaching thread"}
               </CardTitle>
-              <CardDescription className="flex items-center gap-2 text-sm"><Clock3 className="size-4" aria-hidden="true" />Started {new Date(active.startedAt).toLocaleString()}</CardDescription>
+              <CardDescription className="flex items-center gap-2 text-sm"><Clock3 className="size-4" aria-hidden="true" />Started {formatUserDateTime(active.startedAt)}</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className={cn("flex flex-col gap-4 p-4 sm:p-6", CHAT_SURFACE_HEIGHT)}>

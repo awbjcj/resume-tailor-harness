@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { components } from "@/lib/api/schema";
+import { formatUserDate } from "@/lib/date-time";
 
 import { InterviewSetupDialog } from "./InterviewSetupDialog";
 import { useInterviewSessions } from "./use-interview";
@@ -53,7 +54,7 @@ export function InterviewTab({
             const meta = (
               <>
                 <span className="block text-sm font-medium">
-                  {new Date(row.startedAt).toLocaleDateString()}
+                  {formatUserDate(row.startedAt)}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {row.status === "ended" ? "Completed" : "In progress"} · {row.askedCount}/{row.questionCount} questions

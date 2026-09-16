@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { api, unwrap } from "@/lib/api/client";
+import { formatUserDate } from "@/lib/date-time";
 export function AdminUsersCard({ currentUsername }: { currentUsername: string }) {
   const queryClient = useQueryClient();
   const users = useQuery({
@@ -114,7 +115,7 @@ export function AdminUsersCard({ currentUsername }: { currentUsername: string })
                     <div className="flex flex-col gap-1">
                       <span className="font-medium">{user.username}</span>
                       <span className="text-xs text-muted-foreground">
-                        Joined {new Date(user.createdAt).toLocaleDateString()}
+                        Joined {formatUserDate(user.createdAt)}
                       </span>
                     </div>
                   </TableCell>

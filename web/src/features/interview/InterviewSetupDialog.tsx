@@ -22,6 +22,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import type { components } from "@/lib/api/schema";
+import { formatUserDate } from "@/lib/date-time";
 import type { RunRecord } from "@/lib/runs/store";
 
 import { useInterviewAudioAvailability, useStartInterview } from "./use-interview";
@@ -209,7 +210,7 @@ export function InterviewSetupDialog({
             <Select
               items={versions.map((version) => ({
                 value: String(version.id),
-                label: `${new Date(version.createdAt).toLocaleDateString()} · ${version.origin}`,
+                label: `${formatUserDate(version.createdAt)} · ${version.origin}`,
               }))}
               value={String(resumeVersionId || newestVersionId)}
               onValueChange={(v) => setResumeVersionId(Number(v))}
@@ -218,7 +219,7 @@ export function InterviewSetupDialog({
               <SelectContent>
                 {versions.map((version) => (
                   <SelectItem key={version.id} value={String(version.id)}>
-                    {new Date(version.createdAt).toLocaleDateString()} · {version.origin}
+                    {formatUserDate(version.createdAt)} · {version.origin}
                     {version.reviewScore != null ? ` · ${version.reviewScore}/100` : ""}
                   </SelectItem>
                 ))}

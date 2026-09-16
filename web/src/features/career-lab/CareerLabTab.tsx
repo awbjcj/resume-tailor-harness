@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { components } from "@/lib/api/schema";
+import { formatUserDate } from "@/lib/date-time";
 
 import { CareerLabSetupDialog } from "./CareerLabSetupDialog";
 import { useCareerLabSessions } from "./use-career-lab";
@@ -66,7 +67,7 @@ export function CareerLabTab({
                 <span className="text-xs text-muted-foreground">
                   {row.status === "ended" ? "Completed" : "Open"} ·{" "}
                   {`${row.turnCount} turn${row.turnCount === 1 ? "" : "s"}`} ·{" "}
-                  {new Date(row.startedAt).toLocaleDateString()}
+                  {formatUserDate(row.startedAt)}
                 </span>
               </Link>
               {row.status === "ended" ? null : (

@@ -137,12 +137,14 @@ def test_terminal_logs_survive_removal_of_transient_run(app_client):
     with patch.object(app.state.run_manager, "get", return_value=None):
         logs = client.get(f"/api/run-completions/{row['id']}/logs").json()
     assert row["runId"] == run_id
+    assert row["completedAt"].endswith("Z")
     assert [entry["message"] for entry in logs] == [
         "Reading sources",
         "Source imported",
         "Building profile",
         "Building profile",
     ]
+    assert all(entry["timestamp"].endswith("Z") for entry in logs)
     assert logs[-1]["state"] == "done"
 
 

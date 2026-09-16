@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { BoardSkeleton } from "@/components/skeletons";
 import { GettingStartedChecklist } from "@/features/journey/GettingStartedChecklist";
 import { JourneyRail } from "@/features/journey/JourneyRail";
+import { formatUserDate } from "@/lib/date-time";
 
 import { ActionQueue } from "./ActionQueue";
 import { AttentionCard } from "./AttentionCard";
@@ -32,7 +33,7 @@ export function DashboardPage() {
     (sum, [status, count]) => (status === "rejected" ? sum : sum + count),
     0,
   );
-  const eyebrow = `${t("dashboard.operations")} · ${new Date().toLocaleDateString(i18n.resolvedLanguage, {
+  const eyebrow = `${t("dashboard.operations")} · ${formatUserDate(new Date(), i18n.resolvedLanguage, {
     month: "short",
     day: "numeric",
   })}`;

@@ -22,6 +22,7 @@ import { useConfig, useSaveConfig } from "@/features/settings/use-config";
 import { useDraft } from "@/features/settings/use-draft";
 import { useSetupStatus } from "@/features/settings/use-setup-status";
 import type { paths } from "@/lib/api/schema";
+import { formatUserDate, formatUserDateTime } from "@/lib/date-time";
 
 type ProfileDoc = paths["/api/config/profile"]["get"]["responses"][200]["content"]["application/json"];
 
@@ -31,7 +32,7 @@ function parseRepoList(value: string): string[] {
 
 function factsStatusText(builtAt: string | null | undefined): string {
   if (!builtAt) return "Not built yet";
-  return `Profile built ${new Date(builtAt).toLocaleString()}`;
+  return `Profile built ${formatUserDateTime(builtAt)}`;
 }
 
 /**
@@ -96,7 +97,7 @@ export function ProfileWorkspace() {
         meta={
           <Badge variant="outline">
             {lastCoach
-              ? `${lastCoach.topicCount} topics · last session ${new Date(lastCoach.startedAt).toLocaleDateString()}`
+              ? `${lastCoach.topicCount} topics · last session ${formatUserDate(lastCoach.startedAt)}`
               : "Start your first coaching session to uncover grounded profile evidence."}
           </Badge>
         }

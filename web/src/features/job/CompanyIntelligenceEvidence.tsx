@@ -3,6 +3,7 @@ import { AlertTriangle, CircleAlert, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { components } from "@/lib/api/schema";
+import { formatUserDateTime } from "@/lib/date-time";
 import { ResearchNotice } from "./ResearchPanel";
 
 type Evidence = components["schemas"]["CompanyIntelligenceEvidenceOut"];
@@ -34,10 +35,10 @@ const SOURCE_TIER_LABELS: Record<Source["sourceTier"], string> = {
 function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, {
+  return formatUserDateTime(date, undefined, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date);
+  });
 }
 
 function citationLabel(url: string, sources: readonly Source[]): string {

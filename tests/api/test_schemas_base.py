@@ -1,9 +1,15 @@
+from datetime import datetime, timedelta, timezone
+
 from resume_tailor_harness.api.schemas.base import CamelModel, Page, Pagination
 
 
 class Item(CamelModel):
     fit_score: int
     job_id: int
+
+
+class TimestampedItem(CamelModel):
+    occurred_at: datetime
 
 
 def test_camel_model_dumps_camelcase_by_alias():
@@ -23,6 +29,24 @@ def test_camel_model_validates_from_attributes():
 
     item = Item.model_validate(Dto())
     assert item.fit_score == 70
+
+
+def test_camel_model_serializes_naive_datetimes_as_utc_instants():
+    item = TimestampedItem(occurred_at=datetime(2026, 6, 1, 12, 0))
+
+    assert item.model_dump(mode="json", by_alias=True) == {
+        "occurredAt": "2026-06-01T12:00:00Z"
+    }
+
+
+def test_camel_model_normalizes_offset_datetimes_to_utc_instants():
+    item = TimestampedItem(
+        occurred_at=datetime(2026, 6, 1, 8, 0, tzinfo=timezone(timedelta(hours=-4)))
+    )
+
+    assert item.model_dump(mode="json", by_alias=True) == {
+        "occurredAt": "2026-06-01T12:00:00Z"
+    }
 
 
 def test_page_envelope_shape():

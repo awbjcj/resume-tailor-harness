@@ -16,15 +16,16 @@ import {
 } from "@/features/job/artifact-runs";
 import { useRolePreparation } from "@/features/job/use-company-research";
 import { useRefreshRolePreparation } from "@/features/job/use-job-mutations";
+import { formatUserDateTime } from "@/lib/date-time";
 import { ResearchNotice, ResearchPanelHeader } from "./ResearchPanel";
 
 function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, {
+  return formatUserDateTime(date, undefined, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date);
+  });
 }
 
 export function RolePreparationPanel({ jobId }: { jobId: number }) {

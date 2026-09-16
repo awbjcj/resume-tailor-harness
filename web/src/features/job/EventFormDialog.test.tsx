@@ -52,12 +52,16 @@ describe("EventFormDialog", () => {
           notes: "LRU cache",
           occurredAt: "2026-03-09T19:00:00Z",
           allDay: false,
+          timezone: "America/New_York",
         } as never}
         onSubmit={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Edit event" }));
     expect(screen.getByLabelText(/notes/i)).toHaveValue("LRU cache");
+    expect(screen.getByLabelText(/timezone/i)).toHaveValue(
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    );
   });
 
   it("shows only a persisted manual round override in the sequence field", async () => {

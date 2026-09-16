@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import Field, field_serializer, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from resume_tailor_harness.api.schemas.base import CamelModel, Page
 
@@ -11,14 +11,11 @@ RatePeriod = Literal["peak", "off_peak"]
 
 
 class UtcCamelModel(CamelModel):
-    @field_serializer("*", when_used="json", check_fields=False)
-    def serialize_utc(self, value):
-        if not isinstance(value, datetime):
-            return value
-        aware = (
-            value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
-        )
-        return aware.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+    """Compatibility name for datetime-bearing admin response schemas.
+
+    ``CamelModel`` now guarantees the same UTC wire representation everywhere,
+    not only for quota endpoints.
+    """
 
 
 class QuotaTierOut(UtcCamelModel):
