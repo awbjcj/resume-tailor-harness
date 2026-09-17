@@ -266,6 +266,11 @@ class RunManager:
         snapshot = self.get(run_id)
         if snapshot is None or snapshot.state not in TERMINAL_RUN_STATES:
             return
+        # Scheduled work is background bookkeeping, not a user-launched run.
+        # Keep its durable history, but pre-acknowledge it so the next login
+        # does not replay a stale completion banner/toast as fresh news.
+        if snapshot.meta and snapshot.meta.get("scheduled") is True:
+            self.mark_announced(run_id)
         status = {
             "done": "succeeded",
             "error": "failed",
@@ -282,6 +287,7 @@ class RunManager:
                     "completedAt": snapshot.updated_at,
                     "logs": (self._read_record(run_id) or {}).get("logs", []),
                     "userId": snapshot.user_id,
+                    "meta": snapshot.meta,
                 }
             )
         except Exception:  # noqa: BLE001 - bookkeeping never masks run outcome

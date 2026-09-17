@@ -27,6 +27,7 @@ def record_run_completion(
     error: str | None,
     completed_at: datetime,
     logs: list[dict[str, str]] | None = None,
+    initially_read: bool = False,
 ) -> RunCompletion:
     if status not in RUN_COMPLETION_STATUSES:
         raise ValueError(f"unsupported run completion status: {status}")
@@ -42,6 +43,7 @@ def record_run_completion(
         status=status,
         error=error,
         completed_at=completed_at,
+        read_at=completed_at if initially_read else None,
     )
     session.add(row)
     session.add(RunOperationLog(run_id=run_id, entries=logs or []))

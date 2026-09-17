@@ -322,6 +322,10 @@ def create_app(
                 ),
                 completed_at=completed_at,
                 logs=payload.get("logs"),
+                initially_read=(
+                    isinstance(payload.get("meta"), dict)
+                    and payload["meta"].get("scheduled") is True
+                ),
             )
 
     app.state.run_manager = RunManager(

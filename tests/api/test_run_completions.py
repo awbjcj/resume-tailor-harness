@@ -63,6 +63,25 @@ def test_completed_app_run_is_persisted_by_terminal_hook(app_client):
     assert row["status"] == "succeeded"
 
 
+def test_scheduled_completion_is_history_but_not_an_unread_flag(app_client):
+    app, client = app_client
+    run_id = app.state.run_manager.submit(
+        "gmailSync",
+        lambda _reporter: (_ for _ in ()).throw(RuntimeError("token expired")),
+        meta={"scheduled": True},
+    )
+    for future in list(app.state.run_manager._futures.values()):
+        future.result(timeout=2)
+
+    [row] = client.get("/api/run-completions").json()
+    assert row["runId"] == run_id
+    assert row["status"] == "failed"
+    assert row["readAt"] is not None
+    assert client.get(
+        "/api/run-completions", params={"unread_only": True}
+    ).json() == []
+
+
 def test_clear_histories_independently_and_keep_new_operations(app_client):
     app, client = app_client
     with Session(app.state.engine) as session:
