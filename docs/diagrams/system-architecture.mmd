@@ -1,0 +1,20 @@
+C4Container
+    title Containers — Résumé Tailor Harness
+    System_Boundary(harness, "Résumé Tailor Harness") {
+        Container(web, "Web app", "React / TypeScript", "Boards, editors and run progress; executes in browser")
+        Container(cli, "Command line", "Python / Typer", "Embeds shared services; runs without the API")
+        Container(api, "API + background runs", "Python / FastAPI", "Services, agents, gates, thread pools and Typst rendering")
+        ContainerDb(workspace, "Workspace database", "SQLite / SQLModel", "Per-workspace jobs, versions and application events")
+        ContainerDb(system, "System database", "SQLite", "Platform accounts, quotas and usage")
+        ContainerDb(files, "Workspace files", "Filesystem", "Facts, corpus, PDFs, configuration, secrets and run logs")
+    }
+    System_Ext(integrations, "Integrations", "Models, job sources, Gmail; expanded in context view")
+    Rel(web, api, "Submits commands and queries", "HTTP / JSON")
+    Rel(api, web, "Streams run events", "SSE")
+    Rel(api, integrations, "Calls integrations", "HTTPS")
+    Rel(api, system, "Reads and writes platform state", "SQL")
+    Rel(api, workspace, "Reads and writes workspace state", "SQL")
+    Rel(api, files, "Reads and writes artifacts", "File I/O")
+    Rel(cli, workspace, "Reads and writes workspace state", "SQL")
+    %% Selected edges only: CLI also accesses integrations and workspace files.
+    %% The Python service layer is shared code, not a separately deployed container.

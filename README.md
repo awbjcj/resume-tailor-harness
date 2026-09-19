@@ -23,15 +23,43 @@ jobs._
 
 ## System architecture
 
-The React frontend and CLI are thin entry points over the same use-case service
-layer. Those services coordinate bounded agents, deterministic fact-lock gates,
-workspace-scoped persistence, external integrations, and Typst rendering. In
-hosted mode, the same shape runs with authenticated, tenant-confined workspaces;
-every user-influenced public fetch crosses the validated outbound gateway.
+Two C4 views separate the product's external relationships from its runtime
+structure. The [lifecycle](#how-it-works) below shows the job workflow.
 
-![Résumé Tailor Harness system architecture](docs/diagrams/system-architecture.svg)
+### System context
 
-[Open the self-contained architecture diagram](docs/diagrams/system-architecture.html).
+The job seeker controls approvals and final documents. The harness gathers
+project evidence and job postings, calls configured model providers, and can
+connect to Gmail for application tracking and drafts.
+
+![C4 system context: the job seeker, Résumé Tailor Harness, GitHub, job sources, model providers, and optional Gmail](docs/diagrams/system-context.svg)
+
+[Open context diagram](docs/diagrams/system-context.html) ·
+[C4 source](docs/diagrams/system-context.mmd)
+
+### Containers and persistence
+
+The React app calls FastAPI; the CLI calls the same Python use-case services
+directly. Background runs execute in the API's thread pools and stream progress
+via Server-Sent Events (SSE). Agents, deterministic fact-lock gates, and Typst
+rendering are internal capabilities of the Python application.
+
+![C4 container view: browser and CLI entry points, the API runtime, integrations, platform database, and workspace database and files](docs/diagrams/system-architecture.svg)
+
+[Open container diagram](docs/diagrams/system-architecture.html) ·
+[C4 source](docs/diagrams/system-architecture.mmd) ·
+[Diagram scope and code references](docs/diagrams/README.md)
+
+- **Workspace custody:** each hosted user has a separate SQLite database and
+  workspace files. Platform accounts, quotas, and usage live in `system.db`.
+  Local mode selects the default workspace without account authentication.
+- **Runtime boundary:** Docker packages the built frontend and API together;
+  the browser runs the frontend. The standalone CLI embeds the same service
+  code and also accesses integrations and workspace files (those edges are
+  omitted from the container view).
+- **Outbound boundary:** user-influenced public fetches cross the validated
+  egress gateway. Provider routing and spend policy stay inside the shared
+  model-call layer.
 
 ---
 
