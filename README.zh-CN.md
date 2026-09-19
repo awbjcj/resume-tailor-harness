@@ -14,11 +14,27 @@ _下文截图来自一个可随时丢弃的演示工作区，其中的公司和�
 
 ## 系统架构
 
-React 前端和 CLI 都是同一用例服务层的轻量入口。这些服务负责协调受限智能体、确定性事实锁定闸门、工作区级持久化、外部集成和 Typst 渲染。在托管模式下，同样的架构运行于已认证、租户隔离的工作区中；所有受用户输入影响的公网请求都要通过已校验的出站网关。
+下面两张 C4 架构图分别展示系统的外部关系和运行结构。[工作流程](#工作流程)一节展示职位的完整生命周期。
 
-![Résumé Tailor Harness 系统架构](docs/diagrams/system-architecture.svg)
+### 系统上下文
 
-[打开可独立查看的系统架构图](docs/diagrams/system-architecture.html)。
+求职者决定批准哪些职位，并审核最终文档。系统收集项目证据和职位描述，调用配置的模型服务，也可连接 Gmail 来跟踪申请和起草邮件。
+
+![C4 系统上下文：求职者、Résumé Tailor Harness、GitHub、职位来源、模型服务和可选的 Gmail](docs/diagrams/system-context.svg)
+
+[打开系统上下文图](docs/diagrams/system-context.html) · [C4 源文件](docs/diagrams/system-context.mmd)
+
+### 容器与持久化
+
+React 前端调用 FastAPI；CLI 直接调用同一套 Python 用例服务。后台任务在 API 进程的线程池中执行，通过 Server-Sent Events（SSE）推送进度。智能体、确定性事实锁定闸门和 Typst 渲染都属于 Python 应用内部的能力。
+
+![C4 容器图：浏览器与 CLI 入口、API 运行时、外部集成、平台数据库，以及工作区数据库和文件](docs/diagrams/system-architecture.svg)
+
+[打开容器图](docs/diagrams/system-architecture.html) · [C4 源文件](docs/diagrams/system-architecture.mmd) · [图示范围与代码依据](docs/diagrams/README.md)
+
+- **工作区隔离：**托管模式为每个用户提供独立的 SQLite 数据库和工作区文件；平台账号、配额和用量保存在 `system.db` 中。本地模式直接使用默认工作区，无需账号认证。
+- **运行边界：**Docker 将构建后的前端和 API 打包在同一镜像中，前端在浏览器中运行。独立 CLI 使用相同的服务代码，也会访问外部集成和工作区文件；容器图省略了这些连线。
+- **出站边界：**由用户输入影响的公网请求经过受验证的出站网关；模型路由和费用策略由共享模型调用层处理。
 
 ---
 
@@ -32,11 +48,11 @@ React 前端和 CLI 都是同一用例服务层的轻量入口。这些服务负
 
 随后，每轮定制都会经过**三道确定性闸门**。它们全部在进程内运行，不调用模型：
 
-| 闸门               | 在草稿出现以下情况时拦截本轮             |
-| ------------------ | ---------------------------------------------------- |
-| `provenance`       | 引用的事实 id 无法解析为真实事实             |
-| `skill-naming`     | 声称了档案中未能证明的技能                 |
-| `numeric-evidence` | 写入了证据无法支持的数字                   |
+| 闸门               | 在草稿出现以下情况时拦截本轮     |
+| ------------------ | -------------------------------- |
+| `provenance`       | 引用的事实 id 无法解析为真实事实 |
+| `skill-naming`     | 声称了档案中未能证明的技能       |
+| `numeric-evidence` | 写入了证据无法支持的数字         |
 
 这三个名称是**保留名**。把评审员配置成其中任意一个都会导致启动失败，因此修改评审名单无法遮蔽闸门。闸门结果和 LLM 评审意见都会汇入同一个判定构造函数（`tailor/verdict.py::aggregate`），因此“本轮是否通过”只有一个定义。任何闸门失败都会拦截本轮，与评分高低无关。
 
@@ -85,15 +101,15 @@ Source Scout、Profile Coach、担保研究和 Career Lab 在循环内只使用*
 
 [打开可独立查看的生命周期图](docs/diagrams/resume-lifecycle.html)。
 
-| 阶段             | 命令                         | 会发生什么 |
-| ---------------- | ---------------------------- | ------------ |
-| **导入**         | `pull` / `scrape` / `addjob` | 原始职位写入数据库（按 URL 或 JD 文本去重）。`pull` 运行所有已启用的招聘网站连接器；`scrape` 驱动 LinkedIn；`addjob` 手动导入一个职位。 |
-| **发现**         | `discover`                   | 智能体抽取结构化条件，执行硬性筛选和匹配评分，并把符合条件的职位移到 `shortlisted`。 |
-| **👤 批准**      | 网页应用或 `approve`        | 这是成本闸门：你只批准值得花费模型成本进行定制的职位。 |
-| **定制**         | `tailor`                     | 写作智能体起草事实锁定的简历；评审团提出意见，修订者循环修改直到通过。 |
-| **求职信**       | `cover-letter`               | 为每个职位起草事实锁定的求职信，经确定性来源检查后渲染为 PDF。 |
-| **渲染**         | `render`                     | 将选定的简历版本生成到 `output/` 中的 PDF。 |
-| **👤 跟踪**      | 网页应用 / `sync-status`       | 记录带日期的申请事件、结果、复盘和 offer 详情；导出日历/CSV，或让 `sync-status` 读取 Gmail 并**建议**由你应用的状态变更。 |
+| 阶段        | 命令                         | 会发生什么                                                                                                                              |
+| ----------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **导入**    | `pull` / `scrape` / `addjob` | 原始职位写入数据库（按 URL 或 JD 文本去重）。`pull` 运行所有已启用的招聘网站连接器；`scrape` 驱动 LinkedIn；`addjob` 手动导入一个职位。 |
+| **发现**    | `discover`                   | 智能体抽取结构化条件，执行硬性筛选和匹配评分，并把符合条件的职位移到 `shortlisted`。                                                    |
+| **👤 批准** | 网页应用或 `approve`         | 这是成本闸门：你只批准值得花费模型成本进行定制的职位。                                                                                  |
+| **定制**    | `tailor`                     | 写作智能体起草事实锁定的简历；评审团提出意见，修订者循环修改直到通过。                                                                  |
+| **求职信**  | `cover-letter`               | 为每个职位起草事实锁定的求职信，经确定性来源检查后渲染为 PDF。                                                                          |
+| **渲染**    | `render`                     | 将选定的简历版本生成到 `output/` 中的 PDF。                                                                                             |
+| **👤 跟踪** | 网页应用 / `sync-status`     | 记录带日期的申请事件、结果、复盘和 offer 详情；导出日历/CSV，或让 `sync-status` 读取 Gmail 并**建议**由你应用的状态变更。               |
 
 ### 界面预览
 
@@ -242,17 +258,17 @@ uv run python scripts/dev.py              # API + frontend; Ctrl+C stops both
 
 这些工具共用同一份事实锁定档案、已验证的技能注册表、只读工具循环和持久运行历史。它们用来处理求职过程中反复出现的工作：
 
-| 工具                     | 如何帮助你 |
-| ------------------------ | ---------- |
-| **Profile Coach**        | 补充你尚未写下的经历证据。它每次只问一个问题，而且只根据你的回答起草。 |
-| **Mock Interviews**      | 让你针对具体的定制职位演练，并提供带评分的复盘。 |
-| **Career Lab**           | 支持谈薪准备、转行和作品集写作。每轮使用一个已验证技能，所有输出都保留为草稿。 |
-| **Match-gap**            | 按需求职位数量排列目标职位需要、但你的档案尚未体现的技能。 |
-| **担保证据**         | 把历史申报记录作为研究信号，不承诺当前是否提供担保。 |
-| **公司情报**         | 在你发起请求时创建带引用的雇主简报。 |
-| **申请时间线**       | 将轮次、结果和截止日期放在同一数据集中，可导出为 CSV 或日历。 |
-| **Gmail 同步**          | 读取收件箱，并建议由你批准的状态更新。 |
-| **Analytics**            | 显示哪些来源和匹配分档能够进入更后的阶段。 |
+| 工具                | 如何帮助你                                                                     |
+| ------------------- | ------------------------------------------------------------------------------ |
+| **Profile Coach**   | 补充你尚未写下的经历证据。它每次只问一个问题，而且只根据你的回答起草。         |
+| **Mock Interviews** | 让你针对具体的定制职位演练，并提供带评分的复盘。                               |
+| **Career Lab**      | 支持谈薪准备、转行和作品集写作。每轮使用一个已验证技能，所有输出都保留为草稿。 |
+| **Match-gap**       | 按需求职位数量排列目标职位需要、但你的档案尚未体现的技能。                     |
+| **担保证据**        | 把历史申报记录作为研究信号，不承诺当前是否提供担保。                           |
+| **公司情报**        | 在你发起请求时创建带引用的雇主简报。                                           |
+| **申请时间线**      | 将轮次、结果和截止日期放在同一数据集中，可导出为 CSV 或日历。                  |
+| **Gmail 同步**      | 读取收件箱，并建议由你批准的状态更新。                                         |
+| **Analytics**       | 显示哪些来源和匹配分档能够进入更后的阶段。                                     |
 
 ### 职业辅导：Profile Coach、Mock Interviews 和 Career Lab
 
@@ -410,13 +426,13 @@ uv run resume-tailor-harness scrape [--search config/search.yaml] [--limit 25]
 
 运行 `connectors.yaml` 中已启用的每个连接器，将结果去重后写入 `raw` 职位，并输出每个来源的数量。较高优先级的规范来源重新找到数据库中来自聚合器的职位时，系统会就地**升级**已存储的 URL 和 JD 文本。汇总会显示 `+N added, N upgraded`。Adzuna 等密钥来自 `.env`，需要访问的看板/来源由 `connectors.yaml` 决定。
 
-| 连接器       | 所需配置 |
-| ------------ | -------- |
-| `greenhouse` | `connectors.yaml` 中的看板 token |
-| `lever`      | `connectors.yaml` 中的看板 slug |
-| `adzuna`     | `.env` 中的 `ADZUNA_APP_ID` + `ADZUNA_APP_KEY` |
-| `remoteok`   | 无；它使用公开 API |
-| `linkedin`   | `.env` 中的专用账号凭据（与 `scrape` 相同） |
+| 连接器       | 所需配置                                                                                      |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| `greenhouse` | `connectors.yaml` 中的看板 token                                                              |
+| `lever`      | `connectors.yaml` 中的看板 slug                                                               |
+| `adzuna`     | `.env` 中的 `ADZUNA_APP_ID` + `ADZUNA_APP_KEY`                                                |
+| `remoteok`   | 无；它使用公开 API                                                                            |
+| `linkedin`   | `.env` 中的专用账号凭据（与 `scrape` 相同）                                                   |
 | `companies`  | `connectors.yaml` 中的职业页面 URL。可检测 Greenhouse、Lever、Ashby、Workday、Tesla 和 Google |
 
 ```bash
@@ -558,14 +574,14 @@ PREMIUM_MODEL=claude-opus-5             # bare id → Anthropic for the tailor w
 
 ### `config/*.yaml`
 
-| 文件                   | 控制内容 |
-| ---------------------- | -------- |
-| `profile_sources.yaml` | 你的简历路径和 GitHub 用户名。 |
-| `search.yaml`          | 关键词、职位、地点和**硬性筛选**（薪资、工作年限、远程政策、担保）。 |
+| 文件                   | 控制内容                                                                                                                                                                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profile_sources.yaml` | 你的简历路径和 GitHub 用户名。                                                                                                                                                                                                                          |
+| `search.yaml`          | 关键词、职位、地点和**硬性筛选**（薪资、工作年限、远程政策、担保）。                                                                                                                                                                                    |
 | `connectors.yaml`      | `pull` 运行的招聘网站连接器及其参数：Greenhouse 看板 token、Lever slug、Adzuna 国家/地区、RemoteOK、LinkedIn 开关，以及用于直接 ATS 或门户 URL 的 `companies.urls`。它可检测 Greenhouse、Lever、Ashby、Workday、Tesla 和 Google；密钥保留在 `.env` 中。 |
-| `review.yaml`          | 评审名单、权重/模型档位、`max_rounds`、`score_threshold`、可选的 `length_budget` 单页指导和 `style_guide_path`。 |
-| `render.yaml`          | Typst `template_path` 和 PDF `output_dir`。 |
-| `style_guide.md`       | 附加到简历定制循环的可选文风说明。它决定如何写，不决定可以声称什么；文件缺失或为空时不作改变。 |
+| `review.yaml`          | 评审名单、权重/模型档位、`max_rounds`、`score_threshold`、可选的 `length_budget` 单页指导和 `style_guide_path`。                                                                                                                                        |
+| `render.yaml`          | Typst `template_path` 和 PDF `output_dir`。                                                                                                                                                                                                             |
+| `style_guide.md`       | 附加到简历定制循环的可选文风说明。它决定如何写，不决定可以声称什么；文件缺失或为空时不作改变。                                                                                                                                                          |
 
 每个 `*.yaml.example` 都带有注释。复制后再编辑。
 
@@ -575,10 +591,10 @@ PREMIUM_MODEL=claude-opus-5             # bare id → Anthropic for the tailor w
 
 多个连接器发现同一职位时，**规范来源**总是优先于**聚合来源**副本：
 
-| 层级                            | 来源 |
-| ------------------------------- | ---- |
+| 层级                       | 来源                                                                                         |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
 | **规范来源**（优先级较高） | `greenhouse`、`lever`、`ashby`、`workday`、`tesla`、`google`、`companies`、`url`（手动粘贴） |
-| **回退来源**（优先级较低） | `adzuna`、`remoteok`、`linkedin` |
+| **回退来源**（优先级较低） | `adzuna`、`remoteok`、`linkedin`                                                             |
 
 同一层级中采用**先发现者优先**，避免相同层级的重复拉取导致内容来回变化。
 
@@ -590,16 +606,16 @@ PREMIUM_MODEL=claude-opus-5             # bare id → Anthropic for the tailor w
 
 ## 文件位置
 
-| 路径                                                  | 内容 |
-| ----------------------------------------------------- | ---- |
-| `data/resume_tailor_harness.db`                       | 所有职位、简历版本、求职信和申请（SQLite）。 |
-| `data/profile/facts.json`                             | 你的事实锁定档案。 |
-| `data/connector_runs.json`                            | `sources` 读取的逐连接器运行历史。 |
-| `data/gmail_token.json`                               | CLI/本地模式 `sync-status` 的 Gmail OAuth token 缓存（Git 已忽略）。API/网页应用改为把每位用户的 token 存入各自工作区。 |
-| `output/`                                             | 已渲染的简历和求职信 PDF（求职信带 `cl<id>` 后缀）。 |
-| `.linkedin_profile/`                                  | LinkedIn 浏览器会话缓存（Git 已忽略）。 |
+| 路径                                                  | 内容                                                                                                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `data/resume_tailor_harness.db`                       | 所有职位、简历版本、求职信和申请（SQLite）。                                                                                          |
+| `data/profile/facts.json`                             | 你的事实锁定档案。                                                                                                                    |
+| `data/connector_runs.json`                            | `sources` 读取的逐连接器运行历史。                                                                                                    |
+| `data/gmail_token.json`                               | CLI/本地模式 `sync-status` 的 Gmail OAuth token 缓存（Git 已忽略）。API/网页应用改为把每位用户的 token 存入各自工作区。               |
+| `output/`                                             | 已渲染的简历和求职信 PDF（求职信带 `cl<id>` 后缀）。                                                                                  |
+| `.linkedin_profile/`                                  | LinkedIn 浏览器会话缓存（Git 已忽略）。                                                                                               |
 | `config/gmail_credentials.json`                       | 仅供 CLI 使用的 Gmail OAuth **Desktop app** 客户端密钥（Git 已忽略，由你提供）。API/网页应用改用 `GOOGLE_OAUTH_CLIENT_ID`/`_SECRET`。 |
-| `templates/resume.typ` / `templates/cover_letter.typ` | 渲染器使用的 Typst 模板。 |
+| `templates/resume.typ` / `templates/cover_letter.typ` | 渲染器使用的 Typst 模板。                                                                                                             |
 
 `data/`、`output/`、`.env`、`.linkedin_profile/` 和 `config/gmail_credentials.json` 都已被 Git 忽略。
 
