@@ -11,6 +11,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { formatUserDate } from "@/lib/date-time";
 import { useDeleteDocument, useDocuments, useUploadDocument } from "../use-documents";
 
 const DOC_TYPES = ["resume", "transcript", "portfolio", "other"] as const;
@@ -76,7 +77,7 @@ export function DocumentManager() {
                 <TableCell className="font-medium">{doc.filename}</TableCell>
                 <TableCell><Badge variant="secondary">{doc.docType}</Badge></TableCell>
                 <TableCell className="text-muted-foreground">
-                  {new Date(doc.uploadedAt).toLocaleDateString()}
+                  {formatUserDate(doc.uploadedAt)}
                 </TableCell>
                 <TableCell className="text-right">
                   <ConfirmDialog

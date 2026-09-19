@@ -28,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useChatStream } from "@/lib/chat/useChatStream";
+import { formatUserDate } from "@/lib/date-time";
 import type { RunRecord } from "@/lib/runs/store";
 import { cn } from "@/lib/utils";
 
@@ -239,7 +240,7 @@ export function CareerLabPage() {
       [row.jobCompany, row.jobTitle].filter(Boolean).join(" · "),
       row.status === "active" ? "Drafting now" : "Completed",
       `${row.turnCount} turns`,
-      new Date(row.startedAt).toLocaleDateString(),
+      formatUserDate(row.startedAt),
     ].filter(Boolean).join(" · "),
     title: row.title || row.goal || "Untitled Career Lab",
     status: row.status,

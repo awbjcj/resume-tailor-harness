@@ -139,6 +139,27 @@ def test_terminal_hook_records_every_outcome_once(tmp_path):
     assert all(event["completedAt"].tzinfo is not None for event in events)
 
 
+def test_scheduled_run_is_terminal_history_without_login_announcement(tmp_path):
+    events = []
+    manager = RunManager(
+        root=tmp_path,
+        executor=InlineExecutor(),
+        on_terminal=events.append,
+    )
+
+    run_id = manager.submit(
+        "gmailSync",
+        lambda _reporter: (_ for _ in ()).throw(RuntimeError("token expired")),
+        meta={"scheduled": True},
+    )
+
+    snapshot = manager.get(run_id)
+    assert snapshot is not None
+    assert snapshot.announced_at is not None
+    assert manager.list_rehydratable(announce_window_seconds=3600) == []
+    assert events[0]["meta"] == {"scheduled": True}
+
+
 def test_terminal_hook_failure_never_masks_the_run_outcome(tmp_path):
     def broken_hook(_payload):
         raise RuntimeError("hook failed")

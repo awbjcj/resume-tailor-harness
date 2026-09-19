@@ -2,6 +2,7 @@ import type { components } from "@/lib/api/schema";
 import { useTranslation } from "react-i18next";
 
 import { applicationStatusLabel } from "@/features/applications/application-labels";
+import { formatUserDate } from "@/lib/date-time";
 import { stageLabel } from "./chart-theme";
 
 type PipelineLane = components["schemas"]["PipelineLaneOut"];
@@ -53,8 +54,8 @@ export function PipelineTimelineChart({ pipeline, now }: { pipeline: PipelineLan
               {lane.events.map((event, index) => (
                 <span
                   key={`${event.kind}-${event.sequence}-${index}`}
-                  title={`${stageLabel(event.kind, t)} · ${event.date.toLocaleDateString()}`}
-                  aria-label={`${stageLabel(event.kind, t)}, ${event.date.toLocaleDateString()}`}
+                  title={`${stageLabel(event.kind, t)} · ${formatUserDate(event.date)}`}
+                  aria-label={`${stageLabel(event.kind, t)}, ${formatUserDate(event.date)}`}
                   className={`absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-background ${event.upcoming ? "bg-primary" : "bg-muted-foreground"}`}
                   style={{ left: `${event.position}%` }}
                 />

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { openDownload } from "@/lib/api/client";
 import { formatCalendarDate } from "@/lib/calendar-date";
+import { formatUserDateTime } from "@/lib/date-time";
 import { EventFormDialog } from "./EventFormDialog";
 import {
   KIND_LABELS,
@@ -29,7 +30,6 @@ function titleFor(event: ApplicationEvent): string {
 
 function formatDate(event: ApplicationEvent): string {
   if (!event.occurredAt) return "No date";
-  const moment = new Date(event.occurredAt);
   const options: Intl.DateTimeFormatOptions = event.allDay
     ? { month: "short", day: "numeric", year: "numeric" }
     : {
@@ -38,13 +38,12 @@ function formatDate(event: ApplicationEvent): string {
         year: "numeric",
         hour: "numeric",
         minute: "2-digit",
-        timeZone: event.timezone ?? undefined,
-        timeZoneName: event.timezone ? "short" : undefined,
+        timeZoneName: "short",
       };
   try {
     return formatCalendarDate(event.occurredAt, event.allDay, options);
   } catch {
-    return moment.toLocaleString();
+    return formatUserDateTime(event.occurredAt);
   }
 }
 

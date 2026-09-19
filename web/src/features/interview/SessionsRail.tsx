@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ChatSessionHistory, type ChatSessionHistoryItem } from "@/components/chat/ChatSessionHistory";
+import { formatUserDate } from "@/lib/date-time";
 
 import { NewInterviewDialog } from "./NewInterviewDialog";
 import {
@@ -30,7 +31,7 @@ export function SessionsRail({ selectedId }: { selectedId: string | null }) {
     return {
       id: row.sessionId,
       title,
-      detail: `${row.sessionTitle ? `${fallbackTitle} · ` : ""}${progress} · ${new Date(row.startedAt).toLocaleDateString()}`,
+      detail: `${row.sessionTitle ? `${fallbackTitle} · ` : ""}${progress} · ${formatUserDate(row.startedAt)}`,
       status: row.status === "active" ? "active" : "ended",
       archived: Boolean(row.archivedAt),
     };

@@ -15,6 +15,7 @@ import {
 import { KIND_LABELS, REPEATABLE_KINDS } from "@/features/job/event-labels";
 import { openDownload } from "@/lib/api/client";
 import { formatCalendarDate } from "@/lib/calendar-date";
+import { formatUserDateTime } from "@/lib/date-time";
 import type { DashboardSummary } from "./use-dashboard-summary";
 
 type UpcomingEvent = NonNullable<DashboardSummary["upcomingEvents"]>[number];
@@ -27,7 +28,6 @@ function eventTitle(event: UpcomingEvent, otherLabel: string): string {
 }
 
 function eventTime(event: UpcomingEvent, locale: string): string {
-  const date = new Date(event.occurredAt);
   const options: Intl.DateTimeFormatOptions = event.allDay
     ? { weekday: "short", month: "short", day: "numeric" }
     : {
@@ -36,13 +36,12 @@ function eventTime(event: UpcomingEvent, locale: string): string {
         day: "numeric",
         hour: "numeric",
         minute: "2-digit",
-        timeZone: event.timezone ?? undefined,
-        timeZoneName: event.timezone ? "short" : undefined,
+        timeZoneName: "short",
       };
   try {
     return formatCalendarDate(event.occurredAt, event.allDay, options, locale);
   } catch {
-    return date.toLocaleString(locale);
+    return formatUserDateTime(event.occurredAt, locale);
   }
 }
 

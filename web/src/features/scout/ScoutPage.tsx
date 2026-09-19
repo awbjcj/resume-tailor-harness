@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChatStream } from "@/lib/chat/useChatStream";
+import { formatUserDate } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 import type { RunRecord } from "@/lib/runs/store";
 import { useRunStore } from "@/lib/runs/store";
@@ -109,7 +110,7 @@ export function ScoutPage() {
   const historyItems: ChatSessionHistoryItem[] = rows.map((row) => ({
     id: row.sessionId,
     title: row.sessionTitle || row.goal || "Untitled Scout session",
-    detail: `${row.status === "active" ? "Researching" : "Completed"} · ${row.proposalCount} proposals · ${row.addedCount} added · ${new Date(row.startedAt).toLocaleDateString()}`,
+    detail: `${row.status === "active" ? "Researching" : "Completed"} · ${row.proposalCount} proposals · ${row.addedCount} added · ${formatUserDate(row.startedAt)}`,
     status: row.status,
     archived: Boolean(row.archivedAt),
   }));

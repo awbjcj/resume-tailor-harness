@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { api, unwrap } from "@/lib/api/client";
+import { formatUserDate } from "@/lib/date-time";
 
 export function PersonalTokensCard() {
   const queryClient = useQueryClient();
@@ -132,7 +133,7 @@ export function PersonalTokensCard() {
                   </div>
                   <span className="min-w-0 flex-1 truncate font-medium">{token.name}</span>
                   <time className="col-start-2 shrink-0 text-xs text-muted-foreground" dateTime={token.createdAt}>
-                    {new Date(token.createdAt).toLocaleDateString()}
+                    {formatUserDate(token.createdAt)}
                   </time>
                 </li>
               ))}

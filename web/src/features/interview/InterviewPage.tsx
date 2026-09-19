@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Progress, ProgressLabel } from "@/components/ui/progress";
 import { useChatStream } from "@/lib/chat/useChatStream";
+import { formatUserDateTime } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 import type { RunRecord } from "@/lib/runs/store";
 import { useRunStore } from "@/lib/runs/store";
@@ -315,7 +316,7 @@ export function InterviewPage() {
             Live interview
           </CardTitle>
           <CardDescription className="flex items-center gap-2 text-sm">
-            <Clock3 className="size-4" aria-hidden="true" />Started {new Date(active.startedAt).toLocaleString()}
+            <Clock3 className="size-4" aria-hidden="true" />Started {formatUserDateTime(active.startedAt)}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">

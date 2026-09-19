@@ -1,3 +1,5 @@
+import { formatDateTimeInTimeZone, userTimeZone } from "./date-time";
+
 const pad = (part: number) => String(part).padStart(2, "0");
 
 function zonedParts(value: Date, timeZone: string) {
@@ -31,16 +33,10 @@ export function dateInputParts(
   if (!value) return { date: "", time: "" };
   if (allDay) return { date: value.slice(0, 10), time: "" };
   const moment = new Date(value);
-  if (timeZone) {
-    const parts = zonedParts(moment, timeZone);
-    return {
-      date: `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`,
-      time: `${pad(parts.hour)}:${pad(parts.minute)}`,
-    };
-  }
+  const parts = zonedParts(moment, timeZone || userTimeZone());
   return {
-    date: `${moment.getFullYear()}-${pad(moment.getMonth() + 1)}-${pad(moment.getDate())}`,
-    time: `${pad(moment.getHours())}:${pad(moment.getMinutes())}`,
+    date: `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`,
+    time: `${pad(parts.hour)}:${pad(parts.minute)}`,
   };
 }
 
@@ -89,8 +85,12 @@ export function formatCalendarDate(
   options: Intl.DateTimeFormatOptions,
   locale?: string,
 ): string {
-  return new Date(value).toLocaleString(locale, {
-    ...options,
-    ...(allDay ? { timeZone: "UTC" } : {}),
-  });
+  // A bare date is a calendar commitment, not midnight in the viewer's zone.
+  // Timed events, on the other hand, always render in the user's current zone.
+  return formatDateTimeInTimeZone(
+    value,
+    allDay ? "UTC" : userTimeZone(),
+    locale,
+    options,
+  );
 }

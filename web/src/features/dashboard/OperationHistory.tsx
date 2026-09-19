@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api, unwrap } from "@/lib/api/client";
+import { formatUserDateTime, formatUserTime } from "@/lib/date-time";
 import { localizeRunError, localizeRunKind, localizeRunPhase } from "@/i18n/dynamic-labels";
 import { ClearHistoryButton } from "@/features/notifications/ClearHistoryButton";
 import { useClearOperationHistory, useRunCompletions, type RunCompletionItem } from "@/features/notifications/use-run-completions";
@@ -24,7 +25,7 @@ function Operation({ item }: { item: RunCompletionItem }) {
       <div className="min-w-0">
         <div className="text-sm font-medium">{kind} · {t(`runHistory.outcomes.${item.status}`)}</div>
         <time className="text-xs text-muted-foreground" dateTime={item.completedAt}>
-          {new Date(item.completedAt).toLocaleString(i18n.resolvedLanguage)}
+          {formatUserDateTime(item.completedAt, i18n.resolvedLanguage)}
         </time>
       </div>
       <Button size="xs" variant="ghost" aria-expanded={expanded}
@@ -39,7 +40,7 @@ function Operation({ item }: { item: RunCompletionItem }) {
         : logs.isError ? <p role="alert">{t("runHistory.logsError")} <Button size="xs" variant="ghost" onClick={() => void logs.refetch()}>{t("runHistory.retry")}</Button></p>
         : !logs.data?.length ? <p>{t("runHistory.noLogs")}</p>
         : <ol className="space-y-2">{logs.data.map((entry, index) => <li key={index} className="break-words">
-          <time className="mr-2 text-muted-foreground" dateTime={entry.timestamp}>{new Date(entry.timestamp).toLocaleTimeString(i18n.resolvedLanguage)}</time>
+          <time className="mr-2 text-muted-foreground" dateTime={entry.timestamp}>{formatUserTime(entry.timestamp, i18n.resolvedLanguage)}</time>
           {localizeRunError(entry.message, i18n.resolvedLanguage)}
         </li>)}</ol>}
     </div>}

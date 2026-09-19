@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { components } from "@/lib/api/schema";
+import { formatUserDateTime } from "@/lib/date-time";
 import { useCheckH1BSponsorship } from "./use-job-mutations";
 import { ACTIVE_RUN_STATUSES, latestArtifactRun, useArtifactRunIndex } from "./artifact-runs";
 import { ResearchNotice, ResearchPanelHeader, type NoticeTone } from "./ResearchPanel";
@@ -79,10 +80,10 @@ const STATUS_META: Record<EvidenceStatus, StatusMeta> = {
 function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat(undefined, {
+  return formatUserDateTime(date, undefined, {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date);
+  });
 }
 
 function formatMetricLabel(value: string): string {

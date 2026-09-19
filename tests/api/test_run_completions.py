@@ -10,6 +10,11 @@ from resume_tailor_harness.api.app import create_app
 from resume_tailor_harness.services.run_completions import record_run_completion
 
 
+def _persisted_id(value: int | None) -> int:
+    assert value is not None
+    return value
+
+
 @pytest.fixture()
 def app_client(tmp_path):
     app = create_app(
@@ -56,6 +61,25 @@ def test_completed_app_run_is_persisted_by_terminal_hook(app_client):
     [row] = client.get("/api/run-completions").json()
     assert row["runId"] == run_id
     assert row["status"] == "succeeded"
+
+
+def test_scheduled_completion_is_history_but_not_an_unread_flag(app_client):
+    app, client = app_client
+    run_id = app.state.run_manager.submit(
+        "gmailSync",
+        lambda _reporter: (_ for _ in ()).throw(RuntimeError("token expired")),
+        meta={"scheduled": True},
+    )
+    for future in list(app.state.run_manager._futures.values()):
+        future.result(timeout=2)
+
+    [row] = client.get("/api/run-completions").json()
+    assert row["runId"] == run_id
+    assert row["status"] == "failed"
+    assert row["readAt"] is not None
+    assert client.get(
+        "/api/run-completions", params={"unread_only": True}
+    ).json() == []
 
 
 def test_clear_histories_independently_and_keep_new_operations(app_client):
@@ -132,12 +156,14 @@ def test_terminal_logs_survive_removal_of_transient_run(app_client):
     with patch.object(app.state.run_manager, "get", return_value=None):
         logs = client.get(f"/api/run-completions/{row['id']}/logs").json()
     assert row["runId"] == run_id
+    assert row["completedAt"].endswith("Z")
     assert [entry["message"] for entry in logs] == [
         "Reading sources",
         "Source imported",
         "Building profile",
         "Building profile",
     ]
+    assert all(entry["timestamp"].endswith("Z") for entry in logs)
     assert logs[-1]["state"] == "done"
 
 
@@ -154,11 +180,11 @@ def test_clearing_notifications_preserves_message_identity_and_application(app_c
         )
         session.add(job)
         session.commit()
-        application = Application(job_id=job.id)
+        application = Application(job_id=_persisted_id(job.id))
         session.add(application)
         session.commit()
         notification = Notification(
-            application_id=application.id,
+            application_id=_persisted_id(application.id),
             kind="interview",
             proposed_status="interview",
             evidence="Invitation",
@@ -166,23 +192,31 @@ def test_clearing_notifications_preserves_message_identity_and_application(app_c
         )
         session.add(notification)
         session.commit()
-        notification_id, application_id = notification.id, application.id
+        notification_id = _persisted_id(notification.id)
+        application_id = _persisted_id(application.id)
     assert client.delete("/api/notifications").json() == {"cleared": 1}
     assert client.get("/api/notifications").json() == []
     with Session(app.state.engine) as session:
-        assert session.get(Notification, notification_id).message_id == "message-1"
-        assert session.get(Notification, notification_id).state == "cleared"
-        assert session.get(Application, application_id).status == "ready"
+        stored_notification = session.get(Notification, notification_id)
+        stored_application = session.get(Application, application_id)
+        assert stored_notification is not None
+        assert stored_application is not None
+        assert stored_notification.message_id == "message-1"
+        assert stored_notification.state == "cleared"
+        assert stored_application.status == "ready"
 
 
 def test_history_and_clear_state_survive_restart(tmp_path):
-    options = dict(
-        db_url=f"sqlite:///{(tmp_path / 'workspace.db').as_posix()}",
-        config_dir=tmp_path / "config",
-        env_path=tmp_path / ".env",
-        data_dir=tmp_path / "data",
+    db_url = f"sqlite:///{(tmp_path / 'workspace.db').as_posix()}"
+    config_dir = tmp_path / "config"
+    env_path = tmp_path / ".env"
+    data_dir = tmp_path / "data"
+    first_app = create_app(
+        db_url=db_url,
+        config_dir=config_dir,
+        env_path=env_path,
+        data_dir=data_dir,
     )
-    first_app = create_app(**options)
     with TestClient(first_app) as client:
         with Session(first_app.state.engine) as session:
             record_run_completion(
@@ -201,7 +235,14 @@ def test_history_and_clear_state_survive_restart(tmp_path):
                     }
                 ],
             )
-    with TestClient(create_app(**options)) as client:
+    with TestClient(
+        create_app(
+            db_url=db_url,
+            config_dir=config_dir,
+            env_path=env_path,
+            data_dir=data_dir,
+        )
+    ) as client:
         [row] = client.get("/api/run-completions").json()
         assert (
             client.get(f"/api/run-completions/{row['id']}/logs").json()[0]["message"]
@@ -216,7 +257,14 @@ def test_history_and_clear_state_survive_restart(tmp_path):
             )
             == 1
         )
-    with TestClient(create_app(**options)) as client:
+    with TestClient(
+        create_app(
+            db_url=db_url,
+            config_dir=config_dir,
+            env_path=env_path,
+            data_dir=data_dir,
+        )
+    ) as client:
         assert client.get("/api/run-completions").json() == []
         assert (
             len(
@@ -238,6 +286,7 @@ def test_operation_log_retention_is_bounded(tmp_path):
         reporter.step(index, label=f"{index}:" + "x" * 3000)
     reporter.done()
     record = read_progress("bounded", tmp_path)
+    assert record is not None
     assert len(record["logs"]) == 200
     assert all(len(entry["message"]) <= 2000 for entry in record["logs"])
     assert record["logs"][-1]["state"] == "done"

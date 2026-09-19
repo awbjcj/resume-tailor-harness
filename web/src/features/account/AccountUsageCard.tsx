@@ -15,6 +15,7 @@ import {
 import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress";
 import { openDownload } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
+import { formatUserDateTime } from "@/lib/date-time";
 
 type AccountUsage = components["schemas"]["AccountUsage"];
 
@@ -117,7 +118,7 @@ export function AccountUsageCard({
         {quota ? (
           <p className={`text-xs ${quota.overageMicros > 0 ? "font-medium text-warning" : "text-muted-foreground"}`}>
             {quota.overageMicros > 0 ? `${money(quota.overageMicros)} overage · ` : ""}
-            Resets {new Date(quota.nextResetAt).toLocaleString()}.
+            Resets {formatUserDateTime(quota.nextResetAt)}.
           </p>
         ) : null}
       </CardContent>

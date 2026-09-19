@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { dateInputParts, zonedDateTimeToIso } from "@/lib/calendar-date";
+import { userTimeZone } from "@/lib/date-time";
 import {
   KIND_LABELS,
   MODALITY_LABELS,
@@ -53,7 +54,8 @@ type FormState = {
 };
 
 function initialState(event?: ApplicationEvent): FormState {
-  const parts = dateInputParts(event?.occurredAt, event?.allDay ?? true, event?.timezone);
+  const currentTimeZone = userTimeZone();
+  const parts = dateInputParts(event?.occurredAt, event?.allDay ?? true, currentTimeZone);
   return {
     kind: event?.kind ?? "application_submitted",
     sequence: event?.sequenceOverride?.toString() ?? "",
@@ -61,8 +63,7 @@ function initialState(event?: ApplicationEvent): FormState {
     date: parts.date,
     time: parts.time || "09:00",
     allDay: event?.allDay ?? true,
-    timezone:
-      event?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC",
+    timezone: currentTimeZone,
     durationMinutes: event?.durationMinutes?.toString() ?? "",
     modality: event?.modality ?? "",
     platform: event?.platform ?? "",
@@ -160,8 +161,7 @@ export function EventFormDialog({
         try {
           effectiveTimezone =
             form.timezone.trim() ||
-            Intl.DateTimeFormat().resolvedOptions().timeZone ||
-            "UTC";
+            userTimeZone();
           occurredAt = zonedDateTimeToIso(
             form.date,
             form.time || "09:00",

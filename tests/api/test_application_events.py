@@ -71,6 +71,16 @@ def test_event_advances_application_status() -> None:
         )
 
 
+def test_job_response_marks_sqlite_datetime_values_as_utc() -> None:
+    client = _client()
+    with client:
+        job_id = _job(client)
+        response = client.get(f"/api/jobs/{job_id}")
+
+    assert response.status_code == 200, response.text
+    assert response.json()["createdAt"].endswith("Z")
+
+
 def test_offer_response_derives_total_compensation() -> None:
     client = _client()
     with client:
