@@ -34,7 +34,16 @@ export function useJobNavigation(
   pagination?: JobNavPagination,
 ): JobNavigation {
   const index = currentId == null ? -1 : orderedIds.indexOf(currentId);
-  const [pendingAdvance, setPendingAdvance] = useState(false);
+  const [pendingAdvance, setPendingAdvance] = useState<{
+    id: number;
+    sawFetch: boolean;
+  } | null>(null);
+  const isFetching = pagination?.isFetchingNextPage ?? false;
+  const hasNextPage = pagination?.hasNextPage ?? false;
+
+  if (pendingAdvance && !pendingAdvance.sawFetch && isFetching) {
+    setPendingAdvance({ ...pendingAdvance, sawFetch: true });
+  }
 
   const hasPrev = index > 0;
   const hasNext =
@@ -47,17 +56,19 @@ export function useJobNavigation(
   // leaving it to fire a surprise navigation whenever the index next lines up.
   useEffect(() => {
     if (!pendingAdvance) return;
-    if (index < 0) {
+    if (index < 0 || currentId !== pendingAdvance.id) {
       // Intentional: this effect exists to synchronize with the external
       // fetch landing (orderedIds growing); clearing the flag here, not in
       // render, is the correct place once that external event resolves.
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPendingAdvance(false);
+      setPendingAdvance(null);
     } else if (index < orderedIds.length - 1) {
-      setPendingAdvance(false);
+      setPendingAdvance(null);
       onNavigate(orderedIds[index + 1]);
+    } else if (!hasNextPage || (pendingAdvance.sawFetch && !isFetching)) {
+      setPendingAdvance(null);
     }
-  }, [pendingAdvance, orderedIds, index, onNavigate]);
+  }, [pendingAdvance, orderedIds, index, currentId, onNavigate, hasNextPage, isFetching]);
 
   const goPrev = useCallback(() => {
     if (index > 0) onNavigate(orderedIds[index - 1]);
@@ -68,10 +79,10 @@ export function useJobNavigation(
     if (index < orderedIds.length - 1) {
       onNavigate(orderedIds[index + 1]);
     } else if (pagination?.hasNextPage && !pendingAdvance) {
-      setPendingAdvance(true);
+      setPendingAdvance({ id: orderedIds[index], sawFetch: isFetching });
       pagination.fetchNextPage();
     }
-  }, [index, orderedIds, onNavigate, pagination, pendingAdvance]);
+  }, [index, orderedIds, onNavigate, pagination, pendingAdvance, isFetching]);
 
-  return { hasPrev, hasNext, isLoadingNext: pendingAdvance, goPrev, goNext };
+  return { hasPrev, hasNext, isLoadingNext: pendingAdvance !== null, goPrev, goNext };
 }

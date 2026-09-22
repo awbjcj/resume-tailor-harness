@@ -29,11 +29,13 @@ export function ResetSectionButton({
   label,
   note,
   buttonLabel = "Reset to defaults",
+  onReset,
 }: {
   sectionId: string;
   label: string;
   note?: string;
   buttonLabel?: string;
+  onReset?: () => void;
 }) {
   const reset = useResetSection();
   const [open, setOpen] = useState(false);
@@ -64,7 +66,7 @@ export function ResetSectionButton({
               event.preventDefault();
               reset.mutate(
                 { sectionId },
-                { onSuccess: () => setOpen(false) },
+                { onSuccess: () => { onReset?.(); setOpen(false); } },
               );
             }}
           >

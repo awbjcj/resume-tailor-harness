@@ -43,7 +43,7 @@ export function PruningSettingsPage() {
             Archiving is reversible and never touches jobs you have progressed.
           </p>
         </div>
-        <ResetSectionButton sectionId="prune" label="Pruning" />
+        <ResetSectionButton sectionId="prune" label="Pruning" onReset={() => setDraft(null)} />
       </header>
       <FieldGroup>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

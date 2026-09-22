@@ -36,7 +36,7 @@ describe("i18n locale resolution", () => {
   it("persists changes and synchronizes the document language", async () => {
     await changeLanguage("zh-CN");
 
-    expect(i18n.t("nav.dashboard")).toBe("仪表盘");
+    expect(i18n.t("nav.dashboard")).toBe("求职概览");
     expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("zh-CN");
     expect(document.documentElement.lang).toBe("zh-CN");
     expect(document.documentElement.dir).toBe("ltr");
@@ -47,7 +47,7 @@ describe("i18n locale resolution", () => {
     await changeLanguage("zh-CN");
 
     const terms = [
-      { navKey: "nav.profileCoach", english: /Profile Coach/, chinese: "个人资料教练" },
+      { navKey: "nav.profileCoach", english: /Profile Coach/, chinese: "个人资料助手" },
       { navKey: "nav.mockInterviews", english: /Mock Interviews?/i, chinese: "模拟面试" },
       { navKey: "nav.careerLab", english: /Career Lab/, chinese: "职业实验室" },
       { navKey: "nav.discoveryScout", english: /Scout/, chinese: "职位探索助手" },

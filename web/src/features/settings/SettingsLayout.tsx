@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
 import {
   Archive,
@@ -26,44 +27,49 @@ type SettingsNavItem = { to: string; label: string; icon: LucideIcon };
 /** Settings tabs bucketed by concern so related configuration sits together
  *  and nothing mingles: what to discover, how to tailor, how to output, and
  *  the account/system essentials. */
-export const SETTINGS_GROUPS = [
-  {
-    label: "Discovery",
-    items: [
-      { to: "/settings/search", label: "Search", icon: Search },
-      { to: "/settings/sources", label: "Sources", icon: PanelsTopLeft },
-    ],
-  },
-  {
-    label: "Tailoring",
-    items: [
-      { to: "/settings/review", label: "Review panel", icon: Sparkles },
-      { to: "/settings/agent-prompts", label: "Agent prompts", icon: Bot },
-      { to: "/settings/style-guide", label: "Style guide", icon: Paintbrush },
-    ],
-  },
-  {
-    label: "Output",
-    items: [
-      { to: "/settings/rendering", label: "Rendering", icon: FileText },
-      { to: "/settings/pruning", label: "Pruning", icon: SlidersHorizontal },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-      { to: "/settings/keys", label: "API keys", icon: FileKey2 },
-      { to: "/settings/backup", label: "Backup", icon: Archive },
-    ],
-  },
-] satisfies ReadonlyArray<{ label: string; items: ReadonlyArray<SettingsNavItem> }>;
+export function getSettingsNavigation() {
+  const groups = [
+    {
+      label: "Discovery",
+      items: [
+        { to: "/settings/search", label: "Search", icon: Search },
+        { to: "/settings/sources", label: "Sources", icon: PanelsTopLeft },
+      ],
+    },
+    {
+      label: "Tailoring",
+      items: [
+        { to: "/settings/review", label: "Review panel", icon: Sparkles },
+        { to: "/settings/agent-prompts", label: "Agent prompts", icon: Bot },
+        { to: "/settings/style-guide", label: "Style guide", icon: Paintbrush },
+      ],
+    },
+    {
+      label: "Output",
+      items: [
+        { to: "/settings/rendering", label: "Rendering", icon: FileText },
+        { to: "/settings/pruning", label: "Pruning", icon: SlidersHorizontal },
+      ],
+    },
+    {
+      label: "System",
+      items: [
+        { to: "/settings/keys", label: "API keys", icon: FileKey2 },
+        { to: "/settings/backup", label: "Backup", icon: Archive },
+      ],
+    },
+  ] satisfies ReadonlyArray<{ label: string; items: ReadonlyArray<SettingsNavItem> }>;
 
-/** Flat projection of every settings destination, in group order. */
-export const SETTINGS_NAV: ReadonlyArray<SettingsNavItem> = SETTINGS_GROUPS.flatMap(
-  (group) => group.items,
-);
+  /** Flat projection of every settings destination, in group order. */
+  const nav: ReadonlyArray<SettingsNavItem> = groups.flatMap(
+    (group) => group.items,
+  );
+  return { groups, nav };
+}
 
 export function SettingsLayout() {
+  useTranslation();
+  const { groups, nav } = getSettingsNavigation();
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
       <aside className="lg:sticky lg:top-24 lg:w-64 lg:shrink-0">
@@ -77,7 +83,7 @@ export function SettingsLayout() {
           <CardContent>
             <nav aria-label="Settings">
               <ul className="shell-action-rail -mx-1 flex gap-1.5 px-1 pb-1 lg:hidden">
-                {SETTINGS_NAV.map((item) => {
+                {nav.map((item) => {
                   const Icon = item.icon;
                   return (
                     <li key={item.to} className="shrink-0">
@@ -96,8 +102,8 @@ export function SettingsLayout() {
                 })}
               </ul>
               <div className="hidden flex-col gap-4 lg:flex">
-              {SETTINGS_GROUPS.map((group) => (
-                <div key={group.label} className="flex flex-col gap-1.5">
+              {groups.map((group) => (
+                <div key={group.items[0].to} className="flex flex-col gap-1.5">
                   <div className="px-3 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
                     {group.label}
                   </div>

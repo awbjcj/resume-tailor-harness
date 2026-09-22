@@ -64,6 +64,7 @@ export function RenderingSettingsPage() {
         </div>
         <ResetSectionButton
           sectionId="render"
+          onReset={() => setDraft(null)}
           label="Rendering options"
           buttonLabel="Reset options"
           note="Custom uploaded templates are kept. Reset them separately below."
