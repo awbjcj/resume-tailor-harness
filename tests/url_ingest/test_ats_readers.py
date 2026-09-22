@@ -5,7 +5,10 @@ import httpx
 
 from resume_tailor_harness.discovery.connectors.detect import AtsTarget, identify_host
 from resume_tailor_harness.discovery.url_ingest import ats_readers
-from resume_tailor_harness.discovery.url_ingest.ats_readers import ATS_READERS, _from_json_ld
+from resume_tailor_harness.discovery.url_ingest.ats_readers import (
+    ATS_READERS,
+    _from_json_ld,
+)
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
@@ -388,7 +391,9 @@ def test_recruitee_reads_json_ld_from_the_pasted_page():
 def test_breezy_reads_json_ld_fixture():
     html = _fixture("breezy", "detail.html")
     target = AtsTarget("breezy", token="masterworks")
-    extracted = ATS_READERS["breezy"](target, "https://masterworks.breezy.hr/p/x", html)
+    extracted = ATS_READERS["breezy"](
+        target, "https://masterworks.breezy.hr/p/6e3ca01e8ce0-art-tour-guide", html
+    )
     assert extracted is not None
     assert extracted.title == "Art Tour Guide"
 
@@ -397,7 +402,9 @@ def test_jazzhr_reads_json_ld_fixture():
     html = _fixture("jazzhr", "detail.html")
     target = AtsTarget("jazzhr", token="utilidata")
     extracted = ATS_READERS["jazzhr"](
-        target, "https://utilidata.applytojob.com/apply/x", html
+        target,
+        "https://utilidata.applytojob.com/apply/foG1P83r4S/Application-Engineer-Data-Center-Software",
+        html,
     )
     assert extracted is not None
     assert extracted.title == "Application Engineer, Data Center Software"

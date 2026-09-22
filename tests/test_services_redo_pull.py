@@ -38,7 +38,7 @@ def test_repull_replaces_frozen_jd_text_on_a_tailored_job(session, monkeypatch):
     monkeypatch.setattr(
         redo,
         "job_from_url",
-        lambda url, agent, allow_browser: RawJob(
+        lambda url, agent, allow_browser, **kwargs: RawJob(
             source="url",
             url=url,
             company="Acme",
@@ -73,10 +73,59 @@ def test_repull_skips_a_job_with_no_url(session):
     assert job.jd_text == "old text"
 
 
+def test_recovery_review_preserves_saved_job_and_status(session, monkeypatch):
+    from resume_tailor_harness.discovery.url_ingest.recovery import RecoveryRequired
+
+    job = _tailored_job(
+        session, url="https://www.indeed.com/viewjob?jk=1", location="Remote"
+    )
+
+    def unresolved(url, **kwargs):
+        assert kwargs["recovery_hints"].company == "Acme"
+        raise RecoveryRequired(
+            "Multiple matching roles", ("https://jobs.lever.co/acme/1",)
+        )
+
+    monkeypatch.setattr(redo, "job_from_url", unresolved)
+    outcome, failure = redo.repull_job(
+        session, job, agent=object(), allow_browser=False
+    )
+    assert outcome.status == "failed" and failure is not None
+    assert "https://jobs.lever.co/acme/1" in outcome.detail
+    session.refresh(job)
+    assert job.url == "https://www.indeed.com/viewjob?jk=1"
+    assert job.jd_text == "old text" and job.status == JobStatus.tailored.value
+
+
+def test_recovery_updates_apply_url_in_place(session, monkeypatch):
+    job = _tailored_job(session, url="https://www.indeed.com/viewjob?jk=1")
+    identifier = job.id
+    monkeypatch.setattr(
+        redo,
+        "job_from_url",
+        lambda *args, **kwargs: RawJob(
+            source="url",
+            url="https://jobs.lever.co/acme/1",
+            company="Acme",
+            title="Staff Engineer",
+            location="Remote",
+            jd_text="Recovered full description",
+        ),
+    )
+    outcome, failure = redo.repull_job(
+        session, job, agent=object(), allow_browser=False
+    )
+    session.refresh(job)
+    assert job.id == identifier and job.status == JobStatus.tailored.value
+    assert job.url == "https://jobs.lever.co/acme/1"
+    assert outcome.status == "ok" and "indeed.com" in outcome.detail
+    assert failure is None
+
+
 def test_repull_failure_preserves_jd_text(session, monkeypatch):
     job = _tailored_job(session)
 
-    def _boom(url, agent, allow_browser):
+    def _boom(url, agent, allow_browser, **kwargs):
         raise httpx.ConnectError("connection refused")
 
     monkeypatch.setattr(redo, "job_from_url", _boom)
@@ -93,7 +142,9 @@ def test_repull_failure_preserves_jd_text(session, monkeypatch):
 
 def test_repull_reports_failure_when_no_description_extracted(session, monkeypatch):
     job = _tailored_job(session)
-    monkeypatch.setattr(redo, "job_from_url", lambda url, agent, allow_browser: None)
+    monkeypatch.setattr(
+        redo, "job_from_url", lambda url, agent, allow_browser, **kwargs: None
+    )
 
     outcome, _failure = redo.repull_job(
         session, job, agent=object(), allow_browser=False
@@ -110,7 +161,7 @@ def test_repull_recomputes_dedup_key_when_title_changes(session, monkeypatch):
     monkeypatch.setattr(
         redo,
         "job_from_url",
-        lambda url, agent, allow_browser: RawJob(
+        lambda url, agent, allow_browser, **kwargs: RawJob(
             source="url",
             url=url,
             company="Acme",
@@ -140,7 +191,7 @@ def test_repull_keeps_identity_when_the_new_key_would_collide(session, monkeypat
     monkeypatch.setattr(
         redo,
         "job_from_url",
-        lambda url, agent, allow_browser: RawJob(
+        lambda url, agent, allow_browser, **kwargs: RawJob(
             source="url",
             url=url,
             company="Acme",

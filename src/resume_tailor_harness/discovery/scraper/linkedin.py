@@ -8,10 +8,17 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from resume_tailor_harness.config import get_settings
-from resume_tailor_harness.discovery.connectors.base import FetchResult, RawJob, SkipSeen
+from resume_tailor_harness.discovery.connectors.base import (
+    FetchResult,
+    RawJob,
+    SkipSeen,
+)
 from resume_tailor_harness.discovery.scraper.geo import resolve_geo_id
 from resume_tailor_harness.discovery.scraper.models import ScrapedCard
-from resume_tailor_harness.discovery.scraper.parser import parse_job_detail, parse_search_cards
+from resume_tailor_harness.discovery.scraper.parser import (
+    parse_job_detail,
+    parse_search_cards,
+)
 from resume_tailor_harness.discovery.search_config import SearchConfig
 
 _SEARCH_URL = "https://www.linkedin.com/jobs/search/"
@@ -440,8 +447,12 @@ class LinkedInScraper:
         return self._content_for_url(card.url, wait_selector=_DETAIL_SELECTOR)
 
 
-def build_linkedin_scraper(configured_limit: int | None = None) -> LinkedInScraper:
+def build_linkedin_scraper(configured_limit: int | None = None):
     settings = get_settings()
+    if not settings.browser_enabled:
+        from .linkedin_http import LinkedInHttpScraper
+
+        return LinkedInHttpScraper(configured_limit=configured_limit)
     return LinkedInScraper(
         user_data_dir=settings.linkedin_user_data_dir,
         email=settings.linkedin_email,

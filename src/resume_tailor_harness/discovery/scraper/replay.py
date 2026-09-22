@@ -71,6 +71,15 @@ def replay(
             cards = BeautifulSoup(listing.html, "html.parser").select(
                 plan.card_selector
             )
+            single_posting = (
+                draft.page_kind == "posting" and plan.detail_mode == "inline"
+            )
+            if single_posting and len(cards) != 1:
+                report.terminal_reason = "review_required"
+                report.messages.append(
+                    "Single-posting rule no longer matches exactly one page"
+                )
+                break
             new_count = 0
             card_entries = list(enumerate(cards))
             if preview:
@@ -85,6 +94,8 @@ def replay(
                     if link and link.get("href")
                     else None
                 )
+                if single_posting:
+                    url = listing.final_url
                 posting_id = card.get("data-job-id")
                 identity = observed_job_key(
                     draft.source_id, str(posting_id) if posting_id else None, url
@@ -147,7 +158,13 @@ def replay(
                             BrowserAction(kind="open_detail", selector=selector), budget
                         )
                     else:
-                        detail = snapshot_from_html(listing.final_url, str(card))
+                        # A posting is the entire document: its structured facts
+                        # often live in <head>, outside the body's card selector.
+                        detail = (
+                            listing
+                            if single_posting
+                            else snapshot_from_html(listing.final_url, str(card))
+                        )
                     report.inspected += 1
                     store.save_snapshot(detail)
                     extraction_key = f"observation:{draft.source_id}:{draft.revision}:{sha256(plan.model_dump_json().encode()).hexdigest()}:{detail.id}"
@@ -307,7 +324,10 @@ def replay(
                         "Saved pagination control no longer matches the page"
                     )
                     break
-                if control.has_attr("disabled") or control.get("aria-disabled") == "true":
+                if (
+                    control.has_attr("disabled")
+                    or control.get("aria-disabled") == "true"
+                ):
                     break
             budget.charge_listing()
             kind = "scroll" if plan.pagination == "infinite" else "next"

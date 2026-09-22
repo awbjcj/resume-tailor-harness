@@ -18,6 +18,7 @@ from resume_tailor_harness.security.outbound import (
     PublicBytesResponse,
     fetch_public_bytes,
 )
+from resume_tailor_harness.security.source_cooldown import CooldownStore, SourceCooldown
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,7 @@ class BrowserGateway:
         fetcher: Callable[..., PublicBytesResponse] = fetch_public_bytes,
     ):
         self.scheduler = scheduler
+        self.cooldowns = CooldownStore(scheduler.engine)
         self.fetcher = fetcher
         self.owner = uuid4().hex
         self.robots: dict[str, tuple[float, PublicBytesResponse]] = {}
@@ -78,6 +80,9 @@ class BrowserGateway:
         if self._in_page:
             self._page_delays[host] = max(delay, self._page_delays.get(host, 3))
         try:
+            # A different worker may have paused this source while we waited
+            # for its lease. Check again before every transport attempt.
+            self._check_cooldown(request.url)
             budget.charge_request()
             extra = (
                 {"body": request.body, "read_only_search": True}
@@ -134,8 +139,18 @@ class BrowserGateway:
         self._page_delays.clear()
         self._in_page = False
 
+    def _check_cooldown(self, url: str) -> None:
+        try:
+            self.cooldowns.check(url)
+        except SourceCooldown as exc:
+            reason = (
+                "throttled" if exc.reason in {"HTTP 429", "HTTP 503"} else "blocked"
+            )
+            raise CrawlStopped(reason, str(exc)) from exc
+
     def fetch(self, request: BrowserRequest, budget: CrawlBudget) -> BrowserResponse:
         budget.check_deadline()
+        self._check_cooldown(request.url)
         if request.method == "GET" and request.url in self.prefetched:
             return self.prefetched.pop(request.url)
         if request.method not in {"GET", "HEAD"} or request.body:
@@ -154,22 +169,30 @@ class BrowserGateway:
             request.url, robots.status, robots.body.decode("utf-8", errors="replace")
         )
         if not decision.allowed:
-            raise CrawlStopped("blocked", decision.reason)
+            cooldown = self.cooldowns.block(request.url, "robots policy", seconds=86400)
+            raise CrawlStopped("blocked", f"{decision.reason}; {cooldown}")
         for attempt in range(3):
             response = self._request(request, budget, decision.delay_seconds)
             if response.status in {401, 403}:
+                cooldown = self.cooldowns.block(request.url, f"HTTP {response.status}")
                 raise CrawlStopped(
-                    "blocked", f"Website denied access: HTTP {response.status}"
+                    "blocked",
+                    f"Website denied access: HTTP {response.status}; {cooldown}",
                 )
             if response.status not in {429, 503}:
                 return response
-            if attempt == 2:
-                raise CrawlStopped(
-                    "throttled", "website throttled the crawl; retry later"
+            wait = retry_delay(response.headers.get("retry-after"), attempt)
+            if attempt == 2 or wait >= budget.deadline - budget.clock():
+                cooldown = self.cooldowns.block(
+                    request.url,
+                    f"HTTP {response.status}",
+                    seconds=retry_delay(response.headers.get("retry-after"), attempt),
+                    origin_only=True,
                 )
-            self._wait(
-                retry_delay(response.headers.get("retry-after"), attempt), budget
-            )
+                raise CrawlStopped(
+                    "throttled", f"website throttled the crawl; {cooldown}"
+                )
+            self._wait(wait, budget)
         raise RuntimeError("crawl retries exhausted")
 
     def document(
