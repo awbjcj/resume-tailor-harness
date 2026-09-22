@@ -32,7 +32,7 @@ export function SearchSettingsPage() {
             <Sparkles data-icon="inline-start" aria-hidden="true" />
             Ask the Scout
           </a>
-          <ResetSectionButton sectionId="search" label="Search" />
+          <ResetSectionButton sectionId="search" label="Search" onReset={() => setDraft(null)} />
         </div>
       </header>
       <SearchConfigForm value={draft} onChange={setDraft} />

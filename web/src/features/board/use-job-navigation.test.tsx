@@ -4,6 +4,36 @@ import { describe, expect, it, vi } from "vitest";
 import { useJobNavigation, type JobNavPagination } from "./use-job-navigation";
 
 describe("useJobNavigation", () => {
+  it("abandons a pending advance when another loaded job is opened", () => {
+    const nav = vi.fn();
+    const pagination = { hasNextPage: true, isFetchingNextPage: false, fetchNextPage: vi.fn() };
+    const { result, rerender } = renderHook(
+      ({ id, ids }) => useJobNavigation(ids, id, nav, pagination),
+      { initialProps: { id: 2, ids: [1, 2] } },
+    );
+    act(() => result.current.goNext());
+    rerender({ id: 1, ids: [1, 2] });
+    rerender({ id: 1, ids: [1, 2, 3] });
+    expect(nav).not.toHaveBeenCalled();
+    expect(result.current.isLoadingNext).toBe(false);
+  });
+
+  it("allows retry after a next-page request finishes without new rows", () => {
+    const fetchNextPage = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ fetching }) => useJobNavigation([1, 2], 2, vi.fn(), {
+        hasNextPage: true, isFetchingNextPage: fetching, fetchNextPage,
+      }),
+      { initialProps: { fetching: false } },
+    );
+    act(() => result.current.goNext());
+    rerender({ fetching: true });
+    rerender({ fetching: false });
+    expect(result.current.isLoadingNext).toBe(false);
+    act(() => result.current.goNext());
+    expect(fetchNextPage).toHaveBeenCalledTimes(2);
+  });
+
   it("disables prev at the first item and next at the last (no pagination)", () => {
     const nav = vi.fn();
     const first = renderHook(() => useJobNavigation([1, 2, 3], 1, nav));

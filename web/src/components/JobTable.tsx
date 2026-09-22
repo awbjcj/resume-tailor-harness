@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -76,6 +77,7 @@ export function JobTable({
    * detail (salary/seniority for the shortlist, reject reason for triage). */
   extraColumn?: ExtraColumn;
 }) {
+  const { t } = useTranslation();
   const ordered = rows.map((row) => row.jobId);
   return (
     <Table className="min-w-[64rem] table-fixed [&_[data-slot=table-cell]]:px-1.5 [&_[data-slot=table-head]]:px-1.5">
@@ -98,7 +100,7 @@ export function JobTable({
               onCheckedChange={(value) => onToggleAll?.(Boolean(value))}
             />
           </TableHead>
-          <TableHead>Role</TableHead>
+          <TableHead>{t("applicationTimeline.headers.role")}</TableHead>
           {fitColumn && <TableHead className="text-center">Fit</TableHead>}
           <TableHead>Source</TableHead>
           <TableHead>Location</TableHead>

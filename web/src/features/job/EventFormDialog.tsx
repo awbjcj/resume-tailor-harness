@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, type ReactElement } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -15,19 +16,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { dateInputParts, zonedDateTimeToIso } from "@/lib/calendar-date";
 import { userTimeZone } from "@/lib/date-time";
-import {
-  KIND_LABELS,
-  MODALITY_LABELS,
-  PLATFORM_LABELS,
-  RESULT_LABELS,
-  REPEATABLE_KINDS,
-} from "./event-labels";
+import { getEventLabels, REPEATABLE_KINDS } from "./event-labels";
 import type {
   ApplicationEvent,
   ApplicationEventCreate,
 } from "./use-application-events";
-
-export { KIND_LABELS, MODALITY_LABELS, PLATFORM_LABELS, RESULT_LABELS };
 
 type FormState = {
   kind: string;
@@ -128,6 +121,8 @@ export function EventFormDialog({
   event?: ApplicationEvent;
   onSubmit: (body: ApplicationEventCreate) => void | Promise<void>;
 }) {
+  useTranslation();
+  const { KIND_LABELS, MODALITY_LABELS, PLATFORM_LABELS, RESULT_LABELS } = getEventLabels();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(() => initialState(event));
   const [error, setError] = useState<string | null>(null);
