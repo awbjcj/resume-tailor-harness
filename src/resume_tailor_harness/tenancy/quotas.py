@@ -17,6 +17,7 @@ from resume_tailor_harness.tenancy.system_db import (
     QuotaOperationPreview,
     QuotaPeriod,
     QuotaTier,
+    MemberSubscription,
     UsageEvent,
     User,
 )
@@ -61,6 +62,8 @@ class QuotaSnapshot:
     overage_micros: int
     remaining_micros: int | None
     is_unlimited: bool
+    subscription_status: str | None = None
+    subscription_expires_at: datetime | None = None
 
 
 def seed_quota_tiers(engine: Engine) -> None:
@@ -161,7 +164,26 @@ def _new_period(
     session.add(period)
     session.flush()
     account.active_period_id = period.id
+    session.add(
+        QuotaLedgerEntry(
+            user_id=account.user_id,
+            period_id=period.id,
+            kind="ALLOWANCE_GRANT",
+            amount_micros=period.allowance_micros or 0,
+            recurring_micros=period.allowance_micros or 0,
+            snapshot_json=json.dumps({"unlimited": period.allowance_micros is None}),
+        )
+    )
     return period
+
+
+def _subscription(session: Session, user_id: str) -> MemberSubscription | None:
+    # SQLAlchemy does not cache absent rows. Avoid rereading the absent term
+    # during settlement and snapshot construction in the same transaction.
+    cache = session.info.setdefault("subscription_terms", {})
+    if user_id not in cache:
+        cache[user_id] = session.get(MemberSubscription, user_id)
+    return cache[user_id]
 
 
 def _ensure_in_session(
@@ -183,10 +205,33 @@ def _ensure_in_session(
     if period is None:
         account.anchor_at = now
         period = _new_period(session, account, tier, now)
+    subscription = _subscription(session, user_id)
+    if subscription is not None and subscription.status == "ACTIVE":
+        if now >= _aware(subscription.expires_at):
+            period.closed_at = subscription.expires_at
+            subscription.status = "EXPIRED"
+            account.tier_id = "FREE"
+            account.quota_override_micros = None
+            account.anchor_at = subscription.expires_at
+            tier = session.get(QuotaTier, "FREE")
+            assert tier is not None
+            period = _new_period(
+                session, account, tier, _aware(subscription.expires_at)
+            )
+            session.add(
+                QuotaLedgerEntry(
+                    user_id=user_id,
+                    period_id=period.id,
+                    kind="SUBSCRIPTION_EXPIRED",
+                    amount_micros=0,
+                )
+            )
     while now >= _aware(period.ends_at):
         period.closed_at = period.ends_at
         next_start = _aware(period.ends_at)
         period = _new_period(session, account, tier, next_start)
+    if subscription is not None and subscription.status == "ACTIVE":
+        period.ends_at = min(_aware(period.ends_at), _aware(subscription.expires_at))
     return account, period, tier
 
 
@@ -203,6 +248,10 @@ def _snapshot(
         if recurring_remaining is None
         else recurring_remaining + account.credit_balance_micros
     )
+    from sqlalchemy.orm import object_session
+
+    session = object_session(account)
+    subscription = _subscription(session, account.user_id) if session else None
     return QuotaSnapshot(
         user_id=account.user_id,
         tier_id=tier.id,
@@ -217,6 +266,10 @@ def _snapshot(
         overage_micros=period.overage_micros,
         remaining_micros=remaining,
         is_unlimited=unlimited,
+        subscription_status=subscription.status if subscription else None,
+        subscription_expires_at=_aware(subscription.expires_at)
+        if subscription
+        else None,
     )
 
 
@@ -249,10 +302,16 @@ def quota_snapshot(
         if account is not None and account.active_period_id:
             period = session.get(QuotaPeriod, account.active_period_id)
             tier = session.get(QuotaTier, account.tier_id)
+            subscription = _subscription(session, user_id)
             if (
                 period is not None
                 and tier is not None
                 and moment < _aware(period.ends_at)
+                and (
+                    subscription is None
+                    or subscription.status != "ACTIVE"
+                    or moment < _aware(subscription.expires_at)
+                )
             ):
                 return _snapshot(account, period, tier)
     return ensure_quota_account(engine, user_id, now=moment)
@@ -283,37 +342,65 @@ def charge_shared_cost(
     # reads on the settle path of every shared-key call.
     with Session(engine, expire_on_commit=False) as session:
         session.execute(text("BEGIN IMMEDIATE"))
-        account, period, tier = _ensure_in_session(session, user_id, moment)
-        if amount_micros < 0:
-            raise ValueError("cost cannot be negative")
-        allowance = period.allowance_micros
-        recurring_remaining = (
-            amount_micros
-            if allowance is None
-            else max(0, allowance - period.spent_micros)
-        )
-        recurring = min(amount_micros, recurring_remaining)
-        after_recurring = amount_micros - recurring
-        credit = min(after_recurring, account.credit_balance_micros)
-        overage = after_recurring - credit
-        period.spent_micros += amount_micros
-        period.credit_spent_micros += credit
-        period.overage_micros += overage
-        account.credit_balance_micros -= credit
-        session.add(
-            QuotaLedgerEntry(
-                user_id=user_id,
-                period_id=period.id,
-                usage_event_id=usage_event_id,
-                kind="USAGE",
-                amount_micros=-amount_micros,
-                recurring_micros=recurring,
-                credit_micros=credit,
-                overage_micros=overage,
-            )
+        snapshot = charge_in_session(
+            session, user_id, amount_micros, now=moment, usage_event_id=usage_event_id
         )
         session.commit()
-        return _snapshot(account, period, tier)
+        return snapshot
+
+
+def charge_in_session(
+    session: Session,
+    user_id: str,
+    amount_micros: int,
+    *,
+    now: datetime | None = None,
+    usage_event_id: int | None = None,
+    new_event: bool = False,
+) -> QuotaSnapshot:
+    """Called under the same writer transaction as the immutable usage event."""
+    moment = now or datetime.now(UTC)
+    if usage_event_id is not None and not new_event:
+        existing = session.execute(
+            select(QuotaLedgerEntry).where(
+                QuotaLedgerEntry.usage_event_id == usage_event_id,
+                QuotaLedgerEntry.kind == "USAGE",
+            )
+        ).scalar_one_or_none()
+        if existing is not None:
+            if existing.user_id != user_id or existing.amount_micros != -amount_micros:
+                raise IdempotencyConflictError(
+                    "usage settlement conflicts with existing charge"
+                )
+            return _snapshot(*_ensure_in_session(session, user_id, moment))
+    account, period, tier = _ensure_in_session(session, user_id, moment)
+    if amount_micros < 0:
+        raise ValueError("cost cannot be negative")
+    allowance = period.allowance_micros
+    recurring_remaining = (
+        amount_micros if allowance is None else max(0, allowance - period.spent_micros)
+    )
+    recurring = min(amount_micros, recurring_remaining)
+    after_recurring = amount_micros - recurring
+    credit = min(after_recurring, account.credit_balance_micros)
+    overage = after_recurring - credit
+    period.spent_micros += amount_micros
+    period.credit_spent_micros += credit
+    period.overage_micros += overage
+    account.credit_balance_micros -= credit
+    session.add(
+        QuotaLedgerEntry(
+            user_id=user_id,
+            period_id=period.id,
+            usage_event_id=usage_event_id,
+            kind="USAGE",
+            amount_micros=-amount_micros,
+            recurring_micros=recurring,
+            credit_micros=credit,
+            overage_micros=overage,
+        )
+    )
+    return _snapshot(account, period, tier)
 
 
 def grant_credit(
@@ -323,6 +410,7 @@ def grant_credit(
         raise ValueError("credit must be positive")
     moment = now or datetime.now(UTC)
     with Session(engine) as session:
+        session.execute(text("BEGIN IMMEDIATE"))
         account, period, tier = _ensure_in_session(session, user_id, moment)
         account.credit_balance_micros += amount_micros
         session.add(
@@ -345,6 +433,7 @@ def debit_credit(
         raise ValueError("debit must be positive")
     moment = now or datetime.now(UTC)
     with Session(engine) as session:
+        session.execute(text("BEGIN IMMEDIATE"))
         account, period, tier = _ensure_in_session(session, user_id, moment)
         if account.credit_balance_micros < amount_micros:
             raise InsufficientCreditError("insufficient credit balance")
@@ -367,6 +456,7 @@ def reset_current_period(
 ) -> QuotaSnapshot:
     moment = now or datetime.now(UTC)
     with Session(engine) as session:
+        session.execute(text("BEGIN IMMEDIATE"))
         account, period, tier = _ensure_in_session(session, user_id, moment)
         refunded = period.credit_spent_micros
         forgiven = period.spent_micros
@@ -398,12 +488,16 @@ def change_tier(
 ) -> QuotaSnapshot:
     moment = now or datetime.now(UTC)
     with Session(engine) as session:
+        session.execute(text("BEGIN IMMEDIATE"))
         account, period, _old_tier = _ensure_in_session(session, user_id, moment)
         tier = session.get(QuotaTier, tier_id)
         if tier is None or tier.archived_at is not None:
             raise ValueError("quota tier is unavailable")
         period.closed_at = moment
         previous_tier_id = account.tier_id
+        subscription = _subscription(session, user_id)
+        if subscription is not None and subscription.status == "ACTIVE":
+            subscription.status = "REVOKED"
         account.tier_id = tier.id
         account.anchor_at = moment
         new_period = _new_period(session, account, tier, moment)

@@ -1,15 +1,27 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
+from dataclasses import asdict
 from collections.abc import Iterable, Mapping
 from types import SimpleNamespace
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from resume_tailor_harness.tenancy.context import current_context
-from resume_tailor_harness.tenancy.costs import MeteredUsage, calculate_cost, normalize_provider
-from resume_tailor_harness.tenancy.quotas import charge_shared_cost
-from resume_tailor_harness.tenancy.system_db import UsageEvent, UsageLineItem
+from resume_tailor_harness.tenancy.costs import (
+    MeteredUsage,
+    calculate_cost,
+    normalize_provider,
+)
+from resume_tailor_harness.tenancy.quotas import charge_in_session
+from resume_tailor_harness.tenancy.system_db import (
+    UsageEvent,
+    UsageLineItem,
+    UsageReceipt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -160,15 +172,17 @@ def _metered(
     )
 
 
+class UsageSettlementError(RuntimeError):
+    """A hosted call must not silently escape the billing ledger."""
+
+
 def record_call(agent: object, response: object) -> None:
-    """Persist every exact Agno per-model metric entry and charge shared cost.
+    """Settle a response once: receipt, exact usage, line items and balances.
 
-    Agno's aggregate metrics are used only when ``details`` is absent. This
-    prevents double-counting and avoids guessing provider identity from a bare
-    model id. Recording remains best-effort so telemetry cannot hide a useful
-    provider response; preflight handles unknown rates before shared calls.
+    The provider run id is scoped to the tenant. A retry of the same response
+    is harmless; conflicting metrics under that id fail visibly. Responses
+    without an id represent distinct invocations and cannot be replay-deduplicated.
     """
-
     context = current_context()
     if context is None or context.system_engine is None:
         return
@@ -178,6 +192,10 @@ def record_call(agent: object, response: object) -> None:
         entries = list(_detail_entries(metrics))
         if not entries:
             entries = [(fallback_provider, fallback_model, "MODEL", metrics)]
+        from resume_tailor_harness.tenancy.limits import selected_key_is_own
+        from resume_tailor_harness.tenancy.spend import SpendGate
+
+        charges = []
         for provider, model, model_type, detail in entries:
             usage = _metered(
                 provider or fallback_provider,
@@ -185,46 +203,75 @@ def record_call(agent: object, response: object) -> None:
                 detail,
                 model_type=model_type,
             )
-            from resume_tailor_harness.tenancy.limits import selected_key_is_own
-
             own_key = selected_key_is_own(usage.provider, agent)
             priced = calculate_cost(context.system_engine, usage)
-            event = UsageEvent(
-                user_id=context.user_id,
-                provider=usage.provider or None,
-                model=usage.model or None,
-                input_tokens=usage.input_tokens,
-                output_tokens=usage.output_tokens,
-                cache_read_tokens=usage.cache_read_tokens,
-                cache_creation_tokens=usage.cache_write_tokens,
-                cache_write_tokens=usage.cache_write_tokens,
-                reasoning_tokens=usage.reasoning_tokens,
-                audio_input_tokens=usage.audio_input_tokens,
-                audio_output_tokens=usage.audio_output_tokens,
-                total_tokens=usage.total_tokens,
-                weighted_total=(
-                    usage.input_tokens * WEIGHT_INPUT
-                    + usage.output_tokens * WEIGHT_OUTPUT
-                    + usage.cache_read_tokens * WEIGHT_CACHE_READ
-                    + usage.cache_write_tokens * WEIGHT_CACHE_CREATION
-                ),
-                own_key=own_key,
-                cost_micros=priced.total_micros,
-                quota_cost_micros=0 if own_key else priced.total_micros or 0,
-                tool_cost_micros=priced.tool_micros,
-                provider_cost_micros=usage.provider_cost_micros,
-                rate_id=priced.rate_id,
-                pricing_status=priced.pricing_status,
-                reasoning_effort=usage.reasoning_effort,
-                reasoning_mode=usage.reasoning_mode,
-            )
-            weighted = float(event.weighted_total or 0.0)
-            with Session(context.system_engine) as session:
+            if (
+                not own_key
+                and priced.total_micros is None
+                and context.settings.cost_quota_enforcement == "enforce"
+            ):
+                raise UsageSettlementError(
+                    "Shared usage has no exact price; settlement failed"
+                )
+            charges.append((usage, own_key, priced))
+        request_id = getattr(response, "run_id", None)
+        receipt_id = hashlib.sha256(
+            f"{context.user_id}:{request_id}".encode()
+        ).hexdigest()
+        fingerprint = hashlib.sha256(
+            json.dumps(
+                [(asdict(usage), own_key) for usage, own_key, _ in charges],
+                sort_keys=True,
+            ).encode()
+        ).hexdigest()
+        settlements = []
+        with Session(context.system_engine) as session:
+            session.execute(text("BEGIN IMMEDIATE"))
+            receipt = session.get(UsageReceipt, receipt_id) if request_id else None
+            if receipt is not None:
+                if receipt.fingerprint != fingerprint:
+                    raise UsageSettlementError(
+                        "Response id reused with different usage"
+                    )
+                return
+            if request_id:
+                session.add(
+                    UsageReceipt(
+                        id=receipt_id, user_id=context.user_id, fingerprint=fingerprint
+                    )
+                )
+            for usage, own_key, priced in charges:
+                event = UsageEvent(
+                    user_id=context.user_id,
+                    provider=usage.provider or None,
+                    model=usage.model or None,
+                    input_tokens=usage.input_tokens,
+                    output_tokens=usage.output_tokens,
+                    cache_read_tokens=usage.cache_read_tokens,
+                    cache_creation_tokens=usage.cache_write_tokens,
+                    cache_write_tokens=usage.cache_write_tokens,
+                    reasoning_tokens=usage.reasoning_tokens,
+                    audio_input_tokens=usage.audio_input_tokens,
+                    audio_output_tokens=usage.audio_output_tokens,
+                    total_tokens=usage.total_tokens,
+                    weighted_total=(
+                        usage.input_tokens * WEIGHT_INPUT
+                        + usage.output_tokens * WEIGHT_OUTPUT
+                        + usage.cache_read_tokens * WEIGHT_CACHE_READ
+                        + usage.cache_write_tokens * WEIGHT_CACHE_CREATION
+                    ),
+                    own_key=own_key,
+                    cost_micros=priced.total_micros,
+                    quota_cost_micros=0 if own_key else priced.total_micros or 0,
+                    tool_cost_micros=priced.tool_micros,
+                    provider_cost_micros=usage.provider_cost_micros,
+                    rate_id=priced.rate_id,
+                    pricing_status=priced.pricing_status,
+                    reasoning_effort=usage.reasoning_effort,
+                    reasoning_mode=usage.reasoning_mode,
+                )
                 session.add(event)
                 session.flush()
-                # Read the id here, not after the commit: commit expires the
-                # instance, and touching it then costs a refresh SELECT.
-                event_id = event.id
                 if priced.rate_id:
                     session.add_all(
                         UsageLineItem(
@@ -237,30 +284,36 @@ def record_call(agent: object, response: object) -> None:
                         )
                         for line in priced.lines
                     )
-                session.commit()
-            snapshot = None
-            if not own_key and not context.is_admin and priced.total_micros is not None:
-                snapshot = charge_shared_cost(
-                    context.system_engine,
-                    context.user_id,
-                    priced.total_micros,
-                    usage_event_id=event_id,
-                )
-            if not own_key:
-                # The gate's cached decision was made against the budget this
-                # call just spent from. Charging it here is what makes the
-                # cache exact: the call that exhausts a budget is the call that
-                # invalidates the decision, rather than a fan-out coasting on a
-                # stale "yes" until the TTL happens to expire.
-                from resume_tailor_harness.tenancy.spend import SpendGate
-
-                SpendGate().settle(
-                    snapshot,
-                    weighted=weighted,
-                    cost_micros=int(priced.total_micros or 0),
-                )
-    except Exception:
-        logger.warning("usage recording failed", exc_info=True)
+                snapshot = None
+                if (
+                    not own_key
+                    and not context.is_admin
+                    and priced.total_micros is not None
+                ):
+                    snapshot = charge_in_session(
+                        session,
+                        context.user_id,
+                        priced.total_micros,
+                        usage_event_id=event.id,
+                        new_event=True,
+                    )
+                if not own_key:
+                    settlements.append(
+                        (
+                            snapshot,
+                            float(event.weighted_total or 0),
+                            int(priced.total_micros or 0),
+                        )
+                    )
+            session.commit()
+        for snapshot, weighted, cost in settlements:
+            SpendGate().settle(snapshot, weighted=weighted, cost_micros=cost)
+    except Exception as exc:
+        context.spend_decisions.clear()
+        logger.error("usage settlement failed", exc_info=True)
+        raise UsageSettlementError(
+            "Usage could not be settled; operator attention is required"
+        ) from exc
 
 
 def record_direct_usage(usage: MeteredUsage) -> None:

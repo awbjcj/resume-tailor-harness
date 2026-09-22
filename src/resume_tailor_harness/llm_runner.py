@@ -163,10 +163,14 @@ class AgentRunner:
         # applying a key nulls its cached clients. The lock plus the in-flight
         # count are what stop a key change from pulling the client out from
         # under a sibling request mid-flight.
-        self._key_lock = threading.Lock()
+        self._key_lock = threading.Condition()
+        self._key_waiters: list[
+            tuple[asyncio.AbstractEventLoop, asyncio.Future[None]]
+        ] = []
         self._inflight = 0
         self._applied_key: str | None = None
         self._applied_base_url: str | None = None
+        self._applied_own_key: bool | None = None
 
     @property
     def agent(self) -> Any:
@@ -177,7 +181,12 @@ class AgentRunner:
     def run_meta(self) -> AgentRunMeta | None:
         return self._run_meta
 
-    def _enter(self, settings: Settings) -> None:
+    def _enter(
+        self,
+        settings: Settings,
+        *,
+        waiter: tuple[asyncio.AbstractEventLoop, asyncio.Future[None]] | None = None,
+    ) -> bool:
         """Resolve spend policy, apply the funded key, and count the call in.
 
         Raises the same budget errors ``enforce_agent_budget`` always raised.
@@ -190,18 +199,32 @@ class AgentRunner:
         if model is None or not model_id:
             with self._key_lock:
                 self._inflight += 1
-            return
+            return True
         decision = SpendGate(settings=self._settings).open(model_id)
         with self._key_lock:
+            while self._inflight and (
+                (decision.api_key or None) != self._applied_key
+                or _endpoint_target(model, decision.provider, decision.base_url)
+                != self._applied_base_url
+                or decision.own_key != self._applied_own_key
+            ):
+                # Existing requests must settle against their actual funding
+                # before a new route can relabel this shared model.
+                if waiter is not None:
+                    # Async callers wait on their loop, leaving the executor
+                    # free to settle the calls that will wake them.
+                    self._key_waiters.append(waiter)
+                    return False
+                self._key_lock.wait()
+                decision = SpendGate(settings=self._settings).open(model_id)
             self._apply_locked(model, decision)
             self._inflight += 1
+            return True
 
     def _apply_locked(self, model: Any, decision: Any) -> None:
         from resume_tailor_harness.tenancy.context import current_context
 
         context = current_context()
-        if context is not None:
-            context.selected_model_own_keys[id(model)] = decision.own_key
         key = decision.api_key or None
         target_base_url = _endpoint_target(model, decision.provider, decision.base_url)
         if (
@@ -209,13 +232,17 @@ class AgentRunner:
             and target_base_url == self._applied_base_url
             and getattr(model, "api_key", None) == key
             and _current_endpoint(model, decision.provider) == target_base_url
+            and decision.own_key == self._applied_own_key
         ):
+            if context is not None:
+                context.selected_model_own_keys[id(model)] = decision.own_key
             return
         if self._inflight:
-            # A sibling is mid-request on this model's client. Nulling it now
-            # would fail that call; the change lands on the next call that
-            # finds the runner idle, which is the next phase in practice.
-            return
+            raise RuntimeError(
+                "cannot change model funding while requests are in flight"
+            )
+        if context is not None:
+            context.selected_model_own_keys[id(model)] = decision.own_key
         model.api_key = key
         _apply_endpoint(model, decision.provider, decision.base_url)
         # Agno caches clients after first use. Clearing them makes the next
@@ -226,10 +253,51 @@ class AgentRunner:
             model.async_client = None
         self._applied_key = key
         self._applied_base_url = target_base_url
+        self._applied_own_key = decision.own_key
 
     def _exit(self) -> None:
         with self._key_lock:
             self._inflight -= 1
+            self._key_lock.notify_all()
+            if not self._inflight:
+                for loop, future in self._key_waiters:
+                    loop.call_soon_threadsafe(self._wake_funding_waiter, future)
+                self._key_waiters.clear()
+
+    @staticmethod
+    def _wake_funding_waiter(future: asyncio.Future[None]) -> None:
+        if not future.done():
+            future.set_result(None)
+
+    async def _enter_async(self, settings: Settings) -> None:
+        loop = asyncio.get_running_loop()
+        while True:
+            ready: asyncio.Future[None] = loop.create_future()
+            waiter = (loop, ready)
+            entering = asyncio.create_task(
+                asyncio.to_thread(self._enter, settings, waiter=waiter)
+            )
+            try:
+                try:
+                    admitted = await asyncio.shield(entering)
+                except asyncio.CancelledError:
+                    # Cancellation cannot stop a thread already in the gate.
+                    try:
+                        admitted = await entering
+                    except Exception:
+                        pass
+                    else:
+                        if admitted:
+                            self._exit()
+                    raise
+                if admitted:
+                    return
+                await ready
+            finally:
+                ready.cancel()
+                with self._key_lock:
+                    if waiter in self._key_waiters:
+                        self._key_waiters.remove(waiter)
 
     def run(self, prompt: str) -> Any:
         settings = self._settings or get_settings()
@@ -238,9 +306,9 @@ class AgentRunner:
                 self._enter(settings)
                 try:
                     response = self._agent.run(prompt)
+                    record_call(self._agent, response)
                 finally:
                     self._exit()
-                record_call(self._agent, response)
                 record_agent_run(self, response, retries=attempt)
                 if _unparsed_structured_output(self._agent, response):
                     raise _UnparsedRetry(response)
@@ -270,12 +338,19 @@ class AgentRunner:
                 # Both hops are synchronous SQLite I/O, and one of them can
                 # wait on a write lock. On the event loop that the concurrent
                 # fan-out shares, that stalls every sibling call in the batch.
-                await asyncio.to_thread(self._enter, settings)
+                await self._enter_async(settings)
                 try:
                     response = await self._agent.arun(prompt)
+                    recording = asyncio.create_task(
+                        asyncio.to_thread(record_call, self._agent, response)
+                    )
+                    try:
+                        await asyncio.shield(recording)
+                    except asyncio.CancelledError:
+                        await recording
+                        raise
                 finally:
                     self._exit()
-                await asyncio.to_thread(record_call, self._agent, response)
                 record_agent_run(self, response, retries=attempt)
                 if _unparsed_structured_output(self._agent, response):
                     raise _UnparsedRetry(response)
@@ -312,36 +387,36 @@ class AgentRunner:
                         stream_events=True,
                         yield_run_output=True,
                     )
+                    terminal_output: Any | None = None
+                    for raw in raw_stream:
+                        tag = _stream_event_tag(raw)
+                        if tag is None:
+                            terminal_output = raw
+                            continue
+                        for event in _map_stream_event(tag, raw):
+                            if isinstance(event, Failed):
+                                yield event
+                                return
+                            emitted = True
+                            yield event
+                    if terminal_output is None:
+                        yield Failed(
+                            "The model stream ended without a final response.",
+                            "MISSING_RUN_OUTPUT",
+                        )
+                        return
+                    record_call(self._agent, terminal_output)
+                    if _run_failed(terminal_output):
+                        message = (
+                            getattr(terminal_output, "content", None)
+                            or "The model reported an error."
+                        )
+                        yield Failed(str(message), "RUN_ERROR")
+                        return
+                    yield Completed(terminal_output)
+                    return
                 finally:
                     self._exit()
-                terminal_output: Any | None = None
-                for raw in raw_stream:
-                    tag = _stream_event_tag(raw)
-                    if tag is None:
-                        terminal_output = raw
-                        continue
-                    for event in _map_stream_event(tag, raw):
-                        if isinstance(event, Failed):
-                            yield event
-                            return
-                        emitted = True
-                        yield event
-                if terminal_output is None:
-                    yield Failed(
-                        "The model stream ended without a final response.",
-                        "MISSING_RUN_OUTPUT",
-                    )
-                    return
-                record_call(self._agent, terminal_output)
-                if _run_failed(terminal_output):
-                    message = (
-                        getattr(terminal_output, "content", None)
-                        or "The model reported an error."
-                    )
-                    yield Failed(str(message), "RUN_ERROR")
-                    return
-                yield Completed(terminal_output)
-                return
             except Exception as exc:
                 if emitted or attempt >= settings.llm_retries or not is_transient(exc):
                     yield Failed(str(exc), type(exc).__name__)

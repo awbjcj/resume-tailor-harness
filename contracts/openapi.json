@@ -10196,6 +10196,34 @@
             "title": "Status",
             "type": "string"
           },
+          "subscriptionExpiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptionexpiresat"
+          },
+          "subscriptionStatus": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ACTIVE",
+                  "EXPIRED",
+                  "REVOKED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptionstatus"
+          },
           "tierId": {
             "title": "Tierid",
             "type": "string"
@@ -10709,6 +10737,34 @@
           "spendMicros": {
             "title": "Spendmicros",
             "type": "integer"
+          },
+          "subscriptionExpiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptionexpiresat"
+          },
+          "subscriptionStatus": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ACTIVE",
+                  "EXPIRED",
+                  "REVOKED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptionstatus"
           },
           "tierId": {
             "title": "Tierid",
@@ -14729,6 +14785,96 @@
         "title": "StyleGuideDoc",
         "type": "object"
       },
+      "SubscriptionCommand": {
+        "properties": {
+          "action": {
+            "enum": [
+              "ACTIVATE",
+              "RENEW",
+              "REVOKE"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "cycles": {
+            "default": 1,
+            "maximum": 52.0,
+            "minimum": 1.0,
+            "title": "Cycles",
+            "type": "integer"
+          },
+          "idempotencyKey": {
+            "maxLength": 64,
+            "minLength": 8,
+            "title": "Idempotencykey",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "tierId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tierid"
+          }
+        },
+        "required": [
+          "action",
+          "reason",
+          "idempotencyKey"
+        ],
+        "title": "SubscriptionCommand",
+        "type": "object"
+      },
+      "SubscriptionOut": {
+        "properties": {
+          "expiresAt": {
+            "format": "date-time",
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "title": "Startsat",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "EXPIRED",
+              "REVOKED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tierId": {
+            "title": "Tierid",
+            "type": "string"
+          },
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId",
+          "tierId",
+          "status",
+          "startsAt",
+          "expiresAt"
+        ],
+        "title": "SubscriptionOut",
+        "type": "object"
+      },
       "SuggestionEnvelope": {
         "properties": {
           "stale": {
@@ -17490,6 +17636,74 @@
           }
         },
         "summary": "Account Ledger",
+        "tags": [
+          "admin-quotas"
+        ]
+      }
+    },
+    "/api/admin/quota-accounts/{user_id}/subscription": {
+      "post": {
+        "operationId": "manage_subscription_api_admin_quota_accounts__user_id__subscription_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Manage Subscription",
         "tags": [
           "admin-quotas"
         ]

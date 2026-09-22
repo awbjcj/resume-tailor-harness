@@ -129,6 +129,10 @@ def create_app(
     resolved_settings = settings.model_copy(
         update={"db_url": resolved_db, "api_token": resolved_token}
     )
+    if app_mode == "hosted" and "cost_quota_enforcement" not in settings.model_fields_set:
+        resolved_settings = resolved_settings.model_copy(
+            update={"cost_quota_enforcement": "enforce"}
+        )
     if resolved_settings.secure_cookies:
         if not resolved_settings.app_base_url:
             raise RuntimeError("APP_BASE_URL is required when SECURE_COOKIES=true")

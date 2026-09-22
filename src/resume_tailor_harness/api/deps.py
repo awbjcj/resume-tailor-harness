@@ -283,6 +283,8 @@ def refresh_app_settings(app, fresh: Settings) -> None:
 
 def refresh_platform_settings(app, fresh: Settings) -> None:
     """Refresh deployment settings after an admin writes the platform env file."""
+    if app.state.app_mode == "hosted" and "cost_quota_enforcement" not in fresh.model_fields_set:
+        fresh = fresh.model_copy(update={"cost_quota_enforcement": "enforce"})
     refreshed = fresh.model_copy(
         update={
             "db_url": app.state.db_url,
