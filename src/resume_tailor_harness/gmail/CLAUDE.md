@@ -49,3 +49,16 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   `tests/test_reminder_scheduler.py::test_reminder_pass_runs_without_any_gmail_token`
   and by a source-level assertion that `gmail_sync` no longer imports the
   reminder helpers.
+
+- **Sync treats transport failures separately from lost authorization.** Gmail
+  reads go through `requests.execute_read` (bounded SDK retries); only a missing
+  message is skipped, while an incomplete metadata scan remains a failure.
+  Credential refresh serializes per workspace and writes atomically. A temporary
+  refresh failure preserves the token and returns `GMAIL_API_ERROR`; Google's
+  explicit `invalid_grant` retires the unusable token, stopping repeated scheduled
+  failures until the user reconnects. Local manual and scheduled syncs pass the
+  configured data directory; hosted tenant context still takes precedence.
+- **AI classification is optional.** Construct it lazily after matching and
+  deterministic rules. On provider failure, disable AI for the remainder of the
+  pass, retain rule-based proposals, and record warnings in the result and run
+  log. Authentication errors must not be swallowed by body hydration.

@@ -6,12 +6,16 @@ the two can never drift. Never auto-applies a status change.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.db import get_session
 from resume_tailor_harness.gmail.auth import build_service
-from resume_tailor_harness.gmail.classify import build_classifier_llm, hydrating_classifier
+from resume_tailor_harness.gmail.classify import (
+    build_classifier_llm,
+    hydrating_classifier,
+)
 from resume_tailor_harness.gmail.client import fetch_recent_messages
 from resume_tailor_harness.llm_runner import Runner
 from resume_tailor_harness.services.notifications import sync_notifications
@@ -30,17 +34,42 @@ def run_gmail_sync(
     *,
     service: Any | None = None,
     llm: Runner | None | _Unset = _UNSET,
+    data_dir: Path | None = None,
 ) -> dict:
     reporter.begin(2, "Scanning Gmail")
     if service is None:
-        service = build_service()
-    resolved_llm = build_classifier_llm() if isinstance(llm, _Unset) else llm
+        service = build_service(data_dir)
+    warnings: list[str] = []
+
+    def warn(message: str) -> None:
+        if message not in warnings:
+            warnings.append(message)
+
+    def fetch_progress(current: int, total: int) -> None:
+        reporter.checkpoint()
+        reporter.step(current, label="Scanning Gmail", total=total)
+
+    reporter.begin(get_settings().gmail_max_messages, "Scanning Gmail")
     emails = fetch_recent_messages(
-        service, max_results=get_settings().gmail_max_messages
+        service,
+        max_results=get_settings().gmail_max_messages,
+        on_progress=fetch_progress,
     )
-    classify = hydrating_classifier(service, resolved_llm)
+    classify_message = hydrating_classifier(
+        service,
+        None if isinstance(llm, _Unset) else llm,
+        llm_factory=build_classifier_llm if isinstance(llm, _Unset) else None,
+        on_warning=warn,
+    )
+
+    def classify(email):
+        reporter.checkpoint()
+        return classify_message(email)
+
+    reporter.begin(1, "Classifying")
     with get_session(engine) as session:
         pending = sync_notifications(session, emails, classify=classify)
-        reporter.step(1, label="Classifying")
-    reporter.step(2, label="Done")
-    return {"pending": len(pending)}
+    for warning in warnings:
+        reporter.step(1, label=warning)
+    reporter.step(1, label="Done with warnings" if warnings else "Done")
+    return {"pending": len(pending), **({"warnings": warnings} if warnings else {})}

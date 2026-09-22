@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Query, Request, UploadFile
 from sse_starlette.sse import EventSourceResponse
 
 from resume_tailor_harness.api.deps import (
+    get_data_dir,
     get_engine,
     get_run_manager,
     get_sse_user_context,
@@ -443,7 +444,8 @@ def launch_gmail_sync(request: Request, mgr: RunManager = Depends(get_run_manage
     from resume_tailor_harness.gmail.auth import load_credentials
 
     engine = _engine(request)
-    if load_credentials() is None:
+    data_dir = get_data_dir(request)
+    if load_credentials(data_dir) is None:
         raise ApiException(
             409, "GMAIL_NOT_CONNECTED", "Connect Gmail in Settings before syncing"
         )
@@ -451,7 +453,7 @@ def launch_gmail_sync(request: Request, mgr: RunManager = Depends(get_run_manage
     def work(reporter):
         from resume_tailor_harness.services.gmail_sync import run_gmail_sync
 
-        return run_gmail_sync(engine, reporter)
+        return run_gmail_sync(engine, reporter, data_dir=data_dir)
 
     return launch(mgr, "gmailSync", work, singleton_key="gmailSync")
 

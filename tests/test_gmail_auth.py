@@ -5,7 +5,7 @@ import pytest
 
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.gmail import auth
-from resume_tailor_harness.gmail.errors import GmailNotConnected
+from resume_tailor_harness.gmail.errors import GmailApiError, GmailNotConnected
 from resume_tailor_harness.tenancy.context import UserContext, use_context
 from resume_tailor_harness.tenancy.workspace import workspace_paths
 
@@ -71,3 +71,118 @@ def test_delete_token(tmp_path: Path):
 def test_build_service_raises_when_disconnected(tmp_path: Path):
     with pytest.raises(GmailNotConnected):
         auth.build_service(tmp_path)
+
+
+def _expired_token(tmp_path):
+    raw = json.loads(_token_payload(auth.GMAIL_SCOPES))
+    raw["expiry"] = "2000-01-01T00:00:00Z"
+    return auth.save_token_json(json.dumps(raw), tmp_path)
+
+
+def test_refresh_transport_failure_retries_and_persists(tmp_path, monkeypatch):
+    from datetime import datetime
+    from google.auth.exceptions import TransportError
+    from google.oauth2.credentials import Credentials
+
+    path = _expired_token(tmp_path)
+    calls = []
+
+    def refresh(creds, request):
+        calls.append(request)
+        assert request.keywords["timeout"] == 30
+        if len(calls) == 1:
+            raise TransportError("temporary network error")
+        creds.token = "new-access-token"
+        creds.expiry = datetime(2099, 1, 1)
+
+    monkeypatch.setattr(Credentials, "refresh", refresh)
+    monkeypatch.setattr(auth.time, "sleep", lambda _: None)
+    assert auth.load_credentials(tmp_path).token == "new-access-token"
+    assert len(calls) == 2
+    assert json.loads(path.read_text())["token"] == "new-access-token"
+
+
+@pytest.mark.parametrize("error_kind", ["transport", "retryable", "configuration"])
+def test_temporary_refresh_failure_preserves_connection(
+    tmp_path, monkeypatch, error_kind
+):
+    from google.auth.exceptions import RefreshError, TransportError
+    from google.oauth2.credentials import Credentials
+
+    path = _expired_token(tmp_path)
+    before = path.read_bytes()
+    errors = {
+        "transport": TransportError("offline"),
+        "retryable": RefreshError(
+            "unavailable", {"error": "server_error"}, retryable=True
+        ),
+        "configuration": RefreshError("bad client", {"error": "invalid_client"}),
+    }
+    calls = []
+
+    def refresh(*_):
+        calls.append(1)
+        raise errors[error_kind]
+
+    monkeypatch.setattr(Credentials, "refresh", refresh)
+    monkeypatch.setattr(auth.time, "sleep", lambda _: None)
+    with pytest.raises(GmailApiError):
+        auth.load_credentials(tmp_path)
+    assert path.read_bytes() == before
+    assert len(calls) == (3 if error_kind == "transport" else 1)
+
+
+def test_revoked_token_is_retired_until_reconnected(tmp_path, monkeypatch):
+    from google.auth.exceptions import RefreshError
+    from google.oauth2.credentials import Credentials
+
+    path = _expired_token(tmp_path)
+
+    def refresh(*_):
+        raise RefreshError("revoked", {"error": "invalid_grant"})
+
+    monkeypatch.setattr(Credentials, "refresh", refresh)
+    assert auth.load_credentials(tmp_path) is None
+    assert not path.exists()
+    assert auth.load_credentials(tmp_path) is None
+
+
+def test_concurrent_loads_refresh_once(tmp_path, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from datetime import datetime
+    from threading import Barrier
+    from google.oauth2.credentials import Credentials
+
+    path = _expired_token(tmp_path)
+    barrier = Barrier(2)
+    calls = []
+
+    def refresh(creds, _):
+        calls.append(1)
+        creds.token = "refreshed"
+        creds.expiry = datetime(2099, 1, 1)
+
+    def load():
+        barrier.wait(timeout=5)
+        return auth.load_credentials(tmp_path).token
+
+    monkeypatch.setattr(Credentials, "refresh", refresh)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        a, b = executor.submit(load), executor.submit(load)
+        assert a.result(timeout=5) == b.result(timeout=5) == "refreshed"
+    assert calls == [1]
+    assert json.loads(path.read_text())["token"] == "refreshed"
+
+
+def test_missing_access_token_refreshes_even_before_expiry(tmp_path, monkeypatch):
+    from google.oauth2.credentials import Credentials
+
+    raw = json.loads(_token_payload(auth.GMAIL_SCOPES))
+    raw["token"] = None
+    auth.save_token_json(json.dumps(raw), tmp_path)
+
+    def refresh(creds, _):
+        creds.token = "recovered"
+
+    monkeypatch.setattr(Credentials, "refresh", refresh)
+    assert auth.load_credentials(tmp_path).token == "recovered"

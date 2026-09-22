@@ -1,4 +1,9 @@
 {
+  "Could not check Gmail. Try again; your connection may still be active.": {
+    "key": "ui_8aed65d58c66",
+    "en": "Could not check Gmail. Try again; your connection may still be active.",
+    "zh-CN": "无法检查 Gmail 连接。请重试；现有连接可能仍然有效。"
+  },
   ", whatever their status. Existing resume versions and PDFs are kept.": {
     "key": "ui_45077700e30c",
     "en": ", whatever their status. Existing resume versions and PDFs are kept.",

@@ -67,3 +67,36 @@ def test_tick_isolates_a_failing_user(tmp_path):
     result = asyncio.run(tick(state, work=failing_work))
     snapshot = state.run_manager.get(result["local"])
     assert snapshot is not None and snapshot.state.value == "error"
+
+
+def test_tick_stops_rescheduling_a_revoked_token(tmp_path, monkeypatch):
+    import json
+    from google.auth.exceptions import RefreshError
+    from google.oauth2.credentials import Credentials
+    from resume_tailor_harness.gmail.auth import build_service
+
+    state = _state(tmp_path)
+    (tmp_path / "gmail_token.json").write_text(
+        json.dumps(
+            {
+                "token": "expired",
+                "refresh_token": "revoked",
+                "client_id": "cid",
+                "client_secret": "secret",
+                "expiry": "2000-01-01T00:00:00Z",
+            }
+        )
+    )
+
+    def refresh(*_):
+        raise RefreshError("revoked", {"error": "invalid_grant"})
+
+    monkeypatch.setattr(Credentials, "refresh", refresh)
+
+    def work(_engine, _reporter, *, data_dir):
+        build_service(data_dir)
+
+    first = asyncio.run(tick(state, work=work))
+    snapshot = state.run_manager.get(first["local"])
+    assert snapshot is not None and snapshot.error_code == "GMAIL_NOT_CONNECTED"
+    assert asyncio.run(tick(state, work=work)) == {}

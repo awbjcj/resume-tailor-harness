@@ -38,7 +38,7 @@ def _submit(
     state: Any, engine: Any, work: Callable[..., dict], user_id: str | None
 ) -> str:
     def run(reporter):
-        return work(engine, reporter)
+        return work(engine, reporter, data_dir=state.data_dir)
 
     return state.run_manager.submit(
         "gmailSync",

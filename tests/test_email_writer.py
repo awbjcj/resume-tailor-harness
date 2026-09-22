@@ -34,7 +34,9 @@ class _FakeMessages:
 
     def list(self, **kwargs):
         refs = [{"id": m["id"]} for m in self._messages]
-        return type("Req", (), {"execute": staticmethod(lambda: {"messages": refs})})()
+        return type(
+            "Req", (), {"execute": staticmethod(lambda **_: {"messages": refs})}
+        )()
 
     def get(self, userId, id, format, metadataHeaders=None):
         msg = next(m for m in self._messages if m["id"] == id)
@@ -46,7 +48,7 @@ class _FakeMessages:
                 "snippet": msg.get("snippet", ""),
                 "threadId": msg.get("threadId"),
             }
-        return type("Req", (), {"execute": staticmethod(lambda: result)})()
+        return type("Req", (), {"execute": staticmethod(lambda **_: result)})()
 
 
 class FakeGmailService:

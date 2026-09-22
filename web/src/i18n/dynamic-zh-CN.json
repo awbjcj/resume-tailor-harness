@@ -46,6 +46,9 @@
     "Reconciled skill synonyms": "技能同义词已整理",
     "Classifying": "正在分类",
     "Done": "已完成",
+    "Done with warnings": "已完成，但有部分内容未能处理",
+    "AI classification is unavailable. Synced using email rules only.": "AI 分类暂不可用。本次同步仅使用邮件规则。",
+    "Some email bodies could not be read. Used available snippets.": "部分邮件正文无法读取，已使用可用的摘要。",
     "Retrieved taxonomy candidates": "已获取技能分类候选项",
     "Prepared profile facts": "个人资料事实已准备好",
     "Classifying the shared skill taxonomy": "正在整理共享技能分类",
@@ -74,6 +77,14 @@
     "cancelled": "已取消"
   },
   "runErrors": {
+    "Connect Gmail in Settings before syncing": "请先在设置中连接 Gmail，再同步。",
+    "GmailNotConnected: Connect Gmail again in Settings to resume syncing.": "请在设置中重新连接 Gmail 以恢复同步。",
+    "GmailScopeMissing: Reconnect Gmail in Settings and approve Gmail read access.": "请在设置中重新连接 Gmail，并授予邮件读取权限。",
+    "GmailApiError: Gmail could not refresh its connection. Try syncing again later.": "Gmail 暂时无法刷新连接，请稍后重试同步。",
+    "GmailApiError: Google is temporarily unreachable. Try syncing again later.": "暂时无法连接 Google，请稍后重试同步。",
+    "GmailApiError: Gmail could not complete the scan after retries. Try syncing again later.": "重试后仍无法完成 Gmail 扫描，请稍后再试。",
+    "Gmail could not refresh its connection. Try syncing again later.": "Gmail 暂时无法刷新连接，请稍后重试同步。",
+    "Google is temporarily unreachable. Try syncing again later.": "暂时无法连接 Google，请稍后重试同步。",
     "GmailNotConnected: Gmail is not connected for this workspace": "Gmail 尚未连接到此工作区。",
     "GmailNotConnected: Connect Gmail in Settings to save drafts": "Gmail 尚未连接。请先在设置中完成连接。"
   },
