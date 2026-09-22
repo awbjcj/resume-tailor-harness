@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import asyncio
 import time
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 
 import pytest
@@ -109,7 +111,8 @@ def test_concurrent_calls_never_lose_their_client_to_a_key_flip(tmp_path, monkey
     assert agent.violations == []
     # The flip is not simply ignored: it is deferred. Once the runner is idle,
     # the next call applies the currently resolved key.
-    assert _FlippingGate.calls == CONCURRENCY
+    # Funding changes wait for settlement and recheck eligibility on wakeup.
+    assert _FlippingGate.calls >= CONCURRENCY
 
 
 class _SlowGate:
@@ -185,3 +188,125 @@ def test_settling_a_call_that_exhausts_the_budget_drops_the_decision(tmp_path):
 
         SpendGate().settle(weighted=70.0)
         assert "m" not in context.spend_decisions
+
+
+def test_funding_cannot_change_until_previous_call_is_settled(tmp_path, monkeypatch):
+    from resume_tailor_harness.tenancy.limits import selected_key_is_own
+
+    recording_started = threading.Event()
+    second_gate_entered = threading.Event()
+    records = []
+
+    class Gate:
+        def __init__(self, **kwargs):
+            pass
+
+        def open(self, model_id):
+            own = recording_started.is_set()
+            if own:
+                second_gate_entered.set()
+            return SpendDecision(
+                "user-key" if own else "railway-key", own, "anthropic", model_id, "test"
+            )
+
+    def record(agent, response):
+        if not records:
+            recording_started.set()
+            assert second_gate_entered.wait(5)
+        records.append((agent.model.api_key, selected_key_is_own("anthropic", agent)))
+
+    monkeypatch.setattr("resume_tailor_harness.tenancy.spend.SpendGate", Gate)
+    monkeypatch.setattr("resume_tailor_harness.tenancy.usage.record_call", record)
+    settings = _settings()
+    ctx = _context(tmp_path, settings)
+    runner = AgentRunner(_ClientWatchingAgent(), settings=settings)
+
+    def run():
+        with use_context(ctx):
+            return runner.run("p")
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first = pool.submit(run)
+        assert recording_started.wait(5)
+        second = pool.submit(run)
+        first.result(timeout=10)
+        second.result(timeout=10)
+    assert records == [("railway-key", False), ("user-key", True)]
+    assert runner._inflight == 0
+
+
+def test_cancelled_async_admission_releases_its_late_funding_lease(
+    tmp_path, monkeypatch
+):
+    started = threading.Event()
+
+    class SlowGate(_SlowGate):
+        def open(self, model_id, **kwargs):
+            started.set()
+            return super().open(model_id, **kwargs)
+
+    monkeypatch.setattr("resume_tailor_harness.tenancy.spend.SpendGate", SlowGate)
+    settings = _settings()
+    runner = AgentRunner(_ClientWatchingAgent(), settings=settings)
+
+    async def run():
+        task = asyncio.create_task(runner.arun("p"))
+        assert await asyncio.to_thread(started.wait, 5)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert runner._inflight == 0
+
+    with use_context(_context(tmp_path, settings)):
+        asyncio.run(run())
+
+
+def test_async_funding_waiters_leave_executor_capacity_for_settlement(
+    tmp_path, monkeypatch
+):
+    started = threading.Event()
+    records = []
+
+    class Gate:
+        def __init__(self, **kwargs):
+            pass
+
+        def open(self, model_id):
+            own = started.is_set()
+            return SpendDecision(
+                "user-key" if own else "railway-key", own, "anthropic", model_id, "test"
+            )
+
+    class Agent(_ClientWatchingAgent):
+        async def arun(self, prompt):
+            key = self.model.api_key
+            started.set()
+            await asyncio.sleep(0.05)
+            return SimpleNamespace(content="ok", actual_key=key)
+
+    def record(agent, response):
+        from resume_tailor_harness.tenancy.limits import selected_key_is_own
+
+        records.append((response.actual_key, selected_key_is_own("anthropic", agent)))
+
+    monkeypatch.setattr("resume_tailor_harness.tenancy.spend.SpendGate", Gate)
+    monkeypatch.setattr("resume_tailor_harness.tenancy.usage.record_call", record)
+    settings = _settings()
+    runner = AgentRunner(Agent(), settings=settings)
+
+    async def run():
+        asyncio.get_running_loop().set_default_executor(
+            ThreadPoolExecutor(max_workers=2)
+        )
+        first = asyncio.create_task(runner.arun("first"))
+        assert await asyncio.to_thread(started.wait, 5)
+        await asyncio.wait_for(
+            asyncio.gather(first, *(runner.arun("next") for _ in range(10))), 5
+        )
+        assert runner._inflight == 0
+        assert runner._key_waiters == []
+
+    with use_context(_context(tmp_path, settings)):
+        asyncio.run(run())
+    assert len(records) == 11
+    assert all(own == (key == "user-key") for key, own in records)

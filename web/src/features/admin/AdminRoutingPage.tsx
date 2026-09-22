@@ -115,8 +115,7 @@ export function AdminRoutingPage() {
         <Network aria-hidden="true" />
         <AlertTitle>Endpoint and credential move together</AlertTitle>
         <AlertDescription>
-          Subscription calls are quota-exempt and report zero marginal spend. A provider pinned to
-          subscription will fail loudly if its URL or key is missing.
+          {t("subscription.gatewayHelp")}
         </AlertDescription>
       </Alert>
 

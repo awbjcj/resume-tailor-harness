@@ -38,7 +38,7 @@ tenant isolation independent from the auth-free local container default.
    | `SECURE_COOKIES`                   | `true` (enforced by the image; startup fails without HTTPS `APP_BASE_URL`)                       |
    | `DISABLE_API_DOCS`                 | `true` (also the image default)                                                                 |
    | `GLOBAL_DAILY_SIGNUP_LIMIT`        | Maximum verification emails started per rolling day                                             |
-   | `COST_QUOTA_ENFORCEMENT`           | `shadow` dual-records USD while token enforcement remains active; `enforce` enables cost quotas |
+   | `COST_QUOTA_ENFORCEMENT`           | `enforce` (hosted default): allowance and credits govern shared models, including Sub2API; explicit `shadow` retains the legacy token guard |
    | `GLOBAL_MONTHLY_COST_QUOTA_MICROS` | Shared-key UTC calendar-month cap in USD micro-units; defaults to `$500`                        |
    | `GLOBAL_WEEKLY_TOKEN_BUDGET`       | Deprecated stage-one token circuit breaker; used only while cost quotas are in `shadow` mode    |
 

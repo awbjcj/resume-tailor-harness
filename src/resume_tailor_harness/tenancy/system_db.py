@@ -374,6 +374,37 @@ class QuotaLedgerEntry(SystemBase):
     )
 
 
+class MemberSubscription(SystemBase):
+    """Finite entitlement; renewal extends this term without resetting usage."""
+
+    __tablename__ = "member_subscriptions"
+
+    user_id: Mapped[str] = mapped_column(String(12), primary_key=True)
+    tier_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+
+
+class SubscriptionOperation(SystemBase):
+    __tablename__ = "subscription_operations"
+
+    idempotency_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
+    fingerprint: Mapped[str] = mapped_column(Text, nullable=False)
+    result_json: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class UsageReceipt(SystemBase):
+    """Deduplication survives ledger resets and individual usage row pruning."""
+
+    __tablename__ = "usage_receipts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
 class SystemSetting(SystemBase):
     __tablename__ = "system_settings"
 

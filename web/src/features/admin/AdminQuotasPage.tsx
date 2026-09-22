@@ -1,4 +1,5 @@
 import { type ReactNode, useMemo, useState } from "react";
+import { MemberSubscriptionForm } from "./MemberSubscriptionForm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -123,6 +124,11 @@ const ACCOUNT_STATUS_LABEL_KEYS = {
 } as const satisfies Record<QuotaAccount["status"], string>;
 
 const LEDGER_KIND_LABEL_KEYS = {
+  ALLOWANCE_GRANT: "subscription.ledger.allowanceGrant",
+  SUBSCRIPTION_ACTIVATED: "subscription.ledger.activated",
+  SUBSCRIPTION_RENEWED: "subscription.ledger.renewed",
+  SUBSCRIPTION_EXPIRED: "subscription.ledger.expired",
+  SUBSCRIPTION_REVOKED: "subscription.ledger.revoked",
   USAGE: "adminQuota.ledgerKinds.usage",
   CREDIT_GRANT: "adminQuota.ledgerKinds.creditGrant",
   CREDIT_DEBIT: "adminQuota.ledgerKinds.creditDebit",
@@ -498,6 +504,9 @@ function AccountDrawer({
               </div>
             </dl>
 
+            <MemberSubscriptionForm key={account.userId} account={account} tiers={tiers} onSaved={() => onOpenChange(false)} />
+
+            <p className="text-xs text-muted-foreground">{t("subscription.overrideHelp")}</p>
             <Field label="Assign tier" htmlFor="drawer-tier">
               <Select value={tierId} onValueChange={(value) => setTierId(value ?? "")}>
                 <SelectTrigger id="drawer-tier" size="compact" className={CONTROL_TRIGGER} aria-label="Assign member tier">

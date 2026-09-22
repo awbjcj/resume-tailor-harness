@@ -14,22 +14,12 @@ and pays for it again. Measured, it cost 22.2 SQLite statements and one
 exclusive ``BEGIN IMMEDIATE`` per call, all of it synchronous and all of it on
 the event loop that the concurrent fan-out shares.
 
-The fix is not a faster query, it is a correct unit. A budget is a property of
-a **phase**, not of a call — which is what ``CONTEXT.md`` always claimed — so
-one evaluation is cached on the active :class:`UserContext` behind a short TTL
-and reused by every call in that phase. The decision is dropped immediately if
-a charge exhausts the allowance, so the window never lets a call through that
-the previous call's cost should have stopped.
-
-**Behaviour is deliberately unchanged.** Every existing error type is raised
-from the same conditions:
-
-* the user's own key is preferred when shared funding is unavailable, and no
-  error is raised, exactly as ``resolve_api_key`` did;
-* an error is raised only when there is no own key to fall back on, exactly as
-  ``enforce_agent_budget`` did;
-* administrators are exempt from the **per-user allowance** and remain bound by
-  the **platform-wide cap** (ADR-0009 Amendment 2, ADR-0010 §26).
+The gate owns credential, endpoint and budget decisions together. Shadow-mode
+phases retain the legacy bounded cache; cost enforcement rechecks authoritative
+eligibility for each call so another request's spend or entitlement change is
+immediately visible. Administrators remain exempt from member allowances, but
+all platform funding (including subscription gateway keys) obeys the platform
+cap. BYOK remains separate from deployment-owned subscription credentials.
 """
 
 from __future__ import annotations
@@ -154,10 +144,8 @@ def _subscription_decision(
     platform and per-user API keys are not merely lower priority, they are
     wrong -- sending an ``sk-ant-`` key to sub2api authenticates nothing.
 
-    ``own_key=True`` marks the call non-billable. Subscription traffic is
-    flat-rate, so metering it against a shared cost quota would throttle calls
-    that have no marginal cost. The trade-off is that usage reports attribute
-    no spend to these calls; that is accurate, not a gap.
+    Gateway credentials belong to the platform. Hosted member allowance is
+    independent of the upstream provider's flat-rate commercial arrangement.
     """
     from resume_tailor_harness.llm_routing import (
         effective_mode,
@@ -169,7 +157,7 @@ def _subscription_decision(
         return None
     return SpendDecision(
         api_key=subscription_key(provider, settings),
-        own_key=True,
+        own_key=False,
         provider=provider,
         model=model,
         reason="subscription",
@@ -380,6 +368,11 @@ class SpendGate:
         return entry.decision, entry.fatal
 
     def _cached(self, context: UserContext, model_id: str) -> _CachedDecision | None:
+        # Financial eligibility changes in other requests (renewals, revocation,
+        # top-ups and concurrent spend). In enforcement mode SQLite is the
+        # authority on each call; a phase-local TTL cannot observe those writes.
+        if context.settings.cost_quota_enforcement == "enforce":
+            return None
         entry = context.spend_decisions.get(model_id)
         if not isinstance(entry, _CachedDecision):
             return None
@@ -403,7 +396,10 @@ class SpendGate:
         settings = self._settings or context.settings
         routed = _subscription_decision(provider, model, settings)
         if routed is not None:
-            return _settled(routed)
+            verdict = _evaluate_shared(context, provider, model, now=now)
+            return _CachedDecision(
+                time.monotonic(), routed, verdict.denial, verdict.headroom, verdict.unit,
+            )
 
         platform_key = context.platform_provider_keys.get(provider, "")
         user_key = context.user_provider_keys.get(provider, "")

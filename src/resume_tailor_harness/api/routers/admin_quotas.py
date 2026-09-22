@@ -29,6 +29,8 @@ from resume_tailor_harness.api.schemas.admin_quotas import (
     QuotaTierOut,
     QuotaTierPage,
     QuotaTierPatch,
+    SubscriptionCommand,
+    SubscriptionOut,
 )
 from resume_tailor_harness.api.schemas.base import Pagination
 from resume_tailor_harness.tenancy.context import UserContext
@@ -51,6 +53,7 @@ from resume_tailor_harness.tenancy.system_db import (
     QuotaTier,
     UsageEvent,
     User,
+    MemberSubscription,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin-quotas"])
@@ -252,7 +255,10 @@ def _account_out(session: Session, user: User) -> QuotaAccountOut:
             func.coalesce(func.sum(UsageEvent.total_tokens), 0),
         ).where(UsageEvent.user_id == user.id)
     ).one()
+    subscription = session.get(MemberSubscription, user.id)
     return QuotaAccountOut(
+        subscription_status=subscription.status if subscription else None,
+        subscription_expires_at=subscription.expires_at if subscription else None,
         user_id=user.id,
         username=user.username,
         disabled=user.disabled_at is not None,
@@ -379,6 +385,27 @@ def account_ledger(
             data=[QuotaLedgerEntryOut.model_validate(row) for row in rows],
             pagination=_pagination(page, page_size, total),
         )
+
+
+@router.post("/quota-accounts/{user_id}/subscription")
+def manage_subscription(
+    user_id: str, body: SubscriptionCommand, request: Request,
+    context: UserContext = Depends(require_admin),
+) -> SubscriptionOut:
+    from resume_tailor_harness.tenancy.subscriptions import apply_subscription
+
+    try:
+        result = apply_subscription(
+            request.app.state.system_engine, user_id, actor_user_id=context.user_id,
+            **body.model_dump(),
+        )
+    except LookupError as exc:
+        raise ApiException(404, "NOT_FOUND", str(exc)) from exc
+    except IdempotencyConflictError as exc:
+        raise ApiException(409, exc.code, str(exc)) from exc
+    except ValueError as exc:
+        raise ApiException(409, "SUBSCRIPTION_CONFLICT", str(exc)) from exc
+    return SubscriptionOut.model_validate(result)
 
 
 @router.patch("/quota-accounts/{user_id}")

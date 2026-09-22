@@ -331,6 +331,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/quota-accounts/{user_id}/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manage Subscription */
+        post: operations["manage_subscription_api_admin_quota_accounts__user_id__subscription_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/quota-operation-previews": {
         parameters: {
             query?: never;
@@ -7428,6 +7445,10 @@ export interface components {
              * @enum {string}
              */
             status: "ACTIVE" | "EXHAUSTED" | "OVERAGE" | "UNLIMITED";
+            /** Subscriptionexpiresat */
+            subscriptionExpiresAt?: string | null;
+            /** Subscriptionstatus */
+            subscriptionStatus?: ("ACTIVE" | "EXPIRED" | "REVOKED") | null;
             /** Tierid */
             tierId: string;
             /** Totaltokens */
@@ -7607,6 +7628,10 @@ export interface components {
             remainingMicros: number | null;
             /** Spendmicros */
             spendMicros: number;
+            /** Subscriptionexpiresat */
+            subscriptionExpiresAt?: string | null;
+            /** Subscriptionstatus */
+            subscriptionStatus?: ("ACTIVE" | "EXPIRED" | "REVOKED") | null;
             /** Tierid */
             tierId: string;
             /** Tiername */
@@ -9023,6 +9048,47 @@ export interface components {
              */
             content: string;
         };
+        /** SubscriptionCommand */
+        SubscriptionCommand: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "ACTIVATE" | "RENEW" | "REVOKE";
+            /**
+             * Cycles
+             * @default 1
+             */
+            cycles: number;
+            /** Idempotencykey */
+            idempotencyKey: string;
+            /** Reason */
+            reason: string;
+            /** Tierid */
+            tierId?: string | null;
+        };
+        /** SubscriptionOut */
+        SubscriptionOut: {
+            /**
+             * Expiresat
+             * Format: date-time
+             */
+            expiresAt: string;
+            /**
+             * Startsat
+             * Format: date-time
+             */
+            startsAt: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ACTIVE" | "EXPIRED" | "REVOKED";
+            /** Tierid */
+            tierId: string;
+            /** Userid */
+            userId: string;
+        };
         /** SuggestionEnvelope */
         SuggestionEnvelope: {
             /**
@@ -10303,6 +10369,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuotaLedgerPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    manage_subscription_api_admin_quota_accounts__user_id__subscription_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionCommand"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionOut"];
                 };
             };
             /** @description Validation Error */

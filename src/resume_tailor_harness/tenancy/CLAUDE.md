@@ -40,25 +40,27 @@ admin-users API.
   rolling-24h counter independent of per-email/per-IP attempt budgets, capping
   total verification emails sent per day (`Settings.global_daily_signup_limit`)
   regardless of how many distinct emails/IPs originate them.
-- **Spend policy is resolved once per phase, by one seam.** `tenancy/spend.py`'s
-  `SpendGate` owns key selection _and_ budget: `select()` answers "which key?"
-  without raising (what `resolve_api_key` asks), `open()` answers "may I
-  spend?" and raises (what `enforce_agent_budget` asks), and both come from a
-  single evaluation so they cannot disagree. The decision is cached on the
-  active `UserContext` — a context _is_ a phase — for
-  `Settings.spend_gate_ttl_seconds` (default 30). The cache is **exact, not
-  merely time-bounded**: each decision carries the remaining shared headroom,
-  `record_call` decrements it, and the call that exhausts a budget is the call
-  that drops the decision, so a fan-out cannot coast on a stale "yes". Deriving
-  this per call cost a measured 22.2 SQLite statements and one exclusive
-  `BEGIN IMMEDIATE`; it is now ~0.3 amortised, with the remaining ~9 being the
-  billing write, which is not cacheable. `AgentRunner.arun` runs the gate and
-  `record_call` through `asyncio.to_thread` — both are blocking SQLite I/O, and
-  on the loop the concurrent fan-out shares they serialised the whole batch. A
-  key change is applied only when the runner is idle: one agno model object is
-  shared by every coroutine in a batch, and applying a key nulls its cached
-  clients. `tests/perf/test_baselines.py` and `tests/test_llm_runner_concurrency.py`
-  pin all of this.
+- **Spend policy has one seam.** `tenancy/spend.py` owns key and endpoint
+  selection plus shared-funding eligibility. In `enforce` mode it rechecks
+  database eligibility per call so concurrent consumption, subscription expiry,
+  revocation and top-ups are visible across requests. The phase-local TTL cache
+  is retained only in `shadow` mode. `AgentRunner.arun` runs blocking gate and
+  settlement work through `asyncio.to_thread`. Key changes still wait for a
+  shared model's in-flight calls to finish.
+- **Subscription terms are finite.** `tenancy/subscriptions.py` applies audited,
+  idempotent activation, renewal and revocation under `BEGIN IMMEDIATE`.
+  Active renewals extend expiry without resetting usage; expired terms restart
+  now. `quotas.py` expires terms before reads/charges, restores FREE, and keeps
+  durable credits. Legacy manually assigned tiers remain recurring until
+  explicitly migrated. New periods record `ALLOWANCE_GRANT` ledger entries.
+- **Usage is accounting, not best-effort telemetry.** `usage.record_call` writes
+  the response receipt, all per-model usage/line items, and deductions in one
+  transaction. Stable response run IDs are tenant-scoped and repeat-safe;
+  conflicting payloads fail. Persistence failures roll back and surface an
+  error. `charge_in_session` owns allowance-first, then credit, then overage
+  allocation. Gateway credentials belong to the platform and are billable;
+  genuine BYOK remains exempt. Hosted mode defaults to `enforce`, while an
+  explicit `shadow` setting remains available for migration.
 - `tenancy/limits.py::enforce_agent_budget` runs before every LLM call
   (`llm_runner.py`'s `AgentRunner.run`/`arun` and direct transcription), and
   delegates to `SpendGate`. A

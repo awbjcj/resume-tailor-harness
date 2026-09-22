@@ -9719,11 +9719,6 @@
     "en": "Sub2API base URL",
     "zh-CN": "Sub2API 基础 URL"
   },
-  "Subscription calls are quota-exempt and report zero marginal spend. A provider pinned to subscription will fail loudly if its URL or key is missing.": {
-    "key": "ui_52cd8eab18a8",
-    "en": "Subscription calls are quota-exempt and report zero marginal spend. A provider pinned to subscription will fail loudly if its URL or key is missing.",
-    "zh-CN": "订阅调用不计入配额，边际支出记为零。若固定使用订阅的提供商缺少 URL 或密钥，将直接报错。"
-  },
   "succeeded": {
     "key": "ui_5dceaeceb6d8",
     "en": "succeeded",
