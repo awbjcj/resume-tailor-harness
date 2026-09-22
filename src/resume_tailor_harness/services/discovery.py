@@ -36,6 +36,10 @@ from resume_tailor_harness.discovery.scraper.dashboard import DashboardScraper
 from resume_tailor_harness.discovery.scraper.linkedin import build_linkedin_scraper
 from resume_tailor_harness.discovery.search_config import load_search_config
 from resume_tailor_harness.discovery.url_ingest.service import job_from_url
+from resume_tailor_harness.discovery.url_ingest.recovery import (
+    RecoveryHints,
+    RecoveryRequired,
+)
 from resume_tailor_harness.h1b.cache import load_company_evidence
 from resume_tailor_harness.h1b.models import H1BEnrichmentReport, H1BSponsorshipEvidence
 from resume_tailor_harness.models.profile import ProfileFacts
@@ -293,8 +297,13 @@ def add_job_from_url(
             url,
             agent=build_url_extract_agent(),
             allow_browser=allow_browser and get_settings().browser_enabled,
+            **(
+                {"recovery_hints": RecoveryHints(company, title, location)}
+                if company and title
+                else {}
+            ),
         )
-    except (httpx.HTTPError, PlaywrightError) as exc:
+    except (httpx.HTTPError, PlaywrightError, RecoveryRequired) as exc:
         raise UrlFetchError(f"Couldn't fetch {url}: {exc}") from exc
     if raw is None:
         raise UrlFetchError("Couldn't extract a job description from that URL.")
@@ -302,10 +311,11 @@ def add_job_from_url(
         session,
         source="url",
         jd_text=raw.jd_text,
-        url=url,
+        url=raw.url or url,
         company=company or raw.company,
         title=title or raw.title,
         location=location or raw.location,
+        posted_at=raw.posted_at,
     )
 
 
@@ -445,15 +455,8 @@ def scrape_linkedin_jobs(
     limit: int | None = None,
     reporter: ProgressReporter | None = None,
 ) -> LinkedInScrapeResult:
-    """Scrape LinkedIn in a visible browser and ingest all fetched postings."""
+    """Scrape LinkedIn using the configured acquisition mode and ingest postings."""
     enforce_active_budget()
-    if not get_settings().browser_enabled:
-        return {
-            "added": 0,
-            "failures": {
-                "linkedin": "requires a local browser (browser_enabled=false)"
-            },
-        }
     search_config = load_search_config(search_path)
     connector = build_linkedin_scraper()
     if reporter is not None:

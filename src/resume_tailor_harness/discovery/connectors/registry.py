@@ -27,7 +27,11 @@ from resume_tailor_harness.discovery.connectors.sources import (
 )
 from resume_tailor_harness.discovery.scraper.linkedin import build_linkedin_scraper
 from resume_tailor_harness.discovery.scraper.dashboard import DashboardScraper
-from resume_tailor_harness.discovery.source_resolution.catalog import BoardFamily, board_family
+from resume_tailor_harness.discovery.scraper.linkedin_http import LinkedInHttpScraper
+from resume_tailor_harness.discovery.source_resolution.catalog import (
+    BoardFamily,
+    board_family,
+)
 
 _BROWSER_DISABLED = "requires a local browser (browser_enabled=false)"
 
@@ -230,7 +234,7 @@ CONNECTOR_SPECS: tuple[ConnectorSpec, ...] = (
         build=lambda payloads, c, s: (
             build_linkedin_scraper(configured_limit=c.linkedin.limit)
             if s.browser_enabled
-            else _BrowserDisabledConnector("linkedin", ["linkedin"])
+            else LinkedInHttpScraper(configured_limit=c.linkedin.limit)
         ),
     ),
 )

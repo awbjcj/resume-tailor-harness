@@ -10,6 +10,7 @@ from resume_tailor_harness.discovery.connectors.companies import CompaniesConnec
 from resume_tailor_harness.discovery.connectors.config import ConnectorsConfig
 from resume_tailor_harness.discovery.connectors.registry import build_source_connectors
 from resume_tailor_harness.discovery.search_config import SearchConfig
+from resume_tailor_harness.discovery.scraper.linkedin_http import LinkedInHttpScraper
 
 REASON = "requires a local browser (browser_enabled=false)"
 
@@ -49,7 +50,7 @@ def test_registry_reports_disabled_browser_sources_instead_of_dropping_them():
     scrape = by_name[next(name for name in by_name if name.startswith("scrape:"))]
     linkedin = by_name["linkedin"]
     assert list(scrape.fetch(SearchConfig()).failures.values()) == [REASON]
-    assert linkedin.fetch(SearchConfig()).failures == {"linkedin": REASON}
+    assert isinstance(linkedin, LinkedInHttpScraper)
     adzuna = by_name["adzuna"]
     assert isinstance(adzuna, AdzunaConnector)
     assert adzuna.enrich_details is False
@@ -107,10 +108,16 @@ def test_url_ingest_ands_caller_flag_with_browser_setting(monkeypatch):
     assert seen["allow_browser"] is False
 
 
-def test_linkedin_service_returns_explicit_failure_without_building_scraper(
+def test_linkedin_service_uses_http_connector_with_browser_disabled(
     monkeypatch,
 ):
     from resume_tailor_harness.services import discovery
+    from resume_tailor_harness.discovery.connectors.base import FetchResult
+
+    class Connector:
+        def fetch(self, search, limit=None):
+            assert limit == 2
+            return FetchResult(jobs=[], failures={"linkedin": "HTTP 429"})
 
     monkeypatch.setattr(
         discovery,
@@ -120,10 +127,12 @@ def test_linkedin_service_returns_explicit_failure_without_building_scraper(
     monkeypatch.setattr(
         discovery,
         "build_linkedin_scraper",
-        lambda: (_ for _ in ()).throw(AssertionError("browser scraper constructed")),
+        lambda: Connector(),
     )
+    monkeypatch.setattr(discovery, "load_search_config", lambda _: SearchConfig())
+    monkeypatch.setattr(discovery, "ingest_jobs", lambda *a, **k: {})
 
-    assert discovery.scrape_linkedin_jobs(cast(Session, None)) == {
+    assert discovery.scrape_linkedin_jobs(cast(Session, None), limit=2) == {
         "added": 0,
-        "failures": {"linkedin": REASON},
+        "failures": {"linkedin": "HTTP 429"},
     }

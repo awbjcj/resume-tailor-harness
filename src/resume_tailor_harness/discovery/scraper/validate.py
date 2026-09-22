@@ -5,6 +5,7 @@ from typing import cast
 
 from bs4 import BeautifulSoup
 from soupsieve import SelectorSyntaxError
+from resume_tailor_harness.discovery.connectors.jobposting import select_posting
 
 from .contracts import (
     BoardPlan,
@@ -99,6 +100,13 @@ def validate_evidence(
 
 
 def _supports_value(field: str, value, text: str) -> bool:
+    if field == "employment_type":
+        try:
+            raw = json.loads(text)
+        except (ValueError, TypeError):
+            raw = None
+        if isinstance(raw, list) and all(isinstance(item, str) for item in raw):
+            return value == ", ".join(raw)
     normalized = " ".join(
         BeautifulSoup(text, "html.parser").get_text(" ", strip=True).split()
     ).casefold()
@@ -180,6 +188,9 @@ def validate_plan(
                 )
             )
         for detail in details:
+            selected = select_posting(detail.json_ld, detail.final_url)
+            if not plan.detail_selector and selected and selected[1].get("description"):
+                continue
             if not plan.detail_selector or not BeautifulSoup(
                 detail.html, "html.parser"
             ).select(plan.detail_selector):

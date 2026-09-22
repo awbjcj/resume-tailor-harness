@@ -39,22 +39,36 @@ from bs4.element import Tag
 
 from resume_tailor_harness.discovery.connectors import http as board
 
-from resume_tailor_harness.discovery.connectors.ashby import fetch_ashby_board, parse_ashby
+from resume_tailor_harness.discovery.connectors.ashby import (
+    fetch_ashby_board,
+    parse_ashby,
+)
 from resume_tailor_harness.discovery.connectors.bamboohr import (
     bamboohr_meta_lines,
     detail_url as bamboohr_detail_url,
 )
 from resume_tailor_harness.discovery.connectors.base import RawJob
-from resume_tailor_harness.discovery.connectors.detect import AtsTarget, workday_external_path
+from resume_tailor_harness.discovery.connectors.detect import (
+    AtsTarget,
+    workday_external_path,
+)
 from resume_tailor_harness.discovery.connectors.greenhouse import (
     fetch_greenhouse_board_name,
     fetch_greenhouse_job,
     parse_greenhouse,
 )
-from resume_tailor_harness.discovery.connectors.lever import fetch_lever_posting, parse_lever
+from resume_tailor_harness.discovery.connectors.lever import (
+    fetch_lever_posting,
+    parse_lever,
+)
 from resume_tailor_harness.discovery.connectors.personio import parse_personio
-from resume_tailor_harness.discovery.connectors.personio import search_url as personio_search_url
-from resume_tailor_harness.discovery.connectors.recruitee import offers_url, parse_recruitee
+from resume_tailor_harness.discovery.connectors.personio import (
+    search_url as personio_search_url,
+)
+from resume_tailor_harness.discovery.connectors.recruitee import (
+    offers_url,
+    parse_recruitee,
+)
 from resume_tailor_harness.discovery.connectors.smartrecruiters import (
     detail_url as sr_detail_url,
 )
@@ -79,7 +93,9 @@ from resume_tailor_harness.discovery.connectors.workday import (
     fetch_job_detail,
     workday_meta_lines,
 )
-from resume_tailor_harness.discovery.url_ingest.greenhouse import read_greenhouse_posting
+from resume_tailor_harness.discovery.url_ingest.greenhouse import (
+    read_greenhouse_posting,
+)
 from resume_tailor_harness.discovery.url_ingest.models import ExtractedJob
 
 Reader = Callable[[AtsTarget, str, str], ExtractedJob | None]
@@ -210,23 +226,28 @@ def _prefer(*candidates: ExtractedJob | None) -> ExtractedJob | None:
 # -- schema.org JobPosting ---------------------------------------------------
 
 
-def _from_json_ld(html: str) -> ExtractedJob | None:
+def _from_json_ld(html: str, url: str | None = None) -> ExtractedJob | None:
     """The page's own schema.org ``JobPosting`` markup, when present."""
-    posting = jobposting_json_ld(html)
+    posting = jobposting_json_ld(html, url)
     if posting is None:
         return None
     organization = posting.get("hiringOrganization")
     company = organization.get("name") if isinstance(organization, dict) else None
-    body = html_to_markdown(posting.get("description") or "")
+    description = posting.get("description")
+    body = html_to_markdown(description) if isinstance(description, str) else ""
+    if not body:
+        return None
     return ExtractedJob(
-        company=company,
-        title=posting.get("title"),
+        company=company if isinstance(company, str) else None,
+        title=posting.get("title") if isinstance(posting.get("title"), str) else None,
         location=jobposting_location(posting),
         jd_text=_with_meta(jobposting_meta_lines(posting), body),
     )
 
 
-def with_json_ld_meta(extracted: ExtractedJob | None, html: str) -> ExtractedJob | None:
+def with_json_ld_meta(
+    extracted: ExtractedJob | None, html: str, url: str | None = None
+) -> ExtractedJob | None:
     """Enrich a body sourced elsewhere with the page's own schema.org facts.
 
     ``_prefer`` cannot do this: it merges only *scalar* fields, so a candidate
@@ -250,7 +271,7 @@ def with_json_ld_meta(extracted: ExtractedJob | None, html: str) -> ExtractedJob
     """
     if extracted is None or not extracted.jd_text:
         return extracted
-    posting = jobposting_json_ld(html)
+    posting = jobposting_json_ld(html, url)
     if posting is None:
         return extracted
     existing = extracted.jd_text
@@ -273,9 +294,10 @@ def with_json_ld_meta(extracted: ExtractedJob | None, html: str) -> ExtractedJob
 def _from_json_ld_scalars(posting: dict) -> ExtractedJob:
     """The markup's scalar fields only -- no body, so it can never win a body."""
     organization = posting.get("hiringOrganization")
+    company = organization.get("name") if isinstance(organization, dict) else None
     return ExtractedJob(
-        company=organization.get("name") if isinstance(organization, dict) else None,
-        title=posting.get("title"),
+        company=company if isinstance(company, str) else None,
+        title=posting.get("title") if isinstance(posting.get("title"), str) else None,
         location=jobposting_location(posting),
         jd_text="",
     )
@@ -317,7 +339,7 @@ def _read_greenhouse(target: AtsTarget, url: str, html: str) -> ExtractedJob | N
         )
         return _extracted_from_row(rows[0]) if rows else None
 
-    return _prefer(_api(api), _from_json_ld(html), read_greenhouse_posting(html))
+    return _prefer(_api(api), _from_json_ld(html, url), read_greenhouse_posting(html))
 
 
 def _read_ashby(target: AtsTarget, url: str, html: str) -> ExtractedJob | None:
@@ -331,7 +353,7 @@ def _read_ashby(target: AtsTarget, url: str, html: str) -> ExtractedJob | None:
             return None
         return _extracted_from_row(parse_ashby({"jobs": [item]}, target.token)[0])
 
-    return _prefer(_api(api), _from_json_ld(html))
+    return _prefer(_api(api), _from_json_ld(html, url))
 
 
 def _read_lever(target: AtsTarget, url: str, html: str) -> ExtractedJob | None:
@@ -340,7 +362,7 @@ def _read_lever(target: AtsTarget, url: str, html: str) -> ExtractedJob | None:
         rows = parse_lever([payload], target.token)
         return _extracted_from_row(rows[0]) if rows else None
 
-    return _prefer(_api(api), _from_json_ld(html))
+    return _prefer(_api(api), _from_json_ld(html, url))
 
 
 def _smartrecruiters_company(target: AtsTarget, url: str) -> str:
@@ -392,7 +414,7 @@ def _read_smartrecruiters(
             jd_text=_with_meta(smartrecruiters_meta_lines(detail), body),
         )
 
-    return _prefer(_api(api), _from_json_ld(html))
+    return _prefer(_api(api), _from_json_ld(html, url))
 
 
 def _workable_shortcode(url: str) -> str | None:
@@ -426,7 +448,7 @@ def _read_workable(target: AtsTarget, url: str, html: str) -> ExtractedJob | Non
         )[0]
         return _extracted_from_row(row)
 
-    return _prefer(_api(api), _from_json_ld(html))
+    return _prefer(_api(api), _from_json_ld(html, url))
 
 
 def _read_personio(target: AtsTarget, url: str, html: str) -> ExtractedJob | None:
@@ -445,7 +467,7 @@ def _read_personio(target: AtsTarget, url: str, html: str) -> ExtractedJob | Non
         )
         return _extracted_from_row(match) if match is not None else None
 
-    return _prefer(_api(api), _from_json_ld(html))
+    return _prefer(_api(api), _from_json_ld(html, url))
 
 
 def _recruitee_slug(url: str) -> str | None:
@@ -470,7 +492,7 @@ def _read_recruitee(target: AtsTarget, url: str, html: str) -> ExtractedJob | No
         )
         return _extracted_from_row(match) if match is not None else None
 
-    return _prefer(_api(api), _from_json_ld(html))
+    return _prefer(_api(api), _from_json_ld(html, url))
 
 
 def _bamboohr_location(opening: dict) -> str | None:
@@ -504,7 +526,7 @@ def _read_bamboohr(target: AtsTarget, url: str, html: str) -> ExtractedJob | Non
             ),
         )
 
-    return _prefer(_api(api), _from_json_ld(html))
+    return _prefer(_api(api), _from_json_ld(html, url))
 
 
 def _read_workday(target: AtsTarget, url: str, html: str) -> ExtractedJob | None:
@@ -532,12 +554,12 @@ def _read_workday(target: AtsTarget, url: str, html: str) -> ExtractedJob | None
             ),
         )
 
-    return _prefer(_api(api), _from_json_ld(html))
+    return _prefer(_api(api), _from_json_ld(html, url))
 
 
 def _json_ld_only(target: AtsTarget, url: str, html: str) -> ExtractedJob | None:
     """Boards with no usable public single-job API: the page's own markup only."""
-    return _prefer(_from_json_ld(html))
+    return _prefer(_from_json_ld(html, url))
 
 
 ATS_READERS: dict[str, Reader] = {

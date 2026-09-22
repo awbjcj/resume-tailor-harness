@@ -1,5 +1,4 @@
 import html
-import json
 import re
 from collections.abc import Iterable
 
@@ -7,6 +6,10 @@ from bs4 import BeautifulSoup
 from markdownify import markdownify as _markdownify
 
 from resume_tailor_harness.discovery.connectors.base import RawJob
+from resume_tailor_harness.discovery.connectors.jobposting import (
+    json_ld,
+    select_posting,
+)
 from resume_tailor_harness.discovery.search_config import SearchConfig
 from resume_tailor_harness.taxonomy.location import join_locations as _join_locations
 
@@ -176,33 +179,10 @@ def jobposting_location(posting: dict) -> str | None:
     return join_locations(locations)
 
 
-def jobposting_json_ld(raw_html: str) -> dict | None:
-    """Return the first JobPosting object from JSON-LD in a public posting page."""
-    soup = BeautifulSoup(raw_html, "html.parser")
-
-    def find(node):
-        if isinstance(node, list):
-            return next(
-                (match for item in node if (match := find(item)) is not None), None
-            )
-        if not isinstance(node, dict):
-            return None
-        types = node.get("@type")
-        if isinstance(types, str) and types.casefold() == "jobposting":
-            return node
-        if isinstance(types, list) and any(
-            str(item).casefold() == "jobposting" for item in types
-        ):
-            return node
-        return find(node.get("@graph"))
-
-    for script in soup.select('script[type="application/ld+json"]'):
-        try:
-            if match := find(json.loads(script.string or script.get_text())):
-                return match
-        except (json.JSONDecodeError, TypeError):
-            continue
-    return None
+def jobposting_json_ld(raw_html: str, url: str | None = None) -> dict | None:
+    """Return an unambiguous posting, preferring the requested URL over recommendations."""
+    match = select_posting(json_ld(raw_html), url)
+    return match[1] if match else None
 
 
 # Word-count floor + gain a replacement JD must clear to count as "materially
@@ -275,7 +255,7 @@ def _names(value) -> list[str]:
 
 def _amount(value) -> str | None:
     if isinstance(value, int | float):
-        return f"{value:,.0f}"
+        return f"{value:,}"
     if isinstance(value, str) and value.strip():
         return value.strip()
     return None
@@ -283,23 +263,34 @@ def _amount(value) -> str | None:
 
 def _json_ld_salary(posting: dict) -> str | None:
     """Render ``baseSalary`` (a MonetaryAmount) the way the page's pay band reads."""
-    salary = posting.get("baseSalary") or posting.get("estimatedSalary")
+    salary = posting.get("baseSalary")
     if isinstance(salary, list):
-        salary = next((item for item in salary if isinstance(item, dict)), None)
+        return (
+            "; ".join(
+                text
+                for item in salary
+                if (text := _json_ld_salary({"baseSalary": item}))
+            )
+            or None
+        )
     if not isinstance(salary, dict):
         return None
     value = salary.get("value")
-    if not isinstance(value, dict):
-        return _amount(value)
-    low = _amount(value.get("minValue"))
-    high = _amount(value.get("maxValue"))
-    exact = _amount(value.get("value"))
-    span = f"{low} - {high}" if low and high else (low or high or exact)
+    if isinstance(value, dict):
+        low = _amount(value.get("minValue"))
+        high = _amount(value.get("maxValue"))
+        exact = _amount(value.get("value"))
+        span = f"{low} - {high}" if low and high else (low or high or exact)
+        currency = salary.get("currency") or value.get("currency")
+        unit = str(value.get("unitText") or "")
+    else:
+        span = _amount(value)
+        currency = salary.get("currency")
+        unit = str(salary.get("unitText") or "")
     if not span:
         return None
-    currency = salary.get("currency") or value.get("currency")
-    period = _JSON_LD_PERIODS.get(str(value.get("unitText") or "").upper())
-    return " ".join(part for part in (currency, span, period) if part)
+    period = _JSON_LD_PERIODS.get(unit.upper(), unit)
+    return " ".join(str(part) for part in (currency, span, period) if part)
 
 
 def jobposting_meta_lines(posting: dict) -> list[str]:
@@ -334,6 +325,18 @@ def jobposting_meta_lines(posting: dict) -> list[str]:
     if salary := _json_ld_salary(posting):
         lines.append(f"Compensation: {salary}")
 
+    for key, label in (
+        ("datePosted", "Date Posted"),
+        ("validThrough", "Valid Through"),
+        ("qualifications", "Qualifications"),
+        ("educationRequirements", "Education"),
+        ("experienceRequirements", "Experience"),
+        ("skills", "Skills"),
+        ("responsibilities", "Responsibilities"),
+        ("jobBenefits", "Benefits"),
+    ):
+        if values := _names(posting.get(key)):
+            lines.append(f"{label}: {html_to_markdown('; '.join(values))}")
     return lines
 
 
