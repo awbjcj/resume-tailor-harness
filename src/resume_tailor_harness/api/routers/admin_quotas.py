@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import datetime, timezone
+from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import func, or_, select, true
@@ -257,7 +258,10 @@ def _account_out(session: Session, user: User) -> QuotaAccountOut:
     ).one()
     subscription = session.get(MemberSubscription, user.id)
     return QuotaAccountOut(
-        subscription_status=subscription.status if subscription else None,
+        subscription_status=cast(
+            Literal["ACTIVE", "EXPIRED", "REVOKED"] | None,
+            subscription.status if subscription else None,
+        ),
         subscription_expires_at=subscription.expires_at if subscription else None,
         user_id=user.id,
         username=user.username,

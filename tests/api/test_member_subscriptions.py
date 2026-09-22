@@ -79,7 +79,10 @@ def test_hosted_enforcement_survives_settings_refresh(mu_app):
     from resume_tailor_harness.config import Settings
 
     assert mu_app.state.settings.cost_quota_enforcement == "enforce"
-    refresh_platform_settings(mu_app, Settings(_env_file=None))
+    refresh_platform_settings(mu_app, Settings(_env_file=None))  # type: ignore[call-arg]
     assert mu_app.state.settings.cost_quota_enforcement == "enforce"
-    refresh_platform_settings(mu_app, Settings(_env_file=None, cost_quota_enforcement="shadow"))
+    refresh_platform_settings(
+        mu_app,
+        Settings(_env_file=None, cost_quota_enforcement="shadow"),  # type: ignore[call-arg]
+    )
     assert mu_app.state.settings.cost_quota_enforcement == "shadow"

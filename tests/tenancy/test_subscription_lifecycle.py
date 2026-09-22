@@ -66,7 +66,11 @@ def context(tmp_path, engine, **settings):
         username="alice",
         role="user",
         paths=WorkspacePaths(tmp_path / "users" / USER),
-        settings=Settings(_env_file=None, cost_quota_enforcement="enforce", **settings),
+        settings=Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            cost_quota_enforcement="enforce",
+            **settings,
+        ),
         engine=None,
         system_engine=engine,
         own_key_providers=frozenset(),
@@ -169,6 +173,7 @@ def test_gateway_calls_consume_allowance_then_credit_and_exhaust(engine, tmp_pat
         charge = session.scalar(
             select(QuotaLedgerEntry).where(QuotaLedgerEntry.kind == "USAGE")
         )
+        assert charge is not None
         assert charge.recurring_micros + charge.credit_micros == -charge.amount_micros
 
 

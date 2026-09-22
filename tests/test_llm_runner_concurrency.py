@@ -278,7 +278,7 @@ def test_async_funding_waiters_leave_executor_capacity_for_settlement(
             )
 
     class Agent(_ClientWatchingAgent):
-        async def arun(self, prompt):
+        async def arun(self, prompt: str, **_kwargs: object) -> SimpleNamespace:
             key = self.model.api_key
             started.set()
             await asyncio.sleep(0.05)

@@ -583,7 +583,10 @@ def account_usage(request: Request) -> AccountUsage:
     if not context.is_admin:
         current = quota_snapshot(engine, context.user_id)
         snapshot = QuotaSnapshotOut(
-            subscription_status=current.subscription_status,
+            subscription_status=cast(
+                Literal["ACTIVE", "EXPIRED", "REVOKED"] | None,
+                current.subscription_status,
+            ),
             subscription_expires_at=current.subscription_expires_at,
             tier_id=current.tier_id,
             tier_name=current.tier_name,
