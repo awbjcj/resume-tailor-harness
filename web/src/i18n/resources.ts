@@ -11,6 +11,31 @@ export async function loadAutoTranslations(
 }
 
 const en = {
+  subscription: {
+    overrideHelp: "Advanced tier assignment below replaces a finite subscription with an indefinitely recurring allowance. Use renewal above for paid extensions.",
+    ledger: { allowanceGrant: "Cycle allowance granted", activated: "Subscription activated", renewed: "Subscription renewed", expired: "Subscription expired", revoked: "Subscription revoked" },
+    gatewayHelp: "Gateway calls consume member allowances and credits. A provider pinned to subscription fails if its URL or key is missing.",
+    title: "Subscription term",
+    help: "Each plan cycle grants its allowance. Renewal extends the term without resetting spent allowance. Unused allowance expires; top-up credits remain.",
+    unmanaged: "No finite subscription term. Existing recurring tier settings still apply.",
+    action: "Subscription action",
+    activate: "Activate subscription",
+    renew: "Renew subscription",
+    revoke: "Revoke subscription",
+    plan: "Subscription plan",
+    choosePlan: "Choose a paid plan",
+    cycles: "Plan cycles (1–52)",
+    reason: "Subscription change reason",
+    save: "Apply subscription change",
+    saving: "Applying…",
+    revokeHelp: "Ends the subscription now and returns this member to the free tier. Top-up credits remain.",
+    termEnd: "Subscription term ends {{date}}",
+    status: {
+      ACTIVE: "Active subscription",
+      EXPIRED: "Subscription expired",
+      REVOKED: "Subscription revoked"
+    }
+  },
   auto: autoEn,
   app: {
     documentTitle: "Résumé Tailor Harness",
@@ -347,7 +372,7 @@ const en = {
     gatewayFallback: "gateway",
     routeModeFor: "{{provider}} route mode",
     summary: {
-      quotaExempt: "quota-exempt",
+      sharedCredits: "shared credits",
       apiMetered: "Provider API · metered spend",
       unsaved: "unsaved",
     },
@@ -778,6 +803,31 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  subscription: {
+    overrideHelp: "下方的高级套餐分配会将有期限的订阅替换为无限期循环的额度。付费延期请使用上方的续订操作。",
+    ledger: { allowanceGrant: "周期额度已发放", activated: "订阅已开通", renewed: "订阅已续订", expired: "订阅已到期", revoked: "订阅已撤销" },
+    gatewayHelp: "网关调用会消耗成员的周期额度和充值余额。固定使用订阅的供应商缺少地址或密钥时，调用将失败。",
+    title: "订阅期限",
+    help: "每个套餐周期发放对应额度。续订会延长期限，不会重置已用额度。未用完的周期额度到期失效，充值余额保留。",
+    unmanaged: "尚无有期限的订阅，现有周期套餐设置仍然生效。",
+    action: "订阅操作",
+    activate: "开通订阅",
+    renew: "续订",
+    revoke: "撤销订阅",
+    plan: "订阅套餐",
+    choosePlan: "选择付费套餐",
+    cycles: "套餐周期数（1–52）",
+    reason: "订阅变更原因",
+    save: "应用订阅变更",
+    saving: "正在应用…",
+    revokeHelp: "立即结束订阅并恢复免费套餐，充值余额保留。",
+    termEnd: "订阅期限截至 {{date}}",
+    status: {
+      ACTIVE: "订阅生效中",
+      EXPIRED: "订阅已到期",
+      REVOKED: "订阅已撤销"
+    }
+  },
   auto: autoZhCN,
   app: {
     documentTitle: "求职助手",
@@ -1090,7 +1140,7 @@ const zhCN = {
     gatewayFallback: "网关",
     routeModeFor: "{{provider}} 的路由模式",
     summary: {
-      quotaExempt: "不占用配额",
+      sharedCredits: "消耗共享额度",
       apiMetered: "服务商 API · 按量计费",
       unsaved: "未保存",
     },

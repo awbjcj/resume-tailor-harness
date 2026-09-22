@@ -1,4 +1,5 @@
 import { Download, Gauge, Infinity as InfinityIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ export function AccountUsageCard({
   usage: AccountUsage;
   isAdmin: boolean;
 }) {
+  const { t } = useTranslation();
   const quota = usage.quota;
   const costs = usage.costs;
   const unlimited = isAdmin || quota?.recurringAllowanceMicros == null;
@@ -62,6 +64,12 @@ export function AccountUsageCard({
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
+        {quota?.subscriptionStatus ? (
+          <div className="rounded-lg border p-3 text-sm">
+            <p className="font-medium">{quota.tierName} · {t(`subscription.status.${quota.subscriptionStatus}`)}</p>
+            {quota.subscriptionExpiresAt ? <p className="text-muted-foreground">{t("subscription.termEnd", { date: formatUserDateTime(quota.subscriptionExpiresAt) })}</p> : null}
+          </div>
+        ) : null}
         {unlimited ? (
           <Alert>
             <InfinityIcon aria-hidden="true" />

@@ -95,7 +95,7 @@ route's endpoint.
 | `REGISTRATION_MODE` | `invite` | `closed`, `invite`, or `open`. The Docker image defaults this to `open` only in hosted mode. |
 | `GLOBAL_DAILY_SIGNUP_LIMIT` | `50` | Platform-wide rolling daily verification-email limit; integer at least 1. |
 | `GLOBAL_WEEKLY_TOKEN_BUDGET` | `50000000` | Legacy shared-key weekly token circuit breaker; non-negative integer, used while cost enforcement is in shadow mode. |
-| `COST_QUOTA_ENFORCEMENT` | `shadow` | `shadow` dual-records USD while token enforcement remains active; `enforce` makes cost quotas authoritative. |
+| `COST_QUOTA_ENFORCEMENT` | `shadow` | Local/library default. Hosted mode defaults to `enforce` when unset; explicit `shadow` dual-records USD with the legacy token guard, while `enforce` makes cost quotas authoritative. |
 | `SPEND_GATE_TTL_SECONDS` | `30.0` | Seconds a spend decision may be reused; non-negative number, with `0` disabling reuse. |
 | `GLOBAL_MONTHLY_COST_QUOTA_MICROS` | `500000000` | UTC calendar-month platform cap in USD micro-units; non-negative integer (`500000000` = USD 500). |
 | `OPEN_SIGNUP_WEEKLY_TOKEN_BUDGET` | `250000` | Initial weekly token allowance for open-signup accounts; non-negative integer. |

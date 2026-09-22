@@ -33,3 +33,14 @@ calendar-month platform shared-key cap.
 - Historical usage is `LEGACY_UNPRICED`; monetary history is never guessed.
 - Rollout starts in `shadow`, requiring complete pricing coverage and telemetry
   comparison before `enforce` makes cost balances authoritative.
+
+## Amendment: finite subscriptions and transactional settlement (2026-09-21)
+
+Hosted mode defaults to `enforce` unless explicitly configured otherwise.
+Finite subscriptions grant one allowance per anchored cycle, expire to FREE,
+and retain durable credits. Renewals are idempotent and do not reset active
+cycle usage. Deployment-owned subscription gateway keys are platform funding,
+not BYOK. Usage and quota deductions now share one transaction and stable
+response IDs deduplicate settlement. Enforcement rechecks the database per
+call so a phase cache cannot hide another request's financial changes.
+See [subscription operations and rollout](../subscription-credits.md).

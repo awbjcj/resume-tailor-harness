@@ -98,7 +98,7 @@ export function ProviderRouteCard({
               {provider.effectiveMode === "subscription" ? (
                 <>
                   <span className="font-mono">{gatewayHost || t("providerRouting.gatewayFallback")}</span>
-                  <span>· {t("providerRouting.summary.quotaExempt")}</span>
+                  <span>· {t("providerRouting.summary.sharedCredits")}</span>
                 </>
               ) : (
                 <span>{t("providerRouting.summary.apiMetered")}</span>

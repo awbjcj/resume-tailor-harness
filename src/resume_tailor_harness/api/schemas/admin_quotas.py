@@ -61,6 +61,8 @@ class QuotaTierPatch(CamelModel):
 
 
 class QuotaAccountOut(UtcCamelModel):
+    subscription_status: Literal["ACTIVE", "EXPIRED", "REVOKED"] | None = None
+    subscription_expires_at: datetime | None = None
     user_id: str
     username: str
     disabled: bool
@@ -104,6 +106,22 @@ class QuotaAccountPatch(CamelModel):
     tier_id: str | None = None
     allowance_override_micros: int | None = Field(default=None, ge=0)
     reason: str = Field(min_length=1, max_length=500)
+
+
+class SubscriptionCommand(CamelModel):
+    action: Literal["ACTIVATE", "RENEW", "REVOKE"]
+    tier_id: str | None = None
+    cycles: int = Field(default=1, ge=1, le=52)
+    reason: str = Field(min_length=1, max_length=500)
+    idempotency_key: str = Field(min_length=8, max_length=64)
+
+
+class SubscriptionOut(CamelModel):
+    user_id: str
+    tier_id: str
+    status: Literal["ACTIVE", "EXPIRED", "REVOKED"]
+    starts_at: datetime
+    expires_at: datetime
 
 
 class QuotaOperationPreviewCreate(CamelModel):

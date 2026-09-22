@@ -74,6 +74,8 @@ class CostTotals(CamelModel):
 
 
 class QuotaSnapshotOut(CamelModel):
+    subscription_status: Literal["ACTIVE", "EXPIRED", "REVOKED"] | None = None
+    subscription_expires_at: datetime | None = None
     tier_id: str
     tier_name: str
     period_start: datetime
