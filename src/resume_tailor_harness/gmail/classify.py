@@ -1,7 +1,12 @@
+import logging
+from collections.abc import Callable
+
 from resume_tailor_harness.gmail.client import EmailMessage
+from resume_tailor_harness.gmail.errors import GmailApiError
 from resume_tailor_harness.llm_runner import Runner
 
 _LABELS = ("rejection", "interview", "assessment", "offer")
+logger = logging.getLogger(__name__)
 
 _CLASSIFIER_INSTRUCTIONS = [
     "Classify one recruiting email as exactly one lowercase word: rejection, interview, assessment, offer, or none.",
@@ -95,7 +100,13 @@ def build_classifier_llm() -> Runner | None:
     )
 
 
-def hydrating_classifier(service, llm: Runner | None):
+def hydrating_classifier(
+    service,
+    llm: Runner | None,
+    *,
+    llm_factory: Callable[[], Runner | None] | None = None,
+    on_warning: Callable[[str], None] | None = None,
+):
     """Classifier that lazily fetches the full body for matched messages.
 
     propose_transitions only calls classify AFTER an email matched an
@@ -103,12 +114,34 @@ def hydrating_classifier(service, llm: Runner | None):
     """
     from resume_tailor_harness.gmail.client import fetch_message_body
 
+    initialized = llm_factory is None
+
+    def warn(message: str) -> None:
+        logger.warning(message)
+        if on_warning:
+            on_warning(message)
+
     def classify(email: EmailMessage) -> str:
+        nonlocal initialized, llm
         if email.body is None and email.message_id:
             try:
                 email.body = fetch_message_body(service, email.message_id)
-            except Exception:  # noqa: BLE001 — snippet-only is a fine fallback
+            except GmailApiError:
+                warn("Some email bodies could not be read. Used available snippets.")
                 email.body = ""
-        return classify_email(email, llm)
+        label = classify_email(email)
+        if label != "none":
+            return label
+        try:
+            if not initialized:
+                initialized = True
+                llm = llm_factory() if llm_factory else None
+            return classify_email(email, llm)
+        except Exception:  # noqa: BLE001 — optional AI must not discard rule-based proposals
+            # Disable it for this pass so an outage does not cost a timeout per email.
+            initialized = True
+            llm = None
+            warn("AI classification is unavailable. Synced using email rules only.")
+            return "none"
 
     return classify

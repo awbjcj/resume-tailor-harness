@@ -7,6 +7,24 @@ import { withQueryClient } from "@/test/utils";
 import { GmailCard } from "./GmailCard";
 
 describe("GmailCard", () => {
+  it("offers reconnect even when both scopes are present", async () => {
+    server.use(http.get("*/api/gmail/status", () => HttpResponse.json({
+      connected: true, scopes: [], draftCapable: true, clientSource: "platform",
+    })));
+    render(<GmailCard />, { wrapper: withQueryClient });
+    expect(await screen.findByRole("button", { name: "Reconnect" })).toBeInTheDocument();
+  });
+
+  it("distinguishes a temporary status failure from a disconnected account", async () => {
+    server.use(http.get("*/api/gmail/status", () => HttpResponse.json({
+      error: { code: "GMAIL_API_ERROR", message: "Temporarily unavailable" },
+    }, { status: 503 })));
+    render(<GmailCard />, { wrapper: withQueryClient });
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.getByText(/your connection may still be active/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Connect Gmail" })).not.toBeInTheDocument();
+  });
+
   it("offers connect when disconnected", async () => {
     server.use(
       http.get("*/api/gmail/status", () =>

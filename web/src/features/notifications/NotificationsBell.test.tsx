@@ -14,6 +14,35 @@ vi.mock("@/features/job/EmailDraftDialog", () => ({
 }));
 
 describe("NotificationsBell", () => {
+  it("shows launch failures with recovery guidance", async () => {
+    server.use(
+      http.get("*/api/notifications", () => HttpResponse.json([])),
+      http.get("*/api/run-completions", () => HttpResponse.json([])),
+      http.post("*/api/gmail/sync", () => HttpResponse.json({
+        error: { code: "GMAIL_NOT_CONNECTED", message: "Connect Gmail in Settings before syncing" },
+      }, { status: 409 })),
+    );
+    const user = userEvent.setup();
+    render(<NotificationsBell />, { wrapper: withQueryClient });
+    await user.click(await screen.findByRole("button", { name: /notifications/i }));
+    await user.click(screen.getByRole("button", { name: "Sync Gmail" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Connect Gmail in Settings before syncing");
+  });
+
+  it("makes a degraded sync visible in completed run history", async () => {
+    server.use(
+      http.get("*/api/notifications", () => HttpResponse.json([])),
+      http.get("*/api/run-completions", () => HttpResponse.json([{
+        id: 20, runId: "gmail-partial", kind: "gmailSync", label: "Done with warnings",
+        status: "succeeded", error: null, completedAt: "2026-09-21T12:00:00Z", readAt: null,
+      }])),
+    );
+    const user = userEvent.setup();
+    render(<NotificationsBell />, { wrapper: withQueryClient });
+    await user.click(await screen.findByRole("button", { name: /notifications/i }));
+    expect(await screen.findByText("Done with warnings")).toBeInTheDocument();
+  });
+
   afterEach(async () => {
     await changeLanguage("en");
   });

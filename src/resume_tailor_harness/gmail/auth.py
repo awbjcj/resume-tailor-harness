@@ -8,10 +8,14 @@ suite never needs them on the import path.
 
 from __future__ import annotations
 
+import time
+from functools import partial
 from pathlib import Path
+from threading import RLock
 from typing import Any
 
-from resume_tailor_harness.gmail.errors import GmailNotConnected
+from resume_tailor_harness.gmail.errors import GmailApiError, GmailNotConnected
+from resume_tailor_harness.progress import atomic_write_text
 from resume_tailor_harness.tenancy.context import current_context
 
 SCOPE_READONLY = "https://www.googleapis.com/auth/gmail.readonly"
@@ -19,6 +23,13 @@ SCOPE_COMPOSE = "https://www.googleapis.com/auth/gmail.compose"
 GMAIL_SCOPES = [SCOPE_READONLY, SCOPE_COMPOSE]
 CREDENTIALS_PATH = "config/gmail_credentials.json"
 _LEGACY_TOKEN_PATH = Path("data/gmail_token.json")
+HTTP_TIMEOUT_SECONDS = 30
+# Bounded lock storage; refresh, connect, and disconnect share the same lock.
+_TOKEN_LOCKS = tuple(RLock() for _ in range(32))
+
+
+def _token_lock(path: Path):
+    return _TOKEN_LOCKS[hash(path.resolve()) % len(_TOKEN_LOCKS)]
 
 
 def token_path(data_dir: Path | None = None) -> Path:
@@ -33,25 +44,31 @@ def token_path(data_dir: Path | None = None) -> Path:
 
 def save_token_json(raw: str, data_dir: Path | None = None) -> Path:
     path = token_path(data_dir)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(raw, encoding="utf-8")
+    with _token_lock(path):
+        atomic_write_text(path, raw, root=path.parent)
     return path
 
 
 def delete_token(data_dir: Path | None = None) -> bool:
     path = token_path(data_dir)
-    if not path.is_file():
-        return False
-    path.unlink()
-    return True
+    with _token_lock(path):
+        if not path.is_file():
+            return False
+        path.unlink()
+        return True
 
 
 def load_credentials(data_dir: Path | None = None) -> Any | None:
-    """Token file -> Credentials; refresh+persist if expired; None if absent/revoked."""
+    """Refresh once per workspace; temporary failures never mean disconnected."""
     path = token_path(data_dir)
+    with _token_lock(path):
+        return _load_credentials(path)
+
+
+def _load_credentials(path: Path) -> Any | None:
     if not path.is_file():
         return None
-    from google.auth.exceptions import RefreshError
+    from google.auth.exceptions import RefreshError, TransportError
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
 
@@ -61,12 +78,35 @@ def load_credentials(data_dir: Path | None = None) -> Any | None:
         return None
     if creds.valid:
         return creds
-    if creds.expired and creds.refresh_token:
-        try:
-            creds.refresh(Request())
-        except RefreshError:
-            return None
-        path.write_text(creds.to_json(), encoding="utf-8")
+    if creds.refresh_token:
+        import requests
+
+        with requests.Session() as session:
+            request = partial(Request(session=session), timeout=HTTP_TIMEOUT_SECONDS)
+            for attempt in range(3):
+                try:
+                    creds.refresh(request)
+                    break
+                except RefreshError as exc:
+                    # Google-auth already retries temporary token endpoint errors.
+                    # Only an explicit invalid_grant proves this token is unusable.
+                    revoked = any(
+                        isinstance(arg, dict) and arg.get("error") == "invalid_grant"
+                        for arg in exc.args
+                    )
+                    if revoked and not exc.retryable:
+                        path.unlink(missing_ok=True)
+                        return None
+                    raise GmailApiError(
+                        "Gmail could not refresh its connection. Try syncing again later."
+                    ) from exc
+                except TransportError as exc:
+                    if attempt == 2:
+                        raise GmailApiError(
+                            "Google is temporarily unreachable. Try syncing again later."
+                        ) from exc
+                    time.sleep(2**attempt)
+        atomic_write_text(path, creds.to_json(), root=path.parent)
         return creds
     return None
 
@@ -83,10 +123,21 @@ def build_service(data_dir: Path | None = None) -> Any:
     """Authenticated Gmail service for the active tenant, or GmailNotConnected."""
     creds = load_credentials(data_dir)
     if creds is None:
-        raise GmailNotConnected("Gmail is not connected for this workspace")
+        raise GmailNotConnected("Connect Gmail again in Settings to resume syncing.")
+    return _build_service(creds)
+
+
+def _build_service(creds: Any) -> Any:
+    import httplib2
+    from google_auth_httplib2 import AuthorizedHttp
     from googleapiclient.discovery import build
 
-    return build("gmail", "v1", credentials=creds)
+    return build(
+        "gmail",
+        "v1",
+        http=AuthorizedHttp(creds, http=httplib2.Http(timeout=HTTP_TIMEOUT_SECONDS)),
+        cache_discovery=False,
+    )
 
 
 def build_gmail_service_interactive(credentials_path: str = CREDENTIALS_PATH) -> Any:
@@ -98,6 +149,4 @@ def build_gmail_service_interactive(credentials_path: str = CREDENTIALS_PATH) ->
         flow = InstalledAppFlow.from_client_secrets_file(credentials_path, GMAIL_SCOPES)
         creds = flow.run_local_server(port=0)
         save_token_json(creds.to_json())
-    from googleapiclient.discovery import build
-
-    return build("gmail", "v1", credentials=creds)
+    return _build_service(creds)

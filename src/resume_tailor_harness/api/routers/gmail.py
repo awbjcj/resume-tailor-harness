@@ -23,7 +23,7 @@ from resume_tailor_harness.api.public_url import public_url
 from resume_tailor_harness.api.schemas.gmail import GmailConnectOut, GmailStatusOut
 from resume_tailor_harness.config import Settings, get_settings
 from resume_tailor_harness.gmail import auth as gmail_auth
-from resume_tailor_harness.gmail.errors import GmailScopeMissing
+from resume_tailor_harness.gmail.errors import GmailApiError, GmailScopeMissing
 from resume_tailor_harness.tenancy.context import current_context, use_context
 
 logger = logging.getLogger(__name__)
@@ -258,7 +258,10 @@ def gmail_status(request: Request):
 @router.delete("/gmail/token", response_model=GmailStatusOut)
 def gmail_disconnect(request: Request):
     data_dir = get_data_dir(request)
-    creds = gmail_auth.load_credentials(data_dir)
+    try:
+        creds = gmail_auth.load_credentials(data_dir)
+    except GmailApiError:
+        creds = None  # Disconnect still works while Google is unreachable.
     if creds is not None and creds.token:
         try:
             import httpx

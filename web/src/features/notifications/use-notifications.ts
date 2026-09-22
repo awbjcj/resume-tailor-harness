@@ -44,7 +44,12 @@ export function useDismissNotification() {
 
 export function useGmailSync() {
   const qc = useQueryClient();
-  return useMutation({
+  const isRunning = useRunStore((state) =>
+    Object.values(state.runs).some((run) =>
+      run.kind === "gmailSync" && ["queued", "running", "cancelling"].includes(run.status),
+    ),
+  );
+  const mutation = useMutation({
     mutationFn: (): Promise<RunOut> => unwrap(api.POST("/api/gmail/sync")),
     onSuccess: (run) => {
       useRunStore.getState().upsert({
@@ -57,11 +62,13 @@ export function useGmailSync() {
         total: 0,
         etaText: null,
       });
-      watchRun(run.runId, "gmailSync", () =>
-        qc.invalidateQueries({ queryKey: KEY }),
-      );
+      watchRun(run.runId, "gmailSync", () => {
+        void qc.invalidateQueries({ queryKey: KEY });
+        void qc.invalidateQueries({ queryKey: ["gmail-status"] });
+      });
     },
   });
+  return { ...mutation, isPending: mutation.isPending || isRunning };
 }
 
 

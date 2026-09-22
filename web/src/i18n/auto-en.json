@@ -1234,6 +1234,7 @@
   "ui_8a7525b1492f": "Notes",
   "ui_8ab6ceefc7e2": "Choose a domain to inspect its skills.",
   "ui_8aeb711b0e45": "Cache write (USD / 1M)",
+  "ui_8aed65d58c66": "Could not check Gmail. Try again; your connection may still be active.",
   "ui_8b233c2a7ce1": "Start with the provider and model already billed by the app. Historical rows remain immutable.",
   "ui_8b47045eb7b8": "cancelled",
   "ui_8b5c2e422c07": "Deletion is permanent. Jobs with progress are refused.",

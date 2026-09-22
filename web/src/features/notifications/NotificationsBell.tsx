@@ -18,7 +18,7 @@ import {
   useMarkRunCompletionRead,
   useRunCompletions,
 } from "./use-run-completions";
-import { localizeRunError, localizeRunKind } from "@/i18n/dynamic-labels";
+import { localizeRunError, localizeRunKind, localizeRunPhase } from "@/i18n/dynamic-labels";
 import { formatUserDateTime } from "@/lib/date-time";
 
 import { ClearHistoryButton } from "./ClearHistoryButton";
@@ -91,6 +91,11 @@ export function NotificationsBell() {
             Sync Gmail
           </Button>
         </div>
+        {sync.error && (
+          <p role="alert" className="mb-3 text-sm text-destructive">
+            {localizeRunError(sync.error.message, i18n.resolvedLanguage)}
+          </p>
+        )}
         <div className="mb-3">
           <ClearHistoryButton label={t("runHistory.clearNotifications")} pending={clear.isPending}
             disabled={isLoading || runsLoading || items.length + runItems.length === 0} error={clear.error}
@@ -147,7 +152,9 @@ export function NotificationsBell() {
                           </div>
                           <p className="mt-1 text-xs leading-5 text-muted-foreground">
                             {localizeRunError(item.error, i18n.resolvedLanguage)
-                              ?? formatUserDateTime(item.completedAt, i18n.resolvedLanguage)}
+                              ?? (item.kind === "gmailSync" && item.label === "Done with warnings"
+                                ? localizeRunPhase(item.label, i18n.resolvedLanguage)
+                                : formatUserDateTime(item.completedAt, i18n.resolvedLanguage))}
                           </p>
                         </div>
                         {item.readAt == null && (
