@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
+import { createElement, StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useChatStream } from "./useChatStream";
@@ -78,6 +79,60 @@ describe("useChatStream", () => {
     expect(FakeEventSource.last!.closed).toBe(false);
   });
 
+  it.each(["stop", "reset"] as const)("%s cancels a scheduled reconnect and ignores late events", async (action) => {
+    const { result } = renderHook(() => useChatStream("run-1"));
+    await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
+    const previous = FakeEventSource.last!;
+    act(() => previous.onerror?.());
+    act(() => result.current[action]());
+    act(() => previous.send({ i: 0, t: "text", v: { text: "late" } }));
+    await act(() => new Promise((resolve) => setTimeout(resolve, 550)));
+    expect(FakeEventSource.instances).toHaveLength(1);
+    expect(result.current.parts).toEqual([]);
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("ignores events from a previous run", async () => {
+    const { result, rerender } = renderHook(({ id }) => useChatStream(id), {
+      initialProps: { id: "run-1" },
+    });
+    await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
+    const previous = FakeEventSource.last!;
+    rerender({ id: "run-2" });
+    await waitFor(() => expect(FakeEventSource.last?.url).toContain("run-2"));
+    act(() => previous.send({ i: 0, t: "text", v: { text: "old run" } }));
+    act(() => FakeEventSource.last!.send({ i: 0, t: "text", v: { text: "new run" } }));
+    expect(result.current.parts).toEqual([{ kind: "text", text: "new run" }]);
+  });
+
+  it("does not connect if stopped while a link token is loading", async () => {
+    localStorage.removeItem("resume-tailor-harness-token");
+    let release!: () => void;
+    const ready = new Promise<void>((resolve) => { release = resolve; });
+    let requested = false;
+    server.use(http.post("/api/auth/link-token", async () => {
+      requested = true;
+      await ready;
+      return HttpResponse.json({ token: "late-token", expiresInSeconds: 60 });
+    }));
+    const { result } = renderHook(() => useChatStream("run-1"));
+    await waitFor(() => expect(requested).toBe(true));
+    act(() => result.current.stop());
+    release();
+    await getSseLinkToken();
+    expect(FakeEventSource.instances).toHaveLength(0);
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("opens only one stream under Strict Mode and closes it on unmount", async () => {
+    const { unmount } = renderHook(() => useChatStream("run-1"), {
+      wrapper: ({ children }) => createElement(StrictMode, null, children),
+    });
+    await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+    unmount();
+    expect(FakeEventSource.last!.closed).toBe(true);
+  });
+
   it("reuses one unexpired link token across consecutive runs", async () => {
     localStorage.removeItem("resume-tailor-harness-token");
     let requests = 0;
@@ -108,5 +163,5 @@ describe("useChatStream", () => {
     expect(requests).toBe(2);
   });
 });
-import { resetSseLinkTokenCache } from "@/lib/runs/linkToken";
+import { getSseLinkToken, resetSseLinkTokenCache } from "@/lib/runs/linkToken";
 import { server } from "@/test/server";

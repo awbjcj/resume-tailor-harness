@@ -901,10 +901,10 @@ const zhCN = {
     },
   },
   nav: {
-    dashboard: "仪表盘",
+    dashboard: "求职概览",
     prepare: "准备",
     profile: "个人资料",
-    profileCoach: "个人资料教练",
+    profileCoach: "个人资料助手",
     mockInterviews: "模拟面试",
     careerLab: "职业实验室",
     findAndTailor: "发现与定制",
@@ -1308,7 +1308,7 @@ const zhCN = {
     waiting_zero: "目前没有待处理事项",
     waiting_one: "有 {{count}} 个职位等待你处理",
     waiting_other: "有 {{count}} 个职位等待你处理",
-    operations: "运营概览",
+    operations: "求职概览",
     subtitle: "获取最新职位、处理初筛队列并生成定制简历。",
     systemStatus: "系统状态",
     queue: {
@@ -1353,7 +1353,7 @@ const zhCN = {
     health: {
       apiKey: "大模型 API 密钥",
       resume: "简历文档",
-      facts: "个人资料事实已构建",
+      facts: "个人经历已整理",
       search: "搜索已配置",
       sources: "职位来源已启用",
     },
@@ -1404,7 +1404,7 @@ const zhCN = {
     dismiss: "忽略",
     resolve: "解决",
     nextSevenDays: "未来 7 天",
-    upcomingDescription: "即将到来的面试和 Offer 截止日期。",
+    upcomingDescription: "即将到来的面试和录用通知截止日期。",
     downloadCalendar: "下载近期日历",
     otherEvent: "其他",
     application: "职位申请",
@@ -1451,7 +1451,7 @@ const zhCN = {
       emailDraftGeneration: "邮件草稿生成",
       gmailSync: "Gmail 同步",
       githubSync: "GitHub 同步",
-      h1bSponsorshipCheck: "H-1B 赞助核查",
+      h1bSponsorshipCheck: "H-1B 担保核查",
       linkedinImport: "LinkedIn 导入",
       taxonomyMaintenance: "技能分类维护",
       profileBuild: "个人资料构建",
@@ -1487,13 +1487,13 @@ const zhCN = {
       sources: {
         label: "职位来源",
         task: "添加职位来源",
-        hint: "设置搜索条件并启用至少一个来源，让智能体知道去哪里查找。",
+        hint: "设置搜索条件，并启用至少一个职位来源。",
         cta: "添加来源",
       },
       pull: {
         label: "获取",
         task: "获取首批职位",
-        hint: "首次运行职位获取，用最新职位填充求职流程。",
+        hint: "获取首批职位，然后筛选值得申请的机会。",
         cta: "获取职位",
       },
       shortlist: {
@@ -1505,7 +1505,7 @@ const zhCN = {
       tailor: {
         label: "定制",
         task: "定制简历",
-        hint: "为已批准职位定制简历，然后生成并申请。",
+        hint: "为已批准的职位定制简历，生成文档后即可投递。",
         cta: "定制简历",
       },
     },

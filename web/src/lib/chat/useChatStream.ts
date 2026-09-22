@@ -12,41 +12,44 @@ export function useChatStream(runId: string | null) {
   const [parts, setParts] = useState<ChatPart[]>([]);
   const [status, setStatus] = useState<ChatStreamStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const cursor = useRef(0);
-  const source = useRef<EventSource | null>(null);
+  const disposeRef = useRef<(() => void) | null>(null);
 
   const reset = useCallback(() => {
-    source.current?.close();
-    source.current = null;
-    cursor.current = 0;
+    disposeRef.current?.();
     setParts([]);
     setStatus("idle");
     setError(null);
   }, []);
 
   const stop = useCallback(() => {
-    source.current?.close();
-    source.current = null;
+    reset();
     if (runId) void cancelRun(runId);
-    cursor.current = 0;
-    setParts([]);
-    setError(null);
-    setStatus("idle");
-  }, [runId]);
+  }, [reset, runId]);
 
   useEffect(() => {
     let disposed = false;
+    let cursor = 0;
+    let source: EventSource | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const dispose = () => {
+      disposed = true;
+      if (reconnectTimer !== null) clearTimeout(reconnectTimer);
+      source?.close();
+      source = null;
+    };
+    disposeRef.current = dispose;
 
     const connect = (token?: string, refreshed = false) => {
       if (disposed || typeof EventSource === "undefined") return;
-      const base = `/api/runs/${runId}/stream?offset=${cursor.current}`;
+      const base = `/api/runs/${runId}/stream?offset=${cursor}`;
       const url = token ? `${base}&token=${encodeURIComponent(token)}` : withTokenParam(base);
       const eventSource = new EventSource(url);
-      source.current = eventSource;
+      source = eventSource;
       setStatus("streaming");
 
       eventSource.onmessage = (message) => {
+        if (disposed || source !== eventSource) return;
         let raw: unknown;
         try {
           raw = JSON.parse(message.data);
@@ -54,10 +57,10 @@ export function useChatStream(runId: string | null) {
           return;
         }
         const event = parseStreamEvent(raw);
-        if (!event || event.i !== cursor.current) return;
-        cursor.current = event.i + 1;
+        if (!event || event.i !== cursor) return;
+        cursor = event.i + 1;
         if (event.t === "completed") {
-          eventSource.close();
+          dispose();
           setStatus("done");
           return;
         }
@@ -66,7 +69,7 @@ export function useChatStream(runId: string | null) {
           return;
         }
         if (event.t === "failed") {
-          eventSource.close();
+          dispose();
           setError(event.v.message);
           setStatus("error");
           return;
@@ -75,8 +78,9 @@ export function useChatStream(runId: string | null) {
       };
 
       eventSource.onerror = () => {
+        if (disposed || source !== eventSource) return;
         eventSource.close();
-        if (disposed) return;
+        source = null;
         if (token && !getToken() && !refreshed) {
           invalidateSseLinkToken(token);
           void getSseLinkToken()
@@ -90,7 +94,9 @@ export function useChatStream(runId: string | null) {
 
     queueMicrotask(() => {
       if (disposed) return;
-      reset();
+      setParts([]);
+      setStatus("idle");
+      setError(null);
       if (!runId) return;
       if (getToken()) connect();
       else {
@@ -101,12 +107,10 @@ export function useChatStream(runId: string | null) {
     });
 
     return () => {
-      disposed = true;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      source.current?.close();
-      source.current = null;
+      dispose();
+      if (disposeRef.current === dispose) disposeRef.current = null;
     };
-  }, [reset, runId]);
+  }, [runId]);
 
   return { parts, status, error, stop, reset };
 }

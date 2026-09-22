@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { JobTable } from "./JobTable";
+import { changeLanguage } from "@/i18n";
 
 const rows = [
   { jobId: 1, company: "Acme", title: "Eng", fitScore: 22, source: "greenhouse_jobs", location: "New York, NY", status: "rejected" },
@@ -9,6 +10,14 @@ const rows = [
 ];
 
 describe("JobTable", () => {
+  it("translates a job role as a position rather than an account role", async () => {
+    render(<JobTable rows={rows} selection={{ isSelected: () => false }} onToggle={vi.fn()} onOpen={vi.fn()} />);
+    await act(() => changeLanguage("zh-CN"));
+    expect(screen.getByRole("columnheader", { name: "职位" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "角色" })).not.toBeInTheDocument();
+    await act(() => changeLanguage("en"));
+    expect(screen.getByRole("columnheader", { name: "Role" })).toBeInTheDocument();
+  });
   it("renders rows and toggles a row checkbox", () => {
     const onToggle = vi.fn();
     render(

@@ -36,7 +36,7 @@ const reviewConfig = {
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/notifications", (route) => route.fulfill({ json: [] }));
-  await page.route("**/api/run-completions", (route) => route.fulfill({ json: [] }));
+  await page.route(/\/api\/run-completions(?:\?.*)?$/, (route) => route.fulfill({ json: [] }));
   await page.route("**/api/setup/status", (route) =>
     route.fulfill({
       json: {
@@ -68,11 +68,23 @@ test("renders localized gates, tiers, and reviewer notes without altering model 
   await page.goto("/settings/review");
 
   await expect(page.getByText("硬性门槛", { exact: true })).toBeVisible();
-  await expect(page.getByText(/启用硬性门槛的评审会直接阻断本轮/)).toBeVisible();
+  await expect(page.getByText(/硬性门槛评审会在评分前阻断本轮/)).toBeVisible();
   await expect(page.getByText(/阻断项/)).toBeVisible();
   await expect(page.getByRole("button", { name: "写作模型档位：标准型" })).toBeVisible();
   await expect(page.getByRole("button", { name: "修订模型档位：高级型" })).toBeVisible();
   await expect(page.getByText("mid", { exact: true })).toHaveCount(0);
   await expect(page.getByText("premium", { exact: true })).toHaveCount(0);
   expect(consoleErrors).toEqual([]);
+});
+
+test("switches settings navigation language while preserving unsaved form input", async ({ page }) => {
+  await page.goto("/settings/review");
+  await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
+  await expect(page.getByRole("heading", { name: "Review panel", exact: true })).toBeVisible();
+  await page.locator("#maxRounds").fill("4");
+  await page.getByRole("combobox", { name: "Language", exact: true }).selectOption("zh-CN");
+  await expect(page.getByRole("link", { name: "备份", exact: true }).last()).toBeVisible();
+  await expect(page.getByRole("link", { name: "助手提示词", exact: true }).last()).toBeVisible();
+  await expect(page.locator("#maxRounds")).toHaveValue("4");
+  await expect(page.getByRole("button", { name: "保存更改", exact: true })).toBeVisible();
 });

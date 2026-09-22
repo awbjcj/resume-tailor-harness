@@ -9,11 +9,20 @@ function isViewMode(value: string | null): value is ViewMode {
 export function useViewMode(storageKey = "board-view"): [ViewMode, (view: ViewMode) => void] {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlView = searchParams.get("view");
-  const storedView = localStorage.getItem(storageKey);
+  let storedView: string | null = null;
+  try {
+    storedView = localStorage.getItem(storageKey);
+  } catch {
+    // URL state still works when browser storage is unavailable.
+  }
   const view = isViewMode(urlView) ? urlView : isViewMode(storedView) ? storedView : "cards";
 
   const setView = (nextView: ViewMode) => {
-    localStorage.setItem(storageKey, nextView);
+    try {
+      localStorage.setItem(storageKey, nextView);
+    } catch {
+      // A persistence failure must not prevent changing the current view.
+    }
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
       next.set("view", nextView);

@@ -1,10 +1,23 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { EventFormDialog } from "./EventFormDialog";
+import { changeLanguage } from "@/i18n";
 
 describe("EventFormDialog", () => {
+  it("updates event labels in an open dialog while keeping draft input and protocol values", async () => {
+    const user = userEvent.setup();
+    render(<EventFormDialog trigger={<button>Add event</button>} onSubmit={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Add event" }));
+    await user.type(screen.getByLabelText(/notes/i), "Keep my notes");
+    await act(() => changeLanguage("zh-CN"));
+    expect(screen.getByRole("option", { name: "已收到录用通知" })).toHaveValue("offer_received");
+    expect(screen.getByRole("option", { name: "Zoom" })).toHaveValue("zoom");
+    expect(screen.getByDisplayValue("Keep my notes")).toBeInTheDocument();
+    await act(() => changeLanguage("en"));
+    expect(screen.getByRole("option", { name: "Offer received" })).toBeInTheDocument();
+  });
   it("submits a minimal all-day event", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();

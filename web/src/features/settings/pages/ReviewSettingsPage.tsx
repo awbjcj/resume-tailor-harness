@@ -90,6 +90,7 @@ const REVIEWER_NOTE_KEYS: Record<string, ReviewerNoteKey> = {
 
 export function ReviewSettingsPage() {
   const [rosterId, setRosterId] = useState<RosterId>("fast");
+  const [resetVersion, setResetVersion] = useState(0);
   // Switching rosters swaps `key` below, which unmounts the form and takes the
   // unsaved draft with it. Tracking the active form's dirty state up here lets
   // the switch ask first instead of silently discarding typing.
@@ -112,7 +113,7 @@ export function ReviewSettingsPage() {
             How tailored resumes get written, scored, and sized before they're offered up for approval.
           </p>
         </div>
-        <ResetSectionButton sectionId="review" label="Review panel" />
+        <ResetSectionButton sectionId="review" label="Review panel" onReset={() => setResetVersion((version) => version + 1)} />
       </header>
 
       {/* Fast/Deep is the SCOPE of this page, not a setting on it — every
@@ -163,7 +164,7 @@ export function ReviewSettingsPage() {
       </Alert>
 
       <ReviewRosterForm
-        key={roster.id}
+        key={`${roster.id}:${resetVersion}`}
         endpoint={roster.endpoint}
         onDirtyChange={setDirty}
       />

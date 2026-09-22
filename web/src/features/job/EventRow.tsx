@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { CalendarClock, CalendarPlus, MapPin, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,13 +10,7 @@ import { openDownload } from "@/lib/api/client";
 import { formatCalendarDate } from "@/lib/calendar-date";
 import { formatUserDateTime } from "@/lib/date-time";
 import { EventFormDialog } from "./EventFormDialog";
-import {
-  KIND_LABELS,
-  MODALITY_LABELS,
-  PLATFORM_LABELS,
-  REPEATABLE_KINDS,
-  RESULT_LABELS,
-} from "./event-labels";
+import { getEventLabels, REPEATABLE_KINDS } from "./event-labels";
 import {
   useDeleteEvent,
   useUpdateEvent,
@@ -24,7 +19,7 @@ import {
 
 function titleFor(event: ApplicationEvent): string {
   if (event.kind === "custom") return event.customLabel || "Other";
-  const label = KIND_LABELS[event.kind] ?? event.kind;
+  const label = getEventLabels().KIND_LABELS[event.kind] ?? event.kind;
   return REPEATABLE_KINDS.has(event.kind) ? `${label} ${event.sequence}` : label;
 }
 
@@ -58,6 +53,8 @@ function isWebLink(value: string | null | undefined): value is string {
 }
 
 export function EventRow({ event, jobId, now }: { event: ApplicationEvent; jobId: number; now?: Date }) {
+  useTranslation();
+  const { PLATFORM_LABELS, MODALITY_LABELS, RESULT_LABELS } = getEventLabels();
   const update = useUpdateEvent(jobId, event.id);
   const remove = useDeleteEvent(jobId, event.id);
   const [renderedAt] = useState(() => new Date());

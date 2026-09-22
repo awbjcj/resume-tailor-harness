@@ -22,7 +22,7 @@ export function StyleGuideSettingsPage() {
             House style for tailored bullets. The tailor and reviewers use it.
           </p>
         </div>
-        <ResetSectionButton sectionId="style_guide" label="Style guide" />
+        <ResetSectionButton sectionId="style_guide" label="Style guide" onReset={() => setDraft(null)} />
       </header>
       <Field>
         <FieldLabel htmlFor="style-guide">Style guide</FieldLabel>

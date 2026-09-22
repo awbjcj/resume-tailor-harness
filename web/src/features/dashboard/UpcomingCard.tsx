@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { KIND_LABELS, REPEATABLE_KINDS } from "@/features/job/event-labels";
+import { getEventLabels, REPEATABLE_KINDS } from "@/features/job/event-labels";
 import { openDownload } from "@/lib/api/client";
 import { formatCalendarDate } from "@/lib/calendar-date";
 import { formatUserDateTime } from "@/lib/date-time";
@@ -23,7 +23,7 @@ type UpcomingEvent = NonNullable<DashboardSummary["upcomingEvents"]>[number];
 function eventTitle(event: UpcomingEvent, otherLabel: string): string {
   const label = event.kind === "custom"
     ? event.customLabel || otherLabel
-    : KIND_LABELS[event.kind] ?? event.kind;
+    : getEventLabels().KIND_LABELS[event.kind] ?? event.kind;
   return REPEATABLE_KINDS.has(event.kind) ? `${label} ${event.sequence}` : label;
 }
 
