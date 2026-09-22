@@ -1,10 +1,12 @@
 import base64
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from resume_tailor_harness.discovery.connectors.text import html_to_text
 from resume_tailor_harness.gmail.auth import (  # noqa: F401 — CLI compat re-export
     build_gmail_service_interactive as build_gmail_service,
 )
+from resume_tailor_harness.gmail.requests import execute_read
 
 BODY_CHAR_LIMIT = 4000
 
@@ -50,13 +52,11 @@ def extract_body(payload: dict) -> str:
 
 
 def fetch_message_body(service, message_id: str) -> str:
-    msg = (
-        service.users()
-        .messages()
-        .get(userId="me", id=message_id, format="full")
-        .execute()
+    msg = execute_read(
+        service.users().messages().get(userId="me", id=message_id, format="full"),
+        allow_missing=True,
     )
-    return extract_body(msg.get("payload", {}))
+    return extract_body((msg or {}).get("payload", {}))
 
 
 def _header(headers: list[dict], name: str) -> str:
@@ -72,17 +72,43 @@ def _domain(sender: str) -> str:
     return sender.split("@", 1)[1].rstrip(">").strip().lower()
 
 
-def fetch_recent_messages(service, max_results: int = 50) -> list[EmailMessage]:
+def fetch_recent_messages(
+    service,
+    max_results: int = 50,
+    *,
+    on_progress: Callable[[int, int], None] | None = None,
+) -> list[EmailMessage]:
     """Fetch recent inbox messages as EmailMessages (read-only)."""
-    listing = (
-        service.users()
-        .messages()
-        .list(userId="me", maxResults=max_results, labelIds=["INBOX"])
-        .execute()
-    )
+    refs: list[dict] = []
+    page_token = None
+    seen_pages: set[str] = set()
+    while len(refs) < max_results:
+        if on_progress:
+            on_progress(0, max_results)
+        params = {"pageToken": page_token} if page_token else {}
+        listing = (
+            execute_read(
+                service.users()
+                .messages()
+                .list(
+                    userId="me",
+                    maxResults=min(500, max_results - len(refs)),
+                    labelIds=["INBOX"],
+                    **params,
+                )
+            )
+            or {}
+        )
+        refs.extend(listing.get("messages", [])[: max_results - len(refs)])
+        page_token = listing.get("nextPageToken")
+        if not page_token or page_token in seen_pages:
+            break
+        seen_pages.add(page_token)
     messages: list[EmailMessage] = []
-    for ref in listing.get("messages", []):
-        msg = (
+    for index, ref in enumerate(refs):
+        if on_progress:
+            on_progress(index, len(refs))
+        msg = execute_read(
             service.users()
             .messages()
             .get(
@@ -90,9 +116,12 @@ def fetch_recent_messages(service, max_results: int = 50) -> list[EmailMessage]:
                 id=ref["id"],
                 format="metadata",
                 metadataHeaders=["From", "Subject"],
-            )
-            .execute()
+            ),
+            allow_missing=True,
         )
+        # A message can be deleted between listing and fetching metadata.
+        if msg is None:
+            continue
         headers = msg.get("payload", {}).get("headers", [])
         sender = _header(headers, "From")
         messages.append(
@@ -105,4 +134,6 @@ def fetch_recent_messages(service, max_results: int = 50) -> list[EmailMessage]:
                 message_id=ref["id"],
             )
         )
+    if on_progress:
+        on_progress(len(refs), len(refs))
     return messages

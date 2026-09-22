@@ -22,7 +22,7 @@ const BY_KIND: Record<string, readonly string[]> = {
   undoTaxonomyMaintenance: ["match-gap"],
   "profile-build": ["profile-sources", "match-gap", "setup-status"],
   "github-sync": ["profile-sources"],
-  gmailSync: ["notifications"],
+  gmailSync: ["notifications", "gmail-status"],
 };
 
 const overrides = new Map<string, readonly string[]>();

@@ -58,11 +58,16 @@ def _validation_details(exc: RequestValidationError) -> list[dict[str, Any]]:
 
 
 def install_error_handlers(app: FastAPI) -> None:
+    from resume_tailor_harness.gmail.errors import GmailApiError
     from resume_tailor_harness.tenancy.limits import CostRateUnavailableError
     from resume_tailor_harness.tenancy.quotas import (
         CostQuotaExceededError,
         GlobalCostQuotaExceededError,
     )
+
+    @app.exception_handler(GmailApiError)
+    async def _gmail_unavailable(_: Request, exc: GmailApiError) -> JSONResponse:
+        return JSONResponse(status_code=503, content=_envelope(exc.code, str(exc)))
 
     @app.exception_handler(CostQuotaExceededError)
     async def _cost_quota(_: Request, exc: CostQuotaExceededError) -> JSONResponse:

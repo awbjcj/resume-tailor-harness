@@ -1,7 +1,11 @@
 import base64
 
 from resume_tailor_harness.gmail.classify import hydrating_classifier
-from resume_tailor_harness.gmail.client import EmailMessage, extract_body, fetch_message_body
+from resume_tailor_harness.gmail.client import (
+    EmailMessage,
+    extract_body,
+    fetch_message_body,
+)
 
 
 def _b64(text: str) -> str:
@@ -45,7 +49,7 @@ class _FakeMessages:
     def get(self, userId, id, format):
         payload = self._payload
         return type(
-            "Req", (), {"execute": staticmethod(lambda: {"payload": payload})}
+            "Req", (), {"execute": staticmethod(lambda **_: {"payload": payload})}
         )()
 
 
@@ -75,3 +79,38 @@ def test_hydrating_classifier_uses_body_rules():
     )
     assert classify(email) == "rejection"
     assert email.body is not None  # hydrated in place, fetched once
+
+
+def test_body_outage_uses_snippet_and_reports_warning(monkeypatch):
+    from unittest.mock import Mock
+    from resume_tailor_harness.gmail import client
+    from resume_tailor_harness.gmail.errors import GmailApiError
+
+    monkeypatch.setattr(
+        client, "fetch_message_body", Mock(side_effect=GmailApiError("offline"))
+    )
+    warnings = []
+    classify = hydrating_classifier(None, None, on_warning=warnings.append)
+    email = EmailMessage(
+        "hr@acme.com", "acme.com", "Update", "Interview invitation", message_id="m1"
+    )
+    assert classify(email) == "interview"
+    assert warnings == ["Some email bodies could not be read. Used available snippets."]
+
+
+def test_body_auth_error_is_not_silently_ignored(monkeypatch):
+    from unittest.mock import Mock
+    import pytest
+    from resume_tailor_harness.gmail import client
+    from resume_tailor_harness.gmail.errors import GmailNotConnected
+
+    monkeypatch.setattr(
+        client, "fetch_message_body", Mock(side_effect=GmailNotConnected("reconnect"))
+    )
+    classify = hydrating_classifier(None, None)
+    with pytest.raises(GmailNotConnected):
+        classify(
+            EmailMessage(
+                "hr@acme.com", "acme.com", "Update", "Interview", message_id="m1"
+            )
+        )

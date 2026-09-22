@@ -17,7 +17,9 @@ class _FakeListing:
 
     def list(self, **kwargs):
         refs = [{"id": m["id"]} for m in self._messages]
-        return type("Req", (), {"execute": staticmethod(lambda: {"messages": refs})})()
+        return type(
+            "Req", (), {"execute": staticmethod(lambda **_: {"messages": refs})}
+        )()
 
     def get(self, userId, id, format, metadataHeaders=None):
         msg = next(m for m in self._messages if m["id"] == id)
@@ -29,7 +31,7 @@ class _FakeListing:
                 "snippet": msg.get("snippet", ""),
                 "threadId": msg.get("threadId"),
             }
-        return type("Req", (), {"execute": staticmethod(lambda: result)})()
+        return type("Req", (), {"execute": staticmethod(lambda **_: result)})()
 
 
 class FakeGmailService:
@@ -80,3 +82,102 @@ def test_run_gmail_sync_disconnected_raises(tmp_path, monkeypatch):
     init_db(engine)
     with pytest.raises(GmailNotConnected):
         run_gmail_sync(engine, _reporter(tmp_path))
+
+
+@pytest.mark.parametrize("fail_at", ["build", "classify"])
+def test_optional_ai_failure_preserves_rule_proposals(tmp_path, monkeypatch, fail_at):
+    from unittest.mock import Mock
+    from resume_tailor_harness.services import gmail_sync
+    from resume_tailor_harness.tracking.repository import pending_notifications
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        for company in ("Acme", "Beta", "Gamma"):
+            job = save_job(session, Job(source="manual", company=company, title="Eng"))
+            save_application(session, Application(job_id=job.id, status="submitted"))
+    service = FakeGmailService(
+        [
+            {
+                "id": company,
+                "headers": [
+                    {"name": "From", "value": f"hr@{company.lower()}.com"},
+                    {"name": "Subject", "value": subject},
+                ],
+            }
+            for company, subject in [
+                ("Acme", "Application update"),
+                ("Beta", "Application update"),
+                ("Gamma", "Interview"),
+            ]
+        ]
+    )
+    runner = Mock()
+    runner.run.side_effect = RuntimeError("provider unavailable")
+    factory = Mock(return_value=runner)
+    if fail_at == "build":
+        factory.side_effect = RuntimeError("no model available")
+    monkeypatch.setattr(gmail_sync, "build_classifier_llm", factory)
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=service)
+    assert result["pending"] == 1
+    assert result["warnings"] == [
+        "AI classification is unavailable. Synced using email rules only."
+    ]
+    assert factory.call_count == 1
+    assert runner.run.call_count == (1 if fail_at == "classify" else 0)
+    with Session(engine) as session:
+        notifications = pending_notifications(session)
+        assert notifications[0].message_id == "Gamma"
+        assert (
+            session.get(Application, notifications[0].application_id).status
+            == "submitted"
+        )
+    # Repeated passes cannot duplicate the same proposal.
+    assert (
+        run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)[
+            "pending"
+        ]
+        == 1
+    )
+
+
+def test_empty_inbox_does_not_build_ai(tmp_path, monkeypatch):
+    from unittest.mock import Mock
+    from resume_tailor_harness.services import gmail_sync
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    factory = Mock(side_effect=AssertionError("AI should not be needed"))
+    monkeypatch.setattr(gmail_sync, "build_classifier_llm", factory)
+    assert run_gmail_sync(
+        engine, _reporter(tmp_path), service=FakeGmailService([])
+    ) == {"pending": 0}
+    factory.assert_not_called()
+
+
+def test_cancellation_during_scan_remains_cancellation(tmp_path):
+    from resume_tailor_harness.api.runs.manager import RunCancelled
+
+    class CancelledReporter(ProgressReporter):
+        def checkpoint(self):
+            raise RunCancelled
+
+    with pytest.raises(RunCancelled):
+        run_gmail_sync(
+            None,
+            CancelledReporter("cancelled", root=tmp_path),
+            service=FakeGmailService([]),
+            llm=None,
+        )
+
+
+def test_sync_honors_configured_data_dir(tmp_path, monkeypatch):
+    from unittest.mock import Mock
+    from resume_tailor_harness.services import gmail_sync
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    build = Mock(return_value=FakeGmailService([]))
+    monkeypatch.setattr(gmail_sync, "build_service", build)
+    run_gmail_sync(engine, _reporter(tmp_path), data_dir=tmp_path, llm=None)
+    build.assert_called_once_with(tmp_path)

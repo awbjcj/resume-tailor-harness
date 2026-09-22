@@ -140,3 +140,58 @@ def test_callback_denied_by_user(client):
     )
     assert response.status_code == 307
     assert "gmail=denied" in response.headers["location"]
+
+
+def test_status_refresh_outage_returns_retryable_error(client, monkeypatch):
+    from resume_tailor_harness.gmail.errors import GmailApiError
+
+    def unavailable(*_):
+        raise GmailApiError(
+            "Google is temporarily unreachable. Try syncing again later."
+        )
+
+    monkeypatch.setattr(gmail_auth, "load_credentials", unavailable)
+    response = client.get("/api/gmail/status")
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "GMAIL_API_ERROR"
+
+
+def test_manual_sync_passes_workspace_directory(client, monkeypatch):
+    from unittest.mock import Mock
+    from resume_tailor_harness.services import gmail_sync
+    from resume_tailor_harness.api.routers import runs
+
+    checked_paths = []
+    monkeypatch.setattr(
+        gmail_auth,
+        "load_credentials",
+        lambda path: checked_paths.append(path) or object(),
+    )
+    sync = Mock(return_value={"pending": 0})
+    monkeypatch.setattr(gmail_sync, "run_gmail_sync", sync)
+
+    def launch_inline(_manager, _kind, work, **_):
+        work(Mock())
+        raise runs.ApiException(409, "TEST_COMPLETE", "Completed inline")
+
+    monkeypatch.setattr(runs, "launch", launch_inline)
+    response = client.post("/api/gmail/sync")
+    assert response.json()["error"]["code"] == "TEST_COMPLETE"
+    assert sync.call_args.kwargs["data_dir"] == checked_paths[0]
+    assert checked_paths[0] == client.app.state.data_dir
+
+
+def test_disconnect_removes_token_during_refresh_outage(client, monkeypatch):
+    from unittest.mock import Mock
+    from resume_tailor_harness.gmail.errors import GmailApiError
+
+    path = gmail_auth.save_token_json("{}", client.app.state.data_dir)
+    monkeypatch.setattr(
+        gmail_auth,
+        "load_credentials",
+        Mock(side_effect=[GmailApiError("offline"), None]),
+    )
+    response = client.delete("/api/gmail/token")
+    assert response.status_code == 200
+    assert response.json()["connected"] is False
+    assert not path.exists()
