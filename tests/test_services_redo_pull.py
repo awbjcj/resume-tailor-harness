@@ -118,7 +118,11 @@ def test_recovery_updates_apply_url_in_place(session, monkeypatch):
     session.refresh(job)
     assert job.id == identifier and job.status == JobStatus.tailored.value
     assert job.url == "https://jobs.lever.co/acme/1"
-    assert outcome.status == "ok" and "indeed.com" in outcome.detail
+    assert outcome.status == "ok"
+    assert outcome.detail == (
+        "Recovered employer posting: https://www.indeed.com/viewjob?jk=1"
+        " -> https://jobs.lever.co/acme/1"
+    )
     assert failure is None
 
 
