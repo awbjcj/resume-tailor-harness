@@ -1594,6 +1594,10 @@ def _reasoning_effort_for(model_id: str, provider: str) -> str:
 
 
 _EFFORT_ORDER = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
+_DEEPSEEK_FLASH_LEGACY_IDS = {
+    "deepseek:deepseek-v4-flash",
+    "deepseek:deepseek-v4-flash-vision-exp",
+}
 
 
 def _responses_effort(model_id: str, provider: str, *, reasoning: bool) -> str | None:
@@ -1602,10 +1606,18 @@ def _responses_effort(model_id: str, provider: str, *, reasoning: bool) -> str |
     Shared by OpenAI and DeepSeek because both speak the Responses API. For
     DeepSeek this single value is also the thinking **toggle**: its lowest
     declared effort is ``none``, which is how a non-reasoning agent turns
-    thinking off. An uncatalogued id returns ``None`` so no reasoning config is
-    sent at all -- its effort vocabulary is unknown.
+    thinking off. The retired Flash IDs share the current Flash vocabulary.
+    Other uncatalogued IDs return ``None`` because their vocabulary is unknown.
     """
     entry = catalog_entry(model_id)
+    if (
+        entry is None
+        and provider == "deepseek"
+        and model_id in _DEEPSEEK_FLASH_LEGACY_IDS
+    ):
+        # These retired IDs still route to V4.1 Flash. Preserve its explicit
+        # thinking toggle without putting the old IDs back in the UI catalog.
+        entry = catalog_entry("deepseek:deepseek-flash")
     if entry is None or not entry.reasoning_efforts:
         return None
     if not reasoning:

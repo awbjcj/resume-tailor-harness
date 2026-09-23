@@ -114,6 +114,8 @@ def test_non_reasoning_deepseek_disables_thinking_rather_than_omitting_it():
     for model_id in (
         "deepseek:deepseek-flash",
         "deepseek:deepseek-v4-pro",
+        "deepseek:deepseek-v4-flash",
+        "deepseek:deepseek-v4-flash-vision-exp",
     ):
         model = build_model(model_id, api_key="k")
         assert model.reasoning == {"effort": "none"}, model_id
