@@ -6,8 +6,7 @@ on:
       full:
         description: >
           Run the full suite (web production build + dependency audit) in
-          addition to lint/test. Quick (dev) runs pass false; full (main)
-          runs pass true.
+          addition to lint/test. Reduced runs pass false; full runs pass true.
         required: false
         type: boolean
         default: false
