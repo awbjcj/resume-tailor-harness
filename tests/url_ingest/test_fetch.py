@@ -38,11 +38,11 @@ def test_static_page_uses_http(monkeypatch):
     assert browser_calls == {}
 
 
-def test_linkedin_host_uses_browser(monkeypatch):
+def test_linkedin_missing_public_detail_falls_back_to_browser(monkeypatch):
     monkeypatch.setattr(
         fetch,
         "fetch_public_text",
-        lambda url, **kw: (_ for _ in ()).throw(AssertionError("no http")),
+        lambda url, **kw: _public("<html>Job shell</html>", url),
     )
     browser_calls = _patch_browser(monkeypatch)
 
@@ -52,6 +52,27 @@ def test_linkedin_host_uses_browser(monkeypatch):
     assert page.html == "<html>browser</html>"
     assert browser_calls["url"] == "https://www.linkedin.com/jobs/view/123"
     assert browser_calls["wait_selector"] == fetch._LINKEDIN_DETAIL_SELECTOR
+
+
+def test_linkedin_public_detail_does_not_launch_browser_even_when_allowed(monkeypatch):
+    html = '<div class="show-more-less-html__markup">Build services.</div>'
+    monkeypatch.setattr(
+        fetch, "fetch_public_text", lambda url, **kw: _public(html, url)
+    )
+    calls = _patch_browser(monkeypatch)
+    page = fetch.fetch_page("https://www.linkedin.com/jobs/view/123")
+    assert not page.rendered
+    assert not calls
+
+
+def test_jsonld_only_page_is_not_mistaken_for_a_javascript_shell(monkeypatch):
+    html = '<script type="application/ld+json">{"@type":"JobPosting","title":"Engineer","description":"Build systems."}</script>'
+    monkeypatch.setattr(
+        fetch, "fetch_public_text", lambda url, **kw: _public(html, url)
+    )
+    calls = _patch_browser(monkeypatch)
+    assert not fetch.fetch_page("https://example.com/jobs/1").rendered
+    assert not calls
 
 
 def test_js_shell_falls_back_to_browser(monkeypatch):

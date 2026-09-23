@@ -27,9 +27,16 @@ from resume_tailor_harness.discovery.pipeline import (
 )
 from resume_tailor_harness.discovery.search_config import load_search_config
 from resume_tailor_harness.discovery.url_ingest.service import job_from_url
+from resume_tailor_harness.discovery.url_ingest.recovery import (
+    RecoveryHints,
+    RecoveryRequired,
+)
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.progress import ProgressReporter
-from resume_tailor_harness.services.agents import build_discovery_bundle, build_url_extract_agent
+from resume_tailor_harness.services.agents import (
+    build_discovery_bundle,
+    build_url_extract_agent,
+)
 from resume_tailor_harness.services.discovery import _skill_artifacts
 from resume_tailor_harness.services.errors import (
     StageFailure,
@@ -41,7 +48,10 @@ from resume_tailor_harness.services.rendering import render_resume_version
 from resume_tailor_harness.services.tailoring import tailor
 from resume_tailor_harness.tenancy.limits import enforce_active_budget
 from resume_tailor_harness.tenancy.paths import FACTS_PATH, SEARCH_PATH
-from resume_tailor_harness.tracking.dedup import compute_content_fingerprint, compute_dedup_key
+from resume_tailor_harness.tracking.dedup import (
+    compute_content_fingerprint,
+    compute_dedup_key,
+)
 from resume_tailor_harness.tracking.repository import (
     application_for_job,
     company_rename_collides,
@@ -93,11 +103,22 @@ def repull_job(
         return StageOutcome(job_id, "pull", "skipped", "no source URL"), None
 
     try:
-        raw = job_from_url(job.url, agent=agent, allow_browser=allow_browser)
-    except (httpx.HTTPError, PlaywrightError) as exc:
+        raw = job_from_url(
+            job.url,
+            agent=agent,
+            allow_browser=allow_browser,
+            **(
+                {"recovery_hints": RecoveryHints(job.company, job.title, job.location)}
+                if job.company and job.title
+                else {}
+            ),
+        )
+    except (httpx.HTTPError, PlaywrightError, RecoveryRequired) as exc:
         logger.warning("repull job=%s failed", job_id, exc_info=exc)
         failure = StageFailure.from_exception(exc)
-        detail = f"{failure.error_type}: {failure.message}"
+        # Run outcomes retain candidate links even when the compact error-card
+        # summary is truncated to 300 characters.
+        detail = f"{failure.error_type}: {exc if isinstance(exc, RecoveryRequired) else failure.message}"
         return StageOutcome(job_id, "pull", "failed", detail), failure
 
     if raw is None or not raw.jd_text.strip():
@@ -107,7 +128,11 @@ def repull_job(
             StageFailure(error_type="UrlFetchError", message=detail, traceback_tail=""),
         )
 
+    detail = None
     job.jd_text = raw.jd_text
+    if raw.url and raw.url != job.url:
+        detail = f"Recovered employer posting: {job.url} -> {raw.url}"
+        job.url = raw.url
     job.content_fingerprint = compute_content_fingerprint(raw.jd_text)
     if raw.location:
         job.location = join_locations([raw.location])
@@ -126,7 +151,7 @@ def repull_job(
             job.dedup_key = new_key
 
     save_job(session, job)
-    return StageOutcome(job_id, "pull", "ok", None), None
+    return StageOutcome(job_id, "pull", "ok", detail), None
 
 
 def _record(session, job, stage, failure, run_id, model=None) -> None:
@@ -226,7 +251,10 @@ def _run_extract(session, jobs, run_id) -> list[StageOutcome]:
 
 
 def _run_tailor(session, jobs, run_id, deep) -> list[StageOutcome]:
-    from resume_tailor_harness.services.tailoring import DEFAULT_REVIEW, DEFAULT_REVIEW_DEEP
+    from resume_tailor_harness.services.tailoring import (
+        DEFAULT_REVIEW,
+        DEFAULT_REVIEW_DEEP,
+    )
 
     ids = [job.id for job in jobs if job.id is not None]
     outcome = tailor(

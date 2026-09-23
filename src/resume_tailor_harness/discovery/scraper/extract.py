@@ -2,7 +2,6 @@
 
 import json
 from typing import cast
-from urllib.parse import urljoin
 
 from agno.agent import Agent
 from resume_tailor_harness.prompts.guidance import with_guidance
@@ -29,7 +28,8 @@ from .contracts import (
     SalaryBand,
     Snapshot,
 )
-from .identity import normalize_board_url, observed_job_key
+from .identity import observed_job_key
+from resume_tailor_harness.discovery.connectors.jobposting import select_posting
 from .validate import validate_evidence
 
 
@@ -56,36 +56,13 @@ def build_extract_agent() -> Runner:
     )
 
 
-def _postings(value, path=""):
-    if isinstance(value, list):
-        for i, item in enumerate(value):
-            yield from _postings(item, f"{path}.{i}".strip("."))
-    elif isinstance(value, dict):
-        types = value.get("@type", [])
-        if types == "JobPosting" or isinstance(types, list) and "JobPosting" in types:
-            yield path, value
-        for key in ("@graph", "itemListElement", "item"):
-            if key in value:
-                yield from _postings(value[key], f"{path}.{key}".strip("."))
-
-
 def _structured(snapshot: Snapshot, source_id: str, revision: int) -> Observation:
     facts = JobFacts(source_url=snapshot.final_url)
     result = Observation(source_id=source_id, revision=revision, facts=facts)
-    postings = list(_postings(snapshot.json_ld))
-    matched = [
-        (path, job)
-        for path, job in postings
-        if job.get("url")
-        and normalize_board_url(urljoin(snapshot.final_url, str(job["url"])))
-        == normalize_board_url(snapshot.final_url)
-    ]
-    candidates = matched or [
-        (path, job) for path, job in postings if not job.get("url")
-    ]
-    if len(candidates) != 1:
+    selected = select_posting(snapshot.json_ld, snapshot.final_url)
+    if selected is None:
         return result
-    path, job = candidates[0]
+    path, job = selected
 
     def assign(field, value, key):
         if value is None or value == "":
@@ -139,17 +116,28 @@ def _structured(snapshot: Snapshot, source_id: str, revision: int) -> Observatio
     if labels:
         assign("locations", labels, "jobLocation")
     salary = job.get("baseSalary")
-    if isinstance(salary, dict) and isinstance(salary.get("value"), dict):
-        amount = salary["value"]
+    salaries = salary if isinstance(salary, list) else [salary]
+    bands = []
+    for item in salaries:
+        if not isinstance(item, dict):
+            continue
+        amount = item.get("value")
+        if not isinstance(amount, dict):
+            amount = {"value": amount, "unitText": item.get("unitText")}
+        if not any(
+            amount.get(key) is not None for key in ("minValue", "maxValue", "value")
+        ):
+            continue
         try:
-            band = SalaryBand(
-                minimum=amount.get("minValue", amount.get("value")),
-                maximum=amount.get("maxValue", amount.get("value")),
-                currency=salary.get("currency"),
-                period=amount.get("unitText"),
-                raw_text=json.dumps(salary),
+            bands.append(
+                SalaryBand(
+                    minimum=amount.get("minValue", amount.get("value")),
+                    maximum=amount.get("maxValue", amount.get("value")),
+                    currency=item.get("currency", amount.get("currency")),
+                    period=amount.get("unitText"),
+                    raw_text=json.dumps(item, ensure_ascii=False),
+                )
             )
-            assign("salary_bands", [band], "baseSalary")
         except ValueError:
             result.issues.append(
                 FieldIssue(
@@ -158,6 +146,8 @@ def _structured(snapshot: Snapshot, source_id: str, revision: int) -> Observatio
                     message="Invalid salary range",
                 )
             )
+    if bands:
+        assign("salary_bands", bands, "baseSalary")
     if str(job.get("jobLocationType", "")).upper() == "TELECOMMUTE":
         assign("remote_policy", "remote", "jobLocationType")
     if job.get("applicantLocationRequirements"):

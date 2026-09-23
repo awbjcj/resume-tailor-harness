@@ -97,7 +97,9 @@ def test_refresh_transport_failure_retries_and_persists(tmp_path, monkeypatch):
 
     monkeypatch.setattr(Credentials, "refresh", refresh)
     monkeypatch.setattr(auth.time, "sleep", lambda _: None)
-    assert auth.load_credentials(tmp_path).token == "new-access-token"
+    credentials = auth.load_credentials(tmp_path)
+    assert credentials is not None
+    assert credentials.token == "new-access-token"
     assert len(calls) == 2
     assert json.loads(path.read_text())["token"] == "new-access-token"
 
@@ -164,7 +166,9 @@ def test_concurrent_loads_refresh_once(tmp_path, monkeypatch):
 
     def load():
         barrier.wait(timeout=5)
-        return auth.load_credentials(tmp_path).token
+        credentials = auth.load_credentials(tmp_path)
+        assert credentials is not None
+        return credentials.token
 
     monkeypatch.setattr(Credentials, "refresh", refresh)
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -185,4 +189,6 @@ def test_missing_access_token_refreshes_even_before_expiry(tmp_path, monkeypatch
         creds.token = "recovered"
 
     monkeypatch.setattr(Credentials, "refresh", refresh)
-    assert auth.load_credentials(tmp_path).token == "recovered"
+    credentials = auth.load_credentials(tmp_path)
+    assert credentials is not None
+    assert credentials.token == "recovered"

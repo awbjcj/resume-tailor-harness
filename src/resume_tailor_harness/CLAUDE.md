@@ -100,13 +100,10 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
   subclasses `CompatibleOpenAIResponses` — inheriting the truncation recording
   and `$ref`-sibling stripping. `agno.models.deepseek.DeepSeek` (Chat
   Completions) is no longer used, and the legacy `deepseek-chat` /
-  `deepseek-reasoner` ids are retired; `deepseek-v4-flash`, `deepseek-v4-pro`,
-  and the experimental `deepseek-v4-flash-vision-exp` are catalogued. DeepSeek's
-  customer notice says `deepseek-v4-pro` traffic routes to V4.1 Flash from
-  2026-09-10T04:00Z and is billed at V4.1 Flash rates until V4.1 Pro launches;
-  retain that documented route and effective-date its rates. Do not invent a
-  separate V4.1 API alias until DeepSeek publishes its ID and capability
-  contract. Five things ride on this:
+  `deepseek-reasoner` ids are retired. The catalog offers `deepseek-flash`
+  (V4.1 Flash) and `deepseek-v4-pro` (V4 Pro). The retired V4 Flash and Vision
+  Exp IDs temporarily route to V4.1 Flash, so historical rate rows remain for
+  past usage while new selections use `deepseek-flash`. Five things ride on this:
   - **`provider = "DeepSeek"` is load-bearing, not cosmetic.**
     `tenancy/costs.py::normalize_provider` tests for `"openai"` **before**
     `"deepseek"`, so a subclass that inherited the parent's `"OpenAI"` would bill

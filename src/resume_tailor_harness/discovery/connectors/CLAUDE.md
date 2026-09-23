@@ -24,6 +24,14 @@ host suffix), `tenant` +
 
 ## Single-URL ATS readers (`url_ingest/ats_readers.py`)
 
+Browser-free acquisition and its measured limits are documented in
+`docs/browser-free-job-scraping.md`. `connectors/jobposting.py` owns JSON-LD
+selection for both URL readers and evidence extraction: match the requested
+posting, never the first recommendation. Public source replay uses `HttpWorker`
+when browser use is disabled, preserving the existing gateway and review rules.
+LinkedIn has a bounded HTTP connector under the same access policy. A blocked
+site is an acquisition failure, not an empty board.
+
 Add-from-URL routes a pasted posting through `identify_host` (pure, no network)
 to a deterministic reader — the browser is never used for a recognized ATS.
 

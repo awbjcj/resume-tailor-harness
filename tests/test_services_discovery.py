@@ -1,5 +1,6 @@
 import httpx
 import pytest
+from datetime import datetime
 
 from resume_tailor_harness.db import get_session, init_db, make_engine
 from resume_tailor_harness.discovery.connectors.base import RawJob
@@ -169,6 +170,7 @@ def test_add_job_from_url_extracts_and_overrides(monkeypatch):
             title="Engineer",
             location="Remote",
             jd_text="Build.",
+            posted_at=datetime(2026, 9, 20),
         ),
     )
     with _session() as session:
@@ -176,6 +178,7 @@ def test_add_job_from_url_extracts_and_overrides(monkeypatch):
     assert job is not None
     assert job.company == "Globex"  # explicit override wins
     assert job.title == "Engineer"  # extracted value kept
+    assert job.posted_at == datetime(2026, 9, 20)
 
 
 def test_add_job_from_url_raises_on_fetch_error(monkeypatch):
@@ -200,6 +203,34 @@ def test_add_job_from_url_raises_when_no_extraction(monkeypatch):
             discovery.add_job_from_url(session, url="https://x/job")
 
 
+def test_recovered_import_saves_employer_url_and_passes_identity(monkeypatch):
+    monkeypatch.setattr(discovery, "build_url_extract_agent", lambda: object())
+
+    def recover(url, **kwargs):
+        assert kwargs["recovery_hints"].company == "Acme"
+        assert kwargs["recovery_hints"].location == "Remote"
+        return RawJob(
+            source="url",
+            url="https://jobs.lever.co/acme/123",
+            company="Acme",
+            title="Engineer",
+            location="Remote",
+            jd_text="Full employer description",
+        )
+
+    monkeypatch.setattr(discovery, "job_from_url", recover)
+    with _session() as session:
+        job = discovery.add_job_from_url(
+            session,
+            url="https://www.indeed.com/viewjob?jk=1",
+            company="Acme",
+            title="Engineer",
+            location="Remote",
+            allow_browser=False,
+        )
+        assert job is not None and job.url == "https://jobs.lever.co/acme/123"
+
+
 # ---------------------------------------------------------------------------
 # Task-7 tests: reprocess_jobs + run_pull finish=False
 # ---------------------------------------------------------------------------
@@ -212,7 +243,10 @@ class _FakeResult:
 
 class _ExtractRunner:
     def run(self, prompt: str):
-        from resume_tailor_harness.models.job import JobCriteriaExtract, SponsorshipSignal
+        from resume_tailor_harness.models.job import (
+            JobCriteriaExtract,
+            SponsorshipSignal,
+        )
 
         return _FakeResult(
             JobCriteriaExtract.model_validate(

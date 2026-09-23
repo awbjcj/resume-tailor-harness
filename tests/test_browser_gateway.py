@@ -60,9 +60,7 @@ def test_private_browser_request_never_reaches_transport():
         seen.append(request)
         return httpx.Response(500)
 
-    with httpx.Client(
-        transport=httpx.MockTransport(unexpected_request)
-    ) as client:
+    with httpx.Client(transport=httpx.MockTransport(unexpected_request)) as client:
         with pytest.raises(ValueError, match="public"):
             fetch_public_bytes("http://169.254.169.254/", client=client)
     assert seen == []
@@ -161,7 +159,10 @@ def test_assets_share_one_paced_page_acquisition():
     )
     from resume_tailor_harness.discovery.scraper.contracts import CrawlLimits
 
+    from sqlalchemy import create_engine
+
     class Scheduler:
+        engine = create_engine("sqlite://")
         acquisitions = 0
         releases = 0
 

@@ -95,6 +95,7 @@ def test_optional_ai_failure_preserves_rule_proposals(tmp_path, monkeypatch, fai
     with Session(engine) as session:
         for company in ("Acme", "Beta", "Gamma"):
             job = save_job(session, Job(source="manual", company=company, title="Eng"))
+            assert job.id is not None
             save_application(session, Application(job_id=job.id, status="submitted"))
     service = FakeGmailService(
         [
@@ -128,10 +129,9 @@ def test_optional_ai_failure_preserves_rule_proposals(tmp_path, monkeypatch, fai
     with Session(engine) as session:
         notifications = pending_notifications(session)
         assert notifications[0].message_id == "Gamma"
-        assert (
-            session.get(Application, notifications[0].application_id).status
-            == "submitted"
-        )
+        application = session.get(Application, notifications[0].application_id)
+        assert application is not None
+        assert application.status == "submitted"
     # Repeated passes cannot duplicate the same proposal.
     assert (
         run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)[

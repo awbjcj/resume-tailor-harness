@@ -15,7 +15,9 @@ from resume_tailor_harness.llm_runner import (
     use_json_mode_for,
 )
 
-from .contracts import PageUnderstanding, Snapshot
+from .contracts import BoardPlan, PageUnderstanding, Snapshot
+from resume_tailor_harness.discovery.connectors.jobposting import select_posting
+from resume_tailor_harness.discovery.url_ingest.public_readers import access_blocked
 from .learn import prune_html
 
 
@@ -43,6 +45,13 @@ def build_understand_agent() -> Runner:
 def understand(
     snapshot: Snapshot, agent: Runner, details: list[Snapshot] | None = None
 ) -> PageUnderstanding:
+    if access_blocked(snapshot.html):
+        return PageUnderstanding(kind="blocked")
+    selected = select_posting(snapshot.json_ld, snapshot.final_url)
+    if selected and selected[1].get("title") and selected[1].get("description"):
+        return PageUnderstanding(
+            kind="posting", plan=BoardPlan(card_selector="body", detail_mode="inline")
+        )
     payload = {
         "snapshot_id": snapshot.id,
         "url": snapshot.final_url,

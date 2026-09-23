@@ -246,9 +246,7 @@ def test_new_model_rates_are_effective_dated_and_exact(tmp_path):
             vision.output_micros_per_million,
         ) == expected
 
-    # DeepSeek did not publish a direct V4.1 API ID. Its authenticated notice
-    # instead routes the documented V4 Pro ID to V4.1 Flash at 04:00 UTC on
-    # September 10. Preserve the historical V4 Pro price until that instant.
+    # V4 Pro remains available at its own published rate.
     before_v41_route = find_rate(
         engine,
         "deepseek",
@@ -263,8 +261,8 @@ def test_new_model_rates_are_effective_dated_and_exact(tmp_path):
     ) == (1_320_000, 44_000, 3_960_000)
 
     for moment, expected in (
-        (datetime(2026, 9, 10, 4, 0, tzinfo=UTC), (150_000, 3_000, 600_000)),
-        (datetime(2026, 9, 10, 6, 0, tzinfo=UTC), (300_000, 6_000, 1_200_000)),
+        (datetime(2026, 9, 10, 4, 0, tzinfo=UTC), (660_000, 22_000, 1_980_000)),
+        (datetime(2026, 9, 10, 6, 0, tzinfo=UTC), (1_320_000, 44_000, 3_960_000)),
     ):
         v41_route = find_rate(engine, "deepseek", "deepseek-v4-pro", now=moment)
         assert v41_route is not None
@@ -274,9 +272,66 @@ def test_new_model_rates_are_effective_dated_and_exact(tmp_path):
             v41_route.output_micros_per_million,
         ) == expected
 
-    # A plausible-looking direct V4.1 string remains unpriced: the provider
-    # has not published it as a model ID, so the catalog cannot safely guess.
+    # Only the provider's actual V4.1 API ID is priced.
     assert find_rate(engine, "deepseek", "deepseek-v4.1-flash", now=current) is None
+
+
+def test_september_22_model_rates_are_priced_at_current_public_rates(tmp_path):
+    engine = _engine(tmp_path)
+    now = datetime(2026, 9, 22, 12, 0, tzinfo=UTC)
+    for provider, model, short, long in (
+        (
+            "openai",
+            "gpt-6-sol",
+            (2_000_000, 200_000, 2_500_000, 10_000_000),
+            (4_000_000, 400_000, 5_000_000, 15_000_000),
+        ),
+        (
+            "openai",
+            "gpt-6-luna",
+            (100_000, 10_000, 125_000, 500_000),
+            (200_000, 20_000, 250_000, 750_000),
+        ),
+    ):
+        for tokens, expected in ((272_000, short), (272_001, long)):
+            rate = find_rate(engine, provider, model, input_tokens=tokens, now=now)
+            assert rate is not None
+            assert (
+                rate.input_micros_per_million,
+                rate.cache_read_micros_per_million,
+                rate.cache_write_micros_per_million,
+                rate.output_micros_per_million,
+            ) == expected
+
+    opus = find_rate(engine, "anthropic", "claude-opus-5-5", now=now)
+    assert opus is not None
+    assert (
+        opus.input_micros_per_million,
+        opus.cache_read_micros_per_million,
+        opus.cache_write_micros_per_million,
+        opus.output_micros_per_million,
+    ) == (
+        4_000_000,
+        200_000,
+        5_000_000,
+        20_000_000,
+    )
+    for model, off_peak, peak in (
+        ("deepseek-flash", (150_000, 3_000, 600_000), (300_000, 6_000, 1_200_000)),
+        (
+            "deepseek-v4-pro",
+            (660_000, 22_000, 1_980_000),
+            (1_320_000, 44_000, 3_960_000),
+        ),
+    ):
+        for hour, expected in ((12, off_peak), (2, peak)):
+            rate = find_rate(engine, "deepseek", model, now=now.replace(hour=hour))
+            assert rate is not None
+            assert (
+                rate.input_micros_per_million,
+                rate.cache_read_micros_per_million,
+                rate.output_micros_per_million,
+            ) == expected
 
 
 def test_seed_corrects_previously_scheduled_sonnet_increase(tmp_path):

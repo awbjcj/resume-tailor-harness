@@ -35,18 +35,15 @@ trees differ (e.g. right after a `hotfix/*` merge, or if new work landed on
 `dev` while the promotion PR was merging); the documented manual "merge hotfix
 back into dev" step (above) still applies for that path.
 
-CI is split by branch so `dev` gets fast feedback and `main` gets the full
-gate before a deploy-triggering merge: `.github/workflows/_reusable-ci.yml`
-holds the actual jobs (`python-quality`, `web-quality`, `security-audit`)
-behind a `full` input; `.github/workflows/ci-dev.yml` calls it with
-`full: false` (lint + test only) on pushes/PRs to `dev`, and
-`.github/workflows/ci-main.yml` calls it with `full: true` (adds the web
-production build and the pip-audit/npm-audit dependency scan) on
-pushes/PRs to `main`. `.github/workflows/codeql.yml.disabled` is a
-fully-commented placeholder — a fully-commented file with a live `.yml`
-extension still gets parsed (and fails) as an invalid workflow by GitHub
-Actions, so it's kept as `.disabled` until the repo goes public: rename it
-back to `.yml` and uncomment it then.
+CI runs only for `main`: `.github/workflows/_reusable-ci.yml` holds the actual
+jobs (`python-quality`, `web-quality`, `security-audit`) behind a `full` input;
+`.github/workflows/ci-main.yml` calls it with `full: true` (including the web
+production build and the pip-audit/npm-audit dependency scan) on pushes/PRs to
+`main`. `.github/workflows/public-browser.yml` also runs only for matching PRs
+to `main`. CodeQL uses GitHub's default code scanning setup, which creates its
+own workflow and scans the default and protected branches plus relevant PRs.
+The repository is public, so its standard hosted runners do not consume the
+account's included Actions minutes.
 
 ## Commands
 

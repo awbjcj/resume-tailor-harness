@@ -29,6 +29,7 @@ from resume_tailor_harness.discovery.scraper.extract import (
     build_extract_agent,
     extract_observation,
 )
+from resume_tailor_harness.discovery.scraper.http_worker import HttpWorker
 from resume_tailor_harness.discovery.scraper.identity import (
     board_key,
     normalize_board_url,
@@ -68,6 +69,12 @@ def build_gateway() -> BrowserGateway:
     return BrowserGateway(HostScheduler(engine))
 
 
+def _worker(gateway, *, allow_browser: bool = True, initial=None):
+    if allow_browser and get_settings().public_browser_enabled:
+        return BrowserWorker(gateway)
+    return HttpWorker(gateway, initial=initial)
+
+
 def analyze_url(
     session: Session,
     url: str,
@@ -101,7 +108,7 @@ def analyze_url(
         if understanding.kind == "posting"
         else None
     )
-    with BrowserWorker(gateway) as worker:
+    with _worker(gateway, allow_browser=allow_browser, initial=listing) as worker:
         needs_browser = (
             understanding.kind not in {"posting", "listing", "blocked"}
             or (understanding.kind == "listing" and understanding.plan is None)
@@ -148,10 +155,6 @@ def analyze_url(
                 messages=[issue.message for issue in sample.issues if issue.message],
             )
         elif understanding.plan:
-            if not allow_browser or not get_settings().public_browser_enabled:
-                raise BrowserUnavailable(
-                    "Browser extraction is unavailable on this installation"
-                )
             draft.plan = understanding.plan
             report = replay(
                 draft, worker, store, extractor, preview=True, budget=budget
@@ -190,7 +193,7 @@ def revalidate_draft(
         raise RevisionConflict("draft changed")
     if draft.plan is None:
         raise ValueError("Select extraction rules first")
-    with BrowserWorker(build_gateway()) as worker:
+    with _worker(build_gateway()) as worker:
         report = replay(
             draft,
             worker,
@@ -302,7 +305,7 @@ def pull_source(
         and draft.plan is not None
         and draft.plan.detail_mode != "link"
     )
-    with BrowserWorker(build_gateway()) as worker:
+    with _worker(build_gateway()) as worker:
         report = replay(
             draft,
             worker,

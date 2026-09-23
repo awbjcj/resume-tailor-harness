@@ -95,6 +95,7 @@ def test_tick_stops_rescheduling_a_revoked_token(tmp_path, monkeypatch):
 
     def work(_engine, _reporter, *, data_dir):
         build_service(data_dir)
+        return {"pending": 0}
 
     first = asyncio.run(tick(state, work=work))
     snapshot = state.run_manager.get(first["local"])

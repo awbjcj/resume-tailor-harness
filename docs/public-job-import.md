@@ -26,6 +26,14 @@ does not replace approved rules. Layout failures retain affected jobs for review
 
 ## Supported acquisition and limits
 
+With `PUBLIC_BROWSER_ENABLED=false`, public source preview and re-pulls use
+HTTP for static inline cards, linked details and hyperlink pagination. Set
+`BROWSER_ENABLED=false` too to disable legacy browser connectors. LinkedIn
+sources then use bounded public HTTP search/detail acquisition, subject to site
+access and robots rules. JavaScript-only controls report capability unavailable
+and preserve partial results. See [browser-free scraping research and live
+coverage](browser-free-job-scraping.md) for verified sources and limitations.
+
 The renderer handles linked details, inline cards, detail panels, next or
 numbered pagination, load-more controls, and bounded scrolling through declared
 browser actions. It does not execute generated code. It supports public GET/HEAD

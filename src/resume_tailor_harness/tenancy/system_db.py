@@ -37,6 +37,15 @@ class CrawlHostLease(SystemBase):
     available_at: Mapped[float] = mapped_column(Float, default=0)
 
 
+class CrawlCooldown(SystemBase):
+    """Shared public-source access state; no tenant data or raw URLs."""
+
+    __tablename__ = "crawl_cooldowns"
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    reason: Mapped[str] = mapped_column(String(64))
+    retry_at: Mapped[float] = mapped_column(Float)
+
+
 class User(SystemBase):
     __tablename__ = "users"
     __table_args__ = (
@@ -382,7 +391,9 @@ class MemberSubscription(SystemBase):
     user_id: Mapped[str] = mapped_column(String(12), primary_key=True)
     tier_id: Mapped[str] = mapped_column(String(32), nullable=False)
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
     status: Mapped[str] = mapped_column(String(16), nullable=False)
 
 
@@ -434,7 +445,10 @@ def init_system_db(engine: Engine) -> None:
 
     migrate_system_db(engine)
     from resume_tailor_harness.tenancy.costs import seed_llm_rates
-    from resume_tailor_harness.tenancy.quotas import seed_quota_accounts, seed_quota_tiers
+    from resume_tailor_harness.tenancy.quotas import (
+        seed_quota_accounts,
+        seed_quota_tiers,
+    )
 
     seed_quota_tiers(engine)
     seed_llm_rates(engine)

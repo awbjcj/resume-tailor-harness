@@ -53,14 +53,13 @@ live endpoints.
 
 ## CI
 
-CI is split by branch. PRs and pushes into `dev` run the quick gate —
-`python-quality` and `web-quality` lint + test only, for fast feedback. PRs and
-pushes into `main` run the full gate — the same two jobs plus the web
-production build and a non-blocking security audit (`pip-audit` +
-`npm audit`). Fix failures — don't skip tests or disable lint rules to get
-green. CodeQL analysis (`.github/workflows/codeql.yml`) is prepared but
-commented out while the repo is private; it activates once the repo goes
-public.
+PRs and pushes into `main` run the full CI gate: `python-quality`,
+`web-quality` (including the production build), and a non-blocking security
+audit (`pip-audit` + `npm audit`). Matching PRs into `main` also run the public
+browser fixtures. Fix failures — don't skip tests or disable lint rules to get
+green. CodeQL analysis is active through GitHub's default code scanning setup.
+This public repository's standard hosted runners do not consume the account's
+included Actions minutes.
 
 ## Branch protection
 

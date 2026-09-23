@@ -271,6 +271,7 @@ def seed_llm_rates(engine: Engine) -> None:
     # GPT-6 Astra prices short and long requests differently; preserve the
     # release boundary rather than making this new model billable before launch.
     openai_astra_release = datetime(2026, 9, 3, tzinfo=timezone.utc)
+    catalog_refresh = datetime(2026, 9, 22, tzinfo=timezone.utc)
     gemini_price_update = datetime(2026, 8, 15, tzinfo=timezone.utc)
     gemini_38_release = datetime(2026, 9, 2, tzinfo=timezone.utc)
     # Google publishes both Flash models' current rate as promotional "through
@@ -284,14 +285,12 @@ def seed_llm_rates(engine: Engine) -> None:
     sonnet_cancelled_increase = datetime(2026, 9, 1, tzinfo=timezone.utc)
     deepseek_price_update = datetime(2026, 8, 16, 16, 0, tzinfo=timezone.utc)
     deepseek_vision_release = datetime(2026, 8, 21, tzinfo=timezone.utc)
-    # DeepSeek's authenticated customer notice says requests made through the
-    # documented V4 Pro API route are billed as V4.1 Flash from this instant.
-    # It does not name a direct V4.1 model ID, so preserve the V4 Pro route and
-    # model the provider-announced billing cutover as an effective-dated rate.
     deepseek_v41_flash_route = datetime(2026, 9, 10, 4, tzinfo=timezone.utc)
     openai = "https://developers.openai.com/api/docs/pricing"
     openai_sol = "https://developers.openai.com/api/docs/models/gpt-5.6-sol"
     openai_astra = "https://developers.openai.com/api/docs/models/gpt-6-astra"
+    openai_sol_6 = "https://developers.openai.com/api/docs/models/gpt-6-sol"
+    openai_luna_6 = "https://developers.openai.com/api/docs/models/gpt-6-luna"
     anthropic = "https://platform.claude.com/docs/en/about-claude/pricing"
     gemini = "https://ai.google.dev/gemini-api/docs/pricing"
     deepseek = "https://api-docs.deepseek.com/quick_start/pricing"
@@ -617,6 +616,44 @@ def seed_llm_rates(engine: Engine) -> None:
                 maximum=maximum,
             )
 
+        for model, source, short, long in (
+            ("gpt-6-sol", openai_sol_6, (2, 0.2, 2.5, 10), (4, 0.4, 5, 15)),
+            (
+                "gpt-6-luna",
+                openai_luna_6,
+                (0.1, 0.01, 0.125, 0.5),
+                (0.2, 0.02, 0.25, 0.75),
+            ),
+        ):
+            for minimum, maximum, rates in (
+                (0, 272_000, short),
+                (272_001, None, long),
+            ):
+                upsert_rate(
+                    provider="openai",
+                    model=model,
+                    effective_from=catalog_refresh,
+                    input_rate=rates[0],
+                    cache_read=rates[1],
+                    cache_write=rates[2],
+                    output_rate=rates[3],
+                    tool=10_000,
+                    source=source,
+                    minimum=minimum,
+                    maximum=maximum,
+                )
+        upsert_rate(
+            provider="anthropic",
+            model="claude-opus-5-5",
+            effective_from=catalog_refresh,
+            input_rate=4,
+            cache_read=0.2,
+            cache_write=5,
+            output_rate=20,
+            tool=10_000,
+            source=anthropic,
+        )
+
         # Google changed Gemini 3.6 Flash's standard pricing on 2026-08-15.
         # Keep the former rate for historical usage, then add the current row
         # rather than silently repricing the usage events recorded before the
@@ -784,10 +821,8 @@ def seed_llm_rates(engine: Engine) -> None:
             current_rate.output_micros_per_million = _micros_per_million(output_rate)
             current_rate.source_url = deepseek
 
-        # The provider's V4.1 Flash announcement changes only V4 Pro traffic:
-        # it is transparently routed to V4.1 Flash until V4.1 Pro exists. Close
-        # the historical V4 Pro rows at the announced instant and seed exact
-        # peak/off-peak replacements under the still-documented API model ID.
+        # Repair the earlier V4 Pro-to-Flash assumption. DeepSeek's revised
+        # public changelog keeps V4 Pro available at its original price.
         for period in (RATE_PERIOD_OFF_PEAK, RATE_PERIOD_PEAK):
             prior_pro_rate = (
                 session.execute(
@@ -804,9 +839,45 @@ def seed_llm_rates(engine: Engine) -> None:
             )
             if prior_pro_rate is not None:
                 prior_pro_rate.effective_to = deepseek_v41_flash_route
+            prior_flash_rate = (
+                session.execute(
+                    select(LlmRate).where(
+                        LlmRate.provider == "deepseek",
+                        LlmRate.model == "deepseek-v4-flash",
+                        LlmRate.context_min_tokens == 0,
+                        LlmRate.effective_from == deepseek_price_update,
+                        LlmRate.rate_period == period,
+                    )
+                )
+                .scalars()
+                .first()
+            )
+            if prior_flash_rate is not None:
+                prior_flash_rate.effective_to = deepseek_v41_flash_route
+        for model in (
+            "deepseek-flash",
+            "deepseek-v4-flash",
+            "deepseek-v4-flash-vision-exp",
+        ):
+            for period, input_rate, cache_read, output_rate in (
+                (RATE_PERIOD_OFF_PEAK, 0.15, 0.003, 0.60),
+                (RATE_PERIOD_PEAK, 0.30, 0.006, 1.20),
+            ):
+                upsert_rate(
+                    provider="deepseek",
+                    model=model,
+                    effective_from=deepseek_v41_flash_route,
+                    input_rate=input_rate,
+                    cache_read=cache_read,
+                    cache_write=None,
+                    output_rate=output_rate,
+                    tool=None,
+                    source=deepseek,
+                    rate_period=period,
+                )
         for period, input_rate, cache_read, output_rate in (
-            (RATE_PERIOD_OFF_PEAK, 0.15, 0.003, 0.60),
-            (RATE_PERIOD_PEAK, 0.30, 0.006, 1.20),
+            (RATE_PERIOD_OFF_PEAK, 0.66, 0.022, 1.98),
+            (RATE_PERIOD_PEAK, 1.32, 0.044, 3.96),
         ):
             upsert_rate(
                 provider="deepseek",
@@ -821,14 +892,12 @@ def seed_llm_rates(engine: Engine) -> None:
                 rate_period=period,
             )
 
-        # The officially released Vision snapshot is experimental, but DeepSeek
-        # publishes its text-token rate as V4 Flash's peak/off-peak schedule.
-        # Add only that documented ID; no direct V4.1 API SKU has been published.
+        # The retired vision alias kept its prior price until V4.1 Flash launched.
         for period, input_rate, cache_read, output_rate in (
             (RATE_PERIOD_OFF_PEAK, 0.22, 0.007, 0.66),
             (RATE_PERIOD_PEAK, 0.44, 0.014, 1.32),
         ):
-            upsert_rate(
+            prior_vision_rate = upsert_rate(
                 provider="deepseek",
                 model="deepseek-v4-flash-vision-exp",
                 effective_from=deepseek_vision_release,
@@ -840,6 +909,7 @@ def seed_llm_rates(engine: Engine) -> None:
                 source=deepseek,
                 rate_period=period,
             )
+            prior_vision_rate.effective_to = deepseek_v41_flash_route
 
         sonnet_standard_rate = (
             session.execute(
