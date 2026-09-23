@@ -25,6 +25,10 @@ def test_reasoning_parameters_are_attached_for_capable_models():
 
     astra = build_model("openai:gpt-6-astra", api_key="k", reasoning=True)
     assert astra.reasoning == {"effort": "high"}
+    for model_id in ("openai:gpt-6-sol", "openai:gpt-6-luna"):
+        assert build_model(model_id, api_key="k", reasoning=True).reasoning == {
+            "effort": "high"
+        }
 
     gemini = build_model("gemini:gemini-3.5-flash", api_key="k", reasoning=True)
     assert gemini.thinking_level == "high"
@@ -34,11 +38,8 @@ def test_reasoning_parameters_are_attached_for_capable_models():
 
     deepseek = build_model("deepseek:deepseek-v4-pro", api_key="k", reasoning=True)
     assert deepseek.reasoning == {"effort": "max"}
-
-    vision = build_model(
-        "deepseek:deepseek-v4-flash-vision-exp", api_key="k", reasoning=True
-    )
-    assert vision.reasoning == {"effort": "max"}
+    flash = build_model("deepseek:deepseek-flash", api_key="k", reasoning=True)
+    assert flash.reasoning == {"effort": "max"}
 
 
 def test_builder_refuses_reasoning_for_incapable_model():
@@ -56,6 +57,15 @@ def test_non_reasoning_claude_disables_thinking_rather_than_omitting_it():
     sonnet = build_model("claude-sonnet-5", api_key="k")
     assert sonnet.thinking == {"type": "disabled"}
     assert sonnet.output_config is None
+
+
+def test_opus_55_keeps_its_required_adaptive_thinking():
+    model = build_model("claude-opus-5-5", api_key="k")
+    assert model.thinking is None
+    assert model.output_config is None
+    assert build_model("claude-opus-5-5", api_key="k", reasoning=True).thinking == {
+        "type": "adaptive"
+    }
 
 
 def test_openai_asks_for_a_reasoning_summary_whenever_it_sends_a_reasoning_config():
@@ -102,9 +112,8 @@ def test_non_reasoning_deepseek_disables_thinking_rather_than_omitting_it():
     # reasoning output item) -- so the Chat Completions
     # `extra_body={"thinking": {"type": "disabled"}}` side-channel is gone.
     for model_id in (
+        "deepseek:deepseek-flash",
         "deepseek:deepseek-v4-pro",
-        "deepseek:deepseek-v4-flash",
-        "deepseek:deepseek-v4-flash-vision-exp",
     ):
         model = build_model(model_id, api_key="k")
         assert model.reasoning == {"effort": "none"}, model_id

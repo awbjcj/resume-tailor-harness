@@ -718,6 +718,11 @@ GeminiInteractionsThinkingLevel = Literal["minimal", "low", "medium", "high"]
 # ids are Anthropic. Update this list as providers ship new models.
 MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
     "anthropic": [
+        ModelCatalogEntry(
+            "claude-opus-5-5",
+            "Claude Opus 5.5",
+            ("low", "medium", "high", "xhigh", "max"),
+        ),
         ModelCatalogEntry("claude-haiku-4-5", "Claude Haiku 4.5"),
         ModelCatalogEntry(
             "claude-sonnet-5",
@@ -740,6 +745,16 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
             "openai:gpt-6-astra",
             "GPT-6 Astra",
             ("low", "medium", "high", "xhigh", "max"),
+        ),
+        ModelCatalogEntry(
+            "openai:gpt-6-sol",
+            "GPT-6 Sol",
+            ("none", "low", "medium", "high", "xhigh", "max"),
+        ),
+        ModelCatalogEntry(
+            "openai:gpt-6-luna",
+            "GPT-6 Luna",
+            ("none", "low", "medium", "high", "xhigh", "max"),
         ),
         ModelCatalogEntry(
             "openai:gpt-5.6-luna",
@@ -824,25 +839,13 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
         # low->low, medium->high, high->high, xhigh->high, max->max, so only these
         # four are distinct.
         ModelCatalogEntry(
-            "deepseek:deepseek-v4-flash",
-            "DeepSeek V4 Flash",
+            "deepseek:deepseek-flash",
+            "DeepSeek V4.1 Flash",
             ("none", "low", "high", "max"),
         ),
         ModelCatalogEntry(
             "deepseek:deepseek-v4-pro",
-            # DeepSeek's customer pricing notice says this documented API route
-            # is served by V4.1 Flash from 2026-09-10T04:00Z until V4.1 Pro is
-            # released. It does not name a direct V4.1 API identifier, so keep
-            # this known route rather than inventing one.
-            "DeepSeek V4.1 Flash (via V4 Pro API)",
-            ("none", "low", "high", "max"),
-        ),
-        # This officially released Vision snapshot is experimental, but its
-        # documented text-agent and Responses controls match V4 Flash. Do not
-        # substitute an unannounced direct V4.1 id for it.
-        ModelCatalogEntry(
-            "deepseek:deepseek-v4-flash-vision-exp",
-            "DeepSeek V4 Flash Vision (Experimental)",
+            "DeepSeek V4 Pro",
             ("none", "low", "high", "max"),
         ),
     ],
@@ -884,7 +887,7 @@ _ANTHROPIC_VERSION = re.compile(
 # web-search tool all require this generation or newer.
 _ANTHROPIC_MODERN = (4, 6)
 # Thinking is always on for these families; an explicit disabled config is a 400.
-_ANTHROPIC_ALWAYS_THINKING = ("claude-fable-", "claude-mythos-")
+_ANTHROPIC_ALWAYS_THINKING = ("claude-fable-", "claude-mythos-", "claude-opus-5-5")
 
 
 def anthropic_version(model: str) -> tuple[int, int] | None:
@@ -1000,7 +1003,8 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
         return ProviderCapabilities(reasoning, True, True)
     if provider == "openai" and folded.startswith(("gpt-", "o1", "o3", "o4")):
         return ProviderCapabilities(
-            (folded.startswith(("gpt-5", "o1", "o3", "o4")) or folded == "gpt-6-astra"),
+            folded.startswith(("gpt-5", "o1", "o3", "o4"))
+            or folded in {"gpt-6-astra", "gpt-6-sol", "gpt-6-luna"},
             True,
             True,
         )
@@ -1012,7 +1016,9 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
         # Citations stay False: DeepSeek's native web_search runs server-side but
         # returns no `url_citation` annotations (verified live on both tool-type
         # strings), so there is nothing for a citation renderer to read.
-        return ProviderCapabilities(folded.startswith("deepseek-v4"), False, True)
+        return ProviderCapabilities(
+            folded == "deepseek-flash" or folded.startswith("deepseek-v4"), False, True
+        )
     return _NO_PROVIDER_CAPABILITIES
 
 
@@ -1354,7 +1360,7 @@ def _compatible_deepseek_responses_class():
 
     @dataclass
     class CompatibleDeepSeekResponses(OpenAIResponses):  # type: ignore[valid-type,misc]
-        id: str = "deepseek-v4-flash"
+        id: str = "deepseek-flash"
         name: str = "DeepSeek"
         # Load-bearing, not cosmetic: `tenancy.costs.normalize_provider` tests
         # for "openai" BEFORE "deepseek", so inheriting the parent's "OpenAI"
@@ -1534,7 +1540,7 @@ def _anthropic_thinking(
         return {"type": "adaptive"}, {"effort": "high"}
     folded = model.casefold()
     if folded.startswith(_ANTHROPIC_ALWAYS_THINKING):
-        # Fable/Mythos reject an explicit disabled config; only max_tokens bounds it.
+        # Opus 5.5, Fable, and Mythos reject disabled thinking.
         return None, None
     version = anthropic_version(model)
     if version is None or version < _ANTHROPIC_MODERN:

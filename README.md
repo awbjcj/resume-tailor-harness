@@ -851,7 +851,7 @@ uses its provider's key, so you can mix providers freely:
 
 ```bash
 CHEAP_MODEL=gemini:gemini-3.5-flash-lite # cheap extract/fit/relevance on Gemini
-MID_MODEL=deepseek:deepseek-v4-flash    # reviewers / cover-letter reviser on DeepSeek
+MID_MODEL=deepseek:deepseek-flash       # reviewers / cover-letter reviser on DeepSeek V4.1 Flash
 PREMIUM_MODEL=claude-opus-5             # bare id → Anthropic for the tailor writer
 ```
 

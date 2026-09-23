@@ -1,5 +1,17 @@
 # Model catalog refresh research — 2026-09-09
 
+> **Update, 2026-09-22:** The DeepSeek routing conclusion below is historical.
+> [DeepSeek's public changelog](https://api-docs.deepseek.com/updates/) now
+> names `deepseek-flash` for V4.1 Flash and says V4 Pro remains available.
+> [Current pricing](https://api-docs.deepseek.com/quick_start/pricing/) lists
+> V4.1 Flash at $0.15 input / $0.003 cache hit / $0.60 output off-peak and
+> $0.30 / $0.006 / $1.20 peak, per million tokens. V4 Pro retains its own
+> $0.66 / $0.022 / $1.98 off-peak and $1.32 / $0.044 / $3.96 peak rates.
+> [GPT-6 Sol and Luna](https://developers.openai.com/api/docs/changelog) and
+> [Claude Opus 5.5](https://platform.claude.com/docs/en/models/opus-5-5/overview)
+> were released on 2026-09-22; the project catalog and rate seeds now include
+> their exact API IDs.
+
 ## Scope and decision
 
 This note records the user-requested provider refresh against first-party API
