@@ -272,6 +272,7 @@ def seed_llm_rates(engine: Engine) -> None:
     # release boundary rather than making this new model billable before launch.
     openai_astra_release = datetime(2026, 9, 3, tzinfo=timezone.utc)
     catalog_refresh = datetime(2026, 9, 22, tzinfo=timezone.utc)
+    sonnet_55_release = datetime(2026, 9, 28, tzinfo=timezone.utc)
     gemini_price_update = datetime(2026, 8, 15, tzinfo=timezone.utc)
     gemini_38_release = datetime(2026, 9, 2, tzinfo=timezone.utc)
     # Google publishes both Flash models' current rate as promotional "through
@@ -650,6 +651,17 @@ def seed_llm_rates(engine: Engine) -> None:
             cache_read=0.2,
             cache_write=5,
             output_rate=20,
+            tool=10_000,
+            source=anthropic,
+        )
+        upsert_rate(
+            provider="anthropic",
+            model="claude-sonnet-5-5",
+            effective_from=sonnet_55_release,
+            input_rate=2,
+            cache_read=0.2,
+            cache_write=2.5,
+            output_rate=10,
             tool=10_000,
             source=anthropic,
         )
