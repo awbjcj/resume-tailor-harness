@@ -116,6 +116,10 @@ def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
     assert opus["supportsReasoning"] is True
     assert opus["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
     assert haiku["supportsNativeSearch"] is True  # anthropic has native search
+    sonnet_55 = next(m for m in anthropic["models"] if m["id"] == "claude-sonnet-5-5")
+    assert sonnet_55["label"] == "Claude Sonnet 5.5"
+    assert sonnet_55["supportsReasoning"] is True
+    assert sonnet_55["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
 
     deepseek = next(row for row in body if row["provider"] == "deepseek")
     # DeepSeek gained native web search with the Responses API migration -- it
