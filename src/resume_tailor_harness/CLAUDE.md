@@ -228,15 +228,17 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
   does not expose user-message cache breakpoints through this flag. Do not move
   per-profile context into a global system prompt or assume it is cached.
 - **Anthropic has the same "unset means provider decides" trap, and it is
-  generation-specific.** Omitting `thinking` runs **adaptive** on Sonnet 5 and
+  generation-specific.** Omitting `thinking` runs **adaptive** on Sonnet 5/5.5 and
   Opus 5, and runs **without** thinking on Opus 4.8/4.7 and older — so leaving
   it unset silently bought thinking on every non-reasoning agent using the
   default `mid_model`. Because `max_tokens` caps thinking **plus** response
   text, that truncated large structured outputs into the same unparsed-`str`
   symptom as the Gemini bug. `_anthropic_thinking` therefore sends
-  `{"type": "disabled"}` for non-reasoning 4.6+ ids (omitting it on pre-4.6,
-  where unset already means off, and on Fable/Mythos, which reject a disabled
-  config), and `_anthropic_max_tokens` replaces agno's 8192 default — clamped
+  `{"type": "disabled"}` for non-reasoning 4.6+ ids except Sonnet 5.5, which
+  uses `{"type": "between_tools"}` to remove up-front thinking (thinking between
+  tool calls remains possible). It omits the setting on pre-4.6 ids, where
+  unset already means off, and on Fable/Mythos and Opus 5.5, which reject a
+  disabled config. `_anthropic_max_tokens` replaces agno's 8192 default — clamped
   to the SDK's per-model non-streaming ceiling so a custom Opus 4/4.1 id
   cannot raise `ValueError`.
 - **Claude capability gates read the model generation, never a substring.**

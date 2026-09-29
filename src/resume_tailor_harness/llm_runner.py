@@ -719,6 +719,11 @@ GeminiInteractionsThinkingLevel = Literal["minimal", "low", "medium", "high"]
 MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
     "anthropic": [
         ModelCatalogEntry(
+            "claude-sonnet-5-5",
+            "Claude Sonnet 5.5",
+            ("low", "medium", "high", "xhigh", "max"),
+        ),
+        ModelCatalogEntry(
             "claude-opus-5-5",
             "Claude Opus 5.5",
             ("low", "medium", "high", "xhigh", "max"),
@@ -1528,7 +1533,7 @@ def _anthropic_thinking(
 
     Anthropic has the same hazard as Gemini -- an unset thinking config is
     "provider decides", not "off" -- but the default differs by generation:
-    omitting ``thinking`` runs ADAPTIVE on Sonnet 5 and Opus 5, and runs
+    omitting ``thinking`` runs ADAPTIVE on Sonnet 5/5.5 and Opus 5, and runs
     without thinking on Opus 4.8/4.7 and everything older. Since
     ``Settings.mid_model`` defaults to ``claude-sonnet-5``, leaving it unset
     silently bought thinking on every non-reasoning agent -- and because
@@ -1539,6 +1544,10 @@ def _anthropic_thinking(
     if reasoning:
         return {"type": "adaptive"}, {"effort": "high"}
     folded = model.casefold()
+    if folded.startswith("claude-sonnet-5-5"):
+        # Sonnet 5.5 rejects `disabled`. `between_tools` removes up-front
+        # thinking at the default high effort, but can still think between tools.
+        return {"type": "between_tools"}, None
     if folded.startswith(_ANTHROPIC_ALWAYS_THINKING):
         # Opus 5.5, Fable, and Mythos reject disabled thinking.
         return None, None

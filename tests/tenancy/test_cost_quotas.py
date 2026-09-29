@@ -334,6 +334,24 @@ def test_september_22_model_rates_are_priced_at_current_public_rates(tmp_path):
             ) == expected
 
 
+def test_sonnet_55_rate_starts_at_its_release(tmp_path):
+    engine = _engine(tmp_path)
+    assert find_rate(
+        engine, "anthropic", "claude-sonnet-5-5", now=datetime(2026, 9, 27, tzinfo=UTC)
+    ) is None
+
+    rate = find_rate(
+        engine, "anthropic", "claude-sonnet-5-5", now=datetime(2026, 9, 29, tzinfo=UTC)
+    )
+    assert rate is not None
+    assert (
+        rate.input_micros_per_million,
+        rate.cache_read_micros_per_million,
+        rate.cache_write_micros_per_million,
+        rate.output_micros_per_million,
+    ) == (2_000_000, 200_000, 2_500_000, 10_000_000)
+
+
 def test_seed_corrects_previously_scheduled_sonnet_increase(tmp_path):
     engine = _engine(tmp_path)
     cutoff = datetime(2026, 9, 1, tzinfo=UTC)

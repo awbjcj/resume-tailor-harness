@@ -59,6 +59,17 @@ def test_non_reasoning_claude_disables_thinking_rather_than_omitting_it():
     assert sonnet.output_config is None
 
 
+def test_sonnet_55_uses_its_supported_lowest_thinking_mode():
+    model = build_model("claude-sonnet-5-5", api_key="k")
+    assert model.thinking == {"type": "between_tools"}
+    assert model.output_config is None
+    assert model.get_request_params()["thinking"] == {"type": "between_tools"}
+
+    reasoning = build_model("claude-sonnet-5-5", api_key="k", reasoning=True)
+    assert reasoning.thinking == {"type": "adaptive"}
+    assert reasoning.output_config == {"effort": "high"}
+
+
 def test_opus_55_keeps_its_required_adaptive_thinking():
     model = build_model("claude-opus-5-5", api_key="k")
     assert model.thinking is None
