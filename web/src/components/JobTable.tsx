@@ -80,18 +80,18 @@ export function JobTable({
   const { t } = useTranslation();
   const ordered = rows.map((row) => row.jobId);
   return (
-    <Table className="min-w-[64rem] table-fixed [&_[data-slot=table-cell]]:px-1.5 [&_[data-slot=table-head]]:px-1.5">
+    <Table containerClassName="rounded-xl border bg-card shadow-card" className="min-w-[64rem] table-fixed [&_[data-slot=table-cell]]:px-3 [&_[data-slot=table-cell]]:py-3.5 [&_[data-slot=table-head]]:px-3">
       <colgroup>
         <col className="w-9" />
         <col className="w-96" />
         {fitColumn && <col className="w-16" />}
         <col className="w-28" />
         <col className="w-44" />
-        {statusColumn && <col className="w-32" />}
+        {statusColumn && <col className="w-40" />}
         {extraColumn && <col className={fitColumn ? "w-72" : "w-80"} />}
         {actions && <col className="w-32" />}
       </colgroup>
-      <TableHeader>
+      <TableHeader className="bg-muted/70 [&_[data-slot=table-head]]:text-xs [&_[data-slot=table-head]]:font-semibold [&_[data-slot=table-head]]:text-muted-foreground">
         <TableRow>
           <TableHead>
             <Checkbox
@@ -114,7 +114,7 @@ export function JobTable({
           <TableRow
             key={row.jobId}
             data-selected={selection.isSelected(row.jobId)}
-            className="cursor-pointer data-[selected=true]:bg-secondary/60"
+            className="cursor-pointer focus-within:bg-accent/50 data-[selected=true]:bg-accent/70"
           >
             <TableCell onClick={(event) => event.stopPropagation()}>
               <Checkbox

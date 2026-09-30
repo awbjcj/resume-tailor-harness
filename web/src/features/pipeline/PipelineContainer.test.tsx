@@ -118,8 +118,8 @@ describe("PipelineContainer", () => {
     // each stage label appears in both the section header and a card badge
     expect(screen.getAllByText(/approved/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/rendered/i).length).toBeGreaterThan(0);
-    expect(screen.getByText("fit 70")).toBeInTheDocument();
-    expect(screen.getByText("fit 88")).toBeInTheDocument();
+    expect(screen.getByLabelText("fit score 70")).toBeInTheDocument();
+    expect(screen.getByLabelText("fit score 88")).toBeInTheDocument();
     expect(screen.getByText(/Remote eligible Mid/)).toBeInTheDocument();
     expect(screen.queryByText(/corporate/)).not.toBeInTheDocument();
     expect(screen.queryByText(/laptop/)).not.toBeInTheDocument();

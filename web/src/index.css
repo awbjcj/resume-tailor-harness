@@ -132,18 +132,46 @@
      needs six mutually distinguishable hues, so it gets a categorical ramp
      rather than being forced into the four meaning tones. The `--chart-*` ramp
      is deliberately NOT reused: it is tuned for fills, and chart-2/4/5 land at
-     2.1-3.0:1 as text on a light tint. Every hue below is verified >=4.5:1 as
-     11px badge text on its own surface in both themes (light 4.63-5.82,
-     dark 5.37-8.26). */
+     2.1-3.0:1 as text on a light tint. Dedicated emerald, indigo and ochre
+     tokens keep Approved, Tailored and Rendered visually distinct in both
+     themes without changing general success or information messages. */
   :is(.tone-panel, .tone-chip)[data-tone="stage-raw"] { --tone: var(--stage-neutral); }
   :is(.tone-panel, .tone-chip)[data-tone="stage-shortlisted"] { --tone: var(--primary); }
-  :is(.tone-panel, .tone-chip)[data-tone="stage-approved"] { --tone: var(--success); }
-  :is(.tone-panel, .tone-chip)[data-tone="stage-tailored"] { --tone: var(--info); }
+  :is(.tone-panel, .tone-chip)[data-tone="stage-approved"] { --tone: var(--stage-approved); }
+  :is(.tone-panel, .tone-chip)[data-tone="stage-tailored"] { --tone: var(--stage-tailored); }
   :is(.tone-panel, .tone-chip)[data-tone="stage-rendered"] { --tone: var(--stage-rendered); }
   :is(.tone-panel, .tone-chip)[data-tone="stage-rejected"] { --tone: var(--destructive); }
 
   /* The one accent that must read as the tone: icons, eyebrows, status dots. */
   .tone-accent { color: var(--tone); }
+}
+
+/* Preserve stage ink and borders over the Badge outline variant's utilities. */
+.tone-chip[data-tone^="stage-"] {
+  color: var(--tone);
+  border-color: color-mix(in oklab, var(--tone), var(--card) 62%);
+}
+
+/* Stage cues stay consistent between badges and the board's section headers. */
+.pipeline-stage-heading {
+  border-inline-start: 3px solid var(--tone);
+  background-color: color-mix(in oklab, var(--tone), var(--card) 97%);
+}
+
+.board-job-card {
+  transition: box-shadow 150ms ease, background-color 150ms ease;
+}
+.board-job-card[data-selected="true"] {
+  background-color: color-mix(in oklab, var(--primary), var(--card) 96%);
+  box-shadow: var(--card-shadow), 0 0 0 2px color-mix(in oklab, var(--primary), transparent 40%);
+}
+@media (hover: hover) and (pointer: fine) {
+  .board-job-card:hover {
+    box-shadow: var(--card-shadow-raised), 0 0 0 1px color-mix(in oklab, var(--primary), transparent 55%);
+  }
+  .board-job-card[data-selected="true"]:hover {
+    box-shadow: var(--card-shadow-raised), 0 0 0 2px color-mix(in oklab, var(--primary), transparent 30%);
+  }
 }
 
 .scout-proposal-card {
@@ -473,7 +501,9 @@
     --success: #1f7a4d;
     --info: #3867d6;
     --stage-neutral: #556069;
-    --stage-rendered: #6d4aa8;
+    --stage-approved: #176b46;
+    --stage-tailored: #5145b5;
+    --stage-rendered: #855b0b;
     --gap: #bd2d46;
     --adjacent: #8a6500;
     --covered: #65717c;
@@ -521,7 +551,9 @@
     --success: #43d19e;
     --info: #86a9ff;
     --stage-neutral: #a7b1bb;
-    --stage-rendered: #c0a3ff;
+    --stage-approved: #70dfaa;
+    --stage-tailored: #b5abff;
+    --stage-rendered: #efc368;
     --gap: #ff6b82;
     --adjacent: #e6b94d;
     --covered: #a7b1bb;
