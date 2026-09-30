@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from resume_tailor_harness.config import Settings
@@ -334,11 +335,63 @@ def test_september_22_model_rates_are_priced_at_current_public_rates(tmp_path):
             ) == expected
 
 
+def test_sol_61_rates_preserve_release_and_context_boundaries(tmp_path):
+    engine = _engine(tmp_path)
+    assert (
+        find_rate(
+            engine, "openai", "gpt-6.1-sol", now=datetime(2026, 9, 28, tzinfo=UTC)
+        )
+        is None
+    )
+
+    seed_llm_rates(engine)
+    with Session(engine) as session:
+        rates = (
+            session.execute(
+                select(LlmRate).where(
+                    LlmRate.provider == "openai", LlmRate.model == "gpt-6.1-sol"
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert len(rates) == 2
+
+    for input_tokens, expected in (
+        (272_000, (2_000_000, 100_000, 2_500_000, 10_000_000)),
+        (272_001, (4_000_000, 200_000, 5_000_000, 15_000_000)),
+    ):
+        rate = find_rate(
+            engine,
+            "openai",
+            "gpt-6.1-sol",
+            input_tokens=input_tokens,
+            now=datetime(2026, 9, 29, tzinfo=UTC),
+        )
+        assert rate is not None
+        assert (
+            rate.input_micros_per_million,
+            rate.cache_read_micros_per_million,
+            rate.cache_write_micros_per_million,
+            rate.output_micros_per_million,
+        ) == expected
+        assert (
+            rate.source_url
+            == "https://developers.openai.com/api/docs/models/gpt-6.1-sol"
+        )
+
+
 def test_sonnet_55_rate_starts_at_its_release(tmp_path):
     engine = _engine(tmp_path)
-    assert find_rate(
-        engine, "anthropic", "claude-sonnet-5-5", now=datetime(2026, 9, 27, tzinfo=UTC)
-    ) is None
+    assert (
+        find_rate(
+            engine,
+            "anthropic",
+            "claude-sonnet-5-5",
+            now=datetime(2026, 9, 27, tzinfo=UTC),
+        )
+        is None
+    )
 
     rate = find_rate(
         engine, "anthropic", "claude-sonnet-5-5", now=datetime(2026, 9, 29, tzinfo=UTC)

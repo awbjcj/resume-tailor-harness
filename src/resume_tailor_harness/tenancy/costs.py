@@ -272,6 +272,7 @@ def seed_llm_rates(engine: Engine) -> None:
     # release boundary rather than making this new model billable before launch.
     openai_astra_release = datetime(2026, 9, 3, tzinfo=timezone.utc)
     catalog_refresh = datetime(2026, 9, 22, tzinfo=timezone.utc)
+    openai_sol_61_release = datetime(2026, 9, 29, tzinfo=timezone.utc)
     sonnet_55_release = datetime(2026, 9, 28, tzinfo=timezone.utc)
     gemini_price_update = datetime(2026, 8, 15, tzinfo=timezone.utc)
     gemini_38_release = datetime(2026, 9, 2, tzinfo=timezone.utc)
@@ -291,6 +292,7 @@ def seed_llm_rates(engine: Engine) -> None:
     openai_sol = "https://developers.openai.com/api/docs/models/gpt-5.6-sol"
     openai_astra = "https://developers.openai.com/api/docs/models/gpt-6-astra"
     openai_sol_6 = "https://developers.openai.com/api/docs/models/gpt-6-sol"
+    openai_sol_61 = "https://developers.openai.com/api/docs/models/gpt-6.1-sol"
     openai_luna_6 = "https://developers.openai.com/api/docs/models/gpt-6-luna"
     anthropic = "https://platform.claude.com/docs/en/about-claude/pricing"
     gemini = "https://ai.google.dev/gemini-api/docs/pricing"
@@ -617,11 +619,25 @@ def seed_llm_rates(engine: Engine) -> None:
                 maximum=maximum,
             )
 
-        for model, source, short, long in (
-            ("gpt-6-sol", openai_sol_6, (2, 0.2, 2.5, 10), (4, 0.4, 5, 15)),
+        for model, source, release, short, long in (
+            (
+                "gpt-6.1-sol",
+                openai_sol_61,
+                openai_sol_61_release,
+                (2, 0.1, 2.5, 10),
+                (4, 0.2, 5, 15),
+            ),
+            (
+                "gpt-6-sol",
+                openai_sol_6,
+                catalog_refresh,
+                (2, 0.2, 2.5, 10),
+                (4, 0.4, 5, 15),
+            ),
             (
                 "gpt-6-luna",
                 openai_luna_6,
+                catalog_refresh,
                 (0.1, 0.01, 0.125, 0.5),
                 (0.2, 0.02, 0.25, 0.75),
             ),
@@ -633,7 +649,7 @@ def seed_llm_rates(engine: Engine) -> None:
                 upsert_rate(
                     provider="openai",
                     model=model,
-                    effective_from=catalog_refresh,
+                    effective_from=release,
                     input_rate=rates[0],
                     cache_read=rates[1],
                     cache_write=rates[2],

@@ -15,6 +15,7 @@ def test_known_model_capabilities_are_model_gated():
     assert provider_capabilities("openai:gpt-5.6").supports_reasoning is True
     assert provider_capabilities("openai:gpt-6-astra").supports_reasoning is True
     assert provider_capabilities("openai:gpt-6-sol").supports_reasoning is True
+    assert provider_capabilities("openai:gpt-6.1-sol").supports_reasoning is True
     assert provider_capabilities("openai:gpt-6-luna").supports_reasoning is True
     assert provider_capabilities("claude-opus-5-5").supports_reasoning is True
     assert provider_capabilities("deepseek:deepseek-flash").supports_reasoning is True
