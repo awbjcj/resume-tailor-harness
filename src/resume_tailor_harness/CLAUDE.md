@@ -39,6 +39,10 @@ builder imports a concrete agno model class directly.
   and `max`. A catalogued non-reasoning model receives its lowest declared
   effort; an uncatalogued id omits `reasoning` because its vocabulary is
   unknown.
+- **GPT-6.1 Sol has its own contract.** Its API effort values are
+  `low`/`medium`/`high`/`xhigh`/`max`; non-reasoning agents use `low` because
+  `none` and `minimal` are rejected. It uses Responses for tool calling and
+  has a 5% cached-input rate, with full-request pricing above 272K input tokens.
 - **OpenAI output and state are explicit.** `max_output_tokens` leaves room for
   reasoning plus visible structured output. `store=False` disables
   provider-managed response state (not broader provider retention), while

@@ -744,6 +744,12 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
         ),
     ],
     "openai": [
+        # GPT-6.1 Sol rejects `none` and `minimal`; low still allows reasoning.
+        ModelCatalogEntry(
+            "openai:gpt-6.1-sol",
+            "GPT-6.1 Sol",
+            ("low", "medium", "high", "xhigh", "max"),
+        ),
         # Astra does not accept `none`. Its lowest supported effort is therefore
         # the non-reasoning bound; it is not an off switch like GPT-5.6's `none`.
         ModelCatalogEntry(
@@ -1009,7 +1015,7 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
     if provider == "openai" and folded.startswith(("gpt-", "o1", "o3", "o4")):
         return ProviderCapabilities(
             folded.startswith(("gpt-5", "o1", "o3", "o4"))
-            or folded in {"gpt-6-astra", "gpt-6-sol", "gpt-6-luna"},
+            or folded in {"gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna"},
             True,
             True,
         )
