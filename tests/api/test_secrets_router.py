@@ -135,6 +135,11 @@ def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
     assert gpt["reasoningEfforts"] == ["none", "low", "medium", "high", "xhigh"]
     astra = next(m for m in openai["models"] if m["id"] == "openai:gpt-6-astra")
     assert astra["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
+    sol_61 = next(m for m in openai["models"] if m["id"] == "openai:gpt-6.1-sol")
+    assert sol_61["label"] == "GPT-6.1 Sol"
+    assert sol_61["supportsReasoning"] is True
+    assert sol_61["supportsNativeSearch"] is True
+    assert sol_61["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
     for model_id in ("openai:gpt-6-sol", "openai:gpt-6-luna"):
         model = next(m for m in openai["models"] if m["id"] == model_id)
         assert model["reasoningEfforts"] == [

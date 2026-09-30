@@ -112,6 +112,29 @@ def test_astra_uses_low_as_its_non_reasoning_floor_not_an_unsupported_none():
     assert astra.reasoning_summary == "auto"
 
 
+@pytest.mark.parametrize(
+    "reasoning,selected,expected",
+    [(True, effort, effort) for effort in ("low", "medium", "high", "xhigh", "max")]
+    + [(False, "max", "low"), (True, "none", "high")],
+)
+def test_sol_61_forwards_only_supported_api_efforts(
+    monkeypatch, reasoning, selected, expected
+):
+    settings = SimpleNamespace(
+        cheap_model=None,
+        mid_model="openai:gpt-6.1-sol",
+        mid_reasoning_effort=selected,
+        premium_model=None,
+    )
+    monkeypatch.setattr(llm_runner, "get_settings", lambda: settings)
+    model = build_model("openai:gpt-6.1-sol", api_key="k", reasoning=reasoning)
+    assert model.id == "gpt-6.1-sol"
+    assert model.get_request_params()["reasoning"] == {
+        "effort": expected,
+        "summary": "auto",
+    }
+
+
 def test_non_reasoning_deepseek_disables_thinking_rather_than_omitting_it():
     # Fourth instance of the "unset means provider decides" trap, after Gemini,
     # Anthropic and OpenAI. Verified live: omitting `reasoning` entirely on
