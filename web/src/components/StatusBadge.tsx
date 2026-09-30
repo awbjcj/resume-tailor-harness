@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import { CheckCheck, FileCheck2, ListChecks, Sparkles, X, type LucideIcon } from "lucide-react";
 
 /* Pipeline stage is the one categorical axis in the product that needs six
    mutually distinguishable colours, so it maps to the verified `stage-*` ramp
@@ -18,6 +19,14 @@ const STAGE_TONE: Record<string, string> = {
   rejected: "stage-rejected",
 };
 
+const STAGE_ICON: Record<string, LucideIcon> = {
+  shortlisted: ListChecks,
+  approved: CheckCheck,
+  tailored: Sparkles,
+  rendered: FileCheck2,
+  rejected: X,
+};
+
 export function StatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
   const fallback = status.replace(/_/g, " ");
@@ -31,13 +40,15 @@ export function StatusBadge({ status }: { status: string }) {
     tailored: t("job.stages.tailored"),
     rendered: t("job.stages.rendered"),
   }[status] ?? fallback;
+  const Icon = STAGE_ICON[status];
 
   return (
     <Badge
       variant="outline"
-      className="tone-chip rounded-full px-2.5 py-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.14em]"
+      className="tone-chip h-6 gap-1.5 rounded-full px-2.5 text-xs font-medium tracking-normal"
       data-tone={STAGE_TONE[status] ?? "stage-raw"}
     >
+      {Icon && <Icon aria-hidden="true" />}
       {label}
     </Badge>
   );

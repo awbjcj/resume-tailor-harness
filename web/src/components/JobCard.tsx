@@ -40,7 +40,7 @@ export function JobCard({
     row.sponsorshipSignal && SPONSORSHIP_TONE[row.sponsorshipSignal];
 
   return (
-    <Card className="job-card min-w-0 flex min-h-0 flex-col gap-4 p-4 transition-[box-shadow,transform] duration-150 ease-out-strong hover:-translate-y-0.5 hover:shadow-card-raised hover:ring-primary/40 motion-reduce:hover:translate-y-0 sm:p-5">
+    <Card data-selected={selected ?? false} className="job-card board-job-card min-w-0 flex min-h-0 flex-col gap-4 rounded-xl p-4 sm:p-5">
       <div className="flex flex-1 items-start gap-2 sm:gap-3">
         {onSelect && (
           <div className="pt-1">

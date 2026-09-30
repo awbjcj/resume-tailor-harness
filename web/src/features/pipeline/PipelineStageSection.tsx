@@ -78,15 +78,16 @@ export function PipelineStageSection({
     <section className="mb-6">
       <Collapsible open={open} onOpenChange={onOpenChange}>
         <CollapsibleTrigger
+          data-tone={`stage-${stage}`}
           className={cn(
             buttonVariants({ variant: "ghost" }),
-            "group h-auto min-h-11 w-full justify-between whitespace-normal rounded-lg border bg-card px-4 py-3 text-left shadow-card hover:border-primary/25",
+            "tone-panel pipeline-stage-heading group h-auto min-h-11 w-full justify-between whitespace-normal rounded-xl px-4 py-3 text-left shadow-card hover:border-primary/25",
           )}
         >
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <h2 className="text-sm font-semibold text-foreground">
             {pipelineStageLabel(stage)}
           </h2>
-          <span className="ml-auto text-xs font-semibold tabular-nums text-muted-foreground">
+          <span className="ml-auto rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium tabular-nums text-muted-foreground">
             {countLabel}
           </span>
           <ChevronDownIcon
