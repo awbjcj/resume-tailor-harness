@@ -1824,6 +1824,10 @@ def build_model(
     when that provider is actually selected. ``cache_system_prompt`` is forwarded
     only to Anthropic; other providers ignore it.
 
+    Every OpenAI model, including legacy and custom ids, uses Responses. The
+    selected model, reasoning setting, and route never switch it to Chat
+    Completions: reasoning and function tools must work together.
+
     Routing is resolved here rather than by callers: the endpoint and the
     credential are one decision (see ``resolve_route``). An explicit
     ``api_key`` overrides only the credential -- every such caller already
