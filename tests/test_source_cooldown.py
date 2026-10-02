@@ -89,7 +89,7 @@ def test_http_denial_does_not_repeat_transport(monkeypatch):
     assert len(calls) == 1
 
 
-def test_long_retry_after_records_cooldown_without_waiting():
+def test_long_retry_after_records_cooldown_without_waiting(monkeypatch):
     engine = create_engine("sqlite://")
     gateway = BrowserGateway(
         HostScheduler(engine),
@@ -98,8 +98,12 @@ def test_long_retry_after_records_cooldown_without_waiting():
         ),
     )
     # Isolate retry policy from host pacing and robots acquisition.
-    gateway._request = lambda *args: PublicBytesResponse(
-        429, {"retry-after": "3600"}, b"", "https://example.com/jobs"
+    monkeypatch.setattr(
+        gateway,
+        "_request",
+        lambda request, budget, delay=3: PublicBytesResponse(
+            429, {"retry-after": "3600"}, b"", "https://example.com/jobs"
+        ),
     )
     gateway.robots["https://example.com"] = (
         float("inf"),

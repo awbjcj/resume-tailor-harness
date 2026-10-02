@@ -5,6 +5,7 @@ miss a changed invocation path or a gateway URL that still selects chat.
 """
 
 import json
+from typing import Any
 
 from agno.models.message import Message
 import httpx
@@ -18,6 +19,10 @@ from resume_tailor_harness.llm_runner import (
     build_search_equipped,
 )
 from resume_tailor_harness.models.resume import ResumeContent
+
+
+# BaseSettings accepts this runtime option outside its generated field signature.
+_NO_ENV_FILE: dict[str, Any] = {"_env_file": None}
 
 
 @pytest.mark.parametrize(
@@ -36,7 +41,7 @@ async def test_supported_providers_send_responses_with_tools_and_resume_schema(
     model_id, reasoning, route_mode, search_mode
 ):
     settings = Settings(
-        _env_file=None,
+        **_NO_ENV_FILE,
         openai_api_key="direct-test-key",
         openai_base_url="https://direct.example/v1",
         sub2api_base_url="https://gateway.example",
@@ -150,7 +155,7 @@ def test_providers_without_native_responses_keep_native_adapters(provider, reaso
     from agno.models.anthropic import Claude
     from agno.models.google import Gemini
 
-    settings = Settings(_env_file=None)
+    settings = Settings(**_NO_ENV_FILE)
     expected_class = Claude if provider == "anthropic" else Gemini
     for entry in MODEL_CATALOG[provider]:
         model = build_model(entry.id, reasoning=reasoning, settings=settings)

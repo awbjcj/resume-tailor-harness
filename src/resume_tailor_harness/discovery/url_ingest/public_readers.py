@@ -108,9 +108,15 @@ def read_public_posting(html: str, url: str) -> ExtractedJob | None:
             '[itemprop="jobLocation"]',
         )
 
-    def text(selector):
+    def text(selector: str) -> str | None:
         node = soup.select_one(selector)
-        return node.get_text(" ", strip=True) or node.get("content") if node else None
+        if node is None:
+            return None
+        visible = node.get_text(" ", strip=True)
+        if visible:
+            return visible
+        content = node.get("content")
+        return content if isinstance(content, str) else None
 
     body = soup.select_one(selected[0])
     title = text(selected[1]) or (structured.title if structured else None)

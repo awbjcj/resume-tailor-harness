@@ -167,11 +167,15 @@ def test_browser_disabled_analyze_approve_refresh_uses_http(monkeypatch):
         assert proposal.validation.valid
         assert len(proposal.samples) == 2
         assert gateway.calls.count(ROOT + "/jobs") == 1  # reuse the initial response
+        selected_keys = []
+        for item in proposal.samples:
+            assert item.job_key is not None
+            selected_keys.append(item.job_key)
         approval = review.approve_draft(
             session,
             proposal.id,
             proposal.revision,
-            [item.job_key for item in proposal.samples],
+            selected_keys,
         )
         report = review.pull_source(session, approval.source_id, refresh=True)
         assert report.terminal_reason == "complete"
@@ -227,6 +231,7 @@ def test_single_posting_refresh_preserves_head_metadata_and_url_identity(monkeyp
         proposal = review.analyze_url(session, url, CrawlLimits(), allow_browser=False)
         assert proposal.validation.valid
         sample_key = proposal.samples[0].job_key
+        assert sample_key is not None
         approval = review.approve_draft(
             session, proposal.id, proposal.revision, [sample_key]
         )

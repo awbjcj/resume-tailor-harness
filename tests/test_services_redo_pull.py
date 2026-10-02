@@ -91,6 +91,7 @@ def test_recovery_review_preserves_saved_job_and_status(session, monkeypatch):
         session, job, agent=object(), allow_browser=False
     )
     assert outcome.status == "failed" and failure is not None
+    assert outcome.detail is not None
     assert "https://jobs.lever.co/acme/1" in outcome.detail
     session.refresh(job)
     assert job.url == "https://www.indeed.com/viewjob?jk=1"
