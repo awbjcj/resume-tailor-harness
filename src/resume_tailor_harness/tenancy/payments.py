@@ -350,13 +350,11 @@ def create_checkout(
                 assert previous is not None
                 session_id = previous.session_id
                 previous_expired = previous.status == "expired"
-            state = (
-                "expired"
-                if previous_expired
-                else gateway.checkout_status(session_id).get("status")
-                if session_id
-                else "pending"
-            )
+            state = "pending"
+            if previous_expired:
+                state = "expired"
+            elif session_id:
+                state = gateway.checkout_status(session_id).get("status")
             if state in {"open", "pending"} and previous_price == price_id:
                 # Reopening the app after a lost response resumes the original
                 # purchase and Stripe idempotency key, even with a new UI key.
@@ -715,6 +713,117 @@ def _grant_invoice(
     )
 
 
+def _apply_subscription_event(
+    session: Session, event: Any, sub: Any, invoice: Any, moment: datetime
+) -> None:
+    kind = event["type"]
+    order = _order(session, sub)
+    if order is not None and session.get(User, order.user_id) is not None:
+        binding = _bind(session, sub, order)
+        if kind.startswith("customer.subscription."):
+            if (
+                event["created"] >= binding.state_event_created
+                and binding.status != "canceled"
+            ):
+                binding.status = sub["status"]
+                binding.cancel_at_period_end = bool(sub.get("cancel_at_period_end"))
+                binding.state_event_created = event["created"]
+                if binding.status in TERMINAL:
+                    _revoke(session, binding, order, moment, event["id"])
+            if binding.status in CLOSED and order.status != "fulfilled":
+                order.status = "expired"
+                order.checkout_url = None
+        elif invoice is not None:
+            _grant_invoice(session, invoice, sub, moment, event["created"])
+
+
+def _apply_checkout_event(session: Session, obj: Any, moment: datetime) -> None:
+    order = _order(session, obj)
+    if order is not None and session.get(User, order.user_id) is not None:
+        if order.session_id not in {None, obj["id"]} or obj.get("mode") != order.mode:
+            raise BillingError("Checkout identity does not match")
+        order.session_id = obj["id"]
+        if obj.get("status") == "expired" and order.status != "fulfilled":
+            order.status = "expired"
+        if (
+            order.mode == "payment"
+            and obj.get("payment_status") == "paid"
+            and _receipt(session, f"checkout:{obj['id']}")
+        ):
+            if (
+                obj.get("currency") != "usd"
+                or obj.get("amount_total") != order.amount_cents
+            ):
+                raise BillingError("Paid amount does not match the purchase")
+            account, period, _ = _ensure_in_session(session, order.user_id, moment)
+            account.credit_balance_micros += order.credit_micros
+            order.status, order.payment_intent_id = (
+                "fulfilled",
+                _id(obj.get("payment_intent")),
+            )
+            _ledger(
+                session,
+                order,
+                period.id,
+                "CREDIT_PURCHASE",
+                order.credit_micros,
+                order.credit_micros,
+                obj["id"],
+            )
+
+
+def _apply_charge_event(
+    session: Session, event: Any, obj: Any, intent: Any, moment: datetime
+) -> None:
+    kind = event["type"]
+    # Refunds are cumulative. If purchased funds were already consumed,
+    # suspend shared-key access for operator review instead of creating
+    # a negative credit balance (which the allowance ledger forbids).
+    order = _order(session, intent) if intent else None
+    if order is not None and order.status != "fulfilled":
+        raise BillingError("Payment fulfillment is pending; retry this adjustment")
+    if order and order.status == "fulfilled":
+        user = session.get(User, order.user_id)
+        if user:
+            account, period, _ = _ensure_in_session(session, order.user_id, moment)
+            if kind == "charge.dispute.created" and _receipt(
+                session, f"dispute:{obj['id']}"
+            ):
+                user.shared_key_access = False
+                _ledger(
+                    session,
+                    order,
+                    period.id,
+                    "PAYMENT_DISPUTED",
+                    source=obj["id"],
+                )
+            elif kind == "charge.refunded":
+                if (
+                    obj.get("currency") != "usd"
+                    or obj.get("amount") != order.amount_cents
+                ):
+                    raise BillingError("Refund amount does not match its purchase")
+                total = (
+                    order.credit_micros * obj["amount_refunded"] // order.amount_cents
+                )
+                delta = max(0, total - order.refunded_micros)
+                removed = min(delta, account.credit_balance_micros)
+                account.credit_balance_micros -= removed
+                order.refunded_micros = max(order.refunded_micros, total)
+                if removed < delta:
+                    user.shared_key_access = False
+                if delta:
+                    _ledger(
+                        session,
+                        order,
+                        period.id,
+                        "CREDIT_REFUND",
+                        -delta,
+                        -removed,
+                        obj["id"],
+                    )
+
+
 def process_event(
     engine: Engine, event: Any, gateway: StripeGateway, *, now: datetime | None = None
 ) -> None:
@@ -753,117 +862,9 @@ def process_event(
         if not _receipt(session, f"event:{event['id']}"):
             return
         if sub is not None:
-            order = _order(session, sub)
-            if order is not None and session.get(User, order.user_id) is not None:
-                binding = _bind(session, sub, order)
-                if kind.startswith("customer.subscription."):
-                    if (
-                        event["created"] >= binding.state_event_created
-                        and binding.status != "canceled"
-                    ):
-                        binding.status = sub["status"]
-                        binding.cancel_at_period_end = bool(
-                            sub.get("cancel_at_period_end")
-                        )
-                        binding.state_event_created = event["created"]
-                        if binding.status in TERMINAL:
-                            _revoke(session, binding, order, moment, event["id"])
-                    if binding.status in CLOSED and order.status != "fulfilled":
-                        order.status = "expired"
-                        order.checkout_url = None
-                elif invoice is not None:
-                    _grant_invoice(session, invoice, sub, moment, event["created"])
+            _apply_subscription_event(session, event, sub, invoice, moment)
         elif kind.startswith("checkout.session."):
-            order = _order(session, obj)
-            if order is not None and session.get(User, order.user_id) is not None:
-                if (
-                    order.session_id not in {None, obj["id"]}
-                    or obj.get("mode") != order.mode
-                ):
-                    raise BillingError("Checkout identity does not match")
-                order.session_id = obj["id"]
-                if obj.get("status") == "expired" and order.status != "fulfilled":
-                    order.status = "expired"
-                if (
-                    order.mode == "payment"
-                    and obj.get("payment_status") == "paid"
-                    and _receipt(session, f"checkout:{obj['id']}")
-                ):
-                    if (
-                        obj.get("currency") != "usd"
-                        or obj.get("amount_total") != order.amount_cents
-                    ):
-                        raise BillingError("Paid amount does not match the purchase")
-                    account, period, _ = _ensure_in_session(
-                        session, order.user_id, moment
-                    )
-                    account.credit_balance_micros += order.credit_micros
-                    order.status, order.payment_intent_id = (
-                        "fulfilled",
-                        _id(obj.get("payment_intent")),
-                    )
-                    _ledger(
-                        session,
-                        order,
-                        period.id,
-                        "CREDIT_PURCHASE",
-                        order.credit_micros,
-                        order.credit_micros,
-                        obj["id"],
-                    )
+            _apply_checkout_event(session, obj, moment)
         elif kind in {"charge.refunded", "charge.dispute.created"}:
-            # Refunds are cumulative. If purchased funds were already consumed,
-            # suspend shared-key access for operator review instead of creating
-            # a negative credit balance (which the allowance ledger forbids).
-            order = _order(session, intent) if intent else None
-            if order is not None and order.status != "fulfilled":
-                raise BillingError(
-                    "Payment fulfillment is pending; retry this adjustment"
-                )
-            if order and order.status == "fulfilled":
-                user = session.get(User, order.user_id)
-                if user:
-                    account, period, _ = _ensure_in_session(
-                        session, order.user_id, moment
-                    )
-                    if kind == "charge.dispute.created" and _receipt(
-                        session, f"dispute:{obj['id']}"
-                    ):
-                        user.shared_key_access = False
-                        _ledger(
-                            session,
-                            order,
-                            period.id,
-                            "PAYMENT_DISPUTED",
-                            source=obj["id"],
-                        )
-                    elif kind == "charge.refunded":
-                        if (
-                            obj.get("currency") != "usd"
-                            or obj.get("amount") != order.amount_cents
-                        ):
-                            raise BillingError(
-                                "Refund amount does not match its purchase"
-                            )
-                        total = (
-                            order.credit_micros
-                            * obj["amount_refunded"]
-                            // order.amount_cents
-                        )
-                        delta = max(0, total - order.refunded_micros)
-                        removed = min(delta, account.credit_balance_micros)
-                        account.credit_balance_micros -= removed
-                        order.refunded_micros = max(order.refunded_micros, total)
-                        if removed < delta:
-                            user.shared_key_access = False
-                        if delta:
-                            _ledger(
-                                session,
-                                order,
-                                period.id,
-                                "CREDIT_REFUND",
-                                -delta,
-                                -removed,
-                                obj["id"],
-                            )
+            _apply_charge_event(session, event, obj, intent, moment)
         session.commit()
