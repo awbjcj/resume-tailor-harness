@@ -22,6 +22,7 @@ from resume_tailor_harness.api.deps import (
 from resume_tailor_harness.api.errors import ApiException, install_error_handlers
 from resume_tailor_harness.api.password_policy import HibpBreachChecker
 from resume_tailor_harness.api.routers import account as account_router
+from resume_tailor_harness.api.routers import billing as billing_router
 from resume_tailor_harness.api.routers import admin as admin_router
 from resume_tailor_harness.api.routers import admin_invites as admin_invites_router
 from resume_tailor_harness.api.routers import admin_quotas as admin_quotas_router
@@ -379,6 +380,7 @@ def create_app(
     # activates the default workspace; hosted mode authenticates a tenant.
     guarded = [Depends(require_token), Depends(get_user_context)]
     app.include_router(health.router, prefix="/api")
+    app.include_router(billing_router.webhook_router, prefix="/api")
     app.include_router(auth_router.router, prefix="/api")
     app.include_router(auth_google_router.router, prefix="/api")
     app.include_router(auth_google_router.callback_router, prefix="/api")
@@ -412,6 +414,7 @@ def create_app(
         settings_router.link_router, prefix="/api", dependencies=download_guarded
     )
     app.include_router(account_router.router, prefix="/api", dependencies=guarded)
+    app.include_router(billing_router.router, prefix="/api", dependencies=guarded)
     app.include_router(boards.router, prefix="/api", dependencies=guarded)
     app.include_router(board_views_router.router, prefix="/api", dependencies=guarded)
     app.include_router(jobs_router.router, prefix="/api", dependencies=guarded)

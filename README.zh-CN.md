@@ -327,6 +327,8 @@ SESSION_SECRET=<long random value>
 
 登录后，在 **Admin** 页面或通过 `resume-tailor-harness admin invite` 创建一次性邀请。成员在 `/register` 注册；每人都会获得独立的数据库、档案语料库、配置、密钥、输出和运行历史。管理员管理定期美元成本额度、持久积分、按生效日期管理的 LLM 费率、活跃职位上限和并发运行上限。[成本配额改造](docs/cost-quotas.md)开始执行后，token 用量仍用于共享密钥/BYOK 分析，但不再控制配额。成员可以在网页界面中管理自己的密钥、token、密码和工作区导出。远程成员的工作流以网页为主；本地领域 CLI 可以用 `--user USERNAME` 选择现有工作区。
 
+配置 [Stripe 支付](docs/stripe-billing.md)后，托管版本的成员可在 **账户 → 套餐与余额** 中充值永久余额或订阅周期额度。Stripe 托管支付和银行卡管理页面，签名验证后的付款通知会将余额和已付费订阅期限记入现有配额账本。本地模式和未配置部署密钥及价格 ID 的版本不会启用支付。
+
 `REGISTRATION_MODE`（默认为 `invite`，也可设为 `closed`/`open`）控制注册是否需要邀请。管理员、免费成员和订阅用户都可以使用平台的共享 LLM 密钥。请将这些密钥配置为 Railway 环境变量；系统会优先于工作区密钥选择它们。当适用的账户或平台额度用尽后，如果用户已配置对应提供商的密钥，调用会自动改用该密钥。`GLOBAL_DAILY_SIGNUP_LIMIT` 和 `GLOBAL_WEEKLY_TOKEN_BUDGET` 分别限制全平台的验证邮件总量和共享密钥总支出，与账户数量无关。完整变量清单和建议的生产环境配置见 [Railway 部署](docs/deploy-railway.md)。
 
 ### Gmail 设置（用于 `sync-status`、同步、提醒和邮件草稿）

@@ -1472,6 +1472,253 @@
         "title": "ArtifactDeleteRequest",
         "type": "object"
       },
+      "BillingCatalog": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "offers": {
+            "items": {
+              "$ref": "#/components/schemas/BillingOffer"
+            },
+            "title": "Offers",
+            "type": "array"
+          },
+          "portalAvailable": {
+            "default": false,
+            "title": "Portalavailable",
+            "type": "boolean"
+          },
+          "subscription": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BillingSubscription"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "BillingCatalog",
+        "type": "object"
+      },
+      "BillingCheckoutRequest": {
+        "properties": {
+          "idempotencyKey": {
+            "maxLength": 64,
+            "minLength": 8,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Idempotencykey",
+            "type": "string"
+          },
+          "priceId": {
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^price_[a-zA-Z0-9]+$",
+            "title": "Priceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "priceId",
+          "idempotencyKey"
+        ],
+        "title": "BillingCheckoutRequest",
+        "type": "object"
+      },
+      "BillingCheckoutResponse": {
+        "properties": {
+          "checkoutId": {
+            "title": "Checkoutid",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "checkoutId"
+        ],
+        "title": "BillingCheckoutResponse",
+        "type": "object"
+      },
+      "BillingCheckoutState": {
+        "properties": {
+          "status": {
+            "enum": [
+              "pending",
+              "open",
+              "fulfilled",
+              "expired"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "BillingCheckoutState",
+        "type": "object"
+      },
+      "BillingOffer": {
+        "properties": {
+          "allowanceMicros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowancemicros"
+          },
+          "amountCents": {
+            "title": "Amountcents",
+            "type": "integer"
+          },
+          "creditMicros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creditmicros"
+          },
+          "currency": {
+            "const": "usd",
+            "title": "Currency",
+            "type": "string"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "enum": [
+                  "week",
+                  "month"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interval"
+          },
+          "intervalCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intervalcount"
+          },
+          "mode": {
+            "enum": [
+              "payment",
+              "subscription"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "priceId": {
+            "title": "Priceid",
+            "type": "string"
+          },
+          "tierId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tierid"
+          }
+        },
+        "required": [
+          "priceId",
+          "name",
+          "mode",
+          "amountCents",
+          "currency"
+        ],
+        "title": "BillingOffer",
+        "type": "object"
+      },
+      "BillingPortalResponse": {
+        "properties": {
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "BillingPortalResponse",
+        "type": "object"
+      },
+      "BillingSubscription": {
+        "properties": {
+          "cancelAtPeriodEnd": {
+            "title": "Cancelatperiodend",
+            "type": "boolean"
+          },
+          "paidThrough": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paidthrough"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "cancelAtPeriodEnd"
+        ],
+        "title": "BillingSubscription",
+        "type": "object"
+      },
+      "BillingWebhookResponse": {
+        "properties": {
+          "received": {
+            "default": true,
+            "title": "Received",
+            "type": "boolean"
+          }
+        },
+        "title": "BillingWebhookResponse",
+        "type": "object"
+      },
       "BoardPage_PipelineItem_": {
         "properties": {
           "data": {
@@ -16189,6 +16436,221 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/account/billing": {
+      "get": {
+        "operationId": "catalog_api_account_billing_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Catalog",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/account/billing/checkout": {
+      "post": {
+        "operationId": "checkout_api_account_billing_checkout_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingCheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingCheckoutResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Checkout",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/account/billing/checkout/{session_id}": {
+      "get": {
+        "operationId": "checkout_status_api_account_billing_checkout__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingCheckoutState"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Checkout Status",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/api/account/billing/portal": {
+      "post": {
+        "operationId": "portal_api_account_billing_portal_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingPortalResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Portal",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
     "/api/account/email": {
       "post": {
         "operationId": "set_email_api_account_email_post",
@@ -19498,6 +19960,27 @@
         "summary": "Verify Email",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/billing/stripe/webhook": {
+      "post": {
+        "operationId": "webhook_api_billing_stripe_webhook_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingWebhookResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Webhook",
+        "tags": [
+          "billing"
         ]
       }
     },

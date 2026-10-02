@@ -505,6 +505,12 @@ their own keys, tokens, password, and
 workspace export in the web UI. The remote member workflow is web-first; the
 local domain CLI can select an existing workspace with `--user USERNAME`.
 
+Hosted members can purchase durable credits and subscribe from **Account →
+Plans and credits** when [Stripe billing](docs/stripe-billing.md) is configured.
+Checkout and card management are hosted by Stripe; signed payment webhooks apply
+credit and paid subscription terms to the existing quota ledger. Billing stays
+disabled in local mode and until deployment credentials and price IDs are set.
+
 `REGISTRATION_MODE` (`invite` by default, or `closed`/`open`) controls whether
 an invite is required at all. Every administrator, free member, and subscriber
 can use the platform's shared LLM keys. Configure those keys as Railway

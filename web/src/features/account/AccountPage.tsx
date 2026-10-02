@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { useMe } from "@/features/auth/AuthGate";
 import { api, unwrap } from "@/lib/api/client";
 import { AccountUsageCard } from "./AccountUsageCard";
+import { BillingCard } from "./BillingCard";
 import { DataArchiveCard } from "./DataArchiveCard";
 import { DangerZoneCard } from "./DangerZoneCard";
 import { PasswordCard } from "./PasswordCard";
@@ -44,6 +45,7 @@ export function AccountPage() {
         </Badge>
       </div>
 
+      {me.data.authRequired && me.data.role !== "admin" ? <BillingCard quota={usage.data.quota} /> : null}
       <section aria-labelledby="account-security" className="flex flex-col gap-4">
         <div>
           <h2 id="account-security" className="text-lg font-semibold">

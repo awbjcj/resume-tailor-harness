@@ -1,9 +1,10 @@
 # Hosted subscription and credit lifecycle
 
 The quota console manages finite member subscriptions using the existing tier
-catalog. This is an operator-managed entitlement system: it does not collect
-payments or claim that an invoice was paid. Record the external invoice or
-business reason when granting access.
+catalog. Hosted members can also pay through Stripe: see [Stripe billing](stripe-billing.md)
+for deployment settings, Checkout, renewals and the customer portal. Manual
+operator grants do not collect payments or claim that an invoice was paid;
+record the external invoice or business reason when granting access.
 
 ## Operator workflow
 
@@ -48,8 +49,9 @@ conflicting metrics under the same ID fail visibly. Responses without an ID
 (including current direct audio adapters) are distinct invocations and cannot
 be deduplicated across replays. A settlement write failure rolls back the whole
 transaction and raises an operator-visible failure; it is not silently treated
-as successful telemetry. There is no external payment webhook or billing retry
-queue in this implementation.
+as successful telemetry. Stripe payment webhooks use their own durable receipts
+and atomic financial transactions; Stripe retries failed deliveries. There is
+no application-owned payment retry queue.
 
 Enforced calls re-read authoritative eligibility so another request's top-up,
 revocation or consumption is visible immediately. Already admitted concurrent
