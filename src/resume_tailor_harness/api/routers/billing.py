@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
+from contextlib import closing
 from typing import TypeVar
 
 import stripe
@@ -37,12 +38,12 @@ def _call(operation: Callable[[], T]) -> T:
         ) from exc
 
 
-def _gateway(request: Request) -> payments.StripeGateway:
+def _gateway(request: Request) -> closing[payments.StripeGateway]:
     # Always use process settings; tenant-owned secrets cannot configure billing.
     settings = request.app.state.settings
     if not payments.billing_enabled(settings, request.app.state.app_mode):
         raise ApiException(404, "BILLING_DISABLED", "Payments are not enabled")
-    return payments.StripeGateway(settings)
+    return closing(_call(lambda: payments.StripeGateway(settings)))
 
 
 def _check_origin(request: Request) -> None:
@@ -61,31 +62,32 @@ def catalog(request: Request) -> BillingCatalog:
         request.app.state.settings, request.app.state.app_mode
     ):
         return BillingCatalog(enabled=False)
-    return BillingCatalog.model_validate(
-        _call(
-            lambda: payments.billing_catalog(
-                request.app.state.system_engine,
-                request.app.state.settings,
-                require_context().user_id,
-                _gateway(request),
+    with _gateway(request) as gateway:
+        return BillingCatalog.model_validate(
+            _call(
+                lambda: payments.billing_catalog(
+                    request.app.state.system_engine,
+                    request.app.state.settings,
+                    require_context().user_id,
+                    gateway,
+                )
             )
         )
-    )
 
 
 @router.post("/checkout")
 def checkout(body: BillingCheckoutRequest, request: Request) -> BillingCheckoutResponse:
     def create():
-        gateway = _gateway(request)
-        _check_origin(request)
-        return payments.create_checkout(
-            request.app.state.system_engine,
-            request.app.state.settings,
-            require_context().user_id,
-            body.price_id,
-            body.idempotency_key,
-            gateway,
-        )
+        with _gateway(request) as gateway:
+            _check_origin(request)
+            return payments.create_checkout(
+                request.app.state.system_engine,
+                request.app.state.settings,
+                require_context().user_id,
+                body.price_id,
+                body.idempotency_key,
+                gateway,
+            )
 
     return BillingCheckoutResponse.model_validate(_call(create))
 
@@ -93,10 +95,10 @@ def checkout(body: BillingCheckoutRequest, request: Request) -> BillingCheckoutR
 @router.get("/checkout/{session_id}")
 def checkout_status(session_id: str, request: Request) -> BillingCheckoutState:
     def read():
-        _gateway(request)
-        return payments.checkout_state(
-            request.app.state.system_engine, require_context().user_id, session_id
-        )
+        with _gateway(request):
+            return payments.checkout_state(
+                request.app.state.system_engine, require_context().user_id, session_id
+            )
 
     return BillingCheckoutState.model_validate(_call(read))
 
@@ -104,21 +106,27 @@ def checkout_status(session_id: str, request: Request) -> BillingCheckoutState:
 @router.post("/portal")
 def portal(request: Request) -> BillingPortalResponse:
     def create():
-        gateway = _gateway(request)
-        _check_origin(request)
-        return payments.create_portal(
-            request.app.state.system_engine,
-            request.app.state.settings,
-            require_context().user_id,
-            gateway,
-        )
+        with _gateway(request) as gateway:
+            _check_origin(request)
+            return payments.create_portal(
+                request.app.state.system_engine,
+                request.app.state.settings,
+                require_context().user_id,
+                gateway,
+            )
 
     return BillingPortalResponse.model_validate(_call(create))
 
 
 @webhook_router.post("/stripe/webhook")
 async def webhook(request: Request) -> BillingWebhookResponse:
-    _call(lambda: _gateway(request))
+    with _gateway(request) as gateway:
+        return await _receive_webhook(request, gateway)
+
+
+async def _receive_webhook(
+    request: Request, gateway: payments.StripeGateway
+) -> BillingWebhookResponse:
     payload = bytearray()
     async for chunk in request.stream():
         payload.extend(chunk)
@@ -145,8 +153,6 @@ async def webhook(request: Request) -> BillingWebhookResponse:
         )
     await asyncio.to_thread(
         _call,
-        lambda: payments.process_event(
-            request.app.state.system_engine, event, _gateway(request)
-        ),
+        lambda: payments.process_event(request.app.state.system_engine, event, gateway),
     )
     return BillingWebhookResponse()

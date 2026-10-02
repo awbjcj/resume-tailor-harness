@@ -35,7 +35,7 @@ mode. Administrator accounts are quota exempt and cannot buy member plans.
    of credit: `10000000` grants $10 in durable credits. Stripe owns the selling
    price displayed in the UI. `STRIPE_SUBSCRIPTION_PRICES` maps recurring price
    IDs to existing application tier IDs. An ID must appear in exactly one map.
-   These settings are deployment-owned and never read from tenant overlays.
+These settings are deployment-owned and never read from tenant overlays.
    Hosted Checkout requires no publishable key or browser Stripe SDK.
 
 4. Create a Stripe webhook endpoint at
@@ -75,6 +75,10 @@ Checkout accepts only a configured price ID and a purchase retry key; user,
 customer, quantity, credit amount, plan and return URLs are resolved server-side.
 The customer portal is likewise bound to the authenticated member. Pending
 subscription checkout and active subscriptions block a second subscription.
+Closed initial subscriptions release their unfulfilled checkout reservation.
+Archived or unavailable prices are omitted from the catalog and logged, while
+existing customers retain access to billing management. Checkout creation still
+rejects unavailable prices.
 Credit and tier snapshots are persisted before starting Checkout. In-flight
 credit purchases retain their promised credit even if deployment mappings change.
 After a lost response, retries reuse the original purchase. If its creation
@@ -82,6 +86,12 @@ window has closed, the backend first looks up the customer's matching Stripe
 session: an open session resumes, a completed session waits for fulfillment,
 and an expired or never-created session releases the reservation for a new
 purchase. Changing a retry key alone cannot create a second subscription.
+
+Account deletion and promotion to quota-exempt administrator are blocked while
+Stripe subscriptions or checkouts remain open. Cancel the subscription or
+resolve the checkout first, and allow its webhook to reconcile before retrying
+the account change. Disabling a member does not cancel Stripe billing; operators
+must manage that separately in Stripe.
 
 Only a signed webhook can fulfill a payment. The success URL merely polls the
 member's persisted checkout state and refreshes usage after fulfillment; visiting

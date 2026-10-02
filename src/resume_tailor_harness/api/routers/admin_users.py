@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
 from sqlmodel import col
 
@@ -20,6 +20,7 @@ from resume_tailor_harness.api.schemas.admin_users import (
 )
 from resume_tailor_harness.tenancy.context import UserContext
 from resume_tailor_harness.tenancy.limits import weekly_usage
+from resume_tailor_harness.tenancy.payments import BillingError, require_closed_billing
 from resume_tailor_harness.tenancy.system_db import ApiToken, User
 from resume_tailor_harness.tenancy.workspace import workspace_paths
 from resume_tailor_harness.tracking.tables import Job
@@ -92,10 +93,16 @@ def patch_user(
             "Token budgets are analytics-only; manage this member's cost quota instead",
         )
     with Session(request.app.state.system_engine) as session:
+        session.execute(text("BEGIN IMMEDIATE"))
         user = session.get(User, user_id)
         if user is None:
             raise ApiException(404, "NOT_FOUND", "No such user")
         if body.role is not None and body.role != user.role:
+            if body.role == "admin":
+                try:
+                    require_closed_billing(session, user_id)
+                except BillingError as exc:
+                    raise ApiException(exc.status, exc.code, str(exc)) from exc
             if user.role == "admin" and _last_admin(session):
                 raise ApiException(409, "LAST_ADMIN", "Cannot demote the last admin")
             user.role = body.role
@@ -146,11 +153,16 @@ def delete_user(
     user_values: dict[str, object]
     token_values: list[dict[str, object]]
     with Session(request.app.state.system_engine, expire_on_commit=False) as session:
+        session.execute(text("BEGIN IMMEDIATE"))
         user = session.get(User, user_id)
         if user is None:
             raise ApiException(404, "NOT_FOUND", "No such user")
         if user.role == "admin" and _last_admin(session):
             raise ApiException(409, "LAST_ADMIN", "Cannot delete the last admin")
+        try:
+            require_closed_billing(session, user_id)
+        except BillingError as exc:
+            raise ApiException(exc.status, exc.code, str(exc)) from exc
         request.app.state.engine_registry.evict(user_id)
         if paths.root.exists():
             paths.root.rename(tombstone)

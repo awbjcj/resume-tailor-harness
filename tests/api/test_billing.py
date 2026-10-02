@@ -60,6 +60,10 @@ class FakeStripe:
         }
         self.checkouts, self.subscriptions, self.invoices = {}, {}, {}
         self.checkout_calls, self.portal_calls = [], []
+        self.close_calls = 0
+
+    def close(self):
+        self.close_calls += 1
 
     def price(self, key):
         return copy.deepcopy(self.prices[key])
@@ -254,6 +258,126 @@ def test_catalog_prices_and_hosted_gate(billing, mu_app, mu_client):
     assert deliver(mu_client, event("unhandled", {})).status_code == 404
 
 
+def test_retry_does_not_return_expired_checkout_url(billing, mu_client):
+    _, _, fake = billing
+    sid = checkout(mu_client)
+    fake.checkouts[sid]["status"] = "expired"
+    fake.checkouts[sid]["url"] = None
+    response = mu_client.post(
+        "/api/account/billing/checkout",
+        json={"priceId": "price_credit", "idempotencyKey": "purchase-12345"},
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "BILLING_CHECKOUT_ENDED"
+
+
+@pytest.mark.parametrize("state", ["incomplete_expired", "canceled"])
+def test_closed_unpaid_subscription_releases_checkout(billing, mu_client, state):
+    engine, _, fake = billing
+    sid = checkout(mu_client, "price_plan")
+    paid_subscription(fake, sid)
+    fake.checkouts[sid]["status"] = "complete"
+    fake.checkouts[sid]["url"] = None
+    fake.subscriptions["sub_test"]["status"] = state
+    assert (
+        deliver(
+            mu_client, event("customer.subscription.updated", {"id": "sub_test"})
+        ).status_code
+        == 200
+    )
+    assert checkout(mu_client, "price_plan", "new-purchase") != sid
+    assert quota_snapshot(engine, USER).tier_id == "FREE"
+
+
+@pytest.mark.parametrize("paid", [False, True])
+@pytest.mark.parametrize("action", ["delete", "promote"])
+def test_account_deletion_cannot_orphan_pending_or_active_billing(
+    billing, mu_client, paid, action
+):
+    engine, _, fake = billing
+    sid = checkout(mu_client, "price_plan")
+    if paid:
+        payments.process_event(engine, paid_subscription(fake, sid), fake, now=NOW)
+    assert (
+        mu_client.post(
+            "/api/auth/login",
+            json={"identifier": "owner", "password": "owner-password"},
+        ).status_code
+        == 200
+    )
+    response = (
+        mu_client.delete(f"/api/admin/users/{USER}?confirm=DELETE")
+        if action == "delete"
+        else mu_client.patch(f"/api/admin/users/{USER}", json={"role": "admin"})
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "BILLING_ACTIVE"
+    with Session(engine) as session:
+        assert session.get(User, USER) is not None
+        assert session.get(User, USER).role == "user"
+    if paid:
+        fake.subscriptions["sub_test"]["status"] = "canceled"
+        assert (
+            deliver(
+                mu_client,
+                event(
+                    "customer.subscription.deleted", {"id": "sub_test"}, "evt_cancel", 2
+                ),
+            ).status_code
+            == 200
+        )
+    else:
+        fake.checkouts[sid]["status"] = "expired"
+        assert (
+            deliver(
+                mu_client, event("checkout.session.expired", {"id": sid})
+            ).status_code
+            == 200
+        )
+    if action == "delete":
+        assert (
+            mu_client.delete(f"/api/admin/users/{USER}?confirm=DELETE").status_code
+            == 200
+        )
+    else:
+        assert (
+            mu_client.patch(
+                f"/api/admin/users/{USER}", json={"role": "admin"}
+            ).status_code
+            == 200
+        )
+
+
+def test_unavailable_offer_does_not_hide_existing_billing_portal(billing, mu_client):
+    _, _, fake = billing
+    checkout(mu_client)
+    fake.prices["price_plan"]["active"] = False
+    response = mu_client.get("/api/account/billing")
+    assert response.status_code == 200
+    assert response.json()["portalAvailable"] is True
+    assert [offer["priceId"] for offer in response.json()["offers"]] == ["price_credit"]
+
+
+def test_gateway_is_closed_after_success_and_provider_failure(
+    billing, mu_client, monkeypatch
+):
+    _, _, fake = billing
+    assert mu_client.get("/api/account/billing").status_code == 200
+    assert fake.close_calls == 1
+    monkeypatch.setattr(
+        fake,
+        "portal",
+        lambda _: (_ for _ in ()).throw(stripe.APIConnectionError("timeout")),
+    )
+    checkout(mu_client)
+    assert mu_client.post("/api/account/billing/portal").status_code == 502
+    assert fake.close_calls == 3
+    assert deliver(mu_client, event("unhandled", {}), secret="wrong").status_code == 400
+    assert fake.close_calls == 4
+    assert deliver(mu_client, event("unhandled", {})).status_code == 200
+    assert fake.close_calls == 5
+
+
 def test_checkout_pinned_owner_amount_return_urls_and_idempotency(billing, mu_client):
     engine, settings, fake = billing
     sid = checkout(mu_client)
@@ -310,12 +434,18 @@ def test_price_allowlist_cycle_and_missing_config(billing, mu_app, mu_client):
         == 400
     )
     fake.prices["price_plan"]["recurring"]["interval"] = "year"
-    assert mu_client.get("/api/account/billing").status_code == 503
+    assert [
+        offer["priceId"]
+        for offer in mu_client.get("/api/account/billing").json()["offers"]
+    ] == ["price_credit"]
     fake.prices["price_plan"]["recurring"]["interval"] = "month"
     with Session(engine) as session:
         session.get(QuotaTier, "SUBSCRIBER").archived_at = NOW
         session.commit()
-    assert mu_client.get("/api/account/billing").status_code == 503
+    assert [
+        offer["priceId"]
+        for offer in mu_client.get("/api/account/billing").json()["offers"]
+    ] == ["price_credit"]
     mu_app.state.settings.app_base_url = ""
     assert mu_client.get("/api/account/billing").status_code == 503
 
@@ -632,9 +762,44 @@ def test_stripe_provider_errors_are_sanitized(billing, mu_client, monkeypatch):
             stripe.APIConnectionError("sk_secret_do_not_show")
         ),
     )
-    response = mu_client.get("/api/account/billing")
+    response = mu_client.post(
+        "/api/account/billing/checkout",
+        json={"priceId": "price_credit", "idempotencyKey": "purchase-12345"},
+    )
     assert response.status_code == 502
     assert "sk_secret" not in response.text
+
+
+def test_dispute_object_is_applied_once_even_with_distinct_event_ids(
+    billing, mu_client
+):
+    engine, _, fake = billing
+    sid = checkout(mu_client)
+    fake.checkouts[sid]["payment_status"] = "paid"
+    payments.process_event(
+        engine, event("checkout.session.completed", {"id": sid}), fake
+    )
+    dispute = {"id": "dp_test", "payment_intent": f"pi_{sid}"}
+    payments.process_event(
+        engine, event("charge.dispute.created", dispute, "evt_dispute"), fake
+    )
+    with Session(engine) as session:
+        assert session.get(User, USER).shared_key_access is False
+        session.get(User, USER).shared_key_access = True  # operator reconciliation
+        session.commit()
+    payments.process_event(
+        engine, event("charge.dispute.created", dispute, "evt_duplicate"), fake
+    )
+    with Session(engine) as session:
+        assert session.get(User, USER).shared_key_access is True
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(QuotaLedgerEntry)
+                .where(QuotaLedgerEntry.kind == "PAYMENT_DISPUTED")
+            )
+            == 1
+        )
 
 
 def test_refund_delivered_before_fulfillment_retries_without_losing_adjustment(
@@ -881,3 +1046,5 @@ def test_real_stripe_sdk_serializes_sync_requests_and_recovers_across_pages(
     assert parse_qs(urlsplit(str(requests[-1].url)).query)["starting_after"] == [
         "cs_other"
     ]
+    gateway.close()
+    assert gateway.http_client._client.is_closed
