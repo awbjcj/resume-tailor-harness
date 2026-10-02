@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from urllib.parse import urlsplit
@@ -33,6 +34,7 @@ from resume_tailor_harness.tenancy.system_db import (
 STRIPE_API_VERSION = "2026-02-25.clover"
 TERMINAL = {"canceled", "unpaid", "incomplete_expired", "paused"}
 CLOSED = {"canceled", "incomplete_expired"}
+logger = logging.getLogger(__name__)
 
 
 class BillingError(RuntimeError):
@@ -73,12 +75,16 @@ class StripeGateway:
             raise BillingError(
                 "Payments are not configured", status=503, code="BILLING_UNAVAILABLE"
             )
+        self.http_client = stripe.HTTPXClient(timeout=15, allow_sync_methods=True)
         self.client = stripe.StripeClient(
             settings.stripe_secret_key,
             stripe_version=STRIPE_API_VERSION,
             max_network_retries=2,
-            http_client=stripe.HTTPXClient(timeout=15, allow_sync_methods=True),
+            http_client=self.http_client,
         )
+
+    def close(self) -> None:
+        self.http_client.close()
 
     def price(self, price_id: str) -> Any:
         return self.client.v1.prices.retrieve(price_id)
@@ -215,13 +221,17 @@ def billing_catalog(
     billing_origin(settings)
     with Session(engine) as session:
         _member(session, user_id)
-        offers = [
-            _offer(session, settings, gateway, key)
-            for key in (
-                *settings.stripe_credit_prices,
-                *settings.stripe_subscription_prices,
-            )
-        ]
+        offers = []
+        for key in (
+            *settings.stripe_credit_prices,
+            *settings.stripe_subscription_prices,
+        ):
+            try:
+                offers.append(_offer(session, settings, gateway, key))
+            except (BillingError, stripe.StripeError):
+                # Existing customers must retain their portal even when a price
+                # is archived or Stripe cannot load the purchase catalog.
+                logger.warning("Stripe offer %s is unavailable", key)
         customer = session.get(StripeCustomer, user_id)
         subscription = session.scalars(
             select(StripeSubscription)
@@ -265,11 +275,7 @@ def _recover_checkout(engine: Engine, order_id: str, gateway: StripeGateway) -> 
     """Recover a lost response before retrying a time-sensitive creation."""
     with Session(engine) as session:
         order = session.get(StripeCheckout, order_id)
-        if (
-            order is None
-            or order.status not in {"pending", "open"}
-            or order.checkout_url
-        ):
+        if order is None or order.status not in {"pending", "open"}:
             return
         session_id, customer_id = order.session_id, order.customer_id
         if not session_id and _aware(order.expires_at) >= datetime.now(UTC) + timedelta(
@@ -288,13 +294,15 @@ def _recover_checkout(engine: Engine, order_id: str, gateway: StripeGateway) -> 
         session.execute(text("BEGIN IMMEDIATE"))
         order = session.get(StripeCheckout, order_id)
         assert order is not None
-        if order.status not in {"pending", "open"} or order.checkout_url:
+        if order.status not in {"pending", "open"}:
             return
         if remote is not None:
             if _order(session, remote) is not order or remote.get("mode") != order.mode:
                 raise BillingError("Checkout identity does not match")
             order.session_id = remote["id"]
-            order.checkout_url = remote.get("url")
+            order.checkout_url = (
+                remote.get("url") if remote.get("status") == "open" else None
+            )
             order.status = "expired" if remote.get("status") == "expired" else "open"
         elif order.session_id is None:
             # A concurrent creator that later returns may no longer hand out
@@ -472,6 +480,27 @@ def create_portal(
     if settings.stripe_portal_configuration_id:
         params["configuration"] = settings.stripe_portal_configuration_id
     return {"url": gateway.portal(params)["url"]}
+
+
+def require_closed_billing(session: Session, user_id: str) -> None:
+    """Guard account removal or promotion in its existing writer transaction."""
+    active = session.scalars(
+        select(StripeSubscription.id).where(
+            StripeSubscription.user_id == user_id,
+            StripeSubscription.status.not_in(CLOSED),
+        )
+    ).first()
+    pending = session.scalars(
+        select(StripeCheckout.id).where(
+            StripeCheckout.user_id == user_id,
+            StripeCheckout.status.in_(["pending", "open"]),
+        )
+    ).first()
+    if active or pending:
+        raise BillingError(
+            "Cancel Stripe subscriptions and resolve pending checkouts before deleting or promoting this account",
+            code="BILLING_ACTIVE",
+        )
 
 
 def checkout_state(engine: Engine, user_id: str, session_id: str) -> dict:
@@ -739,6 +768,9 @@ def process_event(
                         binding.state_event_created = event["created"]
                         if binding.status in TERMINAL:
                             _revoke(session, binding, order, moment, event["id"])
+                    if binding.status in CLOSED and order.status != "fulfilled":
+                        order.status = "expired"
+                        order.checkout_url = None
                 elif invoice is not None:
                     _grant_invoice(session, invoice, sub, moment, event["created"])
         elif kind.startswith("checkout.session."):
@@ -794,7 +826,9 @@ def process_event(
                     account, period, _ = _ensure_in_session(
                         session, order.user_id, moment
                     )
-                    if kind == "charge.dispute.created":
+                    if kind == "charge.dispute.created" and _receipt(
+                        session, f"dispute:{obj['id']}"
+                    ):
                         user.shared_key_access = False
                         _ledger(
                             session,
@@ -803,7 +837,7 @@ def process_event(
                             "PAYMENT_DISPUTED",
                             source=obj["id"],
                         )
-                    else:
+                    elif kind == "charge.refunded":
                         if (
                             obj.get("currency") != "usd"
                             or obj.get("amount") != order.amount_cents
