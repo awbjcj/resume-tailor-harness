@@ -115,7 +115,7 @@ describe("EvidencePortfolioDisclosure", () => {
 
     await user.click(screen.getAllByRole("button")[0]);
 
-    expect(await screen.findByText("证据规划器不可用（规划器不可用）；已使用基于规则的兜底选择。")).toBeInTheDocument();
+    expect(await screen.findByText("经历依据规划暂不可用（经历依据规划暂不可用），已改用固定规则选择依据。")).toBeInTheDocument();
   });
 
   it("shows an accessible error without closing the disclosure", async () => {
