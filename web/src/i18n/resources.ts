@@ -214,6 +214,11 @@ const en = {
   auth: {
     privateCareerWorkspace: "Private job-search workspace",
     evidenceLedOperations: "Evidence-based job search",
+    brandHeadline: "Resume tailoring,",
+    brandHeadlineAccent: "with traceable facts.",
+    sourceRecords: "Source records",
+    tailoredResume: "Tailored résumé",
+    validation: "Validation",
     brandPromise: "Every resume bullet must trace back to a fact you provided.",
     brandSummary:
       "Find roles, tailor your materials with traceable evidence, and track each application in one workspace.",
@@ -995,6 +1000,11 @@ const zhCN = {
   auth: {
     privateCareerWorkspace: "私密求职工作区",
     evidenceLedOperations: "基于事实的求职管理",
+    brandHeadline: "简历定制，",
+    brandHeadlineAccent: "事实有据可查。",
+    sourceRecords: "原始资料",
+    tailoredResume: "定制简历",
+    validation: "内容校验",
     brandPromise: "每一条简历要点都必须追溯到你提供的事实。",
     brandSummary: "在同一个工作区寻找职位、依据可追溯的事实定制材料，并跟踪每份申请。",
     privateCommandCenter: "你的私密求职工作区。",
