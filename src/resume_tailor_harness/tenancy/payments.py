@@ -49,6 +49,12 @@ def billing_enabled(settings: Settings, app_mode: str) -> bool:
     return app_mode == "hosted" and settings.stripe_enabled
 
 
+def billing_service_available(settings: Settings, app_mode: str) -> bool:
+    return app_mode == "hosted" and bool(
+        settings.stripe_secret_key and settings.stripe_webhook_secret
+    )
+
+
 def billing_origin(settings: Settings) -> str:
     base = settings.app_base_url.strip().rstrip("/")
     parsed = urlsplit(base)
@@ -222,10 +228,12 @@ def billing_catalog(
     with Session(engine) as session:
         _member(session, user_id)
         offers = []
-        for key in (
-            *settings.stripe_credit_prices,
-            *settings.stripe_subscription_prices,
-        ):
+        price_ids = (
+            (*settings.stripe_credit_prices, *settings.stripe_subscription_prices)
+            if settings.stripe_enabled
+            else ()
+        )
+        for key in price_ids:
             try:
                 offers.append(_offer(session, settings, gateway, key))
             except (BillingError, stripe.StripeError):
@@ -621,23 +629,27 @@ def _grant_invoice(
     session: Session, invoice: Any, sub: Any, now: datetime, event_created: int
 ) -> None:
     order = _order(session, sub)
-    if (
-        order is None
-        or invoice.get("status") != "paid"
-        or _id(invoice.get("customer")) != order.customer_id
-    ):
+    if order is None or _id(invoice.get("customer")) != order.customer_id:
         return
     binding = _bind(session, sub, order)
-    if not _receipt(session, f"invoice:{invoice['id']}"):
+    if session.get(StripeReceipt, f"invoice:{invoice['id']}") is not None:
         return
     if (
         binding.status == "canceled"
         or (binding.status in TERMINAL and binding.state_event_created > event_created)
-        or sub.get("status") != "active"
+        or sub.get("status") in CLOSED
         or invoice.get("billing_reason")
         not in {"subscription_create", "subscription_cycle"}
     ):
         return
+    if invoice.get("status") != "paid" or sub.get("status") != "active":
+        # Roll back both receipts so Stripe can retry the same event after its
+        # invoice/subscription reads converge. A 200 would discard that retry.
+        raise BillingError(
+            "Paid invoice state is not ready; retry delivery",
+            status=503,
+            code="BILLING_STATE_PENDING",
+        )
     lines = invoice.get("lines", {})
     if lines.get("has_more"):
         raise BillingError("Subscription invoice needs reconciliation")
@@ -666,6 +678,7 @@ def _grant_invoice(
         raise BillingError("Invalid paid invoice period")
     if binding.paid_through and end <= _aware(binding.paid_through):
         return
+    _receipt(session, f"invoice:{invoice['id']}")
     binding.paid_through = end
     binding.status = sub["status"]
     binding.cancel_at_period_end = bool(sub.get("cancel_at_period_end"))
