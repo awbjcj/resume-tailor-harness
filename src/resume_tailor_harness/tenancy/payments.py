@@ -637,7 +637,7 @@ def _grant_invoice(
     if (
         binding.status == "canceled"
         or (binding.status in TERMINAL and binding.state_event_created > event_created)
-        or sub.get("status") in CLOSED
+        or sub.get("status") in TERMINAL
         or invoice.get("billing_reason")
         not in {"subscription_create", "subscription_cycle"}
     ):
