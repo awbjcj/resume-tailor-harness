@@ -1117,3 +1117,19 @@ def test_disabling_sales_keeps_existing_billing_service(
         mu_client.get(f"/api/account/billing/checkout/{sid}").json()["status"]
         == "fulfilled"
     )
+
+
+@pytest.mark.parametrize("state", sorted(payments.TERMINAL))
+def test_paid_invoice_for_terminal_subscription_is_acknowledged(
+    billing, mu_client, state
+):
+    engine, _, fake = billing
+    sid = checkout(mu_client, "price_plan")
+    ev = paid_subscription(fake, sid)
+    fake.subscriptions["sub_test"]["status"] = state
+    assert deliver(mu_client, ev).status_code == 200
+    assert deliver(mu_client, ev).status_code == 200
+    assert quota_snapshot(engine, USER).tier_id == "FREE"
+    with Session(engine) as session:
+        assert session.get(StripeReceipt, "event:" + ev["id"]) is not None
+        assert session.get(StripeReceipt, "invoice:in_first") is None
