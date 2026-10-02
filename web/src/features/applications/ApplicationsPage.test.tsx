@@ -48,7 +48,7 @@ describe("ApplicationsPage", () => {
     expect(screen.getByRole("option", { name: "公司名称 A–Z" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "申请状态" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "面试中" })).toBeInTheDocument();
-    expect(screen.getByText("正在显示 1 / 1 条申请记录")).toBeInTheDocument();
+    expect(screen.getByText("显示 1 条，共 1 条申请记录")).toBeInTheDocument();
   });
 
   it("compares two selected roles using the deterministic evidence endpoint", async () => {
@@ -115,7 +115,7 @@ describe("ApplicationsPage", () => {
     expect((await axe(container)).violations).toEqual([]);
 
     await changeLanguage("zh-CN");
-    expect(await screen.findByText("深入 · 4 个来源 · 多方印证 · 当前有效")).toBeInTheDocument();
+    expect(await screen.findByText("深入 · 4 个来源 · 多来源印证 · 当前有效")).toBeInTheDocument();
     expect(screen.getByText("找到历史申报记录")).toBeInTheDocument();
   });
 

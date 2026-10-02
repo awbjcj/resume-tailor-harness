@@ -78,10 +78,10 @@ describe("ApplicationsTable", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("columnheader", { name: "技术面 2" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "第 2 轮技术面试" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "职位" })).toBeInTheDocument();
     expect(screen.getByText("面试中")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "技术面 1详情" }));
+    await user.click(screen.getByRole("button", { name: "第 1 轮技术面试详情" }));
     expect(screen.getByText(/进入下一轮 · 线上 · Zoom · A. Interviewer/)).toBeVisible();
   });
 
