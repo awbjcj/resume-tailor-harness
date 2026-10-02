@@ -416,6 +416,63 @@ class UsageReceipt(SystemBase):
     fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
 
 
+class StripeCustomer(SystemBase):
+    __tablename__ = "stripe_customers"
+
+    user_id: Mapped[str] = mapped_column(String(12), primary_key=True)
+    customer_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+
+
+class StripeCheckout(SystemBase):
+    __tablename__ = "stripe_checkouts"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
+    customer_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    price_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    credit_micros: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    tier_id: Mapped[str | None] = mapped_column(String(32))
+    session_id: Mapped[str | None] = mapped_column(String(255), unique=True)
+    payment_intent_id: Mapped[str | None] = mapped_column(String(255), unique=True)
+    checkout_url: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    refunded_micros: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class StripeSubscription(SystemBase):
+    __tablename__ = "stripe_subscriptions"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
+    checkout_id: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
+    tier_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    cancel_at_period_end: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    paid_through: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    state_event_created: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+
+
+class StripeReceipt(SystemBase):
+    """Receipts and financial effects commit together; survive quota resets."""
+
+    __tablename__ = "stripe_receipts"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+
+
 class SystemSetting(SystemBase):
     __tablename__ = "system_settings"
 

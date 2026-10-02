@@ -217,6 +217,14 @@ class Settings(BaseSettings):
     smtp_from: str = ""
     smtp_starttls: bool = True
     app_base_url: str = ""
+    # Deployment-owned billing configuration; never accept prices or amounts
+    # from a workspace overlay or a checkout request.
+    stripe_enabled: bool = False
+    stripe_secret_key: str = Field(default="", repr=False)
+    stripe_webhook_secret: str = Field(default="", repr=False)
+    stripe_credit_prices: dict[str, int] = Field(default_factory=dict)
+    stripe_subscription_prices: dict[str, str] = Field(default_factory=dict)
+    stripe_portal_configuration_id: str = ""
     auth_email: str = ""
 
 

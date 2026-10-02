@@ -53,6 +53,14 @@ admin-users API.
   now. `quotas.py` expires terms before reads/charges, restores FREE, and keeps
   durable credits. Legacy manually assigned tiers remain recurring until
   explicitly migrated. New periods record `ALLOWANCE_GRANT` ledger entries.
+- **Stripe payment effects are atomic.** `payments.py` uses deployment-owned
+  price maps and customer ownership. Signed webhooks alone fulfill purchases;
+  Checkout return URLs never grant access. Event/object receipts and ledger
+  effects commit together under `BEGIN IMMEDIATE`. Subscriptions use paid
+  invoice dates, expire through the existing finite-term seam, and retain
+  purchased credits on cancellation. Billing is hosted-only and disabled by
+  default; deployment setup and refund reconciliation live in
+  `docs/stripe-billing.md`. Do not call Stripe while holding the writer lock.
 - **Usage is accounting, not best-effort telemetry.** `usage.record_call` writes
   the response receipt, all per-model usage/line items, and deductions in one
   transaction. Stable response run IDs are tenant-scoped and repeat-safe;

@@ -164,6 +164,20 @@ The override injects a private `http://h1b-job-search-mcp:8000/mcp` URL only
 for that profile. A container cannot use `localhost` to reach its companion
 service.
 
+## Hosted Stripe billing
+
+Billing is disabled in local mode. See [Stripe deployment setup](stripe-billing.md)
+for supported prices, customer portal configuration and signed webhooks.
+
+| Variable | Default | Accepted values and purpose |
+| --- | --- | --- |
+| `STRIPE_ENABLED` | `false` | Enables member payment collection in hosted mode; requires keys, price mappings and an HTTPS APP_BASE_URL. |
+| `STRIPE_SECRET_KEY` | empty | Deployment-owned Stripe server credential. Never exposed to the browser or read from tenant overlays. |
+| `STRIPE_WEBHOOK_SECRET` | empty | Signing secret for the deployed Stripe webhook endpoint. |
+| `STRIPE_CREDIT_PRICES` | `{}` | JSON map from one-time USD Stripe price IDs to durable credit amounts in integer USD micro-units. |
+| `STRIPE_SUBSCRIPTION_PRICES` | `{}` | JSON map from recurring USD Stripe price IDs to existing paid quota tier IDs. Billing intervals must match tier cycles. |
+| `STRIPE_PORTAL_CONFIGURATION_ID` | empty | Optional customer portal configuration; empty uses Stripe's default. Enable card updates, invoices and period-end cancellation; disable plan and quantity changes. |
+
 ## Gmail and platform mail
 
 | Variable | Default | Accepted values and purpose |

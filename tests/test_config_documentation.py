@@ -107,7 +107,9 @@ def test_configuration_reference_defaults_and_choices_match_settings():
     for field_name, field in Settings.model_fields.items():
         env_name = _field_env_names(field_name, field)[0]
         documented_default, purpose = documented[env_name]
-        assert documented_default == _display_default(field.default), env_name
+        assert documented_default == _display_default(
+            field.get_default(call_default_factory=True)
+        ), env_name
         if get_origin(field.annotation) is Literal:
             for choice in get_args(field.annotation):
                 assert str(choice) in purpose, (env_name, choice)
