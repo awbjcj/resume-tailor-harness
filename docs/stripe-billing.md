@@ -149,3 +149,16 @@ those and complete the test-mode checkout above before enabling live keys.
 Official references: [Checkout fulfillment](https://docs.stripe.com/payments/checkout/fulfill-orders),
 [subscription webhooks](https://docs.stripe.com/billing/subscriptions/webhooks),
 [Stripe Python SDK](https://github.com/stripe/stripe-python).
+
+## Pausing new sales
+
+Set `STRIPE_ENABLED=false` to hide offers and reject new checkout requests.
+Keep Stripe credentials and the signed webhook endpoint configured: existing
+checkouts still settle, subscriptions still receive paid entitlements, and
+customers can still open the billing portal to cancel or update payment details.
+This flag does not cancel existing Stripe subscriptions. In hosted mode the
+account billing card remains available while servicing credentials are configured.
+
+If a paid invoice's retrieved state has not converged, the webhook returns 503
+and rolls back event and invoice receipts. Stripe can retry the same event after
+state converges without losing the grant or applying it twice.

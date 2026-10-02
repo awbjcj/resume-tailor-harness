@@ -41,7 +41,7 @@ def _call(operation: Callable[[], T]) -> T:
 def _gateway(request: Request) -> closing[payments.StripeGateway]:
     # Always use process settings; tenant-owned secrets cannot configure billing.
     settings = request.app.state.settings
-    if not payments.billing_enabled(settings, request.app.state.app_mode):
+    if not payments.billing_service_available(settings, request.app.state.app_mode):
         raise ApiException(404, "BILLING_DISABLED", "Payments are not enabled")
     return closing(_call(lambda: payments.StripeGateway(settings)))
 
@@ -58,7 +58,7 @@ def _check_origin(request: Request) -> None:
 
 @router.get("")
 def catalog(request: Request) -> BillingCatalog:
-    if not payments.billing_enabled(
+    if not payments.billing_service_available(
         request.app.state.settings, request.app.state.app_mode
     ):
         return BillingCatalog(enabled=False)
@@ -78,6 +78,10 @@ def catalog(request: Request) -> BillingCatalog:
 @router.post("/checkout")
 def checkout(body: BillingCheckoutRequest, request: Request) -> BillingCheckoutResponse:
     def create():
+        if not payments.billing_enabled(
+            request.app.state.settings, request.app.state.app_mode
+        ):
+            raise ApiException(404, "BILLING_DISABLED", "New purchases are not enabled")
         with _gateway(request) as gateway:
             _check_origin(request)
             return payments.create_checkout(
