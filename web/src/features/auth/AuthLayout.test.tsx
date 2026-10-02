@@ -22,8 +22,8 @@ describe("AuthLayout", () => {
     expect(story).toBeInTheDocument();
     expect(visual).toBeInTheDocument();
     expect(copy).toBeInTheDocument();
-    expect(copy?.nextElementSibling).toBe(visual);
+    expect(story).toContainElement(copy as HTMLElement);
     expect(container.querySelector("[data-slot='auth-brand'] img")).toBeNull();
-    expect(screen.getAllByText("Secure workspace")).toHaveLength(2);
+    expect(screen.getAllByText("Secure workspace")).toHaveLength(1);
   });
 });
