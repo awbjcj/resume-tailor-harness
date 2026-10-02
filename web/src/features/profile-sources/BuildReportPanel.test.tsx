@@ -65,6 +65,6 @@ describe("BuildReportPanel", () => {
     expect(screen.getByText("deck-1：已移除 'Cut latency 45%'（来源中未找到数字 '45%'）")).toBeInTheDocument();
     expect(screen.getByText("summary：保留 'Current'，未采用来自 deck-1 的 'Other'")).toBeInTheDocument();
     expect(screen.getByText("技能推断失败：boom")).toBeInTheDocument();
-    expect(screen.getByText("手动别名“TS”无法重新关联：未找到目标技能“TypeScript”。")).toBeInTheDocument();
+    expect(screen.getByText("无法恢复手动设置的别名“TS”：未找到对应技能“TypeScript”。")).toBeInTheDocument();
   });
 });

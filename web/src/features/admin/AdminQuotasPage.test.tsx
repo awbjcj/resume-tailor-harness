@@ -319,7 +319,7 @@ describe("AdminQuotasPage", () => {
     expect(await screen.findAllByText("高级型")).not.toHaveLength(0);
     expect(screen.getAllByText("经济型")).not.toHaveLength(0);
     expect(screen.getAllByText(/^(已生效|待生效|历史版本)$/).length).toBeGreaterThan(0);
-    expect(screen.getByText("低谷时段")).toBeInTheDocument();
+    expect(screen.getByText("非高峰时段")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "输入费率" })).toBeInTheDocument();
   });
 

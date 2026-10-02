@@ -73,7 +73,7 @@ it("localizes active names, phases, and history controls in Chinese", async () =
     percent: 10, phase: "Extracting and merging source documents", current: 0, total: 1, etaText: null });
   try {
     render(<RecentRuns />, { wrapper: withQueryClient });
-    expect(screen.getByText(/个人资料构建 · 正在提取并合并源文档/)).toBeInTheDocument();
+    expect(screen.getByText(/个人资料构建 · 正在提取并整合源文档内容/)).toBeInTheDocument();
     expect(await screen.findByText("历史中暂无已完成的操作。")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "清空操作历史" })).toBeInTheDocument();
   } finally {
