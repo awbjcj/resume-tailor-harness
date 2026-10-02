@@ -163,8 +163,10 @@ def recover_employer_posting(
         gateway = build_gateway()
         budget = CrawlBudget(CrawlLimits(detail_pages=5, elapsed_seconds=90))
 
-        def reader(candidate):
+        def read_candidate(candidate: str) -> RawJob | None:
             return _read_candidate(candidate, gateway, budget)
+
+        reader = read_candidate
 
     matches: dict[str, RawJob] = {}
     review: list[str] = []

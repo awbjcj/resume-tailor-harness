@@ -52,6 +52,7 @@ def test_limit_counts_successful_details_not_failed_cards():
     gateway = Gateway(fail_detail=True)
     result = LinkedInHttpScraper(gateway=gateway).fetch(SearchConfig(), limit=1)
     assert len(result.jobs) == 1
+    assert result.jobs[0].url is not None
     assert "3700000002" in result.jobs[0].url
     assert len(result.failures) == 1
 
@@ -59,7 +60,7 @@ def test_limit_counts_successful_details_not_failed_cards():
 def test_known_job_is_skipped_before_detail_request():
     gateway = Gateway()
     result = LinkedInHttpScraper(gateway=gateway).fetch(
-        SearchConfig(), skip_seen=lambda job: "3700000001" in job.url
+        SearchConfig(), skip_seen=lambda job: "3700000001" in (job.url or "")
     )
     assert len(result.jobs) == 1
     assert not any("3700000001" in url for url in gateway.calls)
@@ -82,7 +83,9 @@ def test_disabled_browser_registry_builds_http_connector():
 
     config = ConnectorsConfig()
     config.linkedin.limit = 7
-    connector = spec_for("linkedin").build(
+    spec = spec_for("linkedin")
+    assert spec is not None
+    connector = spec.build(
         [], config, Settings.model_construct(browser_enabled=False)
     )
     assert isinstance(connector, LinkedInHttpScraper)

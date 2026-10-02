@@ -15,6 +15,14 @@ from resume_tailor_harness.discovery.url_ingest.public_readers import (
 )
 
 
+class NoAgent:
+    def run(self, prompt: str):
+        pytest.fail("Deterministic jobs must not need an LLM")
+
+    async def arun(self, prompt: str):
+        pytest.fail("Deterministic jobs must not need an LLM")
+
+
 def markup(value):
     return '<script type="application/ld+json">' + json.dumps(value) + "</script>"
 
@@ -65,11 +73,9 @@ def test_public_boards_preserve_complete_structured_posting_without_browser_or_l
     monkeypatch.setattr(service, "fetch_static", lambda _: page)
     monkeypatch.setattr(service, "fetch_page", lambda *a, **k: page)
 
-    class NoAgent:
-        def run(self, *_):
-            pytest.fail("Structured jobs must not need an LLM")
-
     job = service.job_from_url(url, agent=NoAgent(), allow_browser=False)
+    assert job is not None
+    assert job.posted_at is not None
     assert (job.title, job.company) == ("Platform Engineer", "Example")
     assert job.posted_at.isoformat().startswith("2026-09-20")
     for text in (
@@ -94,9 +100,12 @@ def test_item_list_selects_matching_job_and_keeps_meaningful_query_ids():
     html = markup(
         {"@type": "ItemList", "itemListElement": [{"item": wrong}, {"item": right}]}
     )
-    assert jobposting_json_ld(html, url)["title"] == "Platform Engineer"
+    selected = jobposting_json_ld(html, url)
+    assert selected is not None
+    assert selected["title"] == "Platform Engineer"
     result = extract_observation(snapshot_from_html(url, html), "board", 0, None)
     assert result.accepted
+    assert result.facts.salary_bands is not None
     assert len(result.facts.salary_bands) == 2
     assert result.facts.salary_bands[0].minimum == pytest.approx(40.25)
     assert result.facts.remote_policy == "remote"
@@ -118,10 +127,9 @@ def test_main_entity_reference_cannot_fall_back_to_unrelated_job(reference):
     value = posting()
     value["mainEntityOfPage"] = reference
     assert jobposting_json_ld(markup(value), "https://example.com/jobs/1") is None
-    assert (
-        jobposting_json_ld(markup(value), "https://example.com/jobs/other")["title"]
-        == "Platform Engineer"
-    )
+    selected = jobposting_json_ld(markup(value), "https://example.com/jobs/other")
+    assert selected is not None
+    assert selected["title"] == "Platform Engineer"
 
 
 def test_empty_description_does_not_become_salary_only_job():
@@ -145,6 +153,7 @@ def test_linkedin_sidebar_and_full_body_are_kept():
     <li class="description__job-criteria-item"><h3 class="description__job-criteria-subheader">Employment type</h3><span class="description__job-criteria-text">Full-time</span></li>
     <div class="compensation__salary">CAD 40.25/hour</div>"""
     result = read_public_posting(html, "https://www.linkedin.com/jobs/view/1")
+    assert result is not None
     assert result.title == "Engineer"
     assert "Employment Type: Full-time" in result.jd_text
     assert "CAD 40.25/hour" in result.jd_text
@@ -156,9 +165,24 @@ def test_microdata_is_scoped_to_one_job():
     <h1 itemprop="title">Engineer</h1><div itemprop="hiringOrganization">Example</div>
     <div itemprop="description"><p>Build systems.</p></div></article>"""
     result = read_public_posting(html, "https://careers.example.com/jobs/1")
+    assert result is not None
     assert result.title == "Engineer"
     assert result.company == "Example"
     assert result.jd_text == "Build systems."
+
+
+def test_microdata_content_attributes_supply_text_fields():
+    html = """<article itemscope itemtype="https://schema.org/JobPosting">
+    <meta itemprop="title" content="Engineer">
+    <meta itemprop="hiringOrganization" content="Example">
+    <meta itemprop="jobLocation" content="Toronto">
+    <div itemprop="description"><p>Build systems.</p></div></article>"""
+    result = read_public_posting(html, "https://careers.example.com/jobs/1")
+    assert result is not None
+    assert (result.title, result.company, result.location) == (
+        "Engineer", "Example", "Toronto"
+    )
+    assert "Build systems." in result.jd_text
 
 
 def test_access_challenge_cannot_be_ingested_even_with_job_markup():
@@ -185,7 +209,8 @@ def test_known_ats_api_survives_a_blocked_presentation_page(monkeypatch):
             title="Engineer", company="Example", jd_text="Build systems."
         ),
     )
-    result = service.job_from_url(url, agent=None, allow_browser=False)
+    result = service.job_from_url(url, agent=NoAgent(), allow_browser=False)
+    assert result is not None
     assert result.jd_text == "Build systems."
 
 
@@ -213,7 +238,8 @@ def test_challenge_markup_never_supplies_ats_fallback_content(monkeypatch):
         )
 
     monkeypatch.setitem(service.ATS_READERS, "lever", reader)
-    raw = service.job_from_url(url, agent=None, allow_browser=False)
+    raw = service.job_from_url(url, agent=NoAgent(), allow_browser=False)
+    assert raw is not None
     assert raw.title == "Verified API role"
     assert "CAD" not in raw.jd_text
 
@@ -225,7 +251,7 @@ def test_ambiguous_board_cannot_be_sent_to_single_job_llm(monkeypatch):
         "fetch_static",
         lambda _: SimpleNamespace(html=markup([posting(), posting()]), final_url=url),
     )
-    assert service.job_from_url(url, agent=None, allow_browser=False) is None
+    assert service.job_from_url(url, agent=NoAgent(), allow_browser=False) is None
 
 
 @pytest.mark.parametrize("key", ["url", "mainEntityOfPage"])
@@ -242,13 +268,14 @@ def test_unmatched_single_posting_cannot_bypass_selection_via_llm(monkeypatch, k
         "extract_fields",
         lambda *args: pytest.fail("Unrelated posting reached the LLM"),
     )
-    assert service.job_from_url(url, agent=None, allow_browser=False) is None
+    assert service.job_from_url(url, agent=NoAgent(), allow_browser=False) is None
 
 
 def test_malformed_optional_fields_do_not_abort_valid_description():
     value = posting()
     value["hiringOrganization"] = {"name": {"unexpected": True}}
     result = read_public_posting(markup(value), "https://careers.example.com/jobs/1")
+    assert result is not None
     assert result.company is None
     assert "Build reliable services" in result.jd_text
 
@@ -264,4 +291,5 @@ def test_visible_preview_does_not_replace_complete_schema_description():
         + '<h1 class="jobsearch-JobInfoHeader-title">Platform Engineer</h1><div id="jobDescriptionText">Build reliable services...</div>'
     )
     result = read_public_posting(html, "https://www.indeed.com/viewjob?jk=abc")
+    assert result is not None
     assert "Final required qualification." in result.jd_text

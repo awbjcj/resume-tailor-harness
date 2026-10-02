@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 import httpx
 import pytest
@@ -12,8 +13,16 @@ EMPLOYER = "https://jobs.lever.co/acme/123"
 HINTS = recovery.RecoveryHints("Acme Inc.", "Staff Engineer", "New York, NY")
 
 
-def posting(url=EMPLOYER, **overrides):
-    values = dict(
+class NoAgent:
+    def run(self, prompt: str):
+        pytest.fail("Recovery must not call the LLM")
+
+    async def arun(self, prompt: str):
+        pytest.fail("Recovery must not call the LLM")
+
+
+def posting(url=EMPLOYER, **overrides: Any):
+    values: dict[str, Any] = dict(
         source="url",
         url=url,
         company="Acme",
@@ -171,8 +180,9 @@ def test_url_import_recovers_denials_and_active_cooldowns(monkeypatch, blocked):
 
     monkeypatch.setattr(service, "recover_employer_posting", recover)
     raw = service.job_from_url(
-        ORIGINAL, agent=object(), allow_browser=False, recovery_hints=HINTS
+        ORIGINAL, agent=NoAgent(), allow_browser=False, recovery_hints=HINTS
     )
+    assert raw is not None
     assert raw.url == EMPLOYER
     assert calls == [(ORIGINAL, HINTS)]
 
@@ -190,7 +200,7 @@ def test_not_found_does_not_trigger_recovery(monkeypatch):
         lambda *args: pytest.fail("not an access block"),
     )
     with pytest.raises(httpx.HTTPStatusError):
-        service.job_from_url(ORIGINAL, agent=object(), recovery_hints=HINTS)
+        service.job_from_url(ORIGINAL, agent=NoAgent(), recovery_hints=HINTS)
 
 
 def test_real_candidate_reader_requires_explicit_employer_metadata(monkeypatch):
@@ -211,7 +221,7 @@ def test_real_candidate_reader_requires_explicit_employer_metadata(monkeypatch):
             jd_text="Full employer description. " * 20,
         ),
     )
-    payload = {
+    payload: dict[str, Any] = {
         "@type": "JobPosting",
         "title": "Staff Engineer",
         "description": "Full description. " * 20,
@@ -226,7 +236,9 @@ def test_real_candidate_reader_requires_explicit_employer_metadata(monkeypatch):
         )
         return recovery._read_candidate(EMPLOYER, gateway, CrawlBudget(CrawlLimits()))
 
-    assert read().company_provenance == "unknown"
+    raw = read()
+    assert raw is not None
+    assert raw.company_provenance == "unknown"
     payload["hiringOrganization"] = {"name": "Acme Inc."}
     payload["baseSalary"] = {
         "currency": "USD",
@@ -236,6 +248,8 @@ def test_real_candidate_reader_requires_explicit_employer_metadata(monkeypatch):
     payload["jobLocationType"] = "TELECOMMUTE"
     payload["applicantLocationRequirements"] = {"name": "United States"}
     raw = read()
+    assert raw is not None
+    assert raw.posted_at is not None
     assert raw.company_provenance == "provider"
     assert raw.posted_at.year == 2026
     assert "Compensation: USD 150,000 - 190,000 per year" in raw.jd_text
@@ -263,6 +277,6 @@ def test_review_candidates_survive_url_service_error_wrapping(monkeypatch):
     monkeypatch.setattr(service, "_read_job_url", blocked)
     monkeypatch.setattr(service, "recover_employer_posting", review)
     with pytest.raises(recovery.RecoveryRequired) as caught:
-        service.job_from_url(ORIGINAL, agent=object(), recovery_hints=HINTS)
+        service.job_from_url(ORIGINAL, agent=NoAgent(), recovery_hints=HINTS)
     assert caught.value.candidates == (EMPLOYER,)
     assert "retry after" in str(caught.value)
