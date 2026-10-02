@@ -1,4 +1,5 @@
 import autoEn from "./auto-en.json";
+import { billingEn, billingZh } from "./billing";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -11,6 +12,7 @@ export async function loadAutoTranslations(
 }
 
 const en = {
+  billing: billingEn,
   subscription: {
     overrideHelp: "Advanced tier assignment below replaces a finite subscription with an indefinitely recurring allowance. Use renewal above for paid extensions.",
     ledger: { allowanceGrant: "Cycle allowance granted", activated: "Subscription activated", renewed: "Subscription renewed", expired: "Subscription expired", revoked: "Subscription revoked" },
@@ -833,6 +835,7 @@ const zhCN = {
       REVOKED: "订阅已撤销"
     }
   },
+  billing: billingZh,
   auto: autoZhCN,
   app: {
     documentTitle: "求职助手",

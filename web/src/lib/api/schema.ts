@@ -4,6 +4,74 @@
  */
 
 export interface paths {
+    "/api/account/billing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: operations["catalog_api_account_billing_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/account/billing/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Checkout */
+        post: operations["checkout_api_account_billing_checkout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/account/billing/checkout/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checkout Status */
+        get: operations["checkout_status_api_account_billing_checkout__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/account/billing/portal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Portal */
+        post: operations["portal_api_account_billing_portal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/account/email": {
         parameters: {
             query?: never;
@@ -824,6 +892,23 @@ export interface paths {
         put?: never;
         /** Verify Email */
         post: operations["verify_email_api_auth_verify_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/stripe/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Webhook */
+        post: operations["webhook_api_billing_stripe_webhook_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4286,6 +4371,92 @@ export interface components {
         ArtifactDeleteRequest: {
             /** Ids */
             ids: number[];
+        };
+        /** BillingCatalog */
+        BillingCatalog: {
+            /** Enabled */
+            enabled: boolean;
+            /** Offers */
+            offers?: components["schemas"]["BillingOffer"][];
+            /**
+             * Portalavailable
+             * @default false
+             */
+            portalAvailable: boolean;
+            subscription?: components["schemas"]["BillingSubscription"] | null;
+        };
+        /** BillingCheckoutRequest */
+        BillingCheckoutRequest: {
+            /** Idempotencykey */
+            idempotencyKey: string;
+            /** Priceid */
+            priceId: string;
+        };
+        /** BillingCheckoutResponse */
+        BillingCheckoutResponse: {
+            /** Checkoutid */
+            checkoutId: string;
+            /** Url */
+            url: string;
+        };
+        /** BillingCheckoutState */
+        BillingCheckoutState: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "open" | "fulfilled" | "expired";
+        };
+        /** BillingOffer */
+        BillingOffer: {
+            /** Allowancemicros */
+            allowanceMicros?: number | null;
+            /** Amountcents */
+            amountCents: number;
+            /** Creditmicros */
+            creditMicros?: number | null;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "usd";
+            /** Interval */
+            interval?: ("week" | "month") | null;
+            /** Intervalcount */
+            intervalCount?: number | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "payment" | "subscription";
+            /** Name */
+            name: string;
+            /** Priceid */
+            priceId: string;
+            /** Tierid */
+            tierId?: string | null;
+        };
+        /** BillingPortalResponse */
+        BillingPortalResponse: {
+            /** Url */
+            url: string;
+        };
+        /** BillingSubscription */
+        BillingSubscription: {
+            /** Cancelatperiodend */
+            cancelAtPeriodEnd: boolean;
+            /** Paidthrough */
+            paidThrough?: string | null;
+            /** Status */
+            status: string;
+        };
+        /** BillingWebhookResponse */
+        BillingWebhookResponse: {
+            /**
+             * Received
+             * @default true
+             */
+            received: boolean;
         };
         /** BoardPage[PipelineItem] */
         BoardPage_PipelineItem_: {
@@ -9591,6 +9762,136 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    catalog_api_account_billing_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingCatalog"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkout_api_account_billing_checkout_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BillingCheckoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingCheckoutResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checkout_status_api_account_billing_checkout__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingCheckoutState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    portal_api_account_billing_portal_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingPortalResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     set_email_api_account_email_post: {
         parameters: {
             query?: never;
@@ -11533,6 +11834,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    webhook_api_billing_stripe_webhook_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingWebhookResponse"];
                 };
             };
         };
