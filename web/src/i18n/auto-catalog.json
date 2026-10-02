@@ -2087,7 +2087,7 @@
   "Clear this workspace's data. Configuration, API keys, and sources are kept until you reset them explicitly. Hand-written profile overrides are always kept.": {
     "key": "ui_02cc43545354",
     "en": "Clear this workspace's data. Configuration, API keys, and sources are kept until you reset them explicitly. Hand-written profile overrides are always kept.",
-    "zh-CN": "清除工作区数据。配置、API 密钥和来源需单独重置；手动修改的个人资料始终保留。"
+    "zh-CN": "清除工作区数据。配置、API 密钥和来源需单独重置；手动填写的个人资料覆盖项始终保留。"
   },
   "Cleared on save": {
     "key": "ui_09b8b61b2890",
@@ -2337,7 +2337,7 @@
   "Configuration, API keys, and hand-written profile overrides will not be removed.": {
     "key": "ui_0266c5a21ad8",
     "en": "Configuration, API keys, and hand-written profile overrides will not be removed.",
-    "zh-CN": "配置、API 密钥和手动修改的个人资料会保留。"
+    "zh-CN": "配置、API 密钥和手动填写的个人资料覆盖项会保留。"
   },
   "Configure an OpenAI speech model and API key to enable audio.": {
     "key": "ui_0cb8264147d6",
@@ -3732,7 +3732,7 @@
   "Extracted facts, skill matrix, and fragments. Source documents and hand-written overrides stay.": {
     "key": "ui_2be6963b17d0",
     "en": "Extracted facts, skill matrix, and fragments. Source documents and hand-written overrides stay.",
-    "zh-CN": "清除已提取的经历、技能矩阵和文档片段，保留源文档及手动修改的内容。"
+    "zh-CN": "已提取的事实、技能矩阵和文档片段。源文档及手动填写的个人资料覆盖项会保留。"
   },
   "Fact-check failed": {
     "key": "ui_87f4d38cacdd",
@@ -6977,7 +6977,7 @@
   "Profile built:": {
     "key": "ui_e3de055128d7",
     "en": "Profile built:",
-    "zh-CN": "个人资料生成时间："
+    "zh-CN": "个人资料已生成："
   },
   "Profile Coach": {
     "key": "ui_b471e831c7e6",

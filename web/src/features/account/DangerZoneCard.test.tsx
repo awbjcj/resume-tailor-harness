@@ -1,10 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { toast } from "sonner";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/test/server";
+import { changeLanguage } from "@/i18n";
 import { DangerZoneCard } from "./DangerZoneCard";
 
 async function openConfirmedDialog(user: ReturnType<typeof userEvent.setup>) {
@@ -14,6 +15,34 @@ async function openConfirmedDialog(user: ReturnType<typeof userEvent.setup>) {
 
 describe("DangerZoneCard", () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it.each([/^Profile/, /^Everything/])(
+    "identifies retained overrides in Chinese reset scope %s",
+    async (scopeName) => {
+      await changeLanguage("zh-CN");
+      const user = userEvent.setup();
+      render(<DangerZoneCard />);
+
+      expect(
+        screen.getByText(/手动填写的个人资料覆盖项始终保留/),
+      ).toBeInTheDocument();
+      const scopeButton = screen.getByRole("button", { name: scopeName });
+      await user.click(scopeButton);
+      expect(scopeButton).toHaveAttribute("aria-pressed", "true");
+      await user.click(screen.getByRole("button", { name: "重置数据" }));
+
+      const dialog = screen.getByRole("alertdialog");
+      expect(
+        within(dialog).getByText(
+          "配置、API 密钥和手动填写的个人资料覆盖项会保留。",
+        ),
+      ).toBeInTheDocument();
+      expect(
+        within(dialog).getByRole("button", { name: "清除选定数据" }),
+      ).toBeDisabled();
+      expect(screen.queryByText(/手动修改的个人资料/)).toBeNull();
+    },
+  );
 
   it("gates reset and disarms confirmation when the dialog is dismissed", async () => {
     const user = userEvent.setup();

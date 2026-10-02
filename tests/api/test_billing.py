@@ -683,7 +683,8 @@ def test_failed_invoice_and_term_expiry(billing, mu_client):
     sid = checkout(mu_client, "price_plan")
     ev = paid_subscription(fake, sid)
     fake.invoices["in_first"]["status"] = "open"
-    payments.process_event(engine, ev, fake, now=NOW)
+    with pytest.raises(payments.BillingError, match="state is not ready"):
+        payments.process_event(engine, ev, fake, now=NOW)
     assert quota_snapshot(engine, USER, now=NOW).tier_id == "FREE"
     fake.invoices["in_first"]["status"] = "paid"
     payments.process_event(engine, {**ev, "id": "evt_actual_paid"}, fake, now=NOW)
@@ -1048,3 +1049,87 @@ def test_real_stripe_sdk_serializes_sync_requests_and_recovers_across_pages(
     ]
     gateway.close()
     assert gateway.http_client._client.is_closed
+
+
+@pytest.mark.parametrize("stale", ["invoice", "subscription"])
+def test_paid_invoice_retry_after_provider_state_converges(billing, mu_client, stale):
+    engine, _, fake = billing
+    sid = checkout(mu_client, "price_plan")
+    ev = paid_subscription(fake, sid)
+    if stale == "invoice":
+        fake.invoices["in_first"]["status"] = "open"
+    else:
+        fake.subscriptions["sub_test"]["status"] = "past_due"
+    assert deliver(mu_client, ev).status_code == 503
+    with Session(engine) as session:
+        assert session.get(StripeReceipt, "event:" + ev["id"]) is None
+        assert session.get(StripeReceipt, "invoice:in_first") is None
+    assert quota_snapshot(engine, USER).tier_id == "FREE"
+    fake.invoices["in_first"]["status"] = "paid"
+    fake.subscriptions["sub_test"]["status"] = "active"
+    assert deliver(mu_client, ev).status_code == 200
+    assert deliver(mu_client, {**ev, "id": "evt_second_delivery"}).status_code == 200
+    assert quota_snapshot(engine, USER).tier_id == "SUBSCRIBER"
+    with Session(engine) as session:
+        assert (
+            session.scalar(
+                select(func.count())
+                .select_from(QuotaLedgerEntry)
+                .where(QuotaLedgerEntry.kind == "SUBSCRIPTION_ACTIVATED")
+            )
+            == 1
+        )
+
+
+@pytest.mark.parametrize("price", ["price_plan", "price_credit"])
+def test_disabling_sales_keeps_existing_billing_service(
+    billing, mu_app, mu_client, price
+):
+    engine, settings, fake = billing
+    sid = checkout(mu_client, price)
+    if price == "price_plan":
+        ev = paid_subscription(fake, sid)
+    else:
+        fake.checkouts[sid]["payment_status"] = "paid"
+        ev = event("checkout.session.completed", {"id": sid})
+    settings.stripe_enabled = False
+    response = mu_client.get("/api/account/billing")
+    assert response.status_code == 200
+    assert response.json()["enabled"] is True
+    assert response.json()["offers"] == []
+    assert response.json()["portalAvailable"] is True
+    assert mu_client.post("/api/account/billing/portal").status_code == 200
+    assert (
+        mu_client.post(
+            "/api/account/billing/checkout",
+            json={"priceId": "price_credit", "idempotencyKey": "disabled-purchase"},
+        ).status_code
+        == 404
+    )
+    assert deliver(mu_client, ev, secret="wrong").status_code == 400
+    assert deliver(mu_client, ev).status_code == 200
+    snapshot = quota_snapshot(engine, USER)
+    if price == "price_plan":
+        assert snapshot.tier_id == "SUBSCRIBER"
+    else:
+        assert snapshot.credit_balance_micros == 10_000_000
+    assert (
+        mu_client.get(f"/api/account/billing/checkout/{sid}").json()["status"]
+        == "fulfilled"
+    )
+
+
+@pytest.mark.parametrize("state", sorted(payments.TERMINAL))
+def test_paid_invoice_for_terminal_subscription_is_acknowledged(
+    billing, mu_client, state
+):
+    engine, _, fake = billing
+    sid = checkout(mu_client, "price_plan")
+    ev = paid_subscription(fake, sid)
+    fake.subscriptions["sub_test"]["status"] = state
+    assert deliver(mu_client, ev).status_code == 200
+    assert deliver(mu_client, ev).status_code == 200
+    assert quota_snapshot(engine, USER).tier_id == "FREE"
+    with Session(engine) as session:
+        assert session.get(StripeReceipt, "event:" + ev["id"]) is not None
+        assert session.get(StripeReceipt, "invoice:in_first") is None
