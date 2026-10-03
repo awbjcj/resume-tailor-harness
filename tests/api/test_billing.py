@@ -73,6 +73,11 @@ class FakeStripe:
         return {"id": f"cus_{user_id}"}
 
     def checkout(self, params, key):
+        if params.get("managed_payments", {}).get("enabled") is not False:
+            raise stripe.InvalidRequestError(
+                "Managed Payments controls payment_method_types",
+                param="payment_method_types",
+            )
         self.checkout_calls.append((copy.deepcopy(params), key))
         sid = f"cs_{params['metadata']['checkout_id']}"
         self.checkouts.setdefault(
@@ -1060,9 +1065,12 @@ def test_real_stripe_sdk_serializes_sync_requests_and_recovers_across_pages(
     )
     assert gateway.price("price_test")["id"] == "price_test"
     gateway.customer(USER, "alice@example.com")
-    gateway.checkout(
-        {"mode": "payment", "metadata": {"checkout_id": "order_test"}}, "retry_test"
-    )
+    checkout_params: payments._CheckoutCreateParams = {
+        "mode": "payment",
+        "metadata": {"checkout_id": "order_test"},
+        "managed_payments": {"enabled": False},
+    }
+    gateway.checkout(checkout_params, "retry_test")
     gateway.checkout_status("cs_test")
     gateway.subscription("sub_test")
     gateway.invoice("in_test")
@@ -1076,6 +1084,9 @@ def test_real_stripe_sdk_serializes_sync_requests_and_recovers_across_pages(
     )
     assert requests[1].headers["Idempotency-Key"] == f"resume-customer-{USER}"
     assert requests[2].headers["Idempotency-Key"] == "retry_test"
+    assert parse_qs(requests[2].content.decode())["managed_payments[enabled]"] == [
+        "false"
+    ]
     assert parse_qs(requests[2].content.decode())["metadata[checkout_id]"] == [
         "order_test"
     ]
