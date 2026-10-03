@@ -10,7 +10,7 @@ import hashlib
 import json
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypedDict, cast
 from urllib.parse import urlsplit
 
 import stripe
@@ -40,6 +40,15 @@ STRIPE_API_VERSION = "2026-02-25.clover"
 TERMINAL = {"canceled", "unpaid", "incomplete_expired", "paused"}
 CLOSED = {"canceled", "incomplete_expired"}
 logger = logging.getLogger(__name__)
+
+
+class _ManagedPaymentsParams(TypedDict):
+    enabled: bool
+
+
+class _CheckoutCreateParams(CheckoutSessionCreateParams):
+    # The pinned Stripe SDK does not yet declare this supported API parameter.
+    managed_payments: _ManagedPaymentsParams
 
 
 class BillingError(RuntimeError):
@@ -439,7 +448,7 @@ def create_checkout(
             session.add(order)
             session.commit()
     metadata = {"checkout_id": order.id, "user_id": user_id}
-    params: CheckoutSessionCreateParams = {
+    params: _CheckoutCreateParams = {
         "mode": cast(Literal["payment", "subscription"], order.mode),
         "customer": customer_id,
         "client_reference_id": user_id,
@@ -447,6 +456,8 @@ def create_checkout(
         "line_items": [{"price": order.price_id, "quantity": 1}],
         "currency": "usd",
         "adaptive_pricing": {"enabled": False},
+        # Keep standard Checkout even when the account defaults to Managed Payments.
+        "managed_payments": {"enabled": False},
         "payment_method_types": ["card"],
         "expires_at": int(_aware(order.expires_at).timestamp()),
         "success_url": f"{base}/account?billing=success&session_id={{CHECKOUT_SESSION_ID}}",
