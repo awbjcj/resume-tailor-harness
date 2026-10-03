@@ -7,6 +7,7 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import httpx
@@ -313,8 +314,9 @@ def test_account_deletion_cannot_orphan_pending_or_active_billing(
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "BILLING_ACTIVE"
     with Session(engine) as session:
-        assert session.get(User, USER) is not None
-        assert session.get(User, USER).role == "user"
+        user = session.get(User, USER)
+        assert user is not None
+        assert user.role == "user"
     if paid:
         fake.subscriptions["sub_test"]["status"] = "canceled"
         assert (
@@ -440,7 +442,9 @@ def test_price_allowlist_cycle_and_missing_config(billing, mu_app, mu_client):
     ] == ["price_credit"]
     fake.prices["price_plan"]["recurring"]["interval"] = "month"
     with Session(engine) as session:
-        session.get(QuotaTier, "SUBSCRIBER").archived_at = NOW
+        tier = session.get(QuotaTier, "SUBSCRIBER")
+        assert tier is not None
+        tier.archived_at = NOW
         session.commit()
     assert [
         offer["priceId"]
@@ -615,8 +619,12 @@ def test_subscription_invoice_before_checkout_renewal_preserves_usage(
         engine, USER, now=NOW + timedelta(days=30)
     ).subscription_expires_at == NOW + timedelta(days=59)
     with Session(engine) as session:
-        assert session.get(StripeSubscription, "sub_test").paid_through is not None
-        assert session.get(MemberSubscription, USER).status == "ACTIVE"
+        binding = session.get(StripeSubscription, "sub_test")
+        member = session.get(MemberSubscription, USER)
+        assert binding is not None
+        assert member is not None
+        assert binding.paid_through is not None
+        assert member.status == "ACTIVE"
 
 
 def test_subscription_checkout_alone_never_grants_and_blocks_duplicate(
@@ -750,7 +758,9 @@ def test_cumulative_refund_and_dispute_suspend_consumed_credit(billing, mu_clien
         engine, event("charge.refunded", charge, "evt_full_refund"), fake, now=NOW
     )
     with Session(engine) as session:
-        assert session.get(User, USER).shared_key_access is False
+        user = session.get(User, USER)
+        assert user is not None
+        assert user.shared_key_access is False
     assert quota_snapshot(engine, USER, now=NOW).credit_balance_micros == 0
 
 
@@ -771,8 +781,9 @@ def test_stripe_provider_errors_are_sanitized(billing, mu_client, monkeypatch):
     assert "sk_secret" not in response.text
 
 
+@pytest.mark.parametrize("expanded_intent", [False, True])
 def test_dispute_object_is_applied_once_even_with_distinct_event_ids(
-    billing, mu_client
+    billing, mu_client, expanded_intent
 ):
     engine, _, fake = billing
     sid = checkout(mu_client)
@@ -780,19 +791,27 @@ def test_dispute_object_is_applied_once_even_with_distinct_event_ids(
     payments.process_event(
         engine, event("checkout.session.completed", {"id": sid}), fake
     )
-    dispute = {"id": "dp_test", "payment_intent": f"pi_{sid}"}
+    intent_id = f"pi_{sid}"
+    dispute = {
+        "id": "dp_test",
+        "payment_intent": {"id": intent_id} if expanded_intent else intent_id,
+    }
     payments.process_event(
         engine, event("charge.dispute.created", dispute, "evt_dispute"), fake
     )
     with Session(engine) as session:
-        assert session.get(User, USER).shared_key_access is False
-        session.get(User, USER).shared_key_access = True  # operator reconciliation
+        user = session.get(User, USER)
+        assert user is not None
+        assert user.shared_key_access is False
+        user.shared_key_access = True  # operator reconciliation
         session.commit()
     payments.process_event(
         engine, event("charge.dispute.created", dispute, "evt_duplicate"), fake
     )
     with Session(engine) as session:
-        assert session.get(User, USER).shared_key_access is True
+        user = session.get(User, USER)
+        assert user is not None
+        assert user.shared_key_access is True
         assert (
             session.scalar(
                 select(func.count())
@@ -801,6 +820,20 @@ def test_dispute_object_is_applied_once_even_with_distinct_event_ids(
             )
             == 1
         )
+
+
+def test_adjustment_with_missing_expanded_intent_id_leaves_no_receipt(billing):
+    engine, _, fake = billing
+    ev = event(
+        "charge.dispute.created",
+        {"id": "dp_test", "payment_intent": {"object": "payment_intent"}},
+    )
+    with pytest.raises(
+        payments.BillingError, match="Payment intent identity is missing"
+    ):
+        payments.process_event(engine, ev, fake)
+    with Session(engine) as session:
+        assert session.get(StripeReceipt, "event:" + ev["id"]) is None
 
 
 def test_refund_delivered_before_fulfillment_retries_without_losing_adjustment(
@@ -1016,11 +1049,13 @@ def test_real_stripe_sdk_serializes_sync_requests_and_recovers_across_pages(
         return httpx.Response(200, json=response, request=sent)
 
     monkeypatch.setattr(httpx.Client, "request", request)
+    # BaseSettings accepts runtime options outside its generated field signature.
+    settings_options: dict[str, Any] = {"_env_file": None}
     gateway = payments.StripeGateway(
         Settings(
             stripe_secret_key="sk_test_offline",
             stripe_webhook_secret="whsec_offline",
-            _env_file=None,
+            **settings_options,
         )
     )
     assert gateway.price("price_test")["id"] == "price_test"
@@ -1048,7 +1083,9 @@ def test_real_stripe_sdk_serializes_sync_requests_and_recovers_across_pages(
         "cs_other"
     ]
     gateway.close()
-    assert gateway.http_client._client.is_closed
+    http_client = gateway.http_client._client
+    assert http_client is not None
+    assert http_client.is_closed
 
 
 @pytest.mark.parametrize("stale", ["invoice", "subscription"])
