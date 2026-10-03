@@ -37,6 +37,9 @@ mode. Administrator accounts are quota exempt and cannot buy member plans.
    IDs to existing application tier IDs. An ID must appear in exactly one map.
 These settings are deployment-owned and never read from tenant overlays.
    Hosted Checkout requires no publishable key or browser Stripe SDK.
+   Checkout explicitly disables Managed Payments for each purchase, preserving
+   this integration's fixed USD pricing and card-only payment methods even when
+   the Stripe account enables Managed Payments by default.
 
 4. Create a Stripe webhook endpoint at
    `https://your-app.example/api/billing/stripe/webhook`. Set its event API
