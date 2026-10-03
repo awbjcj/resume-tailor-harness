@@ -10,13 +10,18 @@ import hashlib
 import json
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Literal, cast
 from urllib.parse import urlsplit
 
 import stripe
 from sqlalchemy import select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
+from stripe.params import CustomerCreateParams
+from stripe.params.billing_portal import (
+    SessionCreateParams as PortalSessionCreateParams,
+)
+from stripe.params.checkout import SessionCreateParams as CheckoutSessionCreateParams
 
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.tenancy.quotas import _aware, _ensure_in_session, _new_period
@@ -96,14 +101,14 @@ class StripeGateway:
         return self.client.v1.prices.retrieve(price_id)
 
     def customer(self, user_id: str, email: str | None) -> Any:
-        params: dict[str, Any] = {"metadata": {"user_id": user_id}}
+        params: CustomerCreateParams = {"metadata": {"user_id": user_id}}
         if email:
             params["email"] = email
         return self.client.v1.customers.create(
             params, options={"idempotency_key": f"resume-customer-{user_id}"}
         )
 
-    def checkout(self, params: dict, key: str) -> Any:
+    def checkout(self, params: CheckoutSessionCreateParams, key: str) -> Any:
         return self.client.v1.checkout.sessions.create(
             params, options={"idempotency_key": key}
         )
@@ -133,7 +138,7 @@ class StripeGateway:
     def payment_intent(self, intent_id: str) -> Any:
         return self.client.v1.payment_intents.retrieve(intent_id)
 
-    def portal(self, params: dict) -> Any:
+    def portal(self, params: PortalSessionCreateParams) -> Any:
         return self.client.v1.billing_portal.sessions.create(params)
 
 
@@ -434,8 +439,8 @@ def create_checkout(
             session.add(order)
             session.commit()
     metadata = {"checkout_id": order.id, "user_id": user_id}
-    params = {
-        "mode": order.mode,
+    params: CheckoutSessionCreateParams = {
+        "mode": cast(Literal["payment", "subscription"], order.mode),
         "customer": customer_id,
         "client_reference_id": user_id,
         "metadata": metadata,
@@ -447,9 +452,10 @@ def create_checkout(
         "success_url": f"{base}/account?billing=success&session_id={{CHECKOUT_SESSION_ID}}",
         "cancel_url": f"{base}/account?billing=canceled",
     }
-    params[
-        "subscription_data" if order.mode == "subscription" else "payment_intent_data"
-    ] = {"metadata": metadata}
+    if order.mode == "subscription":
+        params["subscription_data"] = {"metadata": metadata}
+    else:
+        params["payment_intent_data"] = {"metadata": metadata}
     checkout = gateway.checkout(params, f"resume-checkout-{order_id}")
     if not checkout.get("url"):
         raise BillingError(
@@ -482,7 +488,10 @@ def create_portal(
         customer = session.get(StripeCustomer, user_id)
         if customer is None:
             raise BillingError("No billing account exists yet")
-        params = {"customer": customer.customer_id, "return_url": f"{base}/account"}
+        params: PortalSessionCreateParams = {
+            "customer": customer.customer_id,
+            "return_url": f"{base}/account",
+        }
     if settings.stripe_portal_configuration_id:
         params["configuration"] = settings.stripe_portal_configuration_id
     return {"url": gateway.portal(params)["url"]}
@@ -693,6 +702,7 @@ def _grant_invoice(
         and _aware(member.expires_at) >= start
     )
     if active:
+        assert member is not None
         member.expires_at = end
     account, period, _ = _ensure_in_session(session, order.user_id, now)
     tier = session.get(QuotaTier, order.tier_id)
@@ -869,7 +879,10 @@ def process_event(
     elif kind in {"charge.refunded", "charge.dispute.created"} and obj.get(
         "payment_intent"
     ):
-        intent = gateway.payment_intent(_id(obj["payment_intent"]))
+        intent_id = _id(obj["payment_intent"])
+        if intent_id is None:
+            raise BillingError("Payment intent identity is missing")
+        intent = gateway.payment_intent(intent_id)
     with Session(engine) as session:
         session.execute(text("BEGIN IMMEDIATE"))
         if not _receipt(session, f"event:{event['id']}"):
