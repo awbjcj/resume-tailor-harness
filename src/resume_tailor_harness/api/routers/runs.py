@@ -26,6 +26,7 @@ from resume_tailor_harness.api.runs.launch import launch, session_work
 from resume_tailor_harness.api.runs.manager import RunManager
 from resume_tailor_harness.api.runs.sse import record_to_run, run_events
 from resume_tailor_harness.api.runs.stream_sse import stream_events
+from resume_tailor_harness.api.runs.agui import agui_stream
 from resume_tailor_harness.api.schemas.base import Page
 from resume_tailor_harness.api.schemas.jobs import ReviseRequest
 from resume_tailor_harness.api.schemas.runs import (
@@ -614,9 +615,13 @@ async def stream_run(
 async def stream_run_events(
     run_id: str,
     offset: int = Query(0, ge=0),
+    protocol: str = Query("native", pattern="^(native|ag-ui)$"),
     mgr: RunManager = Depends(get_run_manager),
     _context=Depends(get_sse_user_context),
 ):
     """Tail a conversational run's event stream from an event offset."""
-    _owned_record(mgr, run_id)
+    record = _owned_record(mgr, run_id)
+    if protocol == "ag-ui":
+        thread_id = str((record.meta or {}).get("sessionId") or run_id)
+        return EventSourceResponse(agui_stream(mgr, run_id, thread_id, offset))
     return EventSourceResponse(stream_events(mgr, run_id, offset))

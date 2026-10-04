@@ -31,6 +31,33 @@ async function mockCareerLab(page: Page, active = false) {
 
 test.beforeEach(async ({ page }) => { await mockCareerLab(page); });
 
+test("draft workspace preserves versions and prepares feedback with an explicit reference", async ({ page }) => {
+  await page.unrouteAll();
+  await mockCareerLab(page, true);
+  await page.route("**/api/career-lab/sessions/career-1", (route) => route.fulfill({ json: {
+    ...activeCareerLab,
+    turns: [
+      { turnId: "u1", role: "user", text: "Make a plan", at: "2026-10-04T12:00:00Z", contextRefs: { profileSnapshot: "current", offerApplicationIds: [] } },
+      { turnId: "draft-1", role: "assistant", text: "## Experience\nFirst version", at: "2026-10-04T12:00:01Z", artifact: { title: "First plan", summary: "Plan", artifactType: "career_plan" } },
+      { turnId: "draft-2", role: "assistant", text: "## Next steps\nSecond version", at: "2026-10-04T12:00:02Z", artifact: { title: "Revised plan", summary: "Plan", artifactType: "career_plan" } },
+    ],
+  } }));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/career-lab");
+  await expect(page.getByLabel("Draft content")).toContainText("Second version");
+  await page.getByLabel("Draft version").selectOption("draft-1");
+  await expect(page.getByLabel("Draft content")).toContainText("First version");
+  await page.getByLabel("Revision scope").selectOption("Experience");
+  await page.getByLabel("Feedback", { exact: true }).fill("Keep only supported achievements");
+  await page.getByRole("button", { name: "Prepare revision request" }).click();
+  await expect(page.getByLabel("Message Career Lab")).toHaveValue(/section "Experience"/);
+  await expect(page.getByRole("button", { name: "Remove Selected draft" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove Current profile" })).toBeVisible();
+  await page.screenshot({ path: "e2e/__screenshots__/agui-draft-workspace.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+});
+
 test("Career Lab keeps setup and reference context out of the starter", async ({ page }) => {
   await page.goto("/career-lab");
   await expect(page.getByRole("heading", { name: "Career Lab" })).toBeVisible();

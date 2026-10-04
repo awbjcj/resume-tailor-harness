@@ -199,10 +199,10 @@ export function CareerLabContextRail({
   };
 
   useEffect(() => {
-    if (context.jobId != null && !filteredJobs.some((job) => job.jobId === context.jobId)) {
+    if (jobs.data && context.jobId != null && !filteredJobs.some((job) => job.jobId === context.jobId)) {
       setContext({ ...context, jobId: undefined, resumeVersionId: undefined });
     }
-  }, [context, filteredJobs, setContext]);
+  }, [context, filteredJobs, setContext, jobs.data]);
 
   useEffect(() => {
     const resumeVersions = jobDetail.data?.resumeVersions;

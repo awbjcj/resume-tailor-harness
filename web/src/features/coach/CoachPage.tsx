@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
+import { ChatRunProgress } from "@/components/chat/ChatRunProgress";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatSessionHistory, type ChatSessionHistoryItem } from "@/components/chat/ChatSessionHistory";
 import { ChatThread, type ChatThreadMessage } from "@/components/chat/ChatThread";
@@ -431,7 +432,8 @@ export function CoachPage() {
                 </div>
               </div>
               {active.status === "active" ? (
-                <div className="border-t bg-card/95 p-4 sm:p-6">
+                <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
+                  <ChatRunProgress runId={attachedRunId} status={stream.status} />
                   <ChatComposer
                     value={composer}
                     onChange={setComposer}

@@ -10,6 +10,7 @@ export function ChatComposer({
   onSend,
   onStop,
   busy,
+  disabled = false,
   settling = false,
   ariaLabel = "Message",
   sendLabel = "Send message",
@@ -20,6 +21,7 @@ export function ChatComposer({
   onSend: () => void;
   onStop: () => void;
   busy: boolean;
+  disabled?: boolean;
   settling?: boolean;
   ariaLabel?: string;
   sendLabel?: string;
@@ -40,15 +42,15 @@ export function ChatComposer({
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            if (!busy && value.trim()) onSend();
+            if (!busy && !disabled && value.trim()) onSend();
           }
         }}
         placeholder={placeholder}
         rows={1}
-        disabled={busy && !settling}
+        disabled={disabled || (busy && !settling)}
         className="max-h-56 min-h-10 flex-1 resize-none overflow-y-auto border-0 bg-transparent text-base leading-6 shadow-none focus-visible:ring-0"
       />
-      <TranscribeButton onText={(text) => onChange(value ? `${value} ${text}` : text)} disabled={busy && !settling} />
+      <TranscribeButton onText={(text) => onChange(value ? `${value} ${text}` : text)} disabled={disabled || (busy && !settling)} />
       {settling ? (
         <span className="px-2 text-xs text-muted-foreground" role="status">Saving…</span>
       ) : busy ? (
@@ -56,7 +58,7 @@ export function ChatComposer({
           <Square className="size-4" aria-hidden="true" />
         </Button>
       ) : (
-        <Button size="icon-sm" onClick={onSend} disabled={!value.trim()} aria-label={sendLabel}>
+        <Button size="icon-sm" onClick={onSend} disabled={disabled || !value.trim()} aria-label={sendLabel}>
           <Send className="size-4" aria-hidden="true" />
         </Button>
       )}

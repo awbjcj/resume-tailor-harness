@@ -177,6 +177,28 @@ describe("CareerLabPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("starts a new unanchored session without inheriting the displayed job context", async () => {
+    const start = vi.fn().mockResolvedValue({ runId: "new-run" });
+    const send = vi.fn();
+    mocks.start.mockReturnValue({ mutateAsync: start });
+    mocks.send.mockReturnValue({ mutateAsync: send });
+    mocks.sessions.mockReturnValue({ data: { sessions: [summary({ sessionId: "job-7", jobId: 7 })] } });
+    mocks.session.mockReturnValue({ data: {
+      ...summary({ sessionId: "job-7", jobId: 7 }),
+      turns: [{ turnId: "user-1", role: "user", text: "Review this job", contextRefs: {
+        jobId: 7, resumeVersionId: 3, profileSnapshot: "current", offerApplicationIds: [9],
+      } }],
+    } });
+    renderPage();
+    await userEvent.click(screen.getByRole("button", { name: "New Career Lab session" }));
+    await userEvent.type(screen.getByLabelText("Career Lab request"), "Plan my next steps");
+    await userEvent.click(screen.getByRole("button", { name: "Start session" }));
+    await waitFor(() => expect(start).toHaveBeenCalledWith(expect.objectContaining({
+      message: "Plan my next steps", context: { offerApplicationIds: [] },
+    })));
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it("names the anchored job so job threads are told apart in history", () => {
     mocks.sessions.mockReturnValue({
       data: {

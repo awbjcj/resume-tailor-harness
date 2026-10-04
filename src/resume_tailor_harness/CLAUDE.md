@@ -73,9 +73,11 @@ builder imports a concrete agno model class directly.
   standing rule that the visible answer is never reasoning.
 - **Tiers unchanged.** `model_for_tier` still maps `cheap`/`mid`/`premium` →
   `Settings.{cheap,mid,premium}_model`; the prefix lives inside those ids.
-- **Dependency note.** agno 2.6.x's Gemini import needs `google-genai`'s
-  `step_delta` submodule, renamed to `stepdelta` in 2.9.0 — `pyproject.toml`
-  caps it at `<2.9.0`. DeepSeek and OpenAI both ride the `openai` SDK.
+- **Dependency note.** Agno is on 3.1.1 or newer within major version 3.
+  The Gemini SDK range stays at `>=2.5.0,<2.24.0` during this upgrade.
+  DeepSeek and OpenAI both ride the `openai` SDK. The Responses compatibility
+  override forwards Agno 3's `run_response` argument to its parent; omitting
+  it breaks actual provider requests even when model-construction tests pass.
 - **Gemini thinking is generation-specific — never send `thinking_budget` to
   Gemini 3.** Gemini treats an unset thinking config as "provider decides"
   (unbounded automatic budget), so non-reasoning agents must bound it. But

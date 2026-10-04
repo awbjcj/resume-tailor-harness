@@ -17310,6 +17310,7 @@ export interface operations {
         parameters: {
             query?: {
                 offset?: number;
+                protocol?: string;
             };
             header?: {
                 authorization?: string | null;

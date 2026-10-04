@@ -19,6 +19,8 @@ import { formatUserDate } from "@/lib/date-time";
 import { cn } from "@/lib/utils";
 import type { RunRecord } from "@/lib/runs/store";
 import { useRunStore } from "@/lib/runs/store";
+import { ScoutResearchCards } from "./ScoutResearchCards";
+import { ChatRunProgress } from "@/components/chat/ChatRunProgress";
 import { ProposalRail } from "./ProposalRail";
 import {
   useArchiveScoutSession, useDeleteScoutSession, useEndScoutSession,
@@ -73,6 +75,10 @@ export function ScoutPage() {
     if (!pending || durableTurns > pending.baseline) return durable;
     return [...durable, { id: "pending-user", role: "user", parts: [{ kind: "text", text: pending.text }] }];
   }, [active, durableTurns, pending]);
+
+  const turnByMessageId = useMemo(() => new Map(
+    (active?.turns ?? []).map((turn, index) => [`${turn.at}-${index}`, turn]),
+  ), [active?.turns]);
 
   const launchMessage = async (message = composer.trim()) => {
     if (!message || busy) return;
@@ -148,7 +154,8 @@ export function ScoutPage() {
           </CardHeader>
         ) : null}
         <CardContent className={cn("flex flex-col gap-4", active || busy ? "p-4 sm:p-6" : "p-0", CHAT_SURFACE_HEIGHT)}>
-          {!active && !busy ? <WorkspaceEmptyState icon={Compass} title="Set your search direction" description="Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything." actionLabel="Create Scout session" onAction={() => setNewOpen(true)} steps={[{ icon: MessageCircleQuestion, title: "Describe the search", description: "Share roles, locations, industries, and boundaries in plain language." }, { icon: Search, title: "Review the research", description: "The Scout returns separate proposals with citations. It waits for your approval before changing settings." }, { icon: CheckCircle2, title: "Approve what fits", description: "Add or dismiss each company and search term yourself." }]} /> : <ChatThread messages={messages} streaming={streaming?.length ? streaming : null} streamingActive={stream.status === "streaming"} showReasoning assistantName="Discovery Scout" assistantIcon={<Compass className="size-4" aria-hidden="true" />} />}
+          {!active && !busy ? <WorkspaceEmptyState icon={Compass} title="Set your search direction" description="Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything." actionLabel="Create Scout session" onAction={() => setNewOpen(true)} steps={[{ icon: MessageCircleQuestion, title: "Describe the search", description: "Share roles, locations, industries, and boundaries in plain language." }, { icon: Search, title: "Review the research", description: "The Scout returns separate proposals with citations. It waits for your approval before changing settings." }, { icon: CheckCircle2, title: "Approve what fits", description: "Add or dismiss each company and search term yourself." }]} /> : <ChatThread messages={messages} streaming={streaming?.length ? streaming : null} streamingActive={stream.status === "streaming"} showReasoning renderAfter={(message) => active ? <ScoutResearchCards session={active} proposalIds={turnByMessageId.get(message.id)?.proposalIds ?? []} /> : null} assistantName="Discovery Scout" assistantIcon={<Compass className="size-4" aria-hidden="true" />} />}
+          <ChatRunProgress runId={attachedRunId} status={stream.status} />
           {active?.recap ? <div className="rounded-xl border bg-muted/35 p-3 text-sm"><span className="font-medium">Recap: </span>{active.recap}</div> : null}
           {active?.status === "active" ? <ChatComposer value={composer} onChange={setComposer} onSend={() => launchMessage()} onStop={stop} busy={busy} settling={stream.status === "settled"} ariaLabel="Discovery request" placeholder="Ask for a change…" /> : active ? <p className="rounded-xl bg-muted/50 p-3 text-center text-sm text-muted-foreground">This conversation has ended. Pending proposals remain available to review.</p> : null}
         </CardContent>

@@ -11343,5 +11343,205 @@
     "key": "ui_bc7b631a689b",
     "en": "Zoom out",
     "zh-CN": "缩小"
+  },
+  "Saving the response": {
+    "key": "ui_0a4f682e5b36",
+    "en": "Saving the response",
+    "zh-CN": "正在保存回复"
+  },
+  "Preparing your response": {
+    "key": "ui_7a7756066ae9",
+    "en": "Preparing your response",
+    "zh-CN": "正在准备回复"
+  },
+  "The reply is ready. Final checks are still running.": {
+    "key": "ui_71fa3191682d",
+    "en": "The reply is ready. Final checks are still running.",
+    "zh-CN": "回复已生成，正在进行最终检查。"
+  },
+  "Draft workspace": {
+    "key": "ui_b16401ba40b3",
+    "en": "Draft workspace",
+    "zh-CN": "草稿工作区"
+  },
+  "Draft version": {
+    "key": "ui_a6189091559f",
+    "en": "Draft version",
+    "zh-CN": "草稿版本"
+  },
+  "Revisions create a new response. Previous drafts remain available.": {
+    "key": "ui_3c3519954d06",
+    "en": "Revisions create a new response. Previous drafts remain available.",
+    "zh-CN": "修改会生成新的回复，之前的草稿仍会保留。"
+  },
+  "Draft content": {
+    "key": "ui_d411fa831ea2",
+    "en": "Draft content",
+    "zh-CN": "草稿内容"
+  },
+  "Response in progress": {
+    "key": "ui_45967e7f792a",
+    "en": "Response in progress",
+    "zh-CN": "正在生成的回复"
+  },
+  "Revision scope": {
+    "key": "ui_d908d6b40705",
+    "en": "Revision scope",
+    "zh-CN": "修改范围"
+  },
+  "Whole draft": {
+    "key": "ui_14d578043b9a",
+    "en": "Whole draft",
+    "zh-CN": "整篇草稿"
+  },
+  "Feedback": {
+    "key": "ui_aac77df34720",
+    "en": "Feedback",
+    "zh-CN": "反馈"
+  },
+  "What should change in the next revision?": {
+    "key": "ui_b18268535d85",
+    "en": "What should change in the next revision?",
+    "zh-CN": "下一版需要修改哪些内容？"
+  },
+  "Prepare revision request": {
+    "key": "ui_f5d865804f73",
+    "en": "Prepare revision request",
+    "zh-CN": "准备修改请求"
+  },
+  "Current profile": {
+    "key": "ui_70aede1cef74",
+    "en": "Current profile",
+    "zh-CN": "当前个人资料"
+  },
+  "Job #{{v0}}": {
+    "key": "ui_ccd484da352c",
+    "en": "Job #{{v0}}",
+    "zh-CN": "职位 #{{v0}}"
+  },
+  "Resume #{{v0}}": {
+    "key": "ui_10e7d327880e",
+    "en": "Resume #{{v0}}",
+    "zh-CN": "简历 #{{v0}}"
+  },
+  "{{v0}} offer references": {
+    "key": "ui_b53ff1df975c",
+    "en": "{{v0}} offer references",
+    "zh-CN": "{{v0}} 项录用邀约参考"
+  },
+  "Selected draft": {
+    "key": "ui_1435409f5b1d",
+    "en": "Selected draft",
+    "zh-CN": "已选草稿"
+  },
+  "Context for next message": {
+    "key": "ui_ca0a9e95f9a5",
+    "en": "Context for next message",
+    "zh-CN": "下一条消息的参考资料"
+  },
+  "Conversation only. Add references in the context panel.": {
+    "key": "ui_03219cf17f6b",
+    "en": "Conversation only. Add references in the context panel.",
+    "zh-CN": "仅使用对话内容。可在参考资料面板中添加资料。"
+  },
+  "Open draft": {
+    "key": "ui_aaefe15f73cc",
+    "en": "Open draft",
+    "zh-CN": "打开草稿"
+  },
+  "Ask about this job": {
+    "key": "ui_c57faec568c0",
+    "en": "Ask about this job",
+    "zh-CN": "咨询此职位"
+  },
+  "Career assistant": {
+    "key": "ui_ff52fcf34ada",
+    "en": "Career assistant",
+    "zh-CN": "职业助手"
+  },
+  "The response could not be completed. Your request is ready to retry.": {
+    "key": "ui_2e3f46f0184b",
+    "en": "The response could not be completed. Your request is ready to retry.",
+    "zh-CN": "未能完成回复。你可以重试此请求。"
+  },
+  "Unable to start the response.": {
+    "key": "ui_aa26c4c2df59",
+    "en": "Unable to start the response.",
+    "zh-CN": "无法开始生成回复。"
+  },
+  "Context: this job": {
+    "key": "ui_456f2ca948ec",
+    "en": "Context: this job",
+    "zh-CN": "参考资料：此职位"
+  },
+  "No resume selected": {
+    "key": "ui_cd214c733d39",
+    "en": "No resume selected",
+    "zh-CN": "未选择简历"
+  },
+  "These references apply to the next message. Outputs remain drafts.": {
+    "key": "ui_0cce0f0468bc",
+    "en": "These references apply to the next message. Outputs remain drafts.",
+    "zh-CN": "这些参考资料将用于下一条消息，生成的内容仍为草稿。"
+  },
+  "Unable to load this job’s conversation.": {
+    "key": "ui_a926029087bd",
+    "en": "Unable to load this job’s conversation.",
+    "zh-CN": "无法加载此职位的对话。"
+  },
+  "Retry loading": {
+    "key": "ui_a0f859bc4db2",
+    "en": "Retry loading",
+    "zh-CN": "重新加载"
+  },
+  "Ask a question while keeping the job open.": {
+    "key": "ui_409e4d86c595",
+    "en": "Ask a question while keeping the job open.",
+    "zh-CN": "无需离开职位页面即可提问。"
+  },
+  "Which requirements should I address?": {
+    "key": "ui_ea0830648209",
+    "en": "Which requirements should I address?",
+    "zh-CN": "我应该重点回应哪些职位要求？"
+  },
+  "Help me draft an application answer": {
+    "key": "ui_c0305fccd5d2",
+    "en": "Help me draft an application answer",
+    "zh-CN": "帮我起草求职申请回答"
+  },
+  "Prepare questions for the recruiter": {
+    "key": "ui_ef45061369c2",
+    "en": "Prepare questions for the recruiter",
+    "zh-CN": "准备向招聘人员提出的问题"
+  },
+  "Ask about this role or selected resume…": {
+    "key": "ui_a8d9c551f3c8",
+    "en": "Ask about this role or selected resume…",
+    "zh-CN": "询问此职位或所选简历的相关问题…"
+  },
+  "Open full workspace": {
+    "key": "ui_aaa2f2b8b791",
+    "en": "Open full workspace",
+    "zh-CN": "打开完整工作区"
+  },
+  "Research results": {
+    "key": "ui_f56a83e941d5",
+    "en": "Research results",
+    "zh-CN": "研究结果"
+  },
+  "Review the evidence and choose what to add.": {
+    "key": "ui_ff9f5c4519e1",
+    "en": "Review the evidence and choose what to add.",
+    "zh-CN": "查看依据并选择要添加的内容。"
+  },
+  "A decision for this proposal is already in progress.": {
+    "key": "ui_0a1cdf2550e8",
+    "en": "A decision for this proposal is already in progress.",
+    "zh-CN": "此建议正在处理中。"
+  },
+  "Selected resume": {
+    "key": "ui_18bbfd7a96e5",
+    "en": "Selected resume",
+    "zh-CN": "所选简历"
   }
 }

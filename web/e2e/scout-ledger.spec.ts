@@ -62,6 +62,27 @@ const session = {
   proposals, recap: null, scrapeAvailable: true, scrapeUnavailableReason: null,
 };
 
+test("inline research approvals update the same proposal in the ledger", async ({ page }) => {
+  await mockEmptyRuns(page);
+  const current = structuredClone(session);
+  const currentWithResearch = { ...current, turns: current.turns.map((turn, index) => ({ ...turn, proposalIds: index === 1 ? ["s0"] : [] })) };
+  let decisions = 0;
+  await page.route("**/api/scout/sessions**", (route) => route.fulfill({ json: { sessions: [{ ...current, turnCount: 2 }] } }));
+  await page.route("**/api/scout/sessions/sess-1", (route) => route.fulfill({ json: currentWithResearch }));
+  await page.route("**/api/scout/sessions/sess-1/proposals/s0/approve", async (route) => {
+    decisions++;
+    current.proposals[0]!.status = "added";
+    await route.fulfill({ json: current });
+  });
+  await page.goto("/scout");
+  const research = page.getByRole("region", { name: "Research results" });
+  await expect(research.getByRole("link", { name: "Careers", exact: true })).toBeVisible();
+  await research.getByRole("button", { name: "Add Phinia" }).click();
+  await expect(research.getByText("Added", { exact: true })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Scout proposals" }).getByRole("button", { name: "Add Phinia" })).toHaveCount(0);
+  expect(decisions).toBe(1);
+});
+
 test("the empty Scout state keeps a single page header on a narrow viewport", async ({ page }) => {
   await mockEmptyRuns(page);
   await page.route("**/api/scout/sessions**", (route) => route.fulfill({ json: { sessions: [] } }));

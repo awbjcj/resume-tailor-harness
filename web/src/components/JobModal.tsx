@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CareerLabTab } from "@/features/career-lab/CareerLabTab";
+import { JobAssistant } from "@/features/career-lab/JobAssistant";
 import { InterviewTab } from "@/features/interview/InterviewTab";
 import type { CoverLetterItem } from "@/features/job/CoverLetterRow";
 import { CoverLettersTab } from "@/features/job/CoverLettersTab";
@@ -152,7 +153,8 @@ export function JobModal({
                     <span aria-hidden>·</span>
                     <span>{locationLabel(job) ?? "location n/a"}</span>
                     <StatusBadge status={job.status} />
-                    <div className="ml-auto flex items-center gap-2">
+                    <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                      <JobAssistant key={jobId} jobId={jobId} jobLabel={`${job.company ?? ""} · ${job.title ?? ""}`} versions={job.resumeVersions} />
                       <Button
                         size="sm"
                         variant="outline"

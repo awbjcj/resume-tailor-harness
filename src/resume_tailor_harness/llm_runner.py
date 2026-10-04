@@ -1338,12 +1338,14 @@ def _compatible_openai_responses_class():
             response_format=None,
             tools=None,
             tool_choice=None,
+            run_response=None,
         ):
             params = super().get_request_params(
                 messages=messages,
                 response_format=response_format,
                 tools=tools,
                 tool_choice=tool_choice,
+                run_response=run_response,
             )
             text_format = params.get("text", {}).get("format", {})
             schema = text_format.get("schema")

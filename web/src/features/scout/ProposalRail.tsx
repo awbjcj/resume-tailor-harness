@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useIsMutating } from "@tanstack/react-query";
 import { Building2, ChevronRight, Layers3, Tags } from "lucide-react";
 
 import { CHAT_SURFACE_HEIGHT } from "@/components/chat/layout";
@@ -42,6 +43,7 @@ function Section({ title, icon, rows, defaultOpen, children }: { title: string; 
  */
 export function ProposalRail({ sessionId, proposals, scrapeAvailable, className }: { sessionId: string; proposals: ScoutProposal[]; scrapeAvailable: boolean; className?: string }) {
   const approve = useApproveScoutProposal();
+  const changing = useIsMutating({ mutationKey: ["scout-proposal-action"] }) > 0;
   const [batching, setBatching] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [added, setAdded] = useState<string[]>([]);
@@ -87,7 +89,7 @@ export function ProposalRail({ sessionId, proposals, scrapeAvailable, className 
           <span className="text-xs tabular-nums text-muted-foreground">{pendingCount} pending</span>
         </div>
         <CardDescription className="text-xs leading-relaxed">Nothing is added until you approve it.</CardDescription>
-        <Button className="w-full" size="sm" variant="secondary" disabled={!ready.length || batching} onClick={addAll} aria-label="Add all ready proposals">
+        <Button className="w-full" size="sm" variant="secondary" disabled={!ready.length || batching || changing} onClick={addAll} aria-label="Add all ready proposals">
           {ready.length ? `Add all ready (${ready.length})` : "Nothing ready to add"}
         </Button>
         <p aria-live="polite" className="min-h-4 text-center text-xs text-muted-foreground">{summary}</p>

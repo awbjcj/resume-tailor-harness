@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { api, unwrap } from "@/lib/api/client";
@@ -13,6 +14,19 @@ export type ScoutSessions = components["schemas"]["ScoutSessionsOut"];
 export type ScoutProposal = components["schemas"]["ScoutProposalOut"];
 type RunOut = components["schemas"]["RunOut"];
 type RunDone = (run: RunRecord) => void;
+
+const proposalDecisions = new WeakMap<QueryClient, Set<string>>();
+
+/** Inline cards and the ledger can target the same proposal before React has
+ * rendered the pending state. Admit only one decision per proposal at a time. */
+async function decideProposal<T>(client: QueryClient, sessionId: string, proposalId: string, action: () => Promise<T>): Promise<T> {
+  let pending = proposalDecisions.get(client);
+  if (!pending) { pending = new Set(); proposalDecisions.set(client, pending); }
+  const key = `${sessionId}:${proposalId}`;
+  if (pending.has(key)) throw new Error("A decision for this proposal is already in progress.");
+  pending.add(key);
+  try { return await action(); } finally { pending.delete(key); }
+}
 
 const listKey = (archived: boolean) => ["scout-sessions", archived] as const;
 const detailKey = (id: string | null) => ["scout-session", id] as const;
@@ -79,11 +93,12 @@ export function useEndScoutSession() {
 export function useApproveScoutProposal() {
   const client = useQueryClient();
   return useMutation({
+    mutationKey: ["scout-proposal-action"],
     mutationFn: ({ sessionId, proposalId, manualConfirmation = false }: { sessionId: string; proposalId: string; manualConfirmation?: boolean }) => {
       const params = { params: { path: { session_id: sessionId, proposal_id: proposalId } } };
-      return manualConfirmation
+      return decideProposal(client, sessionId, proposalId, () => manualConfirmation
         ? unwrap(api.POST("/api/scout/sessions/{session_id}/proposals/{proposal_id}/approve", { ...params, body: { manualConfirmation: true } }))
-        : unwrap(api.POST("/api/scout/sessions/{session_id}/proposals/{proposal_id}/approve", params));
+        : unwrap(api.POST("/api/scout/sessions/{session_id}/proposals/{proposal_id}/approve", params)));
     },
     onSuccess: () => Promise.all([
       client.invalidateQueries({ queryKey: ["scout-session"] }),
@@ -96,23 +111,27 @@ export function useApproveScoutProposal() {
 }
 
 export function useResolveScoutProposal() {
+  const client = useQueryClient();
   const invalidate = useScoutInvalidation();
   return useMutation({
+    mutationKey: ["scout-proposal-action"],
     mutationFn: ({ sessionId, proposalId, url }: { sessionId: string; proposalId: string; url: string }) =>
-      unwrap(api.POST("/api/scout/sessions/{session_id}/proposals/{proposal_id}/resolve", {
+      decideProposal(client, sessionId, proposalId, () => unwrap(api.POST("/api/scout/sessions/{session_id}/proposals/{proposal_id}/resolve", {
         params: { path: { session_id: sessionId, proposal_id: proposalId } },
         body: { url },
-      })),
+      }))),
     onSuccess: invalidate,
     onError: (error: Error) => toast.error(error.message),
   });
 }
 
 export function useDismissScoutProposal() {
+  const client = useQueryClient();
   const invalidate = useScoutInvalidation();
   return useMutation({
+    mutationKey: ["scout-proposal-action"],
     mutationFn: ({ sessionId, proposalId, reason }: { sessionId: string; proposalId: string; reason: string }) =>
-      unwrap(api.POST("/api/scout/sessions/{session_id}/proposals/{proposal_id}/dismiss", { params: { path: { session_id: sessionId, proposal_id: proposalId } }, body: { reason } })),
+      decideProposal(client, sessionId, proposalId, () => unwrap(api.POST("/api/scout/sessions/{session_id}/proposals/{proposal_id}/dismiss", { params: { path: { session_id: sessionId, proposal_id: proposalId } }, body: { reason } }))),
     onSuccess: invalidate, onError: (error: Error) => toast.error(error.message),
   });
 }
