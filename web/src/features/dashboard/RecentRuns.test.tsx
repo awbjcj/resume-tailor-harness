@@ -17,6 +17,37 @@ describe("RecentRuns durable history", () => {
     await changeLanguage("en");
   });
 
+  it.each(["en", "zh-CN"] as const)("preserves operation log meaning in %s", async (language) => {
+    await changeLanguage(language);
+    const messages = [
+      "Researching Acme",
+      "Done with warnings",
+      "Imported 12 documents from source #7",
+      "已保存 12 份文档",
+      "GmailNotConnected: Gmail is not connected for this workspace",
+      "Provider timeout after 30s",
+    ];
+    server.use(
+      http.get("*/api/run-completions", () => HttpResponse.json([completed])),
+      http.get("*/api/run-completions/1/logs", () => HttpResponse.json(messages.map((message, index) => ({
+        timestamp: "2026-09-09T12:00:00Z", message, state: index >= 4 ? "error" : "running",
+      })))),
+    );
+    const user = userEvent.setup();
+    render(<RecentRuns />, { wrapper: withQueryClient });
+    await user.click(await screen.findByRole("button", { name: language === "en" ? "View logs" : "查看日志" }));
+
+    const expected = language === "en" ? messages : [
+      "正在调研 Acme",
+      "已完成，但有部分内容未能处理",
+      messages[2], messages[3],
+      "Gmail 尚未连接到此工作区。",
+      messages[5],
+    ];
+    for (const message of expected) expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.queryByText("操作失败。请重试。")).not.toBeInTheDocument();
+  });
+
   it("shows saved operations without a live store, expands logs, and clears only completed history", async () => {
     let cleared = false;
     server.use(
