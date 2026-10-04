@@ -29494,6 +29494,17 @@
             }
           },
           {
+            "in": "query",
+            "name": "protocol",
+            "required": false,
+            "schema": {
+              "default": "native",
+              "pattern": "^(native|ag-ui)$",
+              "title": "Protocol",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "authorization",
             "required": false,

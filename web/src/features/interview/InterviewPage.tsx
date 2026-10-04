@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Bot, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Clock3, MessageCircleQuestion, MessagesSquare, SquareCheckBig } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
+import { ChatRunProgress } from "@/components/chat/ChatRunProgress";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatThread, type ChatThreadMessage } from "@/components/chat/ChatThread";
 import { GuidedWorkspaceHeader } from "@/components/chat/GuidedWorkspaceHeader";
@@ -338,7 +339,8 @@ export function InterviewPage() {
           </div>
 
           {canAnswer ? (
-            <div className="border-t bg-card/95 p-4 sm:p-6">
+            <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
+              <ChatRunProgress runId={attachedRunId} status={stream.status} />
               <ChatComposer
                 value={composer}
                 onChange={setComposer}

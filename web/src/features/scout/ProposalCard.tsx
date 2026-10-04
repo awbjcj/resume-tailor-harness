@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from "react";
+import { useIsMutating } from "@tanstack/react-query";
 import { ChevronRight, ExternalLink, Plus, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -26,11 +27,12 @@ export { proposalBadge, proposalLabel } from "./proposals";
  * the page metres tall. Detail (full reason, evidence links, failure text) is
  * revealed in place, so scanning stays cheap and deciding stays possible.
  */
-export function ProposalCard({ sessionId, proposal, scrapeAvailable, error, locallyAdded = false }: { sessionId: string; proposal: ScoutProposal; scrapeAvailable: boolean; error?: string; locallyAdded?: boolean }) {
+export function ProposalCard({ sessionId, proposal, scrapeAvailable, error, locallyAdded = false, inline = false }: { sessionId: string; proposal: ScoutProposal; scrapeAvailable: boolean; error?: string; locallyAdded?: boolean; inline?: boolean }) {
   const approve = useApproveScoutProposal();
   const dismiss = useDismissScoutProposal();
   const resolve = useResolveScoutProposal();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(inline);
+  const changing = useIsMutating({ mutationKey: ["scout-proposal-action"] }) > 0;
   const [editingReason, setEditingReason] = useState(false);
   const [reason, setReason] = useState("");
   const dismissButton = useRef<HTMLButtonElement>(null);
@@ -41,7 +43,7 @@ export function ProposalCard({ sessionId, proposal, scrapeAvailable, error, loca
   const intelligence = companyIntelligenceLabel(proposal);
   const pending = proposal.status === "pending" && !locallyAdded;
   const normalAddable = canAddProposal(proposal);
-  const addDisabled = !pending || !normalAddable || approve.isPending;
+  const addDisabled = !pending || !normalAddable || approve.isPending || changing;
   const blocked = pending ? blockedReason(proposal, scrapeAvailable) : "";
   const citations = (proposal.citations ?? []).filter((item) => /^https?:\/\//i.test(item.url));
   // The dismissal editor lives in the detail region, so opening it must open the
@@ -55,7 +57,7 @@ export function ProposalCard({ sessionId, proposal, scrapeAvailable, error, loca
     <Collapsible
       open={expanded}
       onOpenChange={setOpen}
-      render={<li className={cn("scout-proposal-card border-b border-border/60 last:border-b-0", !pending && "bg-muted/30")} data-pending={pending} />}
+      render={<li className={cn("scout-proposal-card border-b border-border/60 last:border-b-0", inline && "rounded-xl border bg-card shadow-sm", !pending && "bg-muted/30")} data-pending={pending} />}
     >
       {/* The disclosure button holds the chevron and the label and nothing else,
           so its accessible name is exactly the proposal's name. Folding the
@@ -71,7 +73,7 @@ export function ProposalCard({ sessionId, proposal, scrapeAvailable, error, loca
         </CollapsibleTrigger>
         {pending ? (
           <div className="flex shrink-0 items-center gap-0.5">
-            <Button ref={dismissButton} size="icon-sm" variant="ghost" aria-label={`Dismiss ${label}`} onClick={() => { setEditingReason(true); setOpen(true); }}><X /></Button>
+            <Button ref={dismissButton} disabled={changing} size="icon-sm" variant="ghost" aria-label={`Dismiss ${label}`} onClick={() => { setEditingReason(true); setOpen(true); }}><X /></Button>
             {normalAddable ? <Button size="icon-sm" aria-label={`Add ${label}`} disabled={addDisabled} onClick={() => { void approve.mutateAsync({ sessionId, proposalId: proposal.id }).catch(() => undefined); }}><Plus /></Button> : null}
           </div>
         ) : null}
@@ -96,12 +98,12 @@ export function ProposalCard({ sessionId, proposal, scrapeAvailable, error, loca
         {proposal.checkError ? <p className="text-destructive">{proposal.checkError}</p> : null}
         {proposal.dismissReason ? <p className="text-muted-foreground">Dismissed: {proposal.dismissReason}</p> : null}
         {blocked ? <p className="text-muted-foreground">{blocked}</p> : null}
-        {pending && proposal.kind === "source" ? <SourceVerificationActions proposal={proposal} scrapeAvailable={scrapeAvailable} resolvePending={resolve.isPending} confirmPending={approve.isPending} onResolve={(url) => resolve.mutateAsync({ sessionId, proposalId: proposal.id, url })} onConfirm={() => approve.mutateAsync({ sessionId, proposalId: proposal.id, manualConfirmation: true })} /> : null}
+        {pending && proposal.kind === "source" ? <SourceVerificationActions proposal={proposal} scrapeAvailable={scrapeAvailable} resolvePending={resolve.isPending || changing} confirmPending={approve.isPending || changing} onResolve={(url) => resolve.mutateAsync({ sessionId, proposalId: proposal.id, url })} onConfirm={() => approve.mutateAsync({ sessionId, proposalId: proposal.id, manualConfirmation: true })} /> : null}
         {error ? <p role="alert" className="text-destructive">{error}</p> : null}
         {pending && editingReason ? (
           <div className="space-y-2">
-            <label className="block font-medium" htmlFor={`dismiss-${proposal.id}`}>Reason for dismissing {label}</label>
-            <Input id={`dismiss-${proposal.id}`} maxLength={200} value={reason} onChange={(event) => setReason(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { setEditingReason(false); queueMicrotask(() => dismissButton.current?.focus()); } }} />
+            <label className="block font-medium" htmlFor={`${detailId}-dismiss`}>Reason for dismissing {label}</label>
+            <Input id={`${detailId}-dismiss`} maxLength={200} value={reason} onChange={(event) => setReason(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") { setEditingReason(false); queueMicrotask(() => dismissButton.current?.focus()); } }} />
             <div className="flex justify-end gap-2"><Button size="sm" variant="ghost" onClick={() => setEditingReason(false)}>Cancel</Button><Button size="sm" variant="secondary" disabled={dismiss.isPending} onClick={() => { void dismiss.mutateAsync({ sessionId, proposalId: proposal.id, reason: reason.trim() }).then(() => setEditingReason(false)).catch(() => undefined); }}>Confirm dismiss</Button></div>
           </div>
         ) : null}

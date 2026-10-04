@@ -5,6 +5,7 @@ import { getToken, withTokenParam } from "@/lib/api/client";
 import { getSseLinkToken, invalidateSseLinkToken } from "@/lib/runs/linkToken";
 
 import { parseStreamEvent, reduceEvent, type ChatPart } from "./events";
+import { parseAguiEvent } from "./agui";
 
 export type ChatStreamStatus = "idle" | "streaming" | "settled" | "done" | "error";
 
@@ -29,6 +30,7 @@ export function useChatStream(runId: string | null) {
   useEffect(() => {
     let disposed = false;
     let cursor = 0;
+    let settled = false;
     let source: EventSource | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -42,11 +44,11 @@ export function useChatStream(runId: string | null) {
 
     const connect = (token?: string, refreshed = false) => {
       if (disposed || typeof EventSource === "undefined") return;
-      const base = `/api/runs/${runId}/stream?offset=${cursor}`;
+      const base = `/api/runs/${runId}/stream?offset=${cursor}&protocol=ag-ui`;
       const url = token ? `${base}&token=${encodeURIComponent(token)}` : withTokenParam(base);
       const eventSource = new EventSource(url);
       source = eventSource;
-      setStatus("streaming");
+      setStatus(settled ? "settled" : "streaming");
 
       eventSource.onmessage = (message) => {
         if (disposed || source !== eventSource) return;
@@ -56,7 +58,7 @@ export function useChatStream(runId: string | null) {
         } catch {
           return;
         }
-        const event = parseStreamEvent(raw);
+        const event = parseAguiEvent(raw) ?? parseStreamEvent(raw);
         if (!event || event.i !== cursor) return;
         cursor = event.i + 1;
         if (event.t === "completed") {
@@ -65,6 +67,7 @@ export function useChatStream(runId: string | null) {
           return;
         }
         if (event.t === "settled") {
+          settled = true;
           setStatus("settled");
           return;
         }
