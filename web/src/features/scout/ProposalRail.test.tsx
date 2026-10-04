@@ -1,4 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
+import { withQueryClient } from "@/test/utils";
+import { render as renderUI, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
@@ -108,3 +109,5 @@ it("shows only an empty state when there are no proposals", () => {
   expect(screen.getByText("Proposals from your conversation will collect here.")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /companies/i })).not.toBeInTheDocument();
 });
+
+function render(ui: React.ReactNode) { return renderUI(ui, { wrapper: withQueryClient }); }

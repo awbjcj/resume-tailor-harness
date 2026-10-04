@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { withQueryClient } from "@/test/utils";
+import { render as renderUI, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
@@ -82,3 +83,5 @@ describe("ProposalCard", () => {
     expect(screen.getByText(/This board is unverified/)).toBeInTheDocument();
   });
 });
+
+function render(ui: React.ReactNode) { return renderUI(ui, { wrapper: withQueryClient }); }

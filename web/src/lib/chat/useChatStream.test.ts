@@ -79,6 +79,27 @@ describe("useChatStream", () => {
     expect(FakeEventSource.last!.closed).toBe(false);
   });
 
+  it("preserves settled status and the replay cursor when AG-UI reconnects", async () => {
+    const { result } = renderHook(() => useChatStream("run-1"));
+    await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
+    const source = FakeEventSource.last!;
+    expect(source.url).toContain("protocol=ag-ui");
+    act(() => {
+      source.send({ type: "TEXT_MESSAGE_CHUNK", messageId: "m", role: "assistant", delta: "Ready", rawEvent: { index: 0 } });
+      source.send({ type: "CUSTOM", name: "resume.settled", value: {}, rawEvent: { index: 1 } });
+      source.onerror?.();
+    });
+    await waitFor(() => expect(FakeEventSource.last!.url).toContain("offset=2"));
+    expect(result.current.status).toBe("settled");
+    expect(result.current.parts).toEqual([{ kind: "text", text: "Ready" }]);
+    act(() => {
+      FakeEventSource.last!.send({ type: "TEXT_MESSAGE_CHUNK", messageId: "m", role: "assistant", delta: "Ready", rawEvent: { index: 0 } });
+      FakeEventSource.last!.send({ type: "RUN_FINISHED", runId: "run-1", threadId: "s", rawEvent: { index: 2 } });
+    });
+    expect(result.current.parts).toHaveLength(1);
+    expect(result.current.status).toBe("done");
+  });
+
   it.each(["stop", "reset"] as const)("%s cancels a scheduled reconnect and ignores late events", async (action) => {
     const { result } = renderHook(() => useChatStream("run-1"));
     await waitFor(() => expect(FakeEventSource.last).not.toBeNull());

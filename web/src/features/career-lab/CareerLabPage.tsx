@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FileText, ListChecks, MessageCircleMore, Sparkles, SquareCheckBig } from "lucide-react";
 
@@ -32,6 +32,9 @@ import { formatUserDate } from "@/lib/date-time";
 import type { RunRecord } from "@/lib/runs/store";
 import { cn } from "@/lib/utils";
 
+import { ChatRunProgress } from "@/components/chat/ChatRunProgress";
+import { CareerLabArtifactWorkspace } from "./CareerLabArtifactWorkspace";
+import { CareerLabContextSummary } from "./CareerLabContextSummary";
 import { CareerLabContextRail } from "./CareerLabContextRail";
 import {
   useArchiveCareerLabSession,
@@ -100,9 +103,14 @@ export function CareerLabPage() {
   const [suppressedRunId, setSuppressedRunId] = useState<string | null>(null);
   const runId = streamRunId ?? (recoveredRun && recoveredRun.runId !== suppressedRunId ? recoveredRun.runId : null);
   const stream = useChatStream(runId);
+  const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
   const [skill, setSkill] = useState("");
-  const [context, setContext] = useState<CareerLabContext>({ offerApplicationIds: [] });
+  const contextKey = displayedSessionId ?? "new";
+  const [contextEdits, setContextEdits] = useState<Record<string, CareerLabContext>>({});
+  const savedContext = useMemo(() => session.data?.turns?.findLast((turn) => turn.role === "user" && turn.contextRefs)?.contextRefs ?? { offerApplicationIds: [] }, [session.data?.turns]);
+  const context = contextEdits[contextKey] ?? savedContext;
+  const setContext = useCallback((value: CareerLabContext) => setContextEdits((current) => ({ ...current, [contextKey]: value })), [contextKey]);
   const [pending, setPending] = useState<{ text: string; baseline: number } | null>(null);
   const [runError, setRunError] = useState("");
   const [retryMessage, setRetryMessage] = useState("");
@@ -171,7 +179,7 @@ export function CareerLabPage() {
             message,
             goal: message,
             skill: skill ? (skill as import("./use-career-lab").CareerLabSkillName) : undefined,
-            context,
+            context: forceNewSession ? { offerApplicationIds: [] } : context,
             onDone: (completed) => onDone(completed, message),
           });
       attachRun(launched.runId);
@@ -294,7 +302,7 @@ export function CareerLabPage() {
         </Alert>
       ) : null}
 
-      <div className={cn("grid items-start gap-6", active && "xl:grid-cols-[minmax(0,1fr)_22rem]")}>
+      <div className={cn("grid items-start gap-6", active && "xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]")}>
         <main className="flex min-w-0 flex-col gap-4">
           <Card className="min-w-0 overflow-hidden rounded-2xl">
             <CardContent className={cn("flex flex-col gap-4", showThread ? "p-4 sm:p-6" : "p-0", CHAT_SURFACE_HEIGHT)}>
@@ -311,7 +319,7 @@ export function CareerLabPage() {
                   renderAfter={(message) => {
                     const turn = turnByMessageId.get(message.id);
                     if (!turn?.artifact) return null;
-                    return <div className="ml-10 mt-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm"><Badge variant="secondary">Draft</Badge><p className="mt-2 font-medium">{turn.artifact.title}</p><p className="mt-1 text-muted-foreground">{turn.artifact.summary}</p></div>;
+                    return <div className="ml-10 mt-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm"><Badge variant="secondary">Draft</Badge><p className="mt-2 font-medium">{turn.artifact.title}</p><p className="mt-1 text-muted-foreground">{turn.artifact.summary}</p><Button variant="outline" size="sm" className="mt-3" onClick={() => { setSelectedDraftId(turn.turnId); document.getElementById("career-draft-workspace")?.scrollIntoView({ block: "nearest" }); }}>Open draft</Button></div>;
                   }}
                 />
               ) : null}
@@ -322,7 +330,9 @@ export function CareerLabPage() {
                 </div>
               ) : null}
             </CardContent>
-            {canCompose ? <div className="border-t bg-card/95 p-4 sm:p-6">
+            {canCompose ? <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
+              <ChatRunProgress runId={runId} status={stream.status} />
+              <CareerLabContextSummary context={context} onChange={setContext} disabled={busy} />
               <ChatComposer
                 value={composer}
                 onChange={setComposer}
@@ -340,6 +350,9 @@ export function CareerLabPage() {
 
         {active ? (
           <aside className="min-w-0 space-y-4 xl:sticky xl:top-4" aria-label="Career Lab controls">
+            <div id="career-draft-workspace">
+              <CareerLabArtifactWorkspace key={active.sessionId} turns={active.turns ?? []} selectedId={selectedDraftId} onSelect={setSelectedDraftId} busy={busy || active.status !== "active"} liveText={runId && !durableAdvanced ? stream.parts.filter((part) => part.kind === "text").map((part) => part.text).join("") : ""} onRevise={(turnId, message) => { setContext({ ...context, artifact: { sessionId: active.sessionId, turnId } }); setComposer(message); }} />
+            </div>
             <CareerLabContextRail skill={skill} setSkill={setSkill} skills={skills} goal={active.goal} context={context} setContext={setContext} skillRef={skillRef} />
           </aside>
         ) : null}
