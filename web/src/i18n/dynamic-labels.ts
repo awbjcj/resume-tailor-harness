@@ -52,6 +52,14 @@ export function localizeRunError(error: string | null | undefined, language: str
       : zhCN.fallbacks.operationFailed);
 }
 
+/** Logs mix progress and errors; retain diagnostic text when no translation exists. */
+export function localizeRunLogMessage(message: string, language: string | null | undefined): string {
+  if (!message || !isChinese(language)) return message;
+  return translateTemplate(zhCN.runPhases, message)
+    ?? translateTemplate(zhCN.runErrors, message)
+    ?? message;
+}
+
 export function localizeSourceMode(mode: string, language: string | null | undefined): string {
   if (!isChinese(language)) return mode;
   return zhCN.sourceModes[mode as keyof typeof zhCN.sourceModes] ?? zhCN.fallbacks.unknownMode;
