@@ -94,4 +94,46 @@ describe("automatic i18n build transform", () => {
 
     expect(localized).toEqual([]);
   });
+
+  it("preserves status mapper return values while translating explicit status labels", async () => {
+    const localized: string[] = [];
+    const result = await transformAsync(
+      `
+        function stateToStatus(state: string): RunRecord["status"] {
+          switch (state) {
+            case "done": return "succeeded";
+            case "error": return "failed";
+            default: return "running";
+          }
+        }
+        const mapStatus = (state: string) => state === "done" ? "succeeded" : "running";
+        const status = "running";
+        const TERMINAL_STATUSES: readonly RunRecord["status"][] = ["succeeded", "failed", "cancelled"];
+        const ACTIVE_RUN_STATUSES: RunRecord["status"][] = ["queued", "running", "cancelling"];
+        function runStatusLabel() { return "Completed"; }
+      `,
+      {
+        babelrc: false,
+        configFile: false,
+        parserOpts: { plugins: ["typescript"] },
+        plugins: [{
+          visitor: {
+            StringLiteral(path: NodePath<StringLiteral>) {
+              if (isLocalizableStringPath(path)) localized.push(path.node.value);
+            },
+          },
+        } as unknown as PluginItem, autoI18nPlugin],
+      },
+    );
+
+    expect(result?.code).toContain('return "succeeded"');
+    expect(result?.code).toContain('return "failed"');
+    expect(result?.code).toContain('return "running"');
+    expect(result?.code).toContain('state === "done" ? "succeeded" : "running"');
+    expect(result?.code).toContain('const status = "running"');
+    expect(result?.code).toContain('["succeeded", "failed", "cancelled"]');
+    expect(result?.code).toContain('["queued", "running", "cancelling"]');
+    expect(localized).toEqual(["Completed"]);
+    expect(result?.code?.match(/\.t\("auto\./g)).toHaveLength(1);
+  });
 });

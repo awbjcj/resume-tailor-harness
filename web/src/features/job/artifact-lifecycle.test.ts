@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type { RunRecord } from "@/lib/runs/store";
+import { changeLanguage } from "@/i18n";
 import {
+  ACTIVE_RUN_STATUSES,
   cachedArtifactRunIndex,
   coverLetterRevisionLifecycle,
   indexArtifactRuns,
@@ -25,6 +27,19 @@ function run(value: Partial<RunRecord> & Pick<RunRecord, "runId" | "kind">): Run
 }
 
 describe("Job artifact lifecycle index", () => {
+  it.each(["en", "zh-CN"] as const)("recognizes active revision statuses in %s", async (language) => {
+    await changeLanguage(language);
+    expect(ACTIVE_RUN_STATUSES).toEqual(["queued", "running", "cancelling"]);
+    for (const status of ACTIVE_RUN_STATUSES) {
+      const index = indexArtifactRuns({
+        resume: run({ runId: "resume", kind: "revise", status, meta: { versionId: 5 } }),
+        letter: run({ runId: "letter", kind: "coverLetterRevise", status, meta: { coverLetterId: 8 } }),
+      });
+      expect(resumeRevisionLifecycle(index, 5).active).toBe(true);
+      expect(coverLetterRevisionLifecycle(index, 8).active).toBe(true);
+    }
+  });
+
   it("indexes job, parent artifact, and created child in one snapshot", () => {
     const index = indexArtifactRuns({
       old: run({ runId: "old", kind: "revise", updatedAt: 1, meta: { jobId: 3, versionId: 5 } }),

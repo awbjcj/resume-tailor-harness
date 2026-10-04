@@ -1664,20 +1664,10 @@
     "en": "Cancel",
     "zh-CN": "取消"
   },
-  "cancelled": {
-    "key": "ui_8b47045eb7b8",
-    "en": "cancelled",
-    "zh-CN": "已取消"
-  },
   "Cancelled": {
     "key": "ui_d353a99eb455",
     "en": "Cancelled",
     "zh-CN": "已取消"
-  },
-  "cancelling": {
-    "key": "ui_408fd2300df0",
-    "en": "cancelling",
-    "zh-CN": "取消中"
   },
   "Candidate lens:": {
     "key": "ui_2e4605e50fc0",
@@ -6474,11 +6464,6 @@
     "en": "Onsite loop",
     "zh-CN": "现场面试轮次"
   },
-  "open": {
-    "key": "ui_2348f9987442",
-    "en": "open",
-    "zh-CN": "打开"
-  },
   "Open": {
     "key": "ui_ed077f3d8125",
     "en": "Open",
@@ -7223,11 +7208,6 @@
     "key": "ui_320aa8721b7e",
     "en": "Questions, logistics, or what was discussed",
     "zh-CN": "问题、安排或讨论内容"
-  },
-  "queued": {
-    "key": "ui_d36be6494248",
-    "en": "queued",
-    "zh-CN": "已排队"
   },
   "Queued": {
     "key": "ui_661ff40a07e0",
@@ -8529,11 +8509,6 @@
     "en": "Run your first pull to fill the funnel with fresh postings.",
     "zh-CN": "先获取一批最新职位，再开始筛选。"
   },
-  "running": {
-    "key": "ui_c071cf5f5ed6",
-    "en": "running",
-    "zh-CN": "运行中"
-  },
   "Runs": {
     "key": "ui_848f54e89660",
     "en": "Runs",
@@ -9723,11 +9698,6 @@
     "key": "ui_585cf58ff644",
     "en": "Sub2API base URL",
     "zh-CN": "Sub2API 基础 URL"
-  },
-  "succeeded": {
-    "key": "ui_5dceaeceb6d8",
-    "en": "succeeded",
-    "zh-CN": "已成功"
   },
   "Suggestion": {
     "key": "ui_527f6bc857ad",
