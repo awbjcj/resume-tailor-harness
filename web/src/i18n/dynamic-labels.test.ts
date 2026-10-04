@@ -4,6 +4,7 @@ import zhCN from "./dynamic-zh-CN.json";
 import {
   localizeRunError,
   localizeRunEta,
+  localizeRunLogMessage,
   localizeRunPhase,
   localizeSourceFragmentStatus,
   localizeSourceMode,
@@ -16,7 +17,21 @@ describe("dynamic Chinese labels", () => {
       expect(localizeRunPhase(runtimeSource, "zh-CN")).toBe(
         translation.replaceAll("{{value}}", "示例"),
       );
+      expect(localizeRunLogMessage(runtimeSource, "zh-CN")).toBe(
+        translation.replaceAll("{{value}}", "示例"),
+      );
     }
+  });
+
+  it("translates known errors in logs and preserves unmapped diagnostic details", () => {
+    for (const [source, translation] of Object.entries(zhCN.runErrors)) {
+      expect(localizeRunLogMessage(source, "zh-CN")).toBe(translation);
+    }
+    for (const message of ["Imported 12 source documents", "Provider timeout after 30s", "已保存 12 份文档", ""]) {
+      expect(localizeRunLogMessage(message, "zh-CN")).toBe(message);
+      expect(localizeRunLogMessage(message, "en")).toBe(message);
+    }
+    expect(localizeRunLogMessage("Draft is ready", "en")).toBe("Draft is ready");
   });
 
   it("does not leak unrecognized backend phases or errors in Chinese mode", () => {

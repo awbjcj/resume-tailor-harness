@@ -98,6 +98,33 @@ test("mobile chrome keeps launch actions compact and horizontally contained", as
   ).toBe(true);
 });
 
+for (const language of ["en", "zh-CN"] as const) {
+  test(`operation logs preserve progress and diagnostics in ${language}`, async ({ page }) => {
+    await page.addInitScript((selectedLanguage) => {
+      localStorage.setItem("resume-tailor-harness-language", selectedLanguage);
+    }, language);
+    const operation = { id: 1, runId: "saved", kind: "career-lab-turn", label: "Draft is ready",
+      status: "succeeded", error: null, completedAt: "2026-09-09T12:00:00Z", readAt: null };
+    await page.route("**/api/run-completions?*", (route) => route.fulfill({ json:
+      new URL(route.request().url()).searchParams.get("surface") === "operations" ? [operation] : [],
+    }));
+    await page.route("**/api/run-completions/1/logs", (route) => route.fulfill({ json: [
+      { timestamp: operation.completedAt, message: "Drafting your Career Lab response", state: "running" },
+      { timestamp: operation.completedAt, message: "Draft is ready", state: "done" },
+      { timestamp: operation.completedAt, message: "Saved 2 turns in career-1", state: "done" },
+      { timestamp: operation.completedAt, message: "Provider timeout after 30s", state: "error" },
+    ] }));
+    await page.goto("/");
+    await page.getByRole("button", { name: language === "en" ? "View logs" : "查看日志" }).click();
+    const logs = page.locator("#operation-logs-1");
+    await expect(logs).toContainText(language === "en" ? "Drafting your Career Lab response" : "正在起草职业实验室回复");
+    await expect(logs).toContainText(language === "en" ? "Draft is ready" : "草稿已完成");
+    await expect(logs).toContainText("Saved 2 turns in career-1");
+    await expect(logs).toContainText("Provider timeout after 30s");
+    await expect(logs).not.toContainText("操作失败。请重试。");
+  });
+}
+
 
 for (const width of [1440, 390]) {
   test(`recent runs retains operations and clears histories independently at ${width}px`, async ({ page }) => {

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api, unwrap } from "@/lib/api/client";
 import { formatUserDateTime, formatUserTime } from "@/lib/date-time";
-import { localizeRunError, localizeRunKind, localizeRunPhase } from "@/i18n/dynamic-labels";
+import { localizeRunError, localizeRunKind, localizeRunLogMessage, localizeRunPhase } from "@/i18n/dynamic-labels";
 import { ClearHistoryButton } from "@/features/notifications/ClearHistoryButton";
 import { useClearOperationHistory, useRunCompletions, type RunCompletionItem } from "@/features/notifications/use-run-completions";
 
@@ -41,7 +41,7 @@ function Operation({ item }: { item: RunCompletionItem }) {
         : !logs.data?.length ? <p>{t("runHistory.noLogs")}</p>
         : <ol className="space-y-2">{logs.data.map((entry, index) => <li key={index} className="break-words">
           <time className="mr-2 text-muted-foreground" dateTime={entry.timestamp}>{formatUserTime(entry.timestamp, i18n.resolvedLanguage)}</time>
-          {localizeRunError(entry.message, i18n.resolvedLanguage)}
+          {localizeRunLogMessage(entry.message, i18n.resolvedLanguage)}
         </li>)}</ol>}
     </div>}
   </li>;
