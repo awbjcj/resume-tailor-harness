@@ -2,7 +2,8 @@ import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/test/server";
-import { watchRun } from "./sse";
+import { changeLanguage } from "@/i18n";
+import { stateToStatus, watchRun } from "./sse";
 import { useRunStore, type RunRecord } from "./store";
 
 class FakeEventSource {
@@ -29,6 +30,30 @@ describe("watchRun", () => {
         HttpResponse.json({ token: "sse-link", expiresInSeconds: 60 }),
       ),
     );
+  });
+
+  it.each(["en", "zh-CN"] as const)("keeps run states canonical in %s", async (language) => {
+    await changeLanguage(language);
+
+    expect(["pending", "running", "cancelling", "done", "error", "cancelled"].map(stateToStatus))
+      .toEqual(["queued", "running", "cancelling", "succeeded", "failed", "cancelled"]);
+  });
+
+  it("delivers a successful Career Lab completion in Chinese", async () => {
+    await changeLanguage("zh-CN");
+    const onDone = vi.fn();
+    watchRun("career-run", "career-lab-turn", onDone);
+    await vi.waitFor(() => expect(FakeEventSource.current).toBeDefined());
+
+    FakeEventSource.current.onmessage?.({
+      data: JSON.stringify({ state: "done", percent: 100, result: { sessionId: "s1" } }),
+    } as MessageEvent);
+
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({
+      status: "succeeded",
+      result: { sessionId: "s1" },
+    }));
+    expect(useRunStore.getState().runs["career-run"].status).toBe("succeeded");
   });
 
   it("passes the terminal run record to the completion callback", async () => {

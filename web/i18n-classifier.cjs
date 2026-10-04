@@ -11,8 +11,10 @@ UI_PROPS.add("noun");
 UI_PROPS.add("help");
 UI_PROPS.add("message");
 UI_PROPS.add("note");
-const UI_VARIABLE = /(action|badge|caption|date|description|detail|empty|error|eyebrow|fallback|heading|help|hint|label|message|notice|note|placeholder|progress|reason|status|subtitle|success|suffix|summary|text|title)$/i;
-const UI_COLLECTION = /(actions|cards|columns|copy|descriptions|details|errors|fields|filters|items|kinds|labels|messages|meta|modalities|names|nav|options|outcomes|parts|results|rows|scopes|sections|stages|statuses|steps|tabs|titles)$/i;
+// Status/Statuses names often hold protocol values used by control flow, not
+// display copy. Explicit display names (e.g. statusLabel) still qualify.
+const UI_VARIABLE = /(action|badge|caption|date|description|detail|empty|error|eyebrow|fallback|heading|help|hint|label|message|notice|note|placeholder|progress|reason|subtitle|success|suffix|summary|text|title)$/i;
+const UI_COLLECTION = /(actions|cards|columns|copy|descriptions|details|errors|fields|filters|items|kinds|labels|messages|meta|modalities|names|nav|options|outcomes|parts|results|rows|scopes|sections|stages|steps|tabs|titles)$/i;
 const STYLE_VARIABLE = /(?:class(?:name)?|classes|style)$/i;
 const TAILWIND_UTILITY_TOKEN = /^(?:[a-z0-9_/-]+:)*(?:!?)(?:flex|inline-flex|grid|inline-grid|block|inline-block|hidden|relative|absolute|fixed|sticky|uppercase|lowercase|capitalize|truncate|sr-only|(?:whitespace|w|h|min-w|max-w|min-h|max-h|size|p[trblxy]?|m[trblxy]?|text|bg|border|rounded|tracking|leading|font|gap|items|justify|space|overflow|shadow|ring|opacity|transition|duration|ease|animate|cursor)-.+)$/;
 const I18N_KEY = /^[a-z][a-z0-9]*(?:\.[a-z0-9_-]+)+$/i;

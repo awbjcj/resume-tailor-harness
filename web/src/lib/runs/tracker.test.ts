@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
 import type { RunRecord } from "./store";
+import { changeLanguage } from "@/i18n";
 
 const mocks = vi.hoisted(() => ({ apiGet: vi.fn(), watchRun: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({
@@ -24,15 +25,8 @@ vi.mock("@/lib/api/client", () => ({
     return all;
   },
 }));
-vi.mock("./sse", () => ({
-  stateToStatus: (state: string) =>
-    state === "done"
-      ? "succeeded"
-      : state === "error"
-        ? "failed"
-        : state === "cancelled"
-          ? "cancelled"
-          : "running",
+vi.mock("./sse", async (importOriginal) => ({
+  ...await importOriginal<typeof import("./sse")>(),
   watchRun: mocks.watchRun,
 }));
 
@@ -242,6 +236,21 @@ it("finishes a tracked run the poller finds terminal", async () => {
   await pollRunsNow();
 
   expect(seen.flat().map((run) => run.runId)).toEqual(["r1"]);
+  expect(isTracking("r1")).toBe(false);
+});
+
+it.each(["done", "error", "cancelled"])("reconciles %s Career Lab runs in Chinese", async (state) => {
+  await changeLanguage("zh-CN");
+  mocks.apiGet.mockResolvedValue(page([payload({ kind: "career-lab-turn", state })]));
+  const onDone = vi.fn();
+  trackRun({ runId: "r1", kind: "career-lab-turn" }, onDone);
+
+  await pollRunsNow();
+
+  const statuses = { done: "succeeded", error: "failed", cancelled: "cancelled" };
+  expect(onDone).toHaveBeenCalledWith(expect.objectContaining({
+    status: statuses[state as keyof typeof statuses],
+  }));
   expect(isTracking("r1")).toBe(false);
 });
 
