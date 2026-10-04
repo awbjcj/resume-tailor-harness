@@ -26,6 +26,7 @@ def test_legacy_email_adoption_and_revoke_all(mu_app):
     with TestClient(mu_app, base_url="https://testserver") as client:
         _login(client)
         stale = client.cookies.get("ra_session")
+        assert stale is not None
         assert (
             client.post(
                 "/api/account/email", json={"email": "owner@example.com"}

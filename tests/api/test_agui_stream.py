@@ -1,6 +1,6 @@
 import json
 
-from ag_ui.core import Event
+from ag_ui.core import Event, RunErrorEvent, TextMessageChunkEvent, ToolCallResultEvent
 from pydantic import TypeAdapter
 
 from tests.api.test_run_stream_route import InlineExecutor, _rows
@@ -51,12 +51,15 @@ def test_agui_projection_is_valid_and_preserves_replay_and_settling(tmp_path):
 def test_agui_chunks_keep_message_identity_and_errors_remain_terminal():
     first = project_event({"i": 0, "t": "text", "v": {"text": "a"}}, "r", "s")
     second = project_event({"i": 1, "t": "text", "v": {"text": "b"}}, "r", "s")
+    assert isinstance(first, TextMessageChunkEvent)
+    assert isinstance(second, TextMessageChunkEvent)
     assert first.message_id == second.message_id
     error = project_event(
         {"i": 2, "t": "failed", "v": {"message": "Stopped", "code": "CANCELLED"}},
         "r",
         "s",
     )
+    assert isinstance(error, RunErrorEvent)
     assert error.type == "RUN_ERROR"
     assert error.code == "CANCELLED"
 
@@ -78,4 +81,7 @@ def test_tool_result_messages_do_not_overwrite_each_other():
             "s",
         )
 
-    assert result("first").message_id != result("second").message_id
+    first, second = result("first"), result("second")
+    assert isinstance(first, ToolCallResultEvent)
+    assert isinstance(second, ToolCallResultEvent)
+    assert first.message_id != second.message_id
