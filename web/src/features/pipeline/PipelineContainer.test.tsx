@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { server } from "@/test/server";
+import { changeLanguage } from "@/i18n";
 import { PipelineContainer } from "./PipelineContainer";
 
 const wrap = (ui: ReactNode) => {
@@ -55,6 +56,22 @@ const statusAware = (dataset: Array<Record<string, unknown>>) =>
 
 describe("PipelineContainer", () => {
   beforeEach(() => localStorage.clear());
+  it("updates stage headings and status filters when switching to Chinese", async () => {
+    const stages = ["tailored", "rendered", "approved", "shortlisted", "raw", "rejected"];
+    server.use(statusAware(stages.map((stage, index) => pipelineItem(index + 1, stage, `${stage} role`))));
+    wrap(<PipelineContainer />);
+    await screen.findByRole("heading", { name: "Rendered", level: 2 });
+
+    await act(() => changeLanguage("zh-CN"));
+
+    const labels = ["已定制", "已生成", "已批准", "已加入候选", "原始", "已拒绝"];
+    expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual(labels);
+    await userEvent.click(screen.getByRole("button", { name: "状态" }));
+    for (const label of labels) {
+      expect(screen.getByRole("checkbox", { name: new RegExp(label) })).toBeInTheDocument();
+    }
+  });
+
   it("opens tailoring with the complete approved-job query", async () => {
     const requestedStatuses: Array<string | null> = [];
     server.use(

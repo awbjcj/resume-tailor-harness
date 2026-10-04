@@ -1,5 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from "react";
 import { ChevronDownIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -53,6 +54,8 @@ export function PipelineStageSection({
   view,
   actions,
 }: PipelineStageSectionProps) {
+  const { t } = useTranslation();
+  const stageLabel = pipelineStageLabel(stage, t);
   // Each stage owns an independent, status-scoped query so every stage that has
   // jobs always renders — no stage can be paginated out of view by another.
   // Rows are fetched lazily on first expand to avoid N queries up front.
@@ -85,7 +88,7 @@ export function PipelineStageSection({
           )}
         >
           <h2 className="text-sm font-semibold text-foreground">
-            {pipelineStageLabel(stage)}
+            {stageLabel}
           </h2>
           <span className="ml-auto rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium tabular-nums text-muted-foreground">
             {countLabel}
@@ -98,7 +101,7 @@ export function PipelineStageSection({
         <CollapsibleContent>
           {isLoading ? (
             <p className="px-1 pt-4 text-sm text-muted-foreground" role="status">
-              Loading {pipelineStageLabel(stage).toLowerCase()} jobs…
+              Loading {stageLabel.toLowerCase()} jobs…
             </p>
           ) : view === "list" ? (
             <div className="pt-4">
@@ -149,7 +152,7 @@ export function PipelineStageSection({
               >
                 {isFetchingNextPage
                   ? "Loading…"
-                  : `Load more ${pipelineStageLabel(stage).toLowerCase()}`}
+                  : `Load more ${stageLabel.toLowerCase()}`}
               </Button>
             </div>
           )}
