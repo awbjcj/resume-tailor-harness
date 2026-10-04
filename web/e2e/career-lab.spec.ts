@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 const activeCareerLab = {
   sessionId: "career-1", title: "Offer strategy", goal: "Compare two offers", startedAt: "2026-08-02T12:00:00Z", endedAt: null, status: "active", archivedAt: null, turnCount: 1,
@@ -30,6 +30,64 @@ async function mockCareerLab(page: Page, active = false) {
 }
 
 test.beforeEach(async ({ page }) => { await mockCareerLab(page); });
+
+for (const language of ["en", "zh-CN"] as const) {
+  test(`successful Career Lab conversations stay successful in ${language}`, async ({ page }) => {
+    await page.addInitScript((selectedLanguage) => {
+      localStorage.setItem("resume-tailor-harness-language", selectedLanguage);
+    }, language);
+    const chinese = language === "zh-CN";
+    const turns: { turnId: string; role: string; text: string; at: string }[] = [];
+    const runs = new Map<string, Record<string, unknown>>();
+    await page.route("**/api/auth/link-token", (route) => route.fulfill({ json: { token: "fixture-link", expiresInSeconds: 60 } }));
+    await page.route("**/api/runs/ack", (route) => route.fulfill({ json: { acknowledged: 1 } }));
+    await page.route("**/api/career-lab/sessions?*", (route) => route.fulfill({ json: {
+      sessions: turns.length ? [activeCareerLab] : [],
+      activeSessions: turns.length ? [activeCareerLab] : [],
+      pagination: { page: 1, pageSize: 20, totalItems: turns.length ? 1 : 0, totalPages: 1 },
+    } }));
+    await page.route("**/api/career-lab/sessions/career-1", (route) => route.fulfill({ json: { ...activeCareerLab, turns } }));
+    const launch = async (route: Route) => {
+      const message = route.request().postDataJSON().message as string;
+      const runId = `career-success-${runs.size + 1}`;
+      turns.push(
+        { turnId: `${runId}-user`, role: "user", text: message, at: "2026-10-04T12:00:00Z" },
+        { turnId: `${runId}-assistant`, role: "assistant", text: `Saved response ${runs.size + 1}`, at: "2026-10-04T12:00:01Z" },
+      );
+      const run = { runId, kind: "career-lab-turn", state: "done", percent: 100, current: 1, total: 1, label: "Done", result: { sessionId: "career-1" }, error: null };
+      runs.set(runId, run);
+      await route.fulfill({ status: 202, json: { ...run, state: "pending", percent: 0, result: null } });
+    };
+    await page.route("**/api/career-lab/sessions", launch);
+    await page.route("**/api/career-lab/sessions/career-1/messages", launch);
+    await page.route("**/api/runs/career-success-*", async (route) => {
+      const runId = new URL(route.request().url()).pathname.split("/")[3];
+      await route.fulfill({ json: runs.get(runId) });
+    });
+    await page.route("**/api/runs/career-success-*/events*", async (route) => {
+      const runId = new URL(route.request().url()).pathname.split("/")[3];
+      await route.fulfill({ contentType: "text/event-stream", body: `data: ${JSON.stringify(runs.get(runId))}\n\n` });
+    });
+    await page.route("**/api/runs/career-success-*/stream?*", (route) => route.fulfill({ contentType: "text/event-stream", body: 'data: {"i":0,"t":"completed","v":{}}\n\n' }));
+
+    await page.goto("/career-lab");
+    await page.getByRole("button", { name: chinese ? "创建职业实验室会话" : "Create Career Lab session", exact: true }).click();
+    await page.getByRole("textbox", { name: chinese ? "职业实验室请求" : "Career Lab request" }).fill("Help me plan my next step");
+    await page.getByRole("button", { name: chinese ? "开始会话" : "Start session", exact: true }).click();
+    await expect(page.getByText("Saved response 1", { exact: true })).toBeVisible();
+    const composer = page.getByRole("textbox", { name: chinese ? "给职业实验室发消息" : "Message Career Lab" });
+    await expect(composer).toHaveValue("");
+    await expect(composer).toBeEnabled();
+    await composer.fill("Make the plan concise");
+    await composer.press("Enter");
+    await expect(page.getByText("Saved response 2", { exact: true })).toBeVisible();
+    await expect(composer).toHaveValue("");
+    await expect(composer).toBeEnabled();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.getByText("职业实验室任务未完成", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Career Lab run did not complete", { exact: true })).toHaveCount(0);
+  });
+}
 
 test("draft workspace preserves versions and prepares feedback with an explicit reference", async ({ page }) => {
   await page.unrouteAll();
