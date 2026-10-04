@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { BulkActionBar } from "@/components/BulkActionBar";
 import { BulkPreviewButton } from "@/components/BulkPreviewButton";
@@ -44,6 +45,8 @@ import {
 } from "./pipeline-stages";
 
 export function PipelineContainer() {
+  const { t } = useTranslation();
+  const stageLabel = (stage: string) => pipelineStageLabel(stage, t);
   const [filter, setFilter] = useBoardFilters("recency");
   const [targetStatus, setTargetStatus] = useState("approved");
   const [launchMode, setLaunchMode] = useState<"tailor" | "coverLetter" | null>(null);
@@ -173,7 +176,7 @@ export function PipelineContainer() {
         total={total}
         onChange={setFilter}
         statusOptions={PIPELINE_STAGE_ORDER}
-        statusLabel={pipelineStageLabel}
+        statusLabel={stageLabel}
         savedViewBoard="pipeline"
         defaultSort="recency"
       />
@@ -203,7 +206,7 @@ export function PipelineContainer() {
             <Select
               items={PIPELINE_STAGE_ORDER.map((stage) => ({
                 value: stage,
-                label: pipelineStageLabel(stage),
+                label: stageLabel(stage),
               }))}
               value={targetStatus}
               onValueChange={(value) => {
@@ -216,7 +219,7 @@ export function PipelineContainer() {
               <SelectContent>
                 {PIPELINE_STAGE_ORDER.map((stage) => (
                   <SelectItem key={stage} value={stage}>
-                    {pipelineStageLabel(stage)}
+                    {stageLabel(stage)}
                   </SelectItem>
                 ))}
               </SelectContent>
