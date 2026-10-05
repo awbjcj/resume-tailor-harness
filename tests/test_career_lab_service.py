@@ -1,6 +1,7 @@
 """Career Lab orchestration tests cover commit and cancellation boundaries."""
 
 from pathlib import Path
+import json
 from types import SimpleNamespace
 from typing import TypedDict
 
@@ -41,8 +42,10 @@ class _Response:
 class _Persona:
     def __init__(self, meta: AgentRunMeta) -> None:
         self.run_meta = meta
+        self.prompts: list[str] = []
 
     def run(self, prompt: str) -> _Response:
+        self.prompts.append(prompt)
         return _Response("Use the offer data to prepare a careful draft.")
 
     async def arun(self, prompt: str) -> _Response:
@@ -246,8 +249,117 @@ def test_ambiguous_request_asks_then_reroutes_from_the_same_transcript(
 
     assert completed["sessionId"] == session_id
     assert len(completed["turns"]) == 4
-    assert completed["turns"][-1]["skillRef"]["name"] == (
-        "salary-negotiation-prep"
+    assert completed["turns"][-1]["skillRef"]["name"] == ("salary-negotiation-prep")
+    assert '"text": "Research Acme."' in router.prompts[1]
+    assert '"text": "What should the company research' in router.prompts[1]
+
+
+def _conversation(prompt: str) -> dict:
+    encoded = prompt.split("CONVERSATION (UNTRUSTED DATA):\n", 1)[1]
+    return json.JSONDecoder().raw_decode(encoded)[0]
+
+
+def test_complete_history_is_shared_across_skills_after_reload(tmp_path):
+    from resume_tailor_harness.career_lab.store import append_turns
+
+    registry = CareerSkillRegistry.from_paths("skills", "skills-lock.json")
+    first_skill = _skill()
+    next_skill = registry.require(
+        "offer-comparison-analyzer", family=AgentFamily.CAREER_LAB, use="career_lab"
     )
-    assert "user: Research Acme." in router.prompts[1]
-    assert "assistant: What should the company research" in router.prompts[1]
+    create_session(tmp_path, session_id="shared", goal="Evaluate offers", job_id=7)
+    create_session(tmp_path, session_id="other", goal="Other conversation", job_id=8)
+    for index in range(5):
+        append_turns(
+            tmp_path,
+            "shared",
+            user_text=f"Preference {index}: remote only. " + "detail " * 1000,
+            context_refs=CareerLabContextRefs(job_id=7),
+            assistant_text=f"Earlier specialist response {index}",
+            skill_ref=first_skill.ref,
+            agent_meta=_meta(first_skill),
+        )
+    append_turns(
+        tmp_path,
+        "other",
+        user_text="PRIVATE OTHER THREAD",
+        context_refs=CareerLabContextRefs(job_id=8),
+        assistant_text="Other answer",
+        skill_ref=first_skill.ref,
+        agent_meta=_meta(first_skill),
+    )
+    before = load_session(tmp_path, "shared")
+    router = _Router(
+        [CareerLabRoute(skill=CareerLabSkillName.OFFER_COMPARISON_ANALYZER)]
+    )
+    persona = _Persona(_meta(next_skill))
+    current = "Correction: hybrid is acceptable. Compare those offers."
+    # A fresh service call reloads the on-disk session; no agent memory is reused.
+    result = career_lab.run_message_turn(
+        reporter=_Reporter(),
+        root=tmp_path,
+        engine=None,
+        session_id="shared",
+        message=current,
+        context_refs=CareerLabContextRefs(job_id=9),
+        registry=registry,
+        router_agent=router,
+        persona_agent=persona,
+        formatter_agent=_Formatter(),
+        sink=NullSink(),
+    )
+    routed = _conversation(router.prompts[0])
+    drafted = _conversation(persona.prompts[0])
+    assert routed == drafted
+    assert [row["text"] for row in routed["history"]] == [
+        row["text"] for row in before["turns"]
+    ]
+    assert len(router.prompts[0]) > 24_000
+    assert routed["history"][0]["context_refs"]["job_id"] == 7
+    assert routed["history"][1]["skill_ref"]["name"] == first_skill.ref.name
+    assert routed["current_turn"]["context_refs"]["job_id"] == 9
+    assert routed["current_turn"]["text"] == current
+    assert router.prompts[0].count(current) == persona.prompts[0].count(current) == 1
+    assert "PRIVATE OTHER THREAD" not in router.prompts[0] + persona.prompts[0]
+    assert result["sessionId"] == "shared"
+    assert result["turns"][-1]["skillRef"]["name"] == next_skill.ref.name
+
+
+@pytest.mark.parametrize("explicit_skill", [False, True])
+def test_oversize_context_fails_before_agents_and_preserves_session(
+    tmp_path, monkeypatch, explicit_skill
+):
+    from resume_tailor_harness.career_lab import context
+
+    create_session(tmp_path, session_id="s1")
+    path = tmp_path / "session-s1.json"
+    before = path.read_bytes()
+    router = _Router([CareerLabRoute(skill=CareerLabSkillName.SALARY_NEGOTIATION_PREP)])
+    persona = _Persona(_meta(_skill()))
+    monkeypatch.setattr(context, "MAX_CONVERSATION_BYTES", 100)
+    with pytest.raises(
+        context.ConversationContextTooLarge, match="too long to send in full"
+    ):
+        career_lab.run_message_turn(
+            reporter=_Reporter(),
+            root=tmp_path,
+            engine=None,
+            session_id="s1",
+            message="x" * 200,
+            skill="salary-negotiation-prep" if explicit_skill else None,
+            registry=CareerSkillRegistry.from_paths("skills", "skills-lock.json"),
+            router_agent=router,
+            persona_agent=persona,
+            formatter_agent=_Formatter(),
+        )
+    assert router.prompts == persona.prompts == []
+    assert path.read_bytes() == before
+
+
+def test_oversize_start_does_not_create_session(tmp_path, monkeypatch):
+    from resume_tailor_harness.career_lab import context
+
+    monkeypatch.setattr(context, "MAX_CONVERSATION_BYTES", 100)
+    with pytest.raises(context.ConversationContextTooLarge):
+        career_lab.run_start_turn(**_turn_kwargs(tmp_path))
+    assert list(tmp_path.glob("session-*.json")) == []
