@@ -16,7 +16,8 @@ mode. Administrator accounts are quota exempt and cannot buy member plans.
    one-time. Plan prices must recur weekly or monthly with an interval count
    matching the application's tier. Usage-based, yearly, tiered, transformed
    quantity and zero-price offers are rejected. This integration uses quantity
-   one and card payments, and disables Adaptive Pricing to keep checkout in USD.
+   one. Standard Checkout uses card payments and disables Adaptive Pricing to
+   keep checkout in USD; optional Managed Payments is described below.
 3. Configure the following service environment variables (JSON values without
    surrounding shell quotes when entered in Railway's variable editor):
 
@@ -37,9 +38,10 @@ mode. Administrator accounts are quota exempt and cannot buy member plans.
    IDs to existing application tier IDs. An ID must appear in exactly one map.
 These settings are deployment-owned and never read from tenant overlays.
    Hosted Checkout requires no publishable key or browser Stripe SDK.
-   Checkout explicitly disables Managed Payments for each purchase, preserving
-   this integration's fixed USD pricing and card-only payment methods even when
-   the Stripe account enables Managed Payments by default.
+   By default, Checkout explicitly disables Managed Payments for each purchase,
+   preserving fixed USD pricing and card-only payment methods even when the
+   Stripe account enables Managed Payments by default. To opt in, set
+   `STRIPE_MANAGED_PAYMENTS_ENABLED=true` and follow the section below.
 
 4. Create a Stripe webhook endpoint at
    `https://your-app.example/api/billing/stripe/webhook`. Set its event API
@@ -73,6 +75,46 @@ These settings are deployment-owned and never read from tenant overlays.
    and subscription history.
 
 ## Accounting and delivery
+
+### Stripe Managed Payments
+
+For Stripe to act as merchant of record, enable Managed Payments in the intended
+Stripe sandbox or account, then set `STRIPE_MANAGED_PAYMENTS_ENABLED=true` on
+that application's hosted deployment. This does not enable purchases by itself;
+`STRIPE_ENABLED` still controls new sales.
+
+Every mapped product must have an eligible digital-product tax code. For this
+browser-based, automated AI service used by individual job seekers, the sandbox
+uses `txcd_10105001` (cloud-based AIaaS, personal use). Review the category when
+the product or intended customer changes. Every mapped price must explicitly use
+`tax_behavior=inclusive`; exclusive or unspecified prices are omitted from the
+catalog and rejected at checkout. This preserves the ledger's fixed gross USD
+purchase and proportional refund policy. The existing price's tax behavior
+cannot be changed after it is set; create a new price if necessary.
+
+Managed Checkout enables `managed_payments[enabled]` and omits
+`payment_method_types` and `adaptive_pricing`, which Stripe controls. Customers
+can pay in a local currency, while Checkout and PaymentIntent amounts remain in
+the price's USD integration currency; `presentment_details` describes the local
+currency payment. Credits still come from the deployment-owned price map, never
+from the local-currency amount or the amount after taxes/fees. Existing
+subscriptions remain under the Checkout mode in which they were purchased.
+The mode is saved with each checkout reservation, so retries retain identical
+Stripe parameters when the deployment setting changes. Startup adds this mode
+column to existing checkouts with a standard-Checkout default.
+
+Keep the signed webhook events and portal cancellation policy above. In the
+Managed Payments dashboard, verify the support email and refund-request policy;
+Stripe can initiate customer refunds, so the existing refund reconciliation
+requirements still apply. Verify new top-ups and subscriptions, a localized
+payment, tax-inclusive totals, and refunds in an isolated hosted sandbox before
+enabling sales. Sandbox test payments must not fund production shared-AI usage.
+
+References: [Managed Checkout setup](https://docs.stripe.com/payments/managed-payments/update-checkout),
+[eligibility and tax codes](https://docs.stripe.com/payments/managed-payments/eligibility),
+and [Adaptive Pricing amounts](https://docs.stripe.com/payments/currencies/localize-prices/adaptive-pricing?payment-ui=stripe-hosted).
+
+### Ledger behavior
 
 Checkout accepts only a configured price ID and a purchase retry key; user,
 customer, quantity, credit amount, plan and return URLs are resolved server-side.

@@ -172,6 +172,7 @@ for supported prices, customer portal configuration and signed webhooks.
 | Variable | Default | Accepted values and purpose |
 | --- | --- | --- |
 | `STRIPE_ENABLED` | `false` | Enables member payment collection in hosted mode; requires keys, price mappings and an HTTPS APP_BASE_URL. |
+| `STRIPE_MANAGED_PAYMENTS_ENABLED` | `false` | Enables Stripe's merchant-of-record Checkout per session. Requires eligible digital products and explicitly tax-inclusive prices. Stripe controls payment methods and local-currency presentment. |
 | `STRIPE_SECRET_KEY` | empty | Deployment-owned Stripe server credential. Never exposed to the browser or read from tenant overlays. |
 | `STRIPE_WEBHOOK_SECRET` | empty | Signing secret for the deployed Stripe webhook endpoint. |
 | `STRIPE_CREDIT_PRICES` | `{}` | JSON map from one-time USD Stripe price IDs to durable credit amounts in integer USD micro-units. |
