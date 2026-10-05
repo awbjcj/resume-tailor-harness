@@ -73,7 +73,9 @@ class FakeStripe:
         return {"id": f"cus_{user_id}"}
 
     def checkout(self, params, key):
-        if params.get("managed_payments", {}).get("enabled") is not False:
+        if params.get("managed_payments", {}).get("enabled") is not False and (
+            "payment_method_types" in params or "adaptive_pricing" in params
+        ):
             raise stripe.InvalidRequestError(
                 "Managed Payments controls payment_method_types",
                 param="payment_method_types",
@@ -395,6 +397,7 @@ def test_checkout_pinned_owner_amount_return_urls_and_idempotency(billing, mu_cl
     assert params["line_items"] == [{"price": "price_credit", "quantity": 1}]
     assert params["currency"] == "usd"
     assert params["adaptive_pricing"] == {"enabled": False}
+    assert params["managed_payments"] == {"enabled": False}
     assert params["success_url"].startswith("https://testserver/account?")
     assert params["payment_intent_data"]["metadata"]["user_id"] == USER
     assert quota_snapshot(engine, USER).credit_balance_micros == 0
@@ -404,6 +407,104 @@ def test_checkout_pinned_owner_amount_return_urls_and_idempotency(billing, mu_cl
     )
     assert conflict.status_code == 409
     assert key.startswith("resume-checkout-")
+
+
+@pytest.mark.parametrize("price_id", ["price_credit", "price_plan"])
+def test_managed_checkout_lets_stripe_control_presentment(billing, mu_client, price_id):
+    engine, settings, fake = billing
+    settings.stripe_managed_payments_enabled = True
+    fake.prices[price_id]["tax_behavior"] = "inclusive"
+    sid = checkout(mu_client, price=price_id)
+    params, _ = fake.checkout_calls[0]
+    assert params["managed_payments"] == {"enabled": True}
+    assert "payment_method_types" not in params
+    assert "adaptive_pricing" not in params
+    if price_id == "price_credit":
+        fake.checkouts[sid].update(
+            payment_status="paid",
+            presentment_details={
+                "presentment_amount": 1370,
+                "presentment_currency": "cad",
+            },
+            total_details={
+                "amount_tax": 76,
+                "amount_discount": 0,
+                "amount_shipping": 0,
+            },
+        )
+        paid = event("checkout.session.completed", fake.checkouts[sid])
+        assert deliver(mu_client, paid).status_code == 200
+        assert deliver(mu_client, paid).status_code == 200
+        assert quota_snapshot(engine, USER).credit_balance_micros == 10_000_000
+        charge = {
+            "id": "ch_managed",
+            "payment_intent": fake.checkouts[sid]["payment_intent"],
+            "currency": "usd",
+            "amount": 1000,
+            "amount_refunded": 500,
+        }
+        assert (
+            deliver(
+                mu_client, event("charge.refunded", charge, "evt_managed_refund")
+            ).status_code
+            == 200
+        )
+        assert (
+            deliver(
+                mu_client, event("charge.refunded", charge, "evt_managed_refund_retry")
+            ).status_code
+            == 200
+        )
+        assert quota_snapshot(engine, USER).credit_balance_micros == 5_000_000
+    else:
+        invoice = paid_subscription(fake, sid)
+        assert deliver(mu_client, invoice).status_code == 200
+        assert deliver(mu_client, invoice).status_code == 200
+        snapshot = quota_snapshot(engine, USER)
+        assert snapshot.tier_id == "SUBSCRIBER"
+        assert snapshot.allowance_micros == 20_000_000
+
+
+@pytest.mark.parametrize("price_id", ["price_credit", "price_plan"])
+@pytest.mark.parametrize("tax_behavior", [None, "unspecified", "exclusive"])
+def test_managed_checkout_rejects_noninclusive_prices(
+    billing, mu_client, price_id, tax_behavior
+):
+    _, settings, fake = billing
+    settings.stripe_managed_payments_enabled = True
+    fake.prices[price_id]["tax_behavior"] = tax_behavior
+    response = mu_client.post(
+        "/api/account/billing/checkout",
+        json={"priceId": price_id, "idempotencyKey": "purchase-12345"},
+    )
+    assert response.status_code == 503
+    assert not fake.checkout_calls
+
+
+@pytest.mark.parametrize("managed", [False, True])
+def test_pending_checkout_preserves_managed_mode_when_settings_change(
+    billing, mu_client, monkeypatch, managed
+):
+    _, settings, fake = billing
+    settings.stripe_managed_payments_enabled = managed
+    fake.prices["price_credit"]["tax_behavior"] = "inclusive"
+    original = fake.checkout
+    attempts = []
+
+    def failed_attempt(params, key):
+        attempts.append(copy.deepcopy(params))
+        raise stripe.APIConnectionError("timeout")
+
+    monkeypatch.setattr(fake, "checkout", failed_attempt)
+    response = mu_client.post(
+        "/api/account/billing/checkout",
+        json={"priceId": "price_credit", "idempotencyKey": "purchase-12345"},
+    )
+    assert response.status_code == 502
+    settings.stripe_managed_payments_enabled = not managed
+    monkeypatch.setattr(fake, "checkout", original)
+    checkout(mu_client)
+    assert fake.checkout_calls[0][0] == attempts[0]
 
 
 @pytest.mark.parametrize(

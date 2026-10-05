@@ -431,6 +431,9 @@ class StripeCheckout(SystemBase):
     customer_id: Mapped[str] = mapped_column(String(255), nullable=False)
     price_id: Mapped[str] = mapped_column(String(255), nullable=False)
     mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    managed_payments: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
     amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     credit_micros: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     tier_id: Mapped[str | None] = mapped_column(String(32))
