@@ -220,6 +220,7 @@ class Settings(BaseSettings):
     # Deployment-owned billing configuration; never accept prices or amounts
     # from a workspace overlay or a checkout request.
     stripe_enabled: bool = False
+    stripe_managed_payments_enabled: bool = False
     stripe_secret_key: str = Field(default="", repr=False)
     stripe_webhook_secret: str = Field(default="", repr=False)
     stripe_credit_prices: dict[str, int] = Field(default_factory=dict)

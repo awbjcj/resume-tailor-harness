@@ -117,3 +117,11 @@ def migrate_system_db(engine: Engine) -> None:
                 connection.execute(
                     text(f"ALTER TABLE llm_rates ADD COLUMN {name} {ddl}")
                 )
+        checkout_columns = _columns(connection, "stripe_checkouts")
+        if checkout_columns and "managed_payments" not in checkout_columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE stripe_checkouts ADD COLUMN "
+                    "managed_payments BOOLEAN NOT NULL DEFAULT 0"
+                )
+            )

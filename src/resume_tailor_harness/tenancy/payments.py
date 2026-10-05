@@ -179,6 +179,12 @@ def _offer(
         or price["unit_amount"] <= 0
         or price.get("billing_scheme") != "per_unit"
         or price.get("transform_quantity")
+        # Managed Payments calculates tax. Inclusive prices preserve the gross
+        # USD purchase/refund amount recorded by the existing credit ledger.
+        or (
+            settings.stripe_managed_payments_enabled
+            and price.get("tax_behavior") != "inclusive"
+        )
     ):
         raise BillingError(
             "The selected price is unavailable", status=503, code="BILLING_UNAVAILABLE"
@@ -440,6 +446,7 @@ def create_checkout(
                 customer_id=customer_id,
                 price_id=price_id,
                 mode=offer["mode"],
+                managed_payments=settings.stripe_managed_payments_enabled,
                 amount_cents=offer["amount_cents"],
                 credit_micros=offer["credit_micros"] or 0,
                 tier_id=offer["tier_id"],
@@ -455,14 +462,16 @@ def create_checkout(
         "metadata": metadata,
         "line_items": [{"price": order.price_id, "quantity": 1}],
         "currency": "usd",
-        "adaptive_pricing": {"enabled": False},
-        # Keep standard Checkout even when the account defaults to Managed Payments.
-        "managed_payments": {"enabled": False},
-        "payment_method_types": ["card"],
+        "managed_payments": {"enabled": order.managed_payments},
         "expires_at": int(_aware(order.expires_at).timestamp()),
         "success_url": f"{base}/account?billing=success&session_id={{CHECKOUT_SESSION_ID}}",
         "cancel_url": f"{base}/account?billing=canceled",
     }
+    if not order.managed_payments:
+        # Standard Checkout keeps the USD/card policy even when Managed Payments
+        # is the account default. Managed Payments owns these parameters.
+        params["adaptive_pricing"] = {"enabled": False}
+        params["payment_method_types"] = ["card"]
     if order.mode == "subscription":
         params["subscription_data"] = {"metadata": metadata}
     else:

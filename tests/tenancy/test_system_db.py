@@ -70,3 +70,21 @@ def test_legacy_usage_migration_preserves_tokens_without_inventing_cost(tmp_path
         assert event.cost_micros is None
         assert event.pricing_status == "LEGACY_UNPRICED"
     engine.dispose()
+
+
+def test_legacy_checkouts_keep_standard_mode_after_additive_migration(tmp_path):
+    engine = make_system_engine(tmp_path)
+    with engine.begin() as connection:
+        connection.execute(
+            text("CREATE TABLE stripe_checkouts (id VARCHAR(32) PRIMARY KEY)")
+        )
+        connection.execute(
+            text("INSERT INTO stripe_checkouts (id) VALUES ('legacy_pending')")
+        )
+    init_system_db(engine)
+    init_system_db(engine)
+    with engine.connect() as connection:
+        assert connection.execute(
+            text("SELECT id, managed_payments FROM stripe_checkouts")
+        ).one() == ("legacy_pending", 0)
+    engine.dispose()
