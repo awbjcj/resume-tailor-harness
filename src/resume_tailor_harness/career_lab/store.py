@@ -99,6 +99,7 @@ def append_turns(
     agent_meta: AgentRunMeta,
     artifact: CareerLabArtifactMeta | None = None,
     notice: str = "",
+    expected_turn_count: int | None = None,
 ) -> dict:
     """Validate both turns and commit them in one atomic session mutation."""
     user = user_text.strip()
@@ -118,6 +119,7 @@ def append_turns(
         session = store.load(root, session_id)
         if session["status"] != "active":
             raise ValueError("session ended")
+        _check_turn_count(session, expected_turn_count)
         first_id = f"t{len(session['turns']) + 1}"
         second_id = f"t{len(session['turns']) + 2}"
         at = now_iso()
@@ -158,6 +160,7 @@ def append_clarification_turns(
     context_refs: CareerLabContextRefs | dict[str, Any] | None,
     assistant_text: str,
     agent_meta: AgentRunMeta,
+    expected_turn_count: int | None = None,
 ) -> dict:
     """Commit a user observation and the router's next question atomically."""
     user = user_text.strip()
@@ -179,6 +182,7 @@ def append_clarification_turns(
         session = store.load(root, session_id)
         if session["status"] != "active":
             raise ValueError("session ended")
+        _check_turn_count(session, expected_turn_count)
         first_id = f"t{len(session['turns']) + 1}"
         second_id = f"t{len(session['turns']) + 2}"
         at = now_iso()
@@ -206,6 +210,13 @@ def append_clarification_turns(
         )
         store.write(root, session)
         return store.load(root, session_id)
+
+
+def _check_turn_count(session: dict, expected: int | None) -> None:
+    if expected is not None and len(session["turns"]) != expected:
+        raise ValueError(
+            "The conversation changed during this reply. Please try again."
+        )
 
 
 def end_session(root: Path | str, session_id: str) -> dict:

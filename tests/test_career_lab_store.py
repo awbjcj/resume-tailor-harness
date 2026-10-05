@@ -30,6 +30,58 @@ def test_assistant_turn_requires_agent_metadata():
         )
 
 
+@pytest.mark.parametrize("clarification", [False, True])
+def test_stale_conversation_snapshot_cannot_append_a_reply(tmp_path, clarification):
+    from resume_tailor_harness.career_skills.models import AgentFamily, AgentRunMeta
+
+    create_session(tmp_path, session_id="s1")
+    meta = AgentRunMeta(
+        agent_family=AgentFamily.CAREER_LAB,
+        prompt_policy_version="test",
+        model_id="test",
+    )
+    append_clarification_turns(
+        tmp_path,
+        "s1",
+        user_text="First question",
+        context_refs=None,
+        assistant_text="Clarification?",
+        agent_meta=meta,
+        expected_turn_count=0,
+    )
+    path = tmp_path / "session-s1.json"
+    before = path.read_bytes()
+    if clarification:
+        with pytest.raises(ValueError, match="conversation changed"):
+            append_clarification_turns(
+                tmp_path,
+                "s1",
+                user_text="Stale",
+                context_refs=None,
+                assistant_text="Stale reply?",
+                agent_meta=meta,
+                expected_turn_count=0,
+            )
+    else:
+        from resume_tailor_harness.career_skills.registry import CareerSkillRegistry
+
+        skill = CareerSkillRegistry.from_paths("skills", "skills-lock.json").require(
+            "salary-negotiation-prep", family=AgentFamily.CAREER_LAB, use="career_lab"
+        )
+        with pytest.raises(ValueError, match="conversation changed"):
+            append_turns(
+                tmp_path,
+                "s1",
+                user_text="Stale",
+                context_refs=None,
+                assistant_text="Stale draft",
+                skill_ref=skill.ref,
+                agent_meta=meta.model_copy(update={"skill_ref": skill.ref}),
+                expected_turn_count=0,
+            )
+    assert path.read_bytes() == before
+
+
 def test_assistant_turn_accepts_tool_free_router_clarification():
     from resume_tailor_harness.career_skills.models import AgentFamily, AgentRunMeta
 
@@ -50,7 +102,11 @@ def test_assistant_turn_accepts_tool_free_router_clarification():
 
 
 def test_assistant_turn_requires_matching_run_metadata():
-    from resume_tailor_harness.career_skills.models import AgentFamily, AgentRunMeta, SkillRef
+    from resume_tailor_harness.career_skills.models import (
+        AgentFamily,
+        AgentRunMeta,
+        SkillRef,
+    )
 
     skill = SkillRef(
         name="salary-negotiation-prep",
@@ -132,7 +188,11 @@ def test_delete_sessions_for_job_spares_other_threads(tmp_path):
 
 def test_append_turns_round_trips_typed_artifact(tmp_path):
     create_session(tmp_path, session_id="s1")
-    from resume_tailor_harness.career_skills.models import AgentFamily, AgentRunMeta, SkillRef
+    from resume_tailor_harness.career_skills.models import (
+        AgentFamily,
+        AgentRunMeta,
+        SkillRef,
+    )
 
     skill = SkillRef(
         name="salary-negotiation-prep",
