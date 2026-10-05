@@ -23,9 +23,18 @@ const BY_KIND: Record<string, readonly string[]> = {
   "profile-build": ["profile-sources", "match-gap", "setup-status"],
   "github-sync": ["profile-sources"],
   gmailSync: ["notifications", "gmail-status"],
-  // Reload recovery has no Career Lab mutation callback to refresh sessions.
+  // Reload recovery has no chat mutation callback to refresh sessions.
   "career-lab-turn": ["career-lab-sessions", "career-lab-session"],
   "career-lab-end": ["career-lab-sessions", "career-lab-session"],
+  "profile-coach-open": ["coach-sessions", "coach-session"],
+  "profile-coach-turn": ["coach-sessions", "coach-session"],
+  "profile-coach-end": ["coach-sessions", "coach-session"],
+  "mock-interview-open": ["interview-sessions", "interview-session"],
+  "mock-interview-turn": ["interview-sessions", "interview-session"],
+  "mock-interview-end": ["interview-sessions", "interview-session"],
+  "scout-start": ["scout-sessions", "scout-session"],
+  "scout-turn": ["scout-sessions", "scout-session"],
+  "scout-end": ["scout-sessions", "scout-session"],
 };
 
 const overrides = new Map<string, readonly string[]>();

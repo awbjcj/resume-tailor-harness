@@ -31,5 +31,5 @@ def visible_run_completions_clause():
     """Filter before ordering/limits so quiet runs cannot bury failures."""
     return or_(
         col(RunCompletion.kind).not_in(CHAT_RUN_KINDS),
-        RunCompletion.status == "failed",
+        col(RunCompletion.status) == "failed",
     )

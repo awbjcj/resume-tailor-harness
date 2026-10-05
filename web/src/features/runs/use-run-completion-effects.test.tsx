@@ -88,15 +88,40 @@ it("uses the keys the launch site registered for that run", () => {
   expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["job"] });
 });
 
-it.each(["succeeded", "failed", "cancelled"] as const)("refreshes a recovered Career Lab end run (%s) without a launch callback", (status) => {
+const recoveredChatRuns = [
+  ["career-lab-turn", "career-lab"],
+  ["career-lab-end", "career-lab"],
+  ["profile-coach-open", "coach"],
+  ["profile-coach-turn", "coach"],
+  ["profile-coach-end", "coach"],
+  ["mock-interview-open", "interview"],
+  ["mock-interview-turn", "interview"],
+  ["mock-interview-end", "interview"],
+  ["scout-start", "scout"],
+  ["scout-turn", "scout"],
+  ["scout-end", "scout"],
+] as const;
+
+it.each(
+  recoveredChatRuns.flatMap(([kind, prefix]) =>
+    (["succeeded", "failed", "cancelled"] as const).map((status) => ({
+      kind, prefix, status,
+    })),
+  ),
+)("refreshes cached sessions for recovered $kind ($status) without a launch callback", ({ kind, prefix, status }) => {
   const qc = new QueryClient();
-  const invalidate = vi.spyOn(qc, "invalidateQueries");
+  const listKey = [`${prefix}-sessions`, false];
+  const detailKey = [`${prefix}-session`, "s1"];
+  qc.setQueryData(listKey, { sessions: [] });
+  qc.setQueryData(detailKey, { sessionId: "s1", turns: [] });
+  qc.setQueryData(["job", 1], { id: 1 });
   mount(qc);
 
-  act(() => completeRuns([finished({ kind: "career-lab-end", status, result: { sessionId: "s1" } })]));
+  act(() => completeRuns([finished({ kind, status, result: { sessionId: "s1" } })]));
 
-  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["career-lab-sessions"] });
-  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["career-lab-session"] });
+  expect(qc.getQueryState(listKey)?.isInvalidated).toBe(true);
+  expect(qc.getQueryState(detailKey)?.isInvalidated).toBe(true);
+  expect(qc.getQueryState(["job", 1])?.isInvalidated).toBe(false);
 });
 
 it("collapses a reconnect batch into one summary and acks every run", async () => {
