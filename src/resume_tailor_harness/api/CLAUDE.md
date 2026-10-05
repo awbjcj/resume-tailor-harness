@@ -42,6 +42,11 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   `RunOperationLog`; GET `/api/run-completions/{id}/logs` reads these from the
   workspace database even after transient run files expire. Older runs may have
   no recorded logs. The dashboard reuses its Recent runs card for this history.
+  Agent chat operations (Career Lab, coach, interview, scout) surface only
+  failures in history and notifications; successful/cancelled runs remain
+  durable and still emit terminal events for chat refresh and acknowledgement.
+  `services/run_visibility.py` and the contract-checked browser policy own
+  this classification. Filter before query limits and toast batching.
 - **Saved board views store the existing URL contract.** `/api/board-views`
   provides workspace-scoped CRUD for triage, shortlist, and pipeline. Its
   `queryString` is the canonical `stateToParams` representation, including any

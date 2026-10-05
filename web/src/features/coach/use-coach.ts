@@ -75,7 +75,6 @@ function useCoachSessionMutation(action: "archive" | "unarchive" | "delete") {
     },
     onSuccess: async () => {
       await invalidate();
-      if (action === "delete") toast.success("Coaching session deleted");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -121,7 +120,6 @@ export function useCoachSession(sessionId: string | null) {
 
 function useCoachRunMutation<T extends Record<string, unknown>>(
   launch: (input: T) => Promise<RunOut>,
-  successMessage?: string,
 ) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -132,11 +130,7 @@ function useCoachRunMutation<T extends Record<string, unknown>>(
           queryClient.invalidateQueries({ queryKey: ["coach-sessions"] }),
           queryClient.invalidateQueries({ queryKey: ["coach-session"] }),
         ]);
-        if (completed.status === "succeeded") {
-          if (successMessage) toast.success(successMessage);
-        } else {
-          toast.error(completed.error ?? "Profile Coach run did not complete");
-        }
+        // Terminal notifications are owned by useRunCompletionEffects.
         input.onDone?.(completed);
       });
       return run;
@@ -199,7 +193,7 @@ export function useEndCoachSession() {
                   current: 0,
                   total: 0,
                 },
-                async (buildRun) => {
+                async () => {
                   await Promise.all([
                     queryClient.invalidateQueries({
                       queryKey: ["coach-session", sessionId],
@@ -209,13 +203,9 @@ export function useEndCoachSession() {
                     queryClient.invalidateQueries({ queryKey: ["profile-skeleton"] }),
                     queryClient.invalidateQueries({ queryKey: ["profile-matrix"] }),
                   ]);
-                  if (buildRun.status === "succeeded") toast.success("Profile rebuild complete");
-                  else toast.error(buildRun.error ?? "Profile rebuild failed");
                 },
               );
             }
-            if (completed.status === "succeeded") toast.success("Coaching session complete");
-            else toast.error(completed.error ?? "Could not end coaching session");
             onDone?.(completed);
           });
           return run;
@@ -252,7 +242,6 @@ export function useSaveCoachNote() {
         queryClient.invalidateQueries({ queryKey: ["coach-sessions"] }),
         queryClient.invalidateQueries({ queryKey: ["profile-sources"] }),
       ]);
-      toast.success("Profile note saved");
     },
     onError: (error: Error) => toast.error(error.message),
   });

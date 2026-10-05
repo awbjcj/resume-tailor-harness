@@ -23,6 +23,9 @@ const BY_KIND: Record<string, readonly string[]> = {
   "profile-build": ["profile-sources", "match-gap", "setup-status"],
   "github-sync": ["profile-sources"],
   gmailSync: ["notifications", "gmail-status"],
+  // Reload recovery has no Career Lab mutation callback to refresh sessions.
+  "career-lab-turn": ["career-lab-sessions", "career-lab-session"],
+  "career-lab-end": ["career-lab-sessions", "career-lab-session"],
 };
 
 const overrides = new Map<string, readonly string[]>();

@@ -7,6 +7,10 @@ from datetime import datetime
 from sqlalchemy import insert, literal
 from sqlmodel import Session, col, select
 
+from resume_tailor_harness.services.run_visibility import (
+    visible_run_completion,
+    visible_run_completions_clause,
+)
 from resume_tailor_harness.tracking.tables import (
     ClearedRunHistory,
     RunCompletion,
@@ -43,7 +47,11 @@ def record_run_completion(
         status=status,
         error=error,
         completed_at=completed_at,
-        read_at=completed_at if initially_read else None,
+        read_at=(
+            completed_at
+            if initially_read or not visible_run_completion(kind, status)
+            else None
+        ),
     )
     session.add(row)
     session.add(RunOperationLog(run_id=run_id, entries=logs or []))
@@ -65,6 +73,7 @@ def list_run_completions(
     query = (
         select(RunCompletion)
         .where(col(RunCompletion.run_id).not_in(hidden))
+        .where(visible_run_completions_clause())
         .order_by(col(RunCompletion.completed_at).desc(), col(RunCompletion.id).desc())
     )
     if unread_only:
@@ -88,7 +97,9 @@ def mark_run_completion_read(
 
 def mark_all_run_completions_read(session: Session) -> int:
     rows = session.exec(
-        select(RunCompletion).where(col(RunCompletion.read_at).is_(None))
+        select(RunCompletion).where(
+            col(RunCompletion.read_at).is_(None), visible_run_completions_clause()
+        )
     ).all()
     if not rows:
         return 0
@@ -108,7 +119,7 @@ def clear_run_history(session: Session, *, surface: str) -> int:
     statement = insert(ClearedRunHistory).from_select(
         ["run_id", "surface"],
         select(RunCompletion.run_id, literal(surface)).where(
-            col(RunCompletion.run_id).not_in(hidden)
+            col(RunCompletion.run_id).not_in(hidden), visible_run_completions_clause()
         ),
     )
     result = session.connection().execute(statement)
@@ -118,7 +129,11 @@ def clear_run_history(session: Session, *, surface: str) -> int:
 
 def operation_logs(session: Session, completion_id: int) -> list[dict[str, str]] | None:
     row = session.get(RunCompletion, completion_id)
-    if row is None or session.get(ClearedRunHistory, (row.run_id, "operations")):
+    if (
+        row is None
+        or not visible_run_completion(row.kind, row.status)
+        or session.get(ClearedRunHistory, (row.run_id, "operations"))
+    ):
         return None
     log = session.get(RunOperationLog, row.run_id)
     return log.entries if log else []
