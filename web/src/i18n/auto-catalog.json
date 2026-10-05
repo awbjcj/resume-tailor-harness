@@ -1744,11 +1744,6 @@
     "en": "Career Lab run failed",
     "zh-CN": "职业实验室任务失败"
   },
-  "Career Lab session deleted": {
-    "key": "ui_c0be66146521",
-    "en": "Career Lab session deleted",
-    "zh-CN": "职业实验室会话已删除"
-  },
   "Career Lab sessions": {
     "key": "ui_130e7dcaf04c",
     "en": "Career Lab sessions",
@@ -2113,16 +2108,6 @@
     "key": "ui_40e1ba865afb",
     "en": "Coaching impact",
     "zh-CN": "辅导成效"
-  },
-  "Coaching session complete": {
-    "key": "ui_dde8e213d9f9",
-    "en": "Coaching session complete",
-    "zh-CN": "辅导会话已完成"
-  },
-  "Coaching session deleted": {
-    "key": "ui_481fe5486675",
-    "en": "Coaching session deleted",
-    "zh-CN": "辅导会话已删除"
   },
   "Coaching thread": {
     "key": "ui_a5b5634a40a5",
@@ -2508,11 +2493,6 @@
     "key": "ui_4c45a2e67fd9",
     "en": "Could not add",
     "zh-CN": "无法添加"
-  },
-  "Could not end coaching session": {
-    "key": "ui_a2b36827de77",
-    "en": "Could not end coaching session",
-    "zh-CN": "无法结束辅导会话"
   },
   "Could not end interview": {
     "key": "ui_0e6d99f8921d",
@@ -4639,11 +4619,6 @@
     "en": "Interview debrief",
     "zh-CN": "面试复盘"
   },
-  "Interview deleted": {
-    "key": "ui_7e923d092c11",
-    "en": "Interview deleted",
-    "zh-CN": "面试已删除"
-  },
   "Interview error": {
     "key": "ui_c7e83a1170a2",
     "en": "Interview error",
@@ -4668,11 +4643,6 @@
     "key": "ui_bf61a985dedd",
     "en": "Interview soon: {{v0}}",
     "zh-CN": "即将面试：{{v0}}"
-  },
-  "Interview turn did not complete": {
-    "key": "ui_2f2635c59040",
-    "en": "Interview turn did not complete",
-    "zh-CN": "面试对话未完成"
   },
   "Interviewer": {
     "key": "ui_67b21e748742",
@@ -6979,11 +6949,6 @@
     "en": "Profile Coach error",
     "zh-CN": "个人资料助手出错"
   },
-  "Profile Coach run did not complete": {
-    "key": "ui_3b1d2bbb3a18",
-    "en": "Profile Coach run did not complete",
-    "zh-CN": "个人资料助手任务未完成"
-  },
   "Profile Coach sessions": {
     "key": "ui_2a9185031239",
     "en": "Profile Coach sessions",
@@ -6998,21 +6963,6 @@
     "key": "ui_06a340786bcf",
     "en": "Profile gap: not yet in your profile",
     "zh-CN": "个人资料差距：尚未在个人资料中体现。"
-  },
-  "Profile note saved": {
-    "key": "ui_f5520c1e93e3",
-    "en": "Profile note saved",
-    "zh-CN": "个人资料笔记已保存"
-  },
-  "Profile rebuild complete": {
-    "key": "ui_17b60db3debb",
-    "en": "Profile rebuild complete",
-    "zh-CN": "个人资料重建完成"
-  },
-  "Profile rebuild failed": {
-    "key": "ui_40b7647408b8",
-    "en": "Profile rebuild failed",
-    "zh-CN": "个人资料重建失败"
   },
   "Profile skills": {
     "key": "ui_f02f5dcaf985",
