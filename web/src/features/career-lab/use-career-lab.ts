@@ -152,9 +152,7 @@ function useRunMutation<T extends Record<string, unknown>>(
       const run = await launch(input);
       seedRun(run, async (completed) => {
         await invalidate();
-        if (completed.status !== "succeeded") {
-          toast.error(completed.error ?? "Career Lab run did not complete");
-        }
+        // Terminal notifications are owned by useRunCompletionEffects.
         input.onDone?.(completed);
       });
       return run;
@@ -221,7 +219,6 @@ function useLifecycleMutation(action: "archive" | "unarchive" | "delete") {
     },
     onSuccess: async () => {
       await invalidate();
-      if (action === "delete") toast.success("Career Lab session deleted");
     },
     onError: (error: Error) => toast.error(error.message),
   });

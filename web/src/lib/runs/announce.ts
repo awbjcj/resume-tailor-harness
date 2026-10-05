@@ -5,6 +5,7 @@ import { localizeRunError, localizeRunKind } from "@/i18n/dynamic-labels";
 
 import type { RunRecord } from "./store";
 import { runLabel } from "./labels";
+import { visibleRunCompletion } from "./visibility";
 
 export { runLabel, runLabelKey, type RunLabelKey } from "./labels";
 
@@ -150,6 +151,7 @@ function announceOne(run: RunRecord): void {
  * summarise" one run at a time cannot see how many siblings are coming.
  */
 export function announceCompletions(runs: readonly RunRecord[]): void {
+  runs = runs.filter(visibleRunCompletion);
   if (runs.length === 0) return;
   if (runs.length > ANNOUNCE_TOAST_CAP) {
     const failed = runs.filter((run) => run.status === "failed").length;
@@ -157,7 +159,7 @@ export function announceCompletions(runs: readonly RunRecord[]): void {
     const summary = `${runs.length} runs finished while you were away${detail}.`;
     // A green toast reporting that everything failed is a lie the user has to
     // read twice. Severity follows the batch.
-    if (failed === runs.length) toast.error(summary);
+    if (failed > 0) toast.error(summary);
     else toast.success(summary);
     return;
   }

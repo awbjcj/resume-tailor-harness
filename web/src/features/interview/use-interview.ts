@@ -84,7 +84,6 @@ function useInterviewSessionMutation(
     },
     onSuccess: async () => {
       await invalidate();
-      if (action === "delete") toast.success("Interview deleted");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -140,9 +139,7 @@ function useInterviewRunMutation<T extends Record<string, unknown>>(
           queryClient.invalidateQueries({ queryKey: ["interview-sessions"] }),
           queryClient.invalidateQueries({ queryKey: ["interview-session"] }),
         ]);
-        if (completed.status !== "succeeded") {
-          toast.error(completed.error ?? "Interview turn did not complete");
-        }
+        // Terminal notifications are owned by useRunCompletionEffects.
         input.onDone?.(completed);
       });
       return run;

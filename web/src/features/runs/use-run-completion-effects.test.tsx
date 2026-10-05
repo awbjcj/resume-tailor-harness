@@ -88,6 +88,17 @@ it("uses the keys the launch site registered for that run", () => {
   expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["job"] });
 });
 
+it.each(["succeeded", "failed", "cancelled"] as const)("refreshes a recovered Career Lab end run (%s) without a launch callback", (status) => {
+  const qc = new QueryClient();
+  const invalidate = vi.spyOn(qc, "invalidateQueries");
+  mount(qc);
+
+  act(() => completeRuns([finished({ kind: "career-lab-end", status, result: { sessionId: "s1" } })]));
+
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["career-lab-sessions"] });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["career-lab-session"] });
+});
+
 it("collapses a reconnect batch into one summary and acks every run", async () => {
   const acked: string[][] = [];
   server.use(

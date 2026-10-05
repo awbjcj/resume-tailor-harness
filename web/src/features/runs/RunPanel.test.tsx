@@ -11,6 +11,25 @@ describe("RunPanel", () => {
     await changeLanguage("en");
   });
 
+  it.each(["succeeded", "cancelled"] as const)("hides a %s chat completion without removing its state", (status) => {
+    useRunStore.getState().upsert({
+      runId: "chat", kind: "career-lab-turn", status,
+      percent: 100, phase: "Done", current: 1, total: 1, etaText: null,
+    });
+    const { container } = render(<RunPanel />);
+    expect(container).toBeEmptyDOMElement();
+    expect(useRunStore.getState().runs.chat.status).toBe(status);
+  });
+
+  it("keeps failed chat runs visible", () => {
+    useRunStore.getState().upsert({
+      runId: "chat", kind: "career-lab-turn", status: "failed", error: "Chat failed",
+      percent: 0, phase: "", current: 0, total: 1, etaText: null,
+    });
+    render(<RunPanel />);
+    expect(screen.getByText("Chat failed")).toBeInTheDocument();
+  });
+
   it("renders an accessible progressbar for an active run", () => {
     useRunStore.getState().upsert({
       runId: "r1",
