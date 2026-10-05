@@ -8,11 +8,32 @@ from sqlmodel import Session
 
 from resume_tailor_harness.api.app import create_app
 from resume_tailor_harness.services.run_completions import record_run_completion
+from resume_tailor_harness.services.run_visibility import CHAT_RUN_KINDS
 
 
 def _persisted_id(value: int | None) -> int:
     assert value is not None
     return value
+
+
+def test_run_visibility_contract():
+    """New chat operation kinds must be classified on both live and durable paths."""
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    browser = (root / "web/src/lib/runs/visibility.ts").read_text(encoding="utf-8")
+    kind_pattern = r'"((?:career-lab|profile-coach|mock-interview|scout)-[a-z-]+)"'
+    assert set(re.findall(kind_pattern, browser)) == CHAT_RUN_KINDS
+    routers = root / "src/resume_tailor_harness/api/routers"
+    launched = set()
+    for name in ("career_lab", "coach", "interview", "scout"):
+        launched.update(
+            re.findall(
+                kind_pattern, (routers / f"{name}.py").read_text(encoding="utf-8")
+            )
+        )
+    assert launched == CHAT_RUN_KINDS
 
 
 @pytest.fixture()
@@ -77,9 +98,7 @@ def test_scheduled_completion_is_history_but_not_an_unread_flag(app_client):
     assert row["runId"] == run_id
     assert row["status"] == "failed"
     assert row["readAt"] is not None
-    assert client.get(
-        "/api/run-completions", params={"unread_only": True}
-    ).json() == []
+    assert client.get("/api/run-completions", params={"unread_only": True}).json() == []
 
 
 def test_clear_histories_independently_and_keep_new_operations(app_client):
@@ -290,3 +309,81 @@ def test_operation_log_retention_is_bounded(tmp_path):
     assert len(record["logs"]) == 200
     assert all(len(entry["message"]) <= 2000 for entry in record["logs"])
     assert record["logs"][-1]["state"] == "done"
+
+
+@pytest.mark.parametrize("surface", ["operations", "notifications"])
+def test_chat_history_only_surfaces_failures_including_legacy_rows(app_client, surface):
+    app, client = app_client
+    quiet_ids = []
+    failed_ids = set()
+    with Session(app.state.engine) as session:
+        for kind in sorted(CHAT_RUN_KINDS):
+            for status in ("failed", "succeeded", "cancelled"):
+                run_id = f"{kind}-{status}"
+                row = record_run_completion(
+                    session,
+                    run_id=run_id,
+                    kind=kind,
+                    label=kind,
+                    status=status,
+                    error="boom" if status == "failed" else None,
+                    # Quiet rows are newer: filtering must precede the limit.
+                    completed_at=datetime(
+                        2026, 8, 29 if status == "failed" else 30, tzinfo=timezone.utc
+                    ),
+                    logs=[{"message": status}],
+                )
+                if status == "failed":
+                    failed_ids.add(run_id)
+                    assert row.read_at is None
+                else:
+                    assert row.read_at is not None
+                    quiet_ids.append(row.id)
+                    # Simulate pre-policy records, which were unread.
+                    row.read_at = None
+                    session.add(row)
+                    session.commit()
+
+    for unread_only in (True, False):
+        rows = client.get(
+            "/api/run-completions",
+            params={
+                "surface": surface,
+                "unread_only": unread_only,
+                "limit": 100,
+            },
+        ).json()
+        assert {row["runId"] for row in rows} == failed_ids
+        [limited] = client.get(
+            "/api/run-completions", params={"surface": surface, "limit": 1}
+        ).json()
+        assert limited["status"] == "failed"
+    for completion_id in quiet_ids:
+        assert (
+            client.get(f"/api/run-completions/{completion_id}/logs").status_code == 404
+        )
+    assert client.get(f"/api/run-completions/{rows[0]['id']}/logs").json() == [
+        {"message": "failed"}
+    ]
+    assert client.post("/api/run-completions/read-all").json() == {
+        "markedRead": len(CHAT_RUN_KINDS)
+    }
+
+
+def test_quiet_chat_still_completes_and_persists(app_client):
+    from sqlmodel import select
+    from resume_tailor_harness.tracking.tables import RunCompletion, RunOperationLog
+
+    app, client = app_client
+    run_id = app.state.run_manager.submit(
+        "career-lab-turn", lambda _reporter: {"sessionId": "s1"}
+    )
+    for future in list(app.state.run_manager._futures.values()):
+        future.result(timeout=2)
+    assert client.get(f"/api/runs/{run_id}").json()["state"] == "done"
+    assert client.get("/api/run-completions").json() == []
+    assert client.delete("/api/run-completions").json() == {"cleared": 0}
+    with Session(app.state.engine) as session:
+        [row] = session.exec(select(RunCompletion)).all()
+        assert row.run_id == run_id
+        assert session.get(RunOperationLog, run_id) is not None

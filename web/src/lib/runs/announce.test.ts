@@ -10,6 +10,7 @@ const toast = vi.hoisted(() => ({
 vi.mock("sonner", () => ({ toast }));
 
 import { announceCompletions } from "./announce";
+import { CHAT_RUN_KINDS } from "./visibility";
 
 function run(overrides: Partial<RunRecord> = {}): RunRecord {
   return {
@@ -30,6 +31,29 @@ beforeEach(() => {
   toast.success.mockReset();
   toast.error.mockReset();
   toast.info.mockReset();
+});
+
+it.each([...CHAT_RUN_KINDS])("only announces failures for %s", (kind) => {
+  announceCompletions([run({ kind }), run({ kind, status: "cancelled" })]);
+  expect(toast.success).not.toHaveBeenCalled();
+  expect(toast.info).not.toHaveBeenCalled();
+  expect(toast.error).not.toHaveBeenCalled();
+
+  announceCompletions([run({ kind, status: "failed", error: "boom" })]);
+  expect(toast.error).toHaveBeenCalledOnce();
+});
+
+it("filters quiet chat runs before counting and summarizing a reconnect batch", () => {
+  const successes = [...CHAT_RUN_KINDS].map((kind) => run({ kind }));
+  announceCompletions(successes);
+  expect(toast.success).not.toHaveBeenCalled();
+  announceCompletions([
+    ...successes,
+    run({ kind: "career-lab-turn", status: "failed", error: "boom" }),
+  ]);
+  expect(toast.error).toHaveBeenCalledOnce();
+  expect(toast.error.mock.calls[0][0]).toContain("boom");
+  expect(toast.success).not.toHaveBeenCalled();
 });
 
 it("does nothing for an empty batch", () => {
@@ -184,7 +208,8 @@ it("says how many of a collapsed batch failed", () => {
     run({ runId: "c", status: "failed", error: "boom" }),
     run({ runId: "d", status: "failed", error: "boom" }),
   ]);
-  expect(toast.success.mock.calls[0][0]).toContain("2 failed");
+  expect(toast.error.mock.calls[0][0]).toContain("2 failed");
+  expect(toast.success).not.toHaveBeenCalled();
 });
 
 it("reports an all-failed batch as an error, not a success", () => {

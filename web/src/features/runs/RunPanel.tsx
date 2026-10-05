@@ -5,6 +5,7 @@ import { localizeRunError, localizeRunEta, localizeRunKind, localizeRunPhase, lo
 import { useRunStore } from "@/lib/runs/store";
 import { cancelRun } from "./use-launch-run";
 import type { RunRecord } from "@/lib/runs/store";
+import { visibleRunCompletion } from "@/lib/runs/visibility";
 
 function rightLabel(r: RunRecord, language: string | undefined): string {
   if (r.status === "queued") return localizeRunStatus(r.status, language);
@@ -21,7 +22,9 @@ export function RunPanel() {
   // Select the stable map reference; deriving the array in a selector would
   // return a fresh array each render and trip React's useSyncExternalStore loop.
   const runsMap = useRunStore((s) => s.runs);
-  const runs = Object.values(runsMap);
+  const runs = Object.values(runsMap).filter((run) =>
+    ["queued", "running", "cancelling"].includes(run.status) || visibleRunCompletion(run),
+  );
   if (runs.length === 0) return null;
   return (
     // aria-live announces run start/progress/completion to screen readers.

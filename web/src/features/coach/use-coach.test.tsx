@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 
 import { useEndCoachSession } from "./use-coach";
 
@@ -67,5 +68,23 @@ describe("useEndCoachSession", () => {
       queryKey: ["coach-session", "session-1"],
     });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["coach-sessions"] });
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it.each(["succeeded", "cancelled", "failed"])("leaves %s notifications to the global run handler", async (status) => {
+    const queryClient = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useEndCoachSession(), { wrapper });
+    const onDone = vi.fn();
+    await act(async () => {
+      await result.current.mutateAsync({ sessionId: "s1", build: false, onDone });
+      await mocks.trackRun.mock.calls[0][1]({ status, error: "boom" });
+    });
+    expect(onDone).toHaveBeenCalledOnce();
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(toast.error).not.toHaveBeenCalled();
   });
 });

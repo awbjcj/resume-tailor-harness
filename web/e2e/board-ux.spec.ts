@@ -112,3 +112,90 @@ test("job assistant sends explicit context and displays an AG-UI response", asyn
   await expect(panel.getByText("Saving the response", { exact: true })).toBeVisible();
   await page.screenshot({ path: "e2e/__screenshots__/agui-job-assistant.png" });
 });
+
+for (const language of ["en", "zh-CN"] as const) {
+  for (const existing of [false, true]) {
+    test(`job assistant recovers a ${existing ? "follow-up" : "start"} after page reload in ${language}`, async ({ page }) => {
+      await page.addInitScript((selectedLanguage) => {
+        localStorage.setItem("resume-tailor-harness-language", selectedLanguage);
+      }, language);
+      const chinese = language === "zh-CN";
+      const summary = {
+        sessionId: "recovered-session", title: "Job discussion", goal: "Discuss Acme",
+        startedAt: "2026-10-04T12:00:00Z", endedAt: null, archivedAt: null,
+        status: "active", jobId: 7, jobCompany: "Acme", jobTitle: "Staff Engineer",
+      };
+      const previousTurns = existing ? [
+        { turnId: "old-user", role: "user", text: "Earlier question" },
+        { turnId: "old-assistant", role: "assistant", text: "Earlier answer" },
+      ] : [];
+      let launched = false;
+      let saved = false;
+      const run = () => ({
+        runId: "recovered-run", kind: "career-lab-turn", state: saved ? "done" : "running",
+        percent: saved ? 100 : 20, label: saved ? "Done" : "Drafting", current: 1, total: 2,
+        meta: { jobId: 7, turnCount: previousTurns.length, ...(existing ? { sessionId: summary.sessionId } : {}) },
+        result: saved ? { sessionId: summary.sessionId } : null, error: null,
+      });
+      await page.route("**/api/jobs/7", (route) => route.fulfill({ json: {
+        id: 7, source: "greenhouse", company: "Acme", title: "Staff Engineer",
+        location: "Remote", jdText: "Build platform services.", status: "shortlisted",
+        fitScore: 88, skills: [], resumeVersions: [], coverLetters: [], application: null,
+      } }));
+      await page.route("**/api/transcribe/availability", (route) => route.fulfill({ json: { available: false } }));
+      await page.route("**/api/auth/link-token", (route) => route.fulfill({ json: { token: "fixture-link", expiresInSeconds: 60 } }));
+      await page.route("**/api/runs/ack", (route) => route.fulfill({ json: { acknowledged: 1 } }));
+      await page.route("**/api/runs?*", (route) => route.fulfill({ json: {
+        data: launched ? [run()] : [], pagination: { page: 1, pageSize: 200, totalItems: launched ? 1 : 0, totalPages: 1 },
+      } }));
+      await page.route("**/api/runs/recovered-run", (route) => route.fulfill({ json: run() }));
+      await page.route("**/api/runs/recovered-run/events*", (route) => route.fulfill({
+        contentType: "text/event-stream", body: `data: ${JSON.stringify(run())}\n\n`,
+      }));
+      await page.route("**/api/runs/recovered-run/stream?*", (route) => route.fulfill({
+        contentType: "text/event-stream", body: [
+          { i: 0, t: "text", v: { text: "Draft before reload" } },
+          { i: 1, t: "settled", v: {} },
+        ].map((event) => `data: ${JSON.stringify(event)}\n\n`).join(""),
+      }));
+      await page.route("**/api/career-lab/sessions?*", (route) => {
+        const sessions = existing || saved ? [{ ...summary, turnCount: previousTurns.length + (saved ? 2 : 0) }] : [];
+        return route.fulfill({ json: { sessions, activeSessions: sessions, pagination: { page: 1, pageSize: 20, totalItems: sessions.length, totalPages: 1 } } });
+      });
+      await page.route("**/api/career-lab/sessions/recovered-session", (route) => route.fulfill({ json: {
+        ...summary, turns: saved ? [...previousTurns,
+          { turnId: "new-user", role: "user", text: "Question before reload" },
+          { turnId: "new-assistant", role: "assistant", text: "Saved answer after reload" },
+        ] : previousTurns,
+      } }));
+      await page.route(existing ? "**/api/career-lab/sessions/recovered-session/messages" : "**/api/career-lab/sessions", (route) => {
+        launched = true;
+        return route.fulfill({ status: 202, json: run() });
+      });
+
+      await page.goto("/shortlist?job=7");
+      const openAssistant = () => page.getByRole("button", { name: chinese ? "咨询此职位" : "Ask about this job", exact: true }).click();
+      await openAssistant();
+      const panel = page.getByRole("dialog", { name: chinese ? "职业助手" : "Career assistant" });
+      const composer = panel.getByRole("textbox", { name: chinese ? "咨询此职位" : "Ask about this job" });
+      await composer.fill("Question before reload");
+      await composer.press("Enter");
+      await expect(panel.getByText("Draft before reload")).toBeVisible();
+
+      // This destroys the mutation callback and the in-memory query cache.
+      await page.reload();
+      await openAssistant();
+      await expect(panel.getByText("Draft before reload")).toBeVisible();
+      if (existing) await expect(panel.getByText("Earlier answer")).toBeVisible();
+      else await expect(panel.getByRole("link")).toHaveCount(0);
+      saved = true;
+
+      await expect(panel.getByText("Saved answer after reload")).toBeVisible({ timeout: 20_000 });
+      await expect(panel.getByText("Question before reload")).toBeVisible();
+      await expect(panel.getByText("Draft before reload")).toHaveCount(0);
+      await expect(panel.getByRole("link", { name: chinese ? "打开完整工作区" : "Open full workspace" })).toHaveAttribute("href", "/career-lab?session=recovered-session");
+      await expect(composer).toBeEnabled();
+      await expect(panel.getByRole("alert")).toHaveCount(0);
+    });
+  }
+}
