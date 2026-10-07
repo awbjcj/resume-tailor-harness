@@ -12,7 +12,7 @@ dependencies = [
     "sse-starlette>=2.1.0",
     "openai>=1.0.0",
     # Keep the provider SDK range stable during the Agno 3 migration.
-    "google-genai>=2.5.0,<2.24.0",
+    "google-genai>=2.5.0,<2.29.0",
     "beautifulsoup4>=4.15.0",
     "google-api-python-client>=2.197.0",
     "google-auth>=2.53.0",
