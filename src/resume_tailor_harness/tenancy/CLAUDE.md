@@ -25,6 +25,12 @@ engines before a staged, rollback-safe removal.
 
 ### Registration modes and platform spend governance (ADR-0009)
 
+Stripe SDK resources are normalized into recursive dictionaries at the
+`StripeGateway` and verified-webhook boundaries. Stripe 15+ resources no
+longer inherit from `dict`; use `to_dict()` there, with the legacy recursive
+converter retained for the supported Stripe 14 range. Ledger logic consumes
+plain data, while pagination remains on the SDK list object.
+
 `Settings.registration_mode` (`closed` / `invite` / `open`) is a business
 decision independent of shared-key eligibility. `User.shared_key_access`
 (`auth_register.py`, `auth_google.py`) defaults to `True` for every new

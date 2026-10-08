@@ -89,6 +89,16 @@ def billing_origin(settings: Settings) -> str:
     return base
 
 
+def stripe_data(value: Any) -> Any:
+    """Keep provider resource objects outside the dictionary-based ledger."""
+    if isinstance(value, stripe.StripeObject):
+        # Stripe 15+ resources are no longer dicts; to_dict now recurses.
+        # Retain the recursive converter for the supported Stripe 14 range.
+        legacy_converter = getattr(value, "to_dict_recursive", None)
+        return legacy_converter() if callable(legacy_converter) else value.to_dict()
+    return value
+
+
 class StripeGateway:
     def __init__(self, settings: Settings):
         if not settings.stripe_secret_key or not settings.stripe_webhook_secret:
@@ -107,48 +117,49 @@ class StripeGateway:
         self.http_client.close()
 
     def price(self, price_id: str) -> Any:
-        return self.client.v1.prices.retrieve(price_id)
+        return stripe_data(self.client.v1.prices.retrieve(price_id))
 
     def customer(self, user_id: str, email: str | None) -> Any:
         params: CustomerCreateParams = {"metadata": {"user_id": user_id}}
         if email:
             params["email"] = email
-        return self.client.v1.customers.create(
-            params, options={"idempotency_key": f"resume-customer-{user_id}"}
+        return stripe_data(
+            self.client.v1.customers.create(
+                params, options={"idempotency_key": f"resume-customer-{user_id}"}
+            )
         )
 
     def checkout(self, params: CheckoutSessionCreateParams, key: str) -> Any:
-        return self.client.v1.checkout.sessions.create(
-            params, options={"idempotency_key": key}
+        return stripe_data(
+            self.client.v1.checkout.sessions.create(
+                params, options={"idempotency_key": key}
+            )
         )
 
     def checkout_status(self, session_id: str) -> Any:
-        return self.client.v1.checkout.sessions.retrieve(session_id)
+        return stripe_data(self.client.v1.checkout.sessions.retrieve(session_id))
 
     def find_checkout(self, customer_id: str, order_id: str) -> Any:
         sessions = self.client.v1.checkout.sessions.list(
             {"customer": customer_id, "limit": 100}
         )
-        return next(
-            (
-                item
-                for item in sessions.auto_paging_iter()
-                if (item.get("metadata") or {}).get("checkout_id") == order_id
-            ),
-            None,
-        )
+        for item in sessions.auto_paging_iter():
+            checkout = stripe_data(item)
+            if (checkout.get("metadata") or {}).get("checkout_id") == order_id:
+                return checkout
+        return None
 
     def subscription(self, subscription_id: str) -> Any:
-        return self.client.v1.subscriptions.retrieve(subscription_id)
+        return stripe_data(self.client.v1.subscriptions.retrieve(subscription_id))
 
     def invoice(self, invoice_id: str) -> Any:
-        return self.client.v1.invoices.retrieve(invoice_id)
+        return stripe_data(self.client.v1.invoices.retrieve(invoice_id))
 
     def payment_intent(self, intent_id: str) -> Any:
-        return self.client.v1.payment_intents.retrieve(intent_id)
+        return stripe_data(self.client.v1.payment_intents.retrieve(intent_id))
 
     def portal(self, params: PortalSessionCreateParams) -> Any:
-        return self.client.v1.billing_portal.sessions.create(params)
+        return stripe_data(self.client.v1.billing_portal.sessions.create(params))
 
 
 def _member(session: Session, user_id: str) -> User:
