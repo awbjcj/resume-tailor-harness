@@ -6947,7 +6947,7 @@ export interface components {
         ModelsConfigDoc: {
             /**
              * Cheapmodel
-             * @default claude-haiku-4-5
+             * @default claude-haiku-5-5
              */
             cheapModel: string;
             /** Cheapreasoningeffort */

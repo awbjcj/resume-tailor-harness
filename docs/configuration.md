@@ -38,7 +38,7 @@ hosted-only settings such as `APP_BASE_URL`, `AUTH_PASSWORD_HASH`, or
 | `OPENAI_ROUTE_MODE` | `auto` | `auto`, `subscription`, or `api`; selects gateway routing when configured, forces the gateway, or forces the direct OpenAI API. |
 | `GEMINI_ROUTE_MODE` | `auto` | `auto`, `subscription`, or `api`; selects gateway routing when configured, forces the gateway, or forces the direct Gemini API. |
 | `DEEPSEEK_ROUTE_MODE` | `auto` | `auto`, `subscription`, or `api`; selects gateway routing when configured, forces the gateway, or forces the direct DeepSeek API. |
-| `CHEAP_MODEL` | `claude-haiku-4-5` | Model used for inexpensive extraction and classification work. |
+| `CHEAP_MODEL` | `claude-haiku-5-5` | Model used for inexpensive extraction and classification work. |
 | `MID_MODEL` | `claude-sonnet-5` | Model used for intermediate reasoning and review work. |
 | `PREMIUM_MODEL` | `claude-opus-5` | Model used for the highest-quality writing and escalation paths. |
 | `CHEAP_REASONING_EFFORT` | unset | Optional provider-specific reasoning setting for the cheap tier. |
@@ -57,6 +57,21 @@ Model IDs can use `openai:`, `gemini:`, or `deepseek:` prefixes. A bare model
 ID uses Anthropic. Reasoning-effort strings are provider-specific. Leave them
 unset unless the selected provider and model document support for the chosen
 value.
+
+The default cheap tier uses Claude Haiku 5.5 (`claude-haiku-5-5`). Existing
+explicit model selections remain in effect; select the new model in Settings
+or set `CHEAP_MODEL=claude-haiku-5-5` to upgrade them. Reasoning-enabled calls
+default to `medium` effort and accept `low`, `medium`, `high`, `xhigh`, or
+`max`. Calls without reasoning send `thinking.type=disabled` and omit effort
+overrides so a saved `xhigh`/`max` cannot produce an invalid request. Haiku 4.5
+remains selectable.
+
+Haiku 5.5 Standard pricing uses two prompt-length bands: up to 100,000 input
+tokens costs $0.10 input / $0.50 output per million; above that costs $0.50 /
+$2.50. Cached input counts toward that threshold. The rate seed includes both
+bands from its October 7, 2026 release, including 5-minute cache writes and
+cache reads. [Model and pricing](https://platform.claude.com/docs/en/models/haiku-5-5/overview),
+[thinking and effort](https://platform.claude.com/docs/en/build-with-claude/effort).
 
 For OpenAI and Anthropic, every routing decision selects a credential and
 endpoint together. `subscription` uses `SUB2API_<PROVIDER>_KEY` with

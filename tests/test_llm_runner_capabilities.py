@@ -18,6 +18,11 @@ def test_known_model_capabilities_are_model_gated():
     assert provider_capabilities("openai:gpt-6.1-sol").supports_reasoning is True
     assert provider_capabilities("openai:gpt-6-luna").supports_reasoning is True
     assert provider_capabilities("claude-opus-5-5").supports_reasoning is True
+    assert provider_capabilities("claude-haiku-5-5") == ProviderCapabilities(
+        supports_reasoning=True,
+        supports_native_citations=True,
+        supports_prompt_cache=True,
+    )
     assert provider_capabilities("deepseek:deepseek-flash").supports_reasoning is True
     assert provider_capabilities("openai:gpt-6-unpublished").supports_reasoning is False
     assert provider_capabilities("openai:gpt-4o").supports_reasoning is False
