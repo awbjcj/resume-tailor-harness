@@ -247,6 +247,14 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
   disabled config. `_anthropic_max_tokens` replaces agno's 8192 default — clamped
   to the SDK's per-model non-streaming ceiling so a custom Opus 4/4.1 id
   cannot raise `ValueError`.
+- **Haiku 5.5 is the default cheap tier.** It supports adaptive thinking and
+  all five effort levels, defaulting to medium for reasoning-enabled calls.
+  Non-reasoning calls explicitly disable thinking and omit effort overrides:
+  disabled thinking at xhigh/max would return HTTP 400. Keep Haiku 4.5 in the
+  catalog for saved selections. Its price boundary is 100K total prompt tokens,
+  including cache reads/writes; the higher band prices the entire request.
+  Reasoning-enabled Haiku calls use a fifteen-minute SDK timeout so its 32K
+  non-streaming ceiling passes the SDK's default ten-minute preflight guard.
 - **Claude capability gates read the model generation, never a substring.**
   `anthropic_version` parses `claude-<family>-<major>[-<minor>]` into a
   comparable tuple; pre-4 ids (`claude-3-5-haiku-…`) put the version first and

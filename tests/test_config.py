@@ -62,7 +62,7 @@ def test_settings_has_cheap_model_default():
     settings = _settings(env_file=None)
     # The bare alias, not the date-suffixed full id: Anthropic's ids are complete
     # as published, and appending a date is how you get a 404.
-    assert settings.cheap_model == "claude-haiku-4-5"
+    assert settings.cheap_model == "claude-haiku-5-5"
 
 
 def test_settings_has_model_tier_defaults():

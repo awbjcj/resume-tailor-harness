@@ -110,12 +110,17 @@ def test_model_catalog_flags_keyed_providers(client):
 def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
     body = client.get("/api/config/models/catalog").json()
     anthropic = next(row for row in body if row["provider"] == "anthropic")
-    haiku = next(m for m in anthropic["models"] if "haiku" in m["id"])
+    haiku = next(m for m in anthropic["models"] if m["id"] == "claude-haiku-4-5")
     opus = next(m for m in anthropic["models"] if "opus" in m["id"])
     assert haiku["label"] and haiku["supportsReasoning"] is False
     assert opus["supportsReasoning"] is True
     assert opus["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
     assert haiku["supportsNativeSearch"] is True  # anthropic has native search
+    haiku_55 = next(m for m in anthropic["models"] if m["id"] == "claude-haiku-5-5")
+    assert haiku_55["label"] == "Claude Haiku 5.5"
+    assert haiku_55["supportsReasoning"] is True
+    assert haiku_55["supportsNativeSearch"] is True
+    assert haiku_55["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
     sonnet_55 = next(m for m in anthropic["models"] if m["id"] == "claude-sonnet-5-5")
     assert sonnet_55["label"] == "Claude Sonnet 5.5"
     assert sonnet_55["supportsReasoning"] is True

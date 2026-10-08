@@ -405,6 +405,67 @@ def test_sonnet_55_rate_starts_at_its_release(tmp_path):
     ) == (2_000_000, 200_000, 2_500_000, 10_000_000)
 
 
+def test_haiku_55_rates_preserve_release_and_context_boundaries(tmp_path):
+    engine = _engine(tmp_path)
+    model = "claude-haiku-5-5"
+    assert (
+        find_rate(engine, "anthropic", model, now=datetime(2026, 10, 6, tzinfo=UTC))
+        is None
+    )
+    seed_llm_rates(engine)
+    with Session(engine) as session:
+        rows = (
+            session.execute(select(LlmRate).where(LlmRate.model == model))
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 2
+    for tokens, expected in (
+        (100_000, (100_000, 10_000, 125_000, 500_000)),
+        (100_001, (500_000, 50_000, 625_000, 2_500_000)),
+    ):
+        rate = find_rate(
+            engine,
+            "anthropic",
+            model,
+            input_tokens=tokens,
+            now=datetime(2026, 10, 7, tzinfo=UTC),
+        )
+        assert rate is not None
+        assert (
+            rate.input_micros_per_million,
+            rate.cache_read_micros_per_million,
+            rate.cache_write_micros_per_million,
+            rate.output_micros_per_million,
+        ) == expected
+        assert (
+            rate.source_url
+            == "https://platform.claude.com/docs/en/models/haiku-5-5/overview"
+        )
+
+
+@pytest.mark.parametrize(
+    "read,write,expected",
+    [(50_000, 0, 5_550), (50_001, 0, 27_751), (0, 50_000, 11_300), (0, 50_001, 56_501)],
+)
+def test_haiku_55_prompt_band_includes_cached_input(tmp_path, read, write, expected):
+    engine = _engine(tmp_path)
+    priced = calculate_cost(
+        engine,
+        MeteredUsage(
+            provider="anthropic",
+            model="claude-haiku-5-5",
+            input_tokens=50_000,
+            cache_read_tokens=read,
+            cache_write_tokens=write,
+            output_tokens=100,
+        ),
+        now=datetime(2026, 10, 7, tzinfo=UTC),
+    )
+    assert priced.pricing_status == "PRICED"
+    assert priced.total_micros == expected
+
+
 def test_seed_corrects_previously_scheduled_sonnet_increase(tmp_path):
     engine = _engine(tmp_path)
     cutoff = datetime(2026, 9, 1, tzinfo=UTC)

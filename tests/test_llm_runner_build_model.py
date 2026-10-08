@@ -79,6 +79,81 @@ def test_opus_55_keeps_its_required_adaptive_thinking():
     }
 
 
+@pytest.mark.parametrize("effort", [None, "low", "medium", "high", "xhigh", "max"])
+def test_haiku_55_reasoning_forwards_supported_efforts(monkeypatch, effort):
+    from resume_tailor_harness import llm_runner
+    from resume_tailor_harness.config import Settings
+
+    settings = Settings(
+        _env_file=None,
+        cheap_model="claude-haiku-5-5",
+        cheap_reasoning_effort=effort,
+    )
+    monkeypatch.setattr(llm_runner, "get_settings", lambda: settings)
+    model = build_model("claude-haiku-5-5", api_key="k", reasoning=True)
+    params = model.get_request_params()
+    assert params["thinking"] == {"type": "adaptive"}
+    assert params["output_config"] == {"effort": effort or "medium"}
+    assert params["max_tokens"] == 32_000
+    assert not {"temperature", "top_p", "top_k"}.intersection(params)
+
+
+@pytest.mark.parametrize("reasoning", [False, True])
+def test_haiku_55_serializes_valid_messages_api_requests(monkeypatch, reasoning):
+    import json
+
+    import httpx
+    from agno.models.message import Message
+
+    from resume_tailor_harness import llm_runner
+    from resume_tailor_harness.config import Settings
+
+    settings = Settings(
+        _env_file=None,
+        cheap_model="claude-haiku-5-5",
+        cheap_reasoning_effort="max",
+    )
+    monkeypatch.setattr(llm_runner, "get_settings", lambda: settings)
+    requests = []
+
+    def respond(request):
+        requests.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "id": "msg_test",
+                "type": "message",
+                "role": "assistant",
+                "model": "claude-haiku-5-5",
+                "content": [{"type": "text", "text": "ok"}],
+                "stop_reason": "end_turn",
+                "stop_sequence": None,
+                "usage": {"input_tokens": 1, "output_tokens": 1},
+            },
+        )
+
+    model = build_model("claude-haiku-5-5", api_key="k", reasoning=reasoning)
+    with httpx.Client(transport=httpx.MockTransport(respond)) as http_client:
+        model.http_client = http_client
+        model.invoke(
+            messages=[Message(role="user", content="hello")],
+            assistant_message=Message(role="assistant"),
+        )
+        if reasoning:
+            assert model.get_client().timeout == 900.0
+    assert len(requests) == 1
+    body = requests[0]
+    assert body["model"] == "claude-haiku-5-5"
+    assert body["thinking"] == {"type": "adaptive" if reasoning else "disabled"}
+    if reasoning:
+        assert body["output_config"] == {"effort": "max"}
+    else:
+        # A saved max effort must never accompany disabled thinking.
+        assert "output_config" not in body
+    assert not {"temperature", "top_p", "top_k"}.intersection(body)
+    assert model.append_trailing_user_message is True
+
+
 def test_openai_asks_for_a_reasoning_summary_whenever_it_sends_a_reasoning_config():
     # agno's Responses adapter copies every output_text delta into
     # reasoning_content when `reasoning` is set and `reasoning_summary` is not:
