@@ -138,10 +138,12 @@ async def _receive_webhook(
             raise ApiException(413, "WEBHOOK_TOO_LARGE", "Webhook body is too large")
     settings = request.app.state.settings
     try:
-        event = stripe.Webhook.construct_event(
-            bytes(payload),
-            request.headers.get("stripe-signature", ""),
-            settings.stripe_webhook_secret,
+        event = payments.stripe_data(
+            stripe.Webhook.construct_event(
+                bytes(payload),
+                request.headers.get("stripe-signature", ""),
+                settings.stripe_webhook_secret,
+            )
         )
     except (ValueError, stripe.SignatureVerificationError) as exc:
         raise ApiException(

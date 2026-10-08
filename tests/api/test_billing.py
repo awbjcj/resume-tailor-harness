@@ -1151,6 +1151,7 @@ def test_real_stripe_sdk_serializes_sync_requests_and_recovers_across_pages(
                 "object": kind,
                 "id": path.split("/")[-1],
                 "url": "https://checkout.stripe.com/test",
+                "metadata": {"origin": "sdk"},
             }
         return httpx.Response(200, json=response, request=sent)
 
@@ -1164,7 +1165,11 @@ def test_real_stripe_sdk_serializes_sync_requests_and_recovers_across_pages(
             **settings_options,
         )
     )
-    assert gateway.price("price_test")["id"] == "price_test"
+    price = gateway.price("price_test")
+    assert isinstance(price, dict)
+    assert price.get("id") == "price_test"
+    assert isinstance(price["metadata"], dict)
+    assert price["metadata"].get("origin") == "sdk"
     gateway.customer(USER, "alice@example.com")
     checkout_params: payments._CheckoutCreateParams = {
         "mode": "payment",
