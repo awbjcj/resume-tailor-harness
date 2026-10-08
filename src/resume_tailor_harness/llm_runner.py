@@ -728,6 +728,11 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
             "Claude Opus 5.5",
             ("low", "medium", "high", "xhigh", "max"),
         ),
+        ModelCatalogEntry(
+            "claude-haiku-5-5",
+            "Claude Haiku 5.5",
+            ("low", "medium", "high", "xhigh", "max"),
+        ),
         ModelCatalogEntry("claude-haiku-4-5", "Claude Haiku 4.5"),
         ModelCatalogEntry(
             "claude-sonnet-5",
@@ -1565,9 +1570,9 @@ def _anthropic_thinking(
         # generation, so there is nothing to bound -- and agno rejects a thinking
         # config on the Haiku 3/3.5 families outright.
         return None, None
-    # Accepted on Sonnet 5, Opus 4.8/4.7/4.6 and Sonnet 4.6. On Opus 5 it is
-    # accepted only at effort `high` or below -- we send no `output_config` here,
-    # and the default effort is `high`, so this stays inside that limit.
+    # Accepted on Sonnet 5, Opus 4.8/4.7/4.6, Sonnet 4.6, and Haiku 5.5.
+    # Opus 5 and Haiku 5.5 require high or below when disabled. No effort
+    # override is sent here, so their defaults (high / medium) are valid.
     return {"type": "disabled"}, None
 
 
@@ -1607,6 +1612,8 @@ def _reasoning_effort_for(model_id: str, provider: str) -> str:
     entry = catalog_entry(model_id)
     if configured and entry and configured in entry.reasoning_efforts:
         return configured
+    if provider == "anthropic" and split_provider(model_id)[1] == "claude-haiku-5-5":
+        return "medium"
     return "max" if provider == "deepseek" else "high"
 
 
@@ -1910,6 +1917,10 @@ def _build_model_from_route(
         max_tokens=_anthropic_max_tokens(model, reasoning=reasoning),
         thinking=thinking,
         output_config=output_config,
+        # The SDK's default ten-minute timeout rejects a 32K non-streaming
+        # request before sending it. Give Haiku's reasoning ceiling fifteen
+        # minutes explicitly, retaining room for thinking plus structured output.
+        timeout=900.0 if model == "claude-haiku-5-5" and reasoning else None,
         **_endpoint_kwargs("anthropic", base_url),
     )
 

@@ -212,11 +212,16 @@ def calculate_cost(
     engine: Engine, usage: MeteredUsage, *, now: datetime | None = None
 ) -> PricedUsage:
     provider = normalize_provider(usage.provider)
+    prompt_tokens = usage.input_tokens
+    if provider == "anthropic":
+        # Claude reports uncached input separately. All prompt tokens select
+        # Haiku 5.5's price band, including cache hits and cache writes.
+        prompt_tokens += usage.cache_read_tokens + usage.cache_write_tokens
     rate = find_rate(
         engine,
         provider,
         usage.model,
-        input_tokens=usage.input_tokens,
+        input_tokens=prompt_tokens,
         now=now,
     )
     if rate is None:
@@ -274,6 +279,7 @@ def seed_llm_rates(engine: Engine) -> None:
     catalog_refresh = datetime(2026, 9, 22, tzinfo=timezone.utc)
     openai_sol_61_release = datetime(2026, 9, 29, tzinfo=timezone.utc)
     sonnet_55_release = datetime(2026, 9, 28, tzinfo=timezone.utc)
+    haiku_55_release = datetime(2026, 10, 7, tzinfo=timezone.utc)
     gemini_price_update = datetime(2026, 8, 15, tzinfo=timezone.utc)
     gemini_38_release = datetime(2026, 9, 2, tzinfo=timezone.utc)
     # Google publishes both Flash models' current rate as promotional "through
@@ -681,6 +687,25 @@ def seed_llm_rates(engine: Engine) -> None:
             tool=10_000,
             source=anthropic,
         )
+        # Above 100K prompt tokens, Haiku 5.5's higher band prices the entire
+        # request, including output and caching, rather than only the excess.
+        for minimum, maximum, rates in (
+            (0, 100_000, (0.1, 0.01, 0.125, 0.5)),
+            (100_001, None, (0.5, 0.05, 0.625, 2.5)),
+        ):
+            upsert_rate(
+                provider="anthropic",
+                model="claude-haiku-5-5",
+                effective_from=haiku_55_release,
+                input_rate=rates[0],
+                cache_read=rates[1],
+                cache_write=rates[2],
+                output_rate=rates[3],
+                tool=10_000,
+                source="https://platform.claude.com/docs/en/models/haiku-5-5/overview",
+                minimum=minimum,
+                maximum=maximum,
+            )
 
         # Google changed Gemini 3.6 Flash's standard pricing on 2026-08-15.
         # Keep the former rate for historical usage, then add the current row
