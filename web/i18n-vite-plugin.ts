@@ -40,6 +40,7 @@ export function i18nTransform(): Plugin {
               names: [...map.names],
               sources: [...map.sources],
               sourcesContent: map.sourcesContent ? [...map.sourcesContent] : undefined,
+              ignoreList: map.ignoreList ? [...map.ignoreList] : undefined,
             }
           : null,
       };
