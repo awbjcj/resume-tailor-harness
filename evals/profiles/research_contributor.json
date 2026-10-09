@@ -1,0 +1,24 @@
+{
+  "contact": {"name": "Morgan Ellis", "email": "morgan@example.com"},
+  "experience": [
+    {
+      "id": "research-role",
+      "company": "Cedar Research Lab",
+      "title": "Research Assistant",
+      "start": "2023",
+      "end": "2025",
+      "bullets": [
+        {"id": "research-validation", "text": "Contributed Python validation checks to a research data pipeline under the lead researcher's supervision."},
+        {"id": "research-method", "text": "Documented data-cleaning assumptions and reviewed ambiguous records with the research team."},
+        {"id": "research-manuscript", "text": "Contributed the methods section to a submitted manuscript on reproducible data cleaning; the manuscript remains under review."}
+      ]
+    }
+  ],
+  "skills": {
+    "languages": [{"id": "research-python", "name": "Python"}],
+    "methods": [{"id": "research-data-cleaning", "name": "Data Cleaning"}]
+  },
+  "education": [
+    {"id": "research-degree", "institution": "Cedar University", "degree": "BS Statistics", "end": "2023"}
+  ]
+}

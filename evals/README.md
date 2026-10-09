@@ -36,7 +36,7 @@ must be rejected. Passing `tests/eval` does not measure agent quality.
 3. A review config. `config/review.yaml` is gitignored, so `run_eval` falls back
    to `config/review.yaml.example` automatically when it is absent.
 
-Budget expectation: 14 resume cases. Each runs tailoring, up to two panel and
+Budget expectation: 16 resume cases. Each runs tailoring, up to two panel and
 reviser rounds, a judge, and one fact-check probe. Use `--limit` while iterating.
 
 ## Resume quality
@@ -65,7 +65,7 @@ Both artifacts are rewritten in a `finally` block after every case. A crash or
 interrupt after twelve cases still leaves a valid partial report on disk. The
 command exits with code 1 if any case raises, and the report lists the failures.
 
-Each of the 14 resume cases in [cases/](cases) contains a
+Each of the 16 resume cases in [cases/](cases) contains a
 `missing_skill`, `adjacent_skill`, `inflatable_metric`, or
 `seniority_inflation` trap with hand-authored `forbidden_terms`. These terms are
 case assertions, not a universal truth detector. When adding a case, exclude a
