@@ -432,7 +432,10 @@ def test_sponsorship_agent_is_instructed_to_collect_three_years():
     assert "twelve periods" in instructions
     assert "periods" in instructions
     assert runner.run_meta is not None
-    assert runner.run_meta.prompt_policy_version == "h1b-sponsorship-research-v3"
+    assert (
+        runner.run_meta.prompt_policy_version
+        == "h1b-sponsorship-research-v3+career-quality-v1"
+    )
 
 
 def test_persisted_rows_are_written_at_schema_version_two():
