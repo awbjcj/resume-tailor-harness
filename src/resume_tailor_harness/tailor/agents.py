@@ -17,6 +17,7 @@ from resume_tailor_harness.llm_runner import (
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import MergedPanelReview, ReviewCritique
 from resume_tailor_harness.prompts.guidance import guidance_for, with_guidance
+from resume_tailor_harness.prompts.quality import quality_instructions
 from resume_tailor_harness.tailor.craft import CRAFT_REVIEWERS, CRAFT_WRITER
 from resume_tailor_harness.tailor.style_guide import compose_instructions
 
@@ -409,6 +410,7 @@ def _merged_advisory_instructions(
             *([_SCORE_BAND_INSTRUCTION] if bands.get(name, False) else []),
             *REVIEWER_INSTRUCTIONS.get(name, _DEFAULT_REVIEWER_INSTRUCTIONS),
             *CRAFT_REVIEWERS.get(name, []),
+            *quality_instructions(f"reviewer-{name}"),
         ]
         if guidance := guidance_for(f"reviewer-{name}"):
             rubric.append(

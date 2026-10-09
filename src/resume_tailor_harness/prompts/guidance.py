@@ -13,6 +13,7 @@ from threading import RLock
 
 import yaml
 
+from resume_tailor_harness.prompts.quality import with_quality
 from resume_tailor_harness.tenancy.paths import AGENT_GUIDANCE_PATH, resolve_tenant_path
 
 
@@ -96,8 +97,9 @@ def save_guidance(key: str, text: str) -> dict[str, str]:
 
 
 def with_guidance(key: str, base: Sequence[str]) -> list[str]:
-    """Append user guidance after immutable application instructions."""
+    """Compose application quality rules, then lower-priority user guidance."""
+    instructions = with_quality(key, base)
     text = guidance_for(key)
     if not text:
-        return list(base)
-    return [*base, GUIDANCE_HEADER, text]
+        return instructions
+    return [*instructions, GUIDANCE_HEADER, text]

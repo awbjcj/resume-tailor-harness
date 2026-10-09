@@ -17,7 +17,7 @@ from resume_tailor_harness.llm_runner import (
 from resume_tailor_harness.models.profile import ProfileFacts
 
 # Bump whenever _INSTRUCTIONS change so cached fragments re-extract.
-PROMPT_VERSION = 3
+PROMPT_VERSION = 4
 
 
 _INSTRUCTIONS = [

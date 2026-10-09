@@ -45,7 +45,7 @@ from resume_tailor_harness.profile.ids import deterministic_id
 
 # Bump whenever synthesis or entailment instructions change so cached
 # synthesis fragments re-run.
-SYNTHESIS_PROMPT_VERSION = 2
+SYNTHESIS_PROMPT_VERSION = 3
 
 
 class SynthesizedClaim(ExtensibleModel):

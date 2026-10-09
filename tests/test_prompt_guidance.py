@@ -13,6 +13,7 @@ from resume_tailor_harness.prompts.guidance import (
     save_guidance,
     with_guidance,
 )
+from resume_tailor_harness.prompts.quality import with_quality
 
 
 def _write(tmp_path, data) -> None:
@@ -21,19 +22,21 @@ def _write(tmp_path, data) -> None:
     (config / "agent_guidance.yaml").write_text(yaml.safe_dump(data), encoding="utf-8")
 
 
-def test_missing_file_is_a_noop(tmp_path, monkeypatch) -> None:
+def test_missing_file_keeps_application_quality(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     assert load_guidance() == {}
     assert guidance_for("fit-score") is None
-    assert with_guidance("fit-score", ["a", "b"]) == ["a", "b"]
+    assert with_guidance("fit-score", ["a", "b"]) == with_quality(
+        "fit-score", ["a", "b"]
+    )
+    assert with_guidance("unregistered", ["a", "b"]) == ["a", "b"]
 
 
 def test_guidance_appends_beneath_base(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     _write(tmp_path, {"fit-score": "Prefer startup-scale evidence."})
     assert with_guidance("fit-score", ["a", "b"]) == [
-        "a",
-        "b",
+        *with_quality("fit-score", ["a", "b"]),
         GUIDANCE_HEADER,
         "Prefer startup-scale evidence.",
     ]

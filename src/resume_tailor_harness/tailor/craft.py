@@ -17,8 +17,10 @@ CRAFT_WRITER = [
     "accomplishment bullet, not a lesser one, and inventing an outcome to fill "
     "the gap fails the round.",
     "Start bullets with strong past-tense verbs such as built, shipped, scaled, "
-    "reduced, led, or designed. Never open with duty phrasing like 'responsible "
-    "for', 'helped with', 'worked on', or passive voice.",
+    "reduced, led, or designed only when the source supports that ownership. "
+    "Use 'contributed to' or 'supported' when that is the truthful role; "
+    "never upgrade participation to leadership for a stronger verb. Replace "
+    "vague duty phrasing with the specific contribution the fact describes.",
     "Place the most role-relevant evidence in the top third of the resume, and "
     "order bullets within each role by relevance to this job rather than their "
     "original order.",
@@ -48,8 +50,8 @@ CRAFT_WRITER = [
     "share; compress older or off-target roles to one or two bullets instead "
     "of trimming every role evenly.",
     "Keep the summary to at most three lines aimed at this role: seniority, the "
-    "strongest matching skills, and one signature outcome, each supported by "
-    "facts cited elsewhere in the resume. Never fill it with empty self-praise "
+    "strongest matching skills, and a signature outcome or concrete contribution, "
+    "each supported by facts listed in summary_provenance. Never fill it with empty self-praise "
     "such as 'results-driven', 'team player', or 'detail-oriented', and never "
     "state what the candidate is seeking.",
     "Prefer concrete nouns and numbers over adjectives, delete filler words, "
@@ -103,9 +105,10 @@ CRAFT_REVIEWERS: dict[str, list[str]] = {
         "ownership level does not match the role's seniority.",
     ],
     "concision": [
-        "Flag any bullet over roughly thirty words, any bullet opened by a "
-        "weak verb or passive construction, and any repeated verb or "
-        "duplicated evidence across bullets.",
+        "Flag bullets over roughly thirty words when excess wording obscures "
+        "their evidence, vague duty phrasing, and duplicated evidence across "
+        "bullets. A repeated verb or truthful participation qualifier alone "
+        "is not a defect; preserve distinct evidence and actual ownership.",
         "Flag filler words and empty intensifiers (various, numerous, "
         "successfully, effectively), bullets packing more than three numbers, "
         "and any bullet carrying more than one distinct claim.",
