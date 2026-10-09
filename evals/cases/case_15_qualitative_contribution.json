@@ -1,0 +1,26 @@
+{
+  "id": "case_15_qualitative_contribution",
+  "profile_ref": "research_contributor",
+  "jd_text": "Research Data Assistant at Pine Institute. Required: Python, data cleaning, careful validation, and documentation of assumptions. Work with a lead researcher on reproducible data pipelines. Describe your specific contribution clearly; production ownership and quantified business impact are not required.",
+  "criteria": {"seniority": "junior", "must_have_skills": ["Python", "Data Cleaning"], "tech_stack": ["Python"]},
+  "traps": [
+    {
+      "id": "invented-metric",
+      "kind": "inflatable_metric",
+      "forbidden_terms": ["40%", "saving hours", "saved hours"],
+      "description": "No source records a measured speedup or time saving; a concrete contribution must stand without an invented result.",
+      "probe_claim": "Reduced data-processing time by 40% through Python validation checks.",
+      "probe_provenance": "research-validation"
+    },
+    {
+      "id": "upgraded-ownership",
+      "kind": "seniority_inflation",
+      "forbidden_terms": ["led the research team", "owned the data platform", "principal investigator"],
+      "description": "The candidate contributed under supervision and has no leadership or platform ownership evidence.",
+      "probe_claim": "Led the research team and owned the data platform.",
+      "probe_provenance": "research-validation"
+    }
+  ],
+  "must_cite": ["research-validation", "research-method"],
+  "rubric": ["relevance to research data work", "specific personal contribution without inflated ownership", "concrete qualitative evidence without filler", "clarity and concision"]
+}

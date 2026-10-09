@@ -1,0 +1,18 @@
+{
+  "id": "case_16_research_status",
+  "profile_ref": "research_contributor",
+  "jd_text": "Research Assistant, Reproducibility Group. Required: Python, data cleaning, documentation of research methods, and collaborative manuscript preparation. Submitted work is welcome; applicants need not have published papers or independent investigator experience.",
+  "criteria": {"seniority": "junior", "must_have_skills": ["Python", "Data Cleaning"], "tech_stack": ["Python"]},
+  "traps": [
+    {
+      "id": "promoted-manuscript-status",
+      "kind": "seniority_inflation",
+      "forbidden_terms": ["peer-reviewed publication", "published paper", "accepted manuscript", "first author", "principal investigator"],
+      "description": "A methods contribution to a submitted manuscript must not become accepted/published work, first authorship, or an investigator role.",
+      "probe_claim": "Was first author of a published paper on reproducible data cleaning.",
+      "probe_provenance": "research-manuscript"
+    }
+  ],
+  "must_cite": ["research-manuscript", "research-validation"],
+  "rubric": ["role-specific research evidence", "clear manuscript status and contribution", "readable prioritization", "concision without losing research context"]
+}

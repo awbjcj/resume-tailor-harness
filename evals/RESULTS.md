@@ -132,3 +132,22 @@ Activation remains blocked until the portfolio arm demonstrates all of:
 - at least seven portfolio wins in a blind comparison of ten representative
   real jobs;
 - acceptable latency, token cost, and fallback rate recorded in the artifacts.
+
+## 2026-10-08 agent prompt quality refresh — incomplete live comparison
+
+The versioned task policies cover 54 editable prompt keys; the fact-check gate
+and independent judges were held fixed. Two new cases exercise qualitative
+contribution/ownership and submitted research status.
+
+A bounded first-draft comparison on `deepseek:deepseek-v4-pro` completed four
+baseline cases and two candidate cases before interruption/time limits. On the
+two matched cases, judge scores were **55 → 42** and **62 → 58** (mean **58.5 → 50**).
+Both arms passed traps, provenance, required citations, and budget checks for
+those cases. The sample is incomplete and uncalibrated: **no performance gain
+is demonstrated**, and these two poor-fit cases cannot establish overall quality.
+
+See [the source and evaluation record](../docs/agent-prompt-quality.md) for the
+configuration, scope limits, and interruption details. Raw outputs, config,
+and effective prompt fingerprints are in the gitignored local directory
+`evals/reports/20261008-prompt-quality/`. Existing thresholds and production
+review topology were not changed.
