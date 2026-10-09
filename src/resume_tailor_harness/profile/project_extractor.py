@@ -24,7 +24,7 @@ from resume_tailor_harness.llm_runner import (
 from resume_tailor_harness.models.base import ExtensibleModel, Source
 from resume_tailor_harness.models.profile import Contact, ProfileFacts, Project, Skill
 
-PROJECT_PROMPT_VERSION = 4
+PROJECT_PROMPT_VERSION = 5
 
 
 class ProjectDocFacts(ExtensibleModel):

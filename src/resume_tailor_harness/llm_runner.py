@@ -158,6 +158,26 @@ class AgentRunner:
     ) -> None:
         self._agent = agent
         self._run_meta = run_meta
+        # Persist the shared prompt revision as well as the builder's policy.
+        # Legacy runners and the unchanged fact-check gate have no quality block.
+        from resume_tailor_harness.prompts.quality import (
+            QUALITY_HEADER,
+            QUALITY_POLICY_VERSION,
+        )
+
+        instructions = getattr(agent, "instructions", None)
+        if (
+            run_meta is not None
+            and isinstance(instructions, (list, tuple))
+            and QUALITY_HEADER in instructions
+        ):
+            suffix = f"+{QUALITY_POLICY_VERSION}"
+            if not run_meta.prompt_policy_version.endswith(suffix):
+                self._run_meta = run_meta.model_copy(
+                    update={
+                        "prompt_policy_version": run_meta.prompt_policy_version + suffix
+                    }
+                )
         self._settings = settings
         # One agno model object is shared by every coroutine in a fan-out, and
         # applying a key nulls its cached clients. The lock plus the in-flight

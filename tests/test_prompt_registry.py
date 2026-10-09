@@ -4,6 +4,7 @@ from typing import cast
 
 from resume_tailor_harness.llm_runner import AgentRunner, Runner
 from resume_tailor_harness.prompts.registry import PROMPT_SPECS, SPECS_BY_KEY, spec_for
+from resume_tailor_harness.prompts.quality import with_quality
 
 
 def _instructions(runner: Runner) -> list[str]:
@@ -50,27 +51,38 @@ def test_registry_projects_real_instruction_constants() -> None:
     from resume_tailor_harness.gmail import classify
     from resume_tailor_harness.tailor import agents as tailor_agents
 
-    assert SPECS_BY_KEY["fit-score"].instructions == tuple(fit._INSTRUCTIONS)
+    assert SPECS_BY_KEY["fit-score"].instructions == tuple(
+        with_quality("fit-score", fit._INSTRUCTIONS)
+    )
     assert SPECS_BY_KEY["reviewer-fact-check"].instructions == tuple(
         tailor_agents._reviewer_instructions("fact-check")
     )
     assert SPECS_BY_KEY["reviewer-merged-advisory"].instructions == tuple(
-        tailor_agents._MERGED_ADVISORY_BASE_INSTRUCTIONS
+        with_quality(
+            "reviewer-merged-advisory", tailor_agents._MERGED_ADVISORY_BASE_INSTRUCTIONS
+        )
     )
     assert SPECS_BY_KEY["email-classifier"].instructions == tuple(
-        classify._CLASSIFIER_INSTRUCTIONS
+        with_quality("email-classifier", classify._CLASSIFIER_INSTRUCTIONS)
     )
 
 
 def test_interviewer_registers_the_persona_core() -> None:
     from resume_tailor_harness.interview.agent import _PERSONA_CORE
 
-    assert SPECS_BY_KEY["interviewer"].instructions == tuple(_PERSONA_CORE)
+    assert SPECS_BY_KEY["interviewer"].instructions == tuple(
+        with_quality("interviewer", _PERSONA_CORE)
+    )
 
 
 def test_composed_registry_entries_match_their_built_agents() -> None:
-    from resume_tailor_harness.profile.aspect_classifier import build_aspect_classifier_agent
-    from resume_tailor_harness.tailor.agents import build_reviewer_agent, build_tailor_agent
+    from resume_tailor_harness.profile.aspect_classifier import (
+        build_aspect_classifier_agent,
+    )
+    from resume_tailor_harness.tailor.agents import (
+        build_reviewer_agent,
+        build_tailor_agent,
+    )
     from resume_tailor_harness.tailor.match_plan import build_match_plan_agent
 
     assert SPECS_BY_KEY["tailor-writer"].instructions == tuple(

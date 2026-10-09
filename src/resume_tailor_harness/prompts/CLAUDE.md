@@ -10,3 +10,10 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   tone, emphasis, or process, never facts. `reviewer-fact-check` is the only
   non-editable integrity gate. API: `GET /api/agents/prompts` and
   `PUT /api/agents/prompts/{key}`.
+- **Task quality is application-owned.** `quality.py` adds versioned, bounded,
+  task-specific rules via `with_guidance`; the registry uses `with_quality`
+  to project the same rules without loading user guidance. New builder keys
+  must appear in both the quality map and registry. The fact-check gate is
+  deliberately unchanged, and eval judges never use this composition. The
+  merged advisory builder must include each individual reviewer's quality
+  rubric. See `docs/agent-prompt-quality.md` for sources and measurement limits.

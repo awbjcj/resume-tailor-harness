@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from resume_tailor_harness.career_lab import agents as career_lab_agents
 from resume_tailor_harness.cover_letter import agents as cover_letter_agents
 from resume_tailor_harness.company_intelligence import (
     agents as company_intelligence_agents,
@@ -19,6 +20,8 @@ from resume_tailor_harness.discovery import (
 from resume_tailor_harness.discovery.scraper import learn
 from resume_tailor_harness.discovery.url_ingest import llm as url_ingest_llm
 from resume_tailor_harness.gmail import classify
+from resume_tailor_harness.h1b import service as h1b_service
+from resume_tailor_harness.hiring_contacts import agents as hiring_contact_agents
 from resume_tailor_harness.interview import agent as interview_agent
 from resume_tailor_harness.profile import (
     aspect_classifier,
@@ -30,10 +33,13 @@ from resume_tailor_harness.profile import (
     synthesis,
 )
 from resume_tailor_harness.prompts.guidance import NON_EDITABLE_KEYS
+from resume_tailor_harness.prompts.quality import with_quality
+from resume_tailor_harness.role_preparation import agents as role_preparation_agents
 from resume_tailor_harness.services import email_writer
 from resume_tailor_harness.suggestions import agents as suggestions_agents
 from resume_tailor_harness.tailor import agents as tailor_agents
 from resume_tailor_harness.tailor import match_plan
+from resume_tailor_harness.tailor import portfolio_planner
 from resume_tailor_harness.taxonomy import groups
 from resume_tailor_harness.tracking import canonicalize
 
@@ -60,12 +66,89 @@ def _spec(
         title=title,
         stage=stage,
         description=description,
-        instructions=tuple(instructions),
+        instructions=tuple(with_quality(key, tuple(instructions))),
         editable=key not in NON_EDITABLE_KEYS,
     )
 
 
 PROMPT_SPECS = (
+    _spec(
+        "career-lab-router",
+        "Career Lab router",
+        "profile",
+        "Routes a career request to one approved skill.",
+        career_lab_agents._ROUTER_INSTRUCTIONS,
+    ),
+    _spec(
+        "career-lab-persona",
+        "Career Lab drafting assistant",
+        "profile",
+        "Drafts career artifacts with one verified skill and the conversation context.",
+        career_lab_agents._PERSONA_INSTRUCTIONS,
+    ),
+    _spec(
+        "career-lab-formatter",
+        "Career Lab formatter",
+        "profile",
+        "Formats draft metadata without adding claims or actions.",
+        career_lab_agents._FORMATTER_INSTRUCTIONS,
+    ),
+    _spec(
+        "evidence-portfolio",
+        "Evidence portfolio planner",
+        "tailoring",
+        "Allocates source evidence to job requirements within the resume budget.",
+        portfolio_planner._PORTFOLIO_INSTRUCTIONS,
+    ),
+    _spec(
+        "h1b-company-name-resolution",
+        "Sponsorship employer resolver",
+        "discovery",
+        "Normalizes an employer label without substituting corporate entities.",
+        h1b_service._COMPANY_NAME_INSTRUCTIONS,
+    ),
+    _spec(
+        "h1b-sponsorship-research",
+        "Historical sponsorship researcher",
+        "discovery",
+        "Collects historical filing evidence without inferring current sponsorship.",
+        h1b_service._SPONSORSHIP_INSTRUCTIONS,
+    ),
+    _spec(
+        "hiring-contact-research",
+        "Hiring contact researcher",
+        "discovery",
+        "Researches publicly evidenced people relevant to the company and role.",
+        hiring_contact_agents._SEARCH_INSTRUCTIONS,
+    ),
+    _spec(
+        "hiring-contact-format",
+        "Hiring contact formatter",
+        "discovery",
+        "Formats sourced contacts and copy-only outreach drafts.",
+        hiring_contact_agents._FORMAT_INSTRUCTIONS,
+    ),
+    _spec(
+        "role-preparation",
+        "Role preparation advisor",
+        "interview",
+        "Builds an evidence-grounded brief for interviews and recruiter questions.",
+        role_preparation_agents._INSTRUCTIONS,
+    ),
+    _spec(
+        "taxonomy-domains-escalation",
+        "Taxonomy domain resolver",
+        "profile",
+        "Resolves uncertain domain assignments with the full supplied taxonomy.",
+        canonicalize._ESCALATION_DOMAIN_INSTRUCTIONS,
+    ),
+    _spec(
+        "taxonomy-maintenance",
+        "Taxonomy maintainer",
+        "profile",
+        "Proposes high-confidence taxonomy cleanup while preserving pinned identities.",
+        canonicalize._MAINTENANCE_INSTRUCTIONS,
+    ),
     _spec(
         "tailor-writer",
         "Resume writer",
