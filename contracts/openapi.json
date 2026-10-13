@@ -1472,6 +1472,83 @@
         "title": "ArtifactDeleteRequest",
         "type": "object"
       },
+      "AuthoringContextOut": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "contextRevision": {
+            "title": "Contextrevision",
+            "type": "string"
+          },
+          "jdText": {
+            "title": "Jdtext",
+            "type": "string"
+          },
+          "jobId": {
+            "title": "Jobid",
+            "type": "integer"
+          },
+          "lengthBudget": {
+            "additionalProperties": true,
+            "title": "Lengthbudget",
+            "type": "object"
+          },
+          "profile": {
+            "additionalProperties": true,
+            "title": "Profile",
+            "type": "object"
+          },
+          "resumeSchema": {
+            "additionalProperties": true,
+            "title": "Resumeschema",
+            "type": "object"
+          },
+          "styleGuide": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Styleguide"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "jobId",
+          "company",
+          "title",
+          "jdText",
+          "contextRevision",
+          "profile",
+          "resumeSchema",
+          "lengthBudget",
+          "styleGuide"
+        ],
+        "title": "AuthoringContextOut",
+        "type": "object"
+      },
       "BillingCatalog": {
         "properties": {
           "enabled": {
@@ -4257,6 +4334,92 @@
         "title": "CompanyIntelligenceVersionListOut",
         "type": "object"
       },
+      "Contact": {
+        "additionalProperties": true,
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "headline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headline"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "willing_to_relocate": {
+            "default": false,
+            "title": "Willing To Relocate",
+            "type": "boolean"
+          },
+          "work_authorization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Authorization"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Contact",
+        "type": "object"
+      },
       "CostTotals": {
         "properties": {
           "byokEstimatedCostMicros": {
@@ -4907,6 +5070,152 @@
         "title": "DraftPatchIn",
         "type": "object"
       },
+      "DraftValidationOut": {
+        "properties": {
+          "contextRevision": {
+            "title": "Contextrevision",
+            "type": "string"
+          },
+          "critiques": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Critiques",
+            "type": "array"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid",
+          "contextRevision",
+          "critiques"
+        ],
+        "title": "DraftValidationOut",
+        "type": "object"
+      },
+      "Education": {
+        "additionalProperties": true,
+        "properties": {
+          "activities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Activities",
+            "type": "array"
+          },
+          "degree": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Degree"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "gpa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gpa"
+          },
+          "honors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Honors",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "institution": {
+            "title": "Institution",
+            "type": "string"
+          },
+          "relevant_coursework": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Relevant Coursework",
+            "type": "array"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source",
+            "default": "resume"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "synthesized": {
+            "default": false,
+            "title": "Synthesized",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "institution"
+        ],
+        "title": "Education",
+        "type": "object"
+      },
       "EmailDraftOut": {
         "properties": {
           "body": {
@@ -5280,6 +5589,31 @@
           "status"
         ],
         "title": "EvidencePortfolioOut",
+        "type": "object"
+      },
+      "ExternalDraftIn": {
+        "properties": {
+          "agent": {
+            "default": "external",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Agent",
+            "type": "string"
+          },
+          "content": {
+            "$ref": "#/components/schemas/ResumeContent"
+          },
+          "contextRevision": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Contextrevision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content",
+          "contextRevision"
+        ],
+        "title": "ExternalDraftIn",
         "type": "object"
       },
       "FieldIssue": {
@@ -7611,6 +7945,60 @@
         "title": "LaneEventOut",
         "type": "object"
       },
+      "Language": {
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "proficiency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proficiency"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source",
+            "default": "resume"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "synthesized": {
+            "default": false,
+            "title": "Synthesized",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "title": "Language",
+        "type": "object"
+      },
       "LengthBudget": {
         "properties": {
           "maxBulletsPerProject": {
@@ -7685,6 +8073,30 @@
           }
         },
         "title": "LengthBudget",
+        "type": "object"
+      },
+      "Link": {
+        "additionalProperties": true,
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "url"
+        ],
+        "title": "Link",
         "type": "object"
       },
       "LinkTokenRequest": {
@@ -11617,6 +12029,123 @@
         "title": "ResumeAuthoringSkillName",
         "type": "string"
       },
+      "ResumeContent": {
+        "additionalProperties": true,
+        "description": "Structured, fact-locked resume content. The renderer turns this into a PDF;\nthe LLM never emits markup.",
+        "properties": {
+          "awards": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredAward"
+            },
+            "title": "Awards",
+            "type": "array"
+          },
+          "certifications": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredCertification"
+            },
+            "title": "Certifications",
+            "type": "array"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/Contact"
+          },
+          "education": {
+            "items": {
+              "$ref": "#/components/schemas/Education"
+            },
+            "title": "Education",
+            "type": "array"
+          },
+          "experience": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredExperience"
+            },
+            "title": "Experience",
+            "type": "array"
+          },
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/Language"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredProject"
+            },
+            "title": "Projects",
+            "type": "array"
+          },
+          "publications": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredPublication"
+            },
+            "title": "Publications",
+            "type": "array"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "section_order": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Order"
+          },
+          "skills": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/TailoredSkill"
+              },
+              "type": "array"
+            },
+            "title": "Skills",
+            "type": "object"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "summary_provenance": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Summary Provenance",
+            "type": "array"
+          },
+          "volunteer": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredVolunteer"
+            },
+            "title": "Volunteer",
+            "type": "array"
+          }
+        },
+        "required": [
+          "contact"
+        ],
+        "title": "ResumeContent",
+        "type": "object"
+      },
       "ResumeVersionOut": {
         "properties": {
           "createdAt": {
@@ -14701,6 +15230,16 @@
         "title": "SnapshotElement",
         "type": "object"
       },
+      "Source": {
+        "description": "Where an atomic fact originated.",
+        "enum": [
+          "resume",
+          "github",
+          "manual"
+        ],
+        "title": "Source",
+        "type": "string"
+      },
       "SourceHealthOut": {
         "properties": {
           "affectedSources": {
@@ -15503,6 +16042,427 @@
           }
         },
         "title": "TailorParams",
+        "type": "object"
+      },
+      "TailoredAward": {
+        "additionalProperties": true,
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "provenance"
+        ],
+        "title": "TailoredAward",
+        "type": "object"
+      },
+      "TailoredBullet": {
+        "additionalProperties": true,
+        "description": "A resume bullet. ``provenance`` MUST point to a ProfileFacts fact id.",
+        "properties": {
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "provenance"
+        ],
+        "title": "TailoredBullet",
+        "type": "object"
+      },
+      "TailoredCertification": {
+        "additionalProperties": true,
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "issuer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "name",
+          "provenance"
+        ],
+        "title": "TailoredCertification",
+        "type": "object"
+      },
+      "TailoredExperience": {
+        "additionalProperties": true,
+        "properties": {
+          "bullets": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredBullet"
+            },
+            "title": "Bullets",
+            "type": "array"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "company",
+          "title",
+          "provenance"
+        ],
+        "title": "TailoredExperience",
+        "type": "object"
+      },
+      "TailoredProject": {
+        "additionalProperties": true,
+        "properties": {
+          "bullets": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredBullet"
+            },
+            "title": "Bullets",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "tech": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tech",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "provenance"
+        ],
+        "title": "TailoredProject",
+        "type": "object"
+      },
+      "TailoredPublication": {
+        "additionalProperties": true,
+        "properties": {
+          "authors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Authors",
+            "type": "array"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "venue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Venue"
+          }
+        },
+        "required": [
+          "title",
+          "provenance"
+        ],
+        "title": "TailoredPublication",
+        "type": "object"
+      },
+      "TailoredSkill": {
+        "additionalProperties": true,
+        "description": "A selected skill. ``provenance`` MUST point to a ProfileFacts Skill id.",
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "provenance"
+        ],
+        "title": "TailoredSkill",
+        "type": "object"
+      },
+      "TailoredVolunteer": {
+        "additionalProperties": true,
+        "properties": {
+          "bullets": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredBullet"
+            },
+            "title": "Bullets",
+            "type": "array"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "organization": {
+            "title": "Organization",
+            "type": "string"
+          },
+          "provenance": {
+            "title": "Provenance",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          }
+        },
+        "required": [
+          "organization",
+          "provenance"
+        ],
+        "title": "TailoredVolunteer",
         "type": "object"
       },
       "TaxonomyManifestOut": {
@@ -24070,6 +25030,64 @@
         "summary": "Upsert Application"
       }
     },
+    "/api/jobs/{job_id}/authoring-context": {
+      "get": {
+        "operationId": "context_api_jobs__job_id__authoring_context_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthoringContextOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Context",
+        "tags": [
+          "external-tailoring"
+        ]
+      }
+    },
     "/api/jobs/{job_id}/company-intelligence": {
       "get": {
         "operationId": "get_company_intelligence_api_jobs__job_id__company_intelligence_get",
@@ -24716,6 +25734,142 @@
           }
         },
         "summary": "Event Ics"
+      }
+    },
+    "/api/jobs/{job_id}/external-resume": {
+      "post": {
+        "operationId": "submit_api_jobs__job_id__external_resume_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalDraftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit",
+        "tags": [
+          "external-tailoring"
+        ]
+      }
+    },
+    "/api/jobs/{job_id}/external-resume/validate": {
+      "post": {
+        "operationId": "validate_api_jobs__job_id__external_resume_validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalDraftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftValidationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate",
+        "tags": [
+          "external-tailoring"
+        ]
       }
     },
     "/api/jobs/{job_id}/h1b-sponsorship": {
@@ -28597,6 +29751,61 @@
           }
         },
         "summary": "Delete Resume Version Endpoint"
+      }
+    },
+    "/api/resume-versions/{version_id}/content": {
+      "get": {
+        "operationId": "get_content_api_resume_versions__version_id__content_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeContent"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Content"
       }
     },
     "/api/resume-versions/{version_id}/evidence-portfolio": {
