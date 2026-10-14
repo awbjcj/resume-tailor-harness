@@ -28,7 +28,7 @@ from resume_tailor_harness.tailor.workflow import (
 from resume_tailor_harness.taxonomy.clusters import ClusterMap
 from resume_tailor_harness.taxonomy.snapshot import EffectiveTaxonomy
 from resume_tailor_harness.tracking.repository import (
-    resume_versions_for_job,
+    next_resume_attempt,
     save_job,
     save_resume_version,
 )
@@ -45,11 +45,6 @@ class TailorOutcome:
     versions: dict[int, list[ResumeVersion]] = field(default_factory=dict)
     failures: dict[int, StageFailure] = field(default_factory=dict)
     model: str | None = None
-
-
-def _next_attempt(session: Session, job_id: int) -> int:
-    existing = resume_versions_for_job(session, job_id)
-    return max((version.attempt for version in existing), default=0) + 1
 
 
 def _persist_rounds(
@@ -71,7 +66,7 @@ def _persist_rounds(
     """
     if job.id is None:
         raise ValueError("Cannot tailor a job that has not been persisted")
-    attempt = _next_attempt(session, job.id)
+    attempt = next_resume_attempt(session, job.id)
     # Recorded once per call, not per round: every round in a single tailor run
     # shares the same ReviewConfig, and this is what read-side callers (job
     # detail, resume render) use instead of the CURRENT review config so a

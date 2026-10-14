@@ -26,7 +26,7 @@ from resume_tailor_harness.tailor.skill_naming import skill_naming_critique
 from resume_tailor_harness.tailor.style_guide import load_style_guide
 from resume_tailor_harness.tailor.verdict import aggregate
 from resume_tailor_harness.tenancy.paths import REVIEW_PATH
-from resume_tailor_harness.tracking.repository import get_job, resume_versions_for_job
+from resume_tailor_harness.tracking.repository import get_job, next_resume_attempt
 from resume_tailor_harness.tracking.stages import advance
 from resume_tailor_harness.tracking.tables import Job, JobStatus, ResumeVersion
 
@@ -164,10 +164,7 @@ def submit_draft(
         raise ExternalTailoringError(
             "CONTEXT_STALE", "Evidence changed during review; fetch fresh context"
         )
-    attempt = (
-        max((v.attempt for v in resume_versions_for_job(session, job_id)), default=0)
-        + 1
-    )
+    attempt = next_resume_attempt(session, job_id)
     version = ResumeVersion(
         job_id=job_id,
         round=1,

@@ -56,7 +56,7 @@ from resume_tailor_harness.tracking.repository import (
     application_for_job,
     company_rename_collides,
     get_job,
-    resume_versions_for_job,
+    latest_resume_version_id,
     save_job,
 )
 from resume_tailor_harness.tracking.tables import Job
@@ -298,10 +298,7 @@ def _render_target(session, job_id: int) -> int | None:
     application = application_for_job(session, job_id)
     if application is not None and application.resume_version_id is not None:
         return application.resume_version_id
-    versions = resume_versions_for_job(session, job_id)
-    if not versions:
-        return None
-    return max(version.id or 0 for version in versions) or None
+    return latest_resume_version_id(session, job_id)
 
 
 def _run_render(session, jobs, run_id) -> list[StageOutcome]:

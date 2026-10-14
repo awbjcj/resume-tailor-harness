@@ -186,6 +186,27 @@ def resume_versions_for_job(session: Session, job_id: int) -> list[ResumeVersion
     )
 
 
+def next_resume_attempt(session: Session, job_id: int) -> int:
+    """Read the next attempt number without loading historical resume payloads.
+
+    This selects a number; it does not reserve it against concurrent writers.
+    """
+    latest = session.exec(
+        select(func.max(ResumeVersion.attempt)).where(ResumeVersion.job_id == job_id)
+    ).one()
+    return (latest if latest is not None else 0) + 1
+
+
+def latest_resume_version_id(session: Session, job_id: int) -> int | None:
+    """Highest stored id for a job, independent of attempt, score, or round."""
+    return (
+        session.exec(
+            select(func.max(ResumeVersion.id)).where(ResumeVersion.job_id == job_id)
+        ).one()
+        or None
+    )
+
+
 def cover_letters_for_job(session: Session, job_id: int) -> list[CoverLetter]:
     return list(
         session.exec(select(CoverLetter).where(CoverLetter.job_id == job_id)).all()
