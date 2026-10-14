@@ -28,6 +28,10 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   the **launch seam** (`api/runs/launch.py`): `launch()` submits + maps the three
   launch-time errors onto the API envelope (singleton→409, reset→409, quota→429),
   and `session_work()` owns the worker-opens-its-own-session rule.
+- **Run-root registration is idempotent.** Auth calls `register_root` on every
+  request, so a known root must not enumerate its files again under the manager
+  lock. `_root_for` discovers uncached records, including files created or
+  restored after registration; run listings still read durable records.
 - **Terminal runs are also durable.** `RunManager.on_terminal` records exactly one
   `RunCompletion` row when a run reaches `succeeded`, `failed`, or `cancelled`;
   callback failures are logged and must never replace the worker's real outcome.
