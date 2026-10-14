@@ -319,7 +319,7 @@ def ensure_resume_version_attempt_columns(engine: Engine) -> None:
 
     Existing rows predate the attempt concept but are, by definition, a job's
     first tailoring; backfilling to 1 (not the column default of 0) keeps
-    _next_attempt()'s "max + 1" logic from colliding with them on redo.
+    next_resume_attempt()'s "max + 1" logic from colliding with them on redo.
     """
     cols = _table_columns(engine, "resume_versions")
     if not cols:

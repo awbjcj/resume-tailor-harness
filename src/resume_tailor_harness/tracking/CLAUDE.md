@@ -90,6 +90,12 @@ block `interview -> rejected`, the most common transition in a job hunt, and
 against `ApplicationStatus` members — the ordering lives in `PROGRESSION` and
 nowhere else.
 
+`repository.next_resume_attempt` owns attempt selection for internal and external
+authors; `latest_resume_version_id` selects the re-render fallback when there is
+no Application selection. Both query scalar maxima rather than loading historical
+resume/critique JSON. They respect the caller's session and transaction; selecting
+an attempt number does not reserve it against concurrent writers.
+
 `StageScope(job_ids, any_status, never_regress)` is how the funnel stages in
 `discovery/pipeline.py` run over explicit ids. `StageScope()` reproduces the
 automatic funnel exactly — that default is the regression guard.
