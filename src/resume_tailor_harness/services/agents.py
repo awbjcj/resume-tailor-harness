@@ -95,28 +95,13 @@ def build_discovery_bundle(
     )
 
 
-def build_tailor_bundle(
+def build_reviewers(
     config,
     style_guide: str | None = None,
     *,
-    authoring_skill: ResumeAuthoringSkillName | str | None = None,
     registry: CareerSkillRegistry | None = None,
-) -> TailorBundle:
-    selected_authoring: VerifiedSkill | None = None
-    selected_revision: VerifiedSkill | None = None
-    if authoring_skill is not None or registry is not None:
-        registry = registry or CareerSkillRegistry.from_settings(get_settings())
-        selected_name = (
-            authoring_skill.value
-            if isinstance(authoring_skill, ResumeAuthoringSkillName)
-            else authoring_skill or "resume-customizer"
-        )
-        selected_authoring = registry.require(
-            selected_name, family=AgentFamily.RESUME_AUTHORING, use="tailor"
-        )
-        selected_revision = registry.require(
-            "resume-version-manager", family=AgentFamily.RESUME_REVIEW, use="revision"
-        )
+) -> Mapping[str, Runner]:
+    """Build the shared review roster without constructing authoring agents."""
     reviewers = {}
     merged = bool(getattr(config, "merged_advisory", False))
     for spec in config.reviewers:
@@ -151,6 +136,32 @@ def build_tailor_bundle(
                     for spec in advisory_specs
                 },
             )
+    return reviewers
+
+
+def build_tailor_bundle(
+    config,
+    style_guide: str | None = None,
+    *,
+    authoring_skill: ResumeAuthoringSkillName | str | None = None,
+    registry: CareerSkillRegistry | None = None,
+) -> TailorBundle:
+    selected_authoring: VerifiedSkill | None = None
+    selected_revision: VerifiedSkill | None = None
+    if authoring_skill is not None or registry is not None:
+        registry = registry or CareerSkillRegistry.from_settings(get_settings())
+        selected_name = (
+            authoring_skill.value
+            if isinstance(authoring_skill, ResumeAuthoringSkillName)
+            else authoring_skill or "resume-customizer"
+        )
+        selected_authoring = registry.require(
+            selected_name, family=AgentFamily.RESUME_AUTHORING, use="tailor"
+        )
+        selected_revision = registry.require(
+            "resume-version-manager", family=AgentFamily.RESUME_REVIEW, use="revision"
+        )
+    reviewers = build_reviewers(config, style_guide, registry=registry)
     tailor_model_id = model_for_tier(getattr(config, "tailor_tier", "premium"))
     reviser_model_id = model_for_tier(getattr(config, "reviser_tier", "premium"))
     if selected_authoring is None:

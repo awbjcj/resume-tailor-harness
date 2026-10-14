@@ -1,5 +1,6 @@
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from threading import Barrier, Event, Lock, Thread
 
 import pytest
@@ -49,6 +50,57 @@ def test_create_run_starts_pending(tmp_path):
     assert rec is not None
     assert rec.kind == "discover"
     assert rec.state in (RunState.pending, RunState.running, RunState.done)
+
+
+@pytest.mark.parametrize("default_root", [False, True])
+def test_register_root_does_not_rescan_known_directories(
+    tmp_path, monkeypatch, default_root
+):
+    root = tmp_path / "runs"
+    ProgressReporter("existing", root=root).begin(1, "Existing run", kind="pull")
+    manager = RunManager(
+        root=root if default_root else tmp_path / "legacy", executor=InlineExecutor()
+    )
+    scans = []
+    original_glob = Path.glob
+
+    def counted_glob(path, pattern, *args, **kwargs):
+        scans.append(path)
+        return original_glob(path, pattern, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "glob", counted_glob)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        list(executor.map(manager.register_root, [root] * 20))
+    created = manager.create("pull", storage_root=root)
+
+    assert scans == ([] if default_root else [root])
+    assert manager.get("existing") is not None
+    assert manager.get(created) is not None
+
+
+@pytest.mark.parametrize("default_root", [False, True])
+def test_registered_root_discovers_later_and_restored_records(tmp_path, default_root):
+    root = tmp_path / "runs"
+    manager = RunManager(
+        root=root if default_root else tmp_path / "legacy", executor=InlineExecutor()
+    )
+    manager.register_root(root)  # Registration may precede directory creation.
+    for run_id in ("later", "restored"):
+        ProgressReporter(run_id, root=root).begin(
+            1, "Working", kind="pull", user_id="alice"
+        )
+        manager.register_root(root)
+
+        snapshot = manager.get(run_id)
+        assert snapshot is not None and snapshot.user_id == "alice"
+        assert [run.run_id for run in manager.list_active(user_id="alice")] == [run_id]
+        assert [
+            run.run_id for run in manager.list_rehydratable(user_id="alice")
+        ] == [run_id]
+        assert manager.list_active(user_id="bob") == []
+        assert manager.list_rehydratable(user_id="bob") == []
+        manager.clear(run_id)
+        root.rmdir()  # Workspace replacement may remove and recreate the root.
 
 
 def test_submit_runs_fn_and_records_result(tmp_path):

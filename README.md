@@ -13,6 +13,11 @@ cover letter; renders both to PDF; and tracks each application in a
 workspace-scoped SQLite database. Use it as a CLI, a local web app, or a hosted
 multi-user service.
 
+For programmatic access from Codex, Claude Code, pi, or your own agent, use the
+[Python SDK and agent skills](sdk/python/README.md). Authenticate with a personal
+access token, pull jobs, run hosted tailoring, or submit an externally authored
+resume through the harness's review gates.
+
 **Fact-lock** requires every tailored-resume bullet to trace back to a fact you
 provided. Agents can draft, reframe, and critique. Deterministic control-flow
 gates decide what can reach a saved document. [The harness](#the-harness)

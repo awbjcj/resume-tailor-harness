@@ -1,17 +1,22 @@
 {
-  "include": ["src", "tests"],
+  "include": ["src", "tests", "sdk/python/src"],
   "exclude": [".venv"],
   "venvPath": ".",
   "venv": ".venv",
   "pythonVersion": "3.13",
   "executionEnvironments": [
     {
+      "root": "sdk/python",
+      "pythonVersion": "3.10",
+      "extraPaths": ["sdk/python/src"]
+    },
+    {
       "root": "services/h1b-job-search-mcp",
       "extraPaths": ["services/h1b-job-search-mcp/src"]
     },
     {
       "root": ".",
-      "extraPaths": ["src"]
+      "extraPaths": ["src", "sdk/python/src"]
     }
   ]
 }

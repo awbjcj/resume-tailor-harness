@@ -35,6 +35,14 @@ router = APIRouter()
 link_router = APIRouter()
 
 
+@router.get("/resume-versions/{version_id}/content", response_model=ResumeContent)
+def get_content(version_id: int, session: Session = Depends(get_session)):
+    version = get_resume_version(session, version_id)
+    if version is None:
+        raise ApiException(404, "NOT_FOUND", "Resume version not found")
+    return ResumeContent.model_validate(version.content_json or {})
+
+
 def _realized_portfolio_fact_ids(content: ResumeContent) -> set[str]:
     return {
         *(

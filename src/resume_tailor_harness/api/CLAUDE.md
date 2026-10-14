@@ -28,6 +28,10 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   the **launch seam** (`api/runs/launch.py`): `launch()` submits + maps the three
   launch-time errors onto the API envelope (singleton→409, reset→409, quota→429),
   and `session_work()` owns the worker-opens-its-own-session rule.
+- **Run-root registration is idempotent.** Auth calls `register_root` on every
+  request, so a known root must not enumerate its files again under the manager
+  lock. `_root_for` discovers uncached records, including files created or
+  restored after registration; run listings still read durable records.
 - **Terminal runs are also durable.** `RunManager.on_terminal` records exactly one
   `RunCompletion` row when a run reaches `succeeded`, `failed`, or `cancelled`;
   callback failures are logged and must never replace the worker's real outcome.
@@ -66,6 +70,17 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   `board_filter_query(default_sort)` only maps the shared HTTP query surface
   into that contract. Triage's extra `archived` flag stays endpoint-local via
   `dataclasses.replace`.
+- **External resume authors use the same trust boundary.** The standalone client
+  and distributable agent skills live in `sdk/python`; personal access tokens
+  authenticate them through the normal guarded routes. `authoring-context`
+  returns renderable facts and native resume JSON Schema; `external-resume/validate`
+  is deterministic preflight, not approval. `services/external_tailoring.py`
+  rechecks the JD/profile revision, requires the configured fact-check gate,
+  reviews external content, and appends a version only for a passing verdict.
+  The outer API uses camelCase; embedded profile/resume domain JSON stays
+  snake_case. Never accept client-supplied review verdicts or use preflight as
+  a substitute for the factual review. New SDK code is included in root pytest
+  import paths and lint targets; it must remain installable without the server.
 
 ---
 

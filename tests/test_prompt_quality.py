@@ -2,6 +2,7 @@
 
 import ast
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -115,7 +116,8 @@ def test_new_catalog_entries_match_runtime_instructions(monkeypatch):
     monkeypatch.setattr(
         "resume_tailor_harness.prompts.guidance.guidance_for", lambda _: None
     )
-    settings = Settings(_env_file=None)
+    settings_options: dict[str, Any] = {"_env_file": None}
+    settings = Settings(**settings_options)
     builders = {
         "career-lab-router": lambda: build_router_agent(settings),
         "career-lab-formatter": lambda: build_formatter_agent(settings),
@@ -171,6 +173,7 @@ def test_run_provenance_records_quality_version_without_mutating_caller_meta():
     )
     agent = SimpleNamespace(instructions=with_quality("fit-score", ["base"]))
     runner = AgentRunner(agent, run_meta=meta)
+    assert runner.run_meta is not None
     assert (
         runner.run_meta.prompt_policy_version == f"job-fit-v1+{QUALITY_POLICY_VERSION}"
     )

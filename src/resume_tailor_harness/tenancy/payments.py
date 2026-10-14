@@ -10,7 +10,7 @@ import hashlib
 import json
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, Literal, cast
 from urllib.parse import urlsplit
 
 import stripe
@@ -42,13 +42,9 @@ CLOSED = {"canceled", "incomplete_expired"}
 logger = logging.getLogger(__name__)
 
 
-class _ManagedPaymentsParams(TypedDict):
-    enabled: bool
-
-
-class _CheckoutCreateParams(CheckoutSessionCreateParams):
-    # The pinned Stripe SDK does not yet declare this supported API parameter.
-    managed_payments: _ManagedPaymentsParams
+class _CheckoutCreateParams(CheckoutSessionCreateParams, total=False):
+    # Stripe 16 types omit this parameter, which our pinned Clover API accepts.
+    payment_method_types: list[Literal["card"]]
 
 
 class BillingError(RuntimeError):

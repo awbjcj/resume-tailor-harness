@@ -131,7 +131,7 @@ test-web:
 lint: lint-py lint-web
 
 lint-py:
-	$(UV) run ruff check src tests evals
+	$(UV) run ruff check src tests evals sdk/python/src
 
 lint-web:
 	$(NPM) --prefix web run lint

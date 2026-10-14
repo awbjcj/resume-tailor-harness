@@ -28,7 +28,7 @@ jobs:
       - name: Sync dependencies
         run: uv sync --frozen
       - name: Lint (ruff)
-        run: uv run ruff check src tests evals
+        run: uv run ruff check src tests evals sdk/python/src
       - name: Test (pytest, offline)
         run: uv run pytest tests
 

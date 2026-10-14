@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "resume-harness-sdk"
+version = "0.1.0"
+description = "API-key client and agent skills for Resume Tailor Harness"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["httpx>=0.28.1,<1"]
+
+[project.scripts]
+resume-harness = "resume_harness_sdk.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/resume_harness_sdk"]

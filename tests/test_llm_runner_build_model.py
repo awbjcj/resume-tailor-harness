@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 
 from agno.models.message import Message
 from openai.types.responses import Response, ResponseStreamEvent
@@ -84,8 +84,9 @@ def test_haiku_55_reasoning_forwards_supported_efforts(monkeypatch, effort):
     from resume_tailor_harness import llm_runner
     from resume_tailor_harness.config import Settings
 
+    settings_options: dict[str, Any] = {"_env_file": None}
     settings = Settings(
-        _env_file=None,
+        **settings_options,
         cheap_model="claude-haiku-5-5",
         cheap_reasoning_effort=effort,
     )
@@ -108,8 +109,9 @@ def test_haiku_55_serializes_valid_messages_api_requests(monkeypatch, reasoning)
     from resume_tailor_harness import llm_runner
     from resume_tailor_harness.config import Settings
 
+    settings_options: dict[str, Any] = {"_env_file": None}
     settings = Settings(
-        _env_file=None,
+        **settings_options,
         cheap_model="claude-haiku-5-5",
         cheap_reasoning_effort="max",
     )

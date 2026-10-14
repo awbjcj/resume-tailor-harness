@@ -296,6 +296,10 @@ class RunManager:
     def register_root(self, root: Path | str) -> None:
         resolved = Path(root)
         with self._singleton_lock:
+            # Auth registers on every request. Later/restored records are still
+            # discovered by _root_for; registration is not a directory snapshot.
+            if resolved in self._roots:
+                return
             self._roots.add(resolved)
             if resolved.is_dir():
                 for path in resolved.glob("*.json"):

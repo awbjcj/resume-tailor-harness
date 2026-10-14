@@ -97,7 +97,7 @@ def test_attempt_migration_backfills_existing_rows_to_attempt_one():
     assert {"attempt", "tailor_model"}.issubset(cols)
     # Rows written before this feature existed are, by definition, the job's
     # first (and only) attempt so far -- backfilling to 0 would collide with
-    # _next_attempt()'s "max + 1" logic on the very next redo.
+    # next_resume_attempt()'s "max + 1" logic on the very next redo.
     assert attempt == 1
     assert model is None
 
