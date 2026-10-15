@@ -73,11 +73,17 @@ builder imports a concrete agno model class directly.
   standing rule that the visible answer is never reasoning.
 - **Tiers unchanged.** `model_for_tier` still maps `cheap`/`mid`/`premium` →
   `Settings.{cheap,mid,premium}_model`; the prefix lives inside those ids.
-- **Dependency note.** Agno is on 3.1.1 or newer within major version 3.
-  The Gemini SDK range stays at `>=2.5.0,<2.24.0` during this upgrade.
+- **Dependency note.** Agno is on 3.1.3 or newer within major version 3.
+  The Gemini SDK range stays at `>=2.5.0,<2.30.0` during this upgrade.
   DeepSeek and OpenAI both ride the `openai` SDK. The Responses compatibility
   override forwards Agno 3's `run_response` argument to its parent; omitting
   it breaks actual provider requests even when model-construction tests pass.
+  Agno 3.1.2+ recognizes GPT-6 for encrypted reasoning replay with `store=False`
+  and preserves Responses cache-write usage. These improvements flow through
+  our existing model seam and usage recorder without a second implementation.
+  `tests/test_agno_integration.py` exercises the real sync, async, and streaming
+  tool loops over a mocked HTTP transport, including structured output.
+  See `docs/agno-3.1.3-upgrade.md` for the capability assessment and boundaries.
 - **Gemini thinking is generation-specific — never send `thinking_budget` to
   Gemini 3.** Gemini treats an unset thinking config as "provider decides"
   (unbounded automatic budget), so non-reasoning agents must bound it. But
