@@ -52,5 +52,9 @@ null`; the domain model rejects that outright, so turning the budget off
   Blank application answers mean unknown; search defaults, inferred skills, and
   employer requirements never become applicant answers. Contact overrides are
   explicit. Prompts remain English regardless of UI language, contain no source
-  paths, and do not attach files. Application profile settings are included in
-  settings bundles, validated on import, and reset through the section registry.
+  paths, and do not attach files. Render a ready-to-use Markdown prompt with
+  populated applicant fields and readable education/work history, never a JSON
+  dump. Omit unknown answers, empty sections, provenance/GitHub metadata, and
+  redundant employer requirements or job-description text. Application profile
+  settings are included in settings bundles, validated on import, and reset
+  through the section registry.
