@@ -1,0 +1,16 @@
+{{ tr(title) }}
+
+{% if language == "zh-CN" %}{{ username }}，你好：{% else %}Hello {{ username }},{% endif %}
+
+{{ tr(summary) }}
+{{ tr('Operation recorded at') }} {{ occurred_at }} (UTC){% if language == "zh-CN" %}。{% else %}.{% endif %}
+{% for label, value in details.items() %}
+{{ tr(label) }}{% if language == "zh-CN" %}：{% else %}: {% endif %}{{ detail_value(label, value) }}
+{% endfor %}
+{% if account_url %}
+{{ tr('Review your account') }}: {{ account_url }}
+{% endif %}
+
+{{ tr('If you did not expect this change, contact your administrator.') }}
+
+{{ tr('This account notice was sent to your registered email address. Account and security notices are independent of optional job-search digests.') }}

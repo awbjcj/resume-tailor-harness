@@ -20,7 +20,7 @@ from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.public_url import public_url
 from resume_tailor_harness.api.schemas.auth_google import GoogleStartOut
 from resume_tailor_harness.config import Settings
-from resume_tailor_harness.mail import messages
+from resume_tailor_harness.mail.account_notifications import enqueue_account_email
 from resume_tailor_harness.tenancy.context import new_user_id
 from resume_tailor_harness.tenancy.quotas import assign_new_member
 from resume_tailor_harness.tenancy.secrets import hash_secret
@@ -333,12 +333,9 @@ def google_callback(
             by_email.email_verified_at = by_email.email_verified_at or now
             by_email.last_active_at = now
             attempts.clear_lockout(by_email)
+            enqueue_account_email(session, by_email, "google_linked")
             session.commit()
             attempts.reset(engine, email=email, ip=_client_ip(request))
-            notice = messages.google_linked(settings.app_base_url)
-            request.app.state.mailer.notify(
-                to=email, subject=notice.subject, body=notice.body
-            )
             return _sign_in(request, settings, by_email)
 
         if parsed.mode != "register" and settings.registration_mode != "open":
@@ -403,6 +400,7 @@ def google_callback(
             ),
         )
         session.add(user)
+        enqueue_account_email(session, user, "account_created")
         assign_new_member(session, user.id, now=now)
         if invite is not None:
             invite.used_by = user.id

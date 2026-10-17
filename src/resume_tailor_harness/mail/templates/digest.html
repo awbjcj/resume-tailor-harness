@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 style="font-size:24px">Your job-search digest</h1>
-<p style="color:#78716c">{{ date }} · {{ frequency }} digest</p>
+<h1 style="font-size:24px">{{ tr('Your job-search digest') }}</h1>
+<p style="color:#78716c">{{ date }} · {{ frequency }}</p>
 {% if pending_reviews %}
-<h2 style="font-size:18px">{{ pending_count }} jobs awaiting review</h2>
-<ul>{% for job in jobs %}<li>{{ job.company or "Unknown company" }} — {{ job.title or "Untitled job" }}</li>{% endfor %}</ul>
-<p><a href="{{ base_url }}/shortlist">Review your shortlist</a></p>
+<h2 style="font-size:18px">{{ pending_count }} {{ tr('jobs awaiting review') }}</h2>
+<ul>{% for job in jobs %}<li>{{ job.company or tr("Unknown company") }} — {{ job.title or tr("Untitled job") }}</li>{% endfor %}</ul>
+<p><a href="{{ base_url }}/shortlist">{{ tr('Review your shortlist') }}</a></p>
 {% endif %}
 {% if statistics %}
-<h2 style="font-size:18px">Workspace statistics</h2>
-<p>{{ stats.active_jobs }} active jobs · {{ stats.applications }} applications submitted<br>
-{{ stats.interviews }} applications in interview · {{ stats.offers }} offers</p>
-<p><a href="{{ base_url }}/analytics">View statistics</a></p>
+<h2 style="font-size:18px">{{ tr('Workspace statistics') }}</h2>
+<p>{{ stats.active_jobs }} {{ tr('active jobs') }} · {{ stats.applications }} {{ tr('applications submitted') }}<br>
+{{ stats.interviews }} {{ tr('applications in interview') }} · {{ stats.offers }} {{ tr('offers') }}</p>
+<p><a href="{{ base_url }}/analytics">{{ tr('View statistics') }}</a></p>
 {% endif %}
 {% if reminders %}
-<h2 style="font-size:18px">Reminders</h2>
-<ul>{% for reminder in reminder_items %}<li>{{ reminder }}</li>{% else %}<li>No upcoming events or follow-ups due.</li>{% endfor %}</ul>
-<p><a href="{{ base_url }}/applications">Open applications</a></p>
+<h2 style="font-size:18px">{{ tr('Reminders') }}</h2>
+<ul>{% for reminder in reminder_items %}<li>{{ reminder }}</li>{% else %}<li>{{ tr('No upcoming events or follow-ups due.') }}</li>{% endfor %}</ul>
+<p><a href="{{ base_url }}/applications">{{ tr('Open applications') }}</a></p>
 {% endif %}
 <hr style="border:0;border-top:1px solid #e7e5e4;margin-top:24px">
-<p style="font-size:12px;color:#78716c">You opted in to these emails. <a href="{{ base_url }}/settings/notifications">Manage preferences</a> or <a href="{{ unsubscribe_url }}">unsubscribe</a>.</p>
+<p style="font-size:12px;color:#78716c">{{ tr('You opted in to these emails.') }} <a href="{{ base_url }}/settings/notifications">{{ tr('Manage preferences') }}</a> {{ tr("or") }} <a href="{{ unsubscribe_url }}">{{ tr('unsubscribe') }}</a>{% if language == "zh-CN" %}。{% else %}.{% endif %}</p>
 {% endblock %}

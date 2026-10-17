@@ -22,11 +22,17 @@ from resume_tailor_harness.api.schemas.auth_email import (
 )
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.mail import messages
+from resume_tailor_harness.mail.localization import normalize_language
+from resume_tailor_harness.mail.account_notifications import enqueue_account_email
 from resume_tailor_harness.mail.mailer import MailDeliveryError
 from resume_tailor_harness.tenancy.context import new_user_id
 from resume_tailor_harness.tenancy.quotas import assign_new_member
 from resume_tailor_harness.tenancy.secrets import hash_secret
-from resume_tailor_harness.tenancy.system_db import InviteCode, PendingRegistration, User
+from resume_tailor_harness.tenancy.system_db import (
+    InviteCode,
+    PendingRegistration,
+    User,
+)
 from resume_tailor_harness.tenancy.workspace import provision_workspace, workspace_paths
 
 
@@ -124,7 +130,9 @@ def register(
         if existing is not None:
             # Match the expensive password-hash work of the unknown-address path.
             auth.hash_password(body.password)
-            notice = messages.signup_on_existing(settings.app_base_url)
+            notice = messages.signup_on_existing(
+                settings.app_base_url, existing.dashboard_language
+            )
             request.app.state.mailer.notify(
                 to=body.email, subject=notice.subject, body=notice.body
             )
@@ -147,7 +155,13 @@ def register(
             )
         )
         session.flush()
-        send_or_fail(request, body.email, messages.verification_code(code))
+        send_or_fail(
+            request,
+            body.email,
+            messages.verification_code(
+                code, normalize_language(request.headers.get("accept-language"))
+            ),
+        )
         session.commit()
     return CodeSentResponse()
 
@@ -217,6 +231,9 @@ def verify_email(
                 ),
                 email=body.email,
                 email_verified_at=now,
+                dashboard_language=normalize_language(
+                    request.headers.get("accept-language")
+                ),
                 password_hash=pending.password_hash,
                 role="user",
                 shared_key_access=True,
@@ -231,6 +248,7 @@ def verify_email(
                 ),
             )
             session.add(user)
+            enqueue_account_email(session, user, "account_created")
             assign_new_member(session, user.id, now=now)
             if invite is not None:
                 invite.used_by = user.id
@@ -300,6 +318,12 @@ def resend_code(
         pending.code_hash = auth_codes.hash_code(code, settings)
         pending.expires_at = auth_codes.expires_at()
         pending.attempts = 0
-        send_or_fail(request, body.email, messages.verification_code(code))
+        send_or_fail(
+            request,
+            body.email,
+            messages.verification_code(
+                code, normalize_language(request.headers.get("accept-language"))
+            ),
+        )
         session.commit()
     return CodeSentResponse()

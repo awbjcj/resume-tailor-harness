@@ -20,6 +20,7 @@ import {
 import { useDraft } from "../use-draft";
 import {
   useEmailNotifications,
+  EmailNotificationError,
   type EmailUpdate,
 } from "../use-email-notifications";
 
@@ -29,6 +30,13 @@ const TOPICS = [
   { key: "reminders", icon: Bell },
 ] as const;
 const FREQUENCIES = ["daily", "weekly", "monthly"] as const;
+const ERROR_KEYS = {
+  INVALID_CODE: "emailNotifications.errors.invalidCode",
+  RATE_LIMITED: "emailNotifications.errors.rateLimited",
+  EMAIL_REQUIRED: "emailNotifications.errors.emailRequired",
+  MAIL_UNAVAILABLE: "emailNotifications.errors.mailUnavailable",
+  VALIDATION_ERROR: "emailNotifications.errors.validation",
+} as const;
 
 export function EmailNotificationsPage() {
   const { t, i18n } = useTranslation();
@@ -53,6 +61,9 @@ export function EmailNotificationsPage() {
   >(null);
   const busy = save.isPending || sendCode.isPending || verify.isPending;
   const error = save.error || sendCode.error || verify.error;
+  const errorKey = error instanceof EmailNotificationError
+    ? ERROR_KEYS[error.code as keyof typeof ERROR_KEYS]
+    : undefined;
   const resetFeedback = () => {
     setFeedbackKey(null);
     save.reset();
@@ -92,6 +103,9 @@ export function EmailNotificationsPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {t("emailNotifications.description")}
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t("emailNotifications.languageHelp")}
         </p>
       </header>
       {!data.deliveryAvailable && (
@@ -379,7 +393,9 @@ export function EmailNotificationsPage() {
       )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
-          {error.message}
+          {(i18n.resolvedLanguage ?? i18n.language).startsWith("zh")
+            ? t(errorKey ?? "emailNotifications.errors.unexpected")
+            : error.message}
         </p>
       )}
     </div>

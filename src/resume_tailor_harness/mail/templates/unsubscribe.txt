@@ -1,0 +1,7 @@
+{% if unsubscribed %}
+{{ tr('You are unsubscribed') }}
+{{ tr('Email notifications are off. You can opt in again in Settings → Email notifications.') }}
+{% else %}
+{{ tr('Unsubscribe from email notifications?') }}
+{{ tr('Account security emails will continue.') }}
+{% endif %}

@@ -21,6 +21,7 @@ from resume_tailor_harness.config import Settings
 from resume_tailor_harness.tenancy import payments
 from resume_tailor_harness.tenancy.quotas import quota_snapshot, charge_shared_cost
 from resume_tailor_harness.tenancy.system_db import (
+    AccountEmail,
     MemberSubscription,
     QuotaLedgerEntry,
     QuotaTier,
@@ -1287,3 +1288,69 @@ def test_paid_invoice_for_terminal_subscription_is_acknowledged(
     with Session(engine) as session:
         assert session.get(StripeReceipt, "event:" + ev["id"]) is not None
         assert session.get(StripeReceipt, "invoice:in_first") is None
+
+
+def test_payment_notices_commit_with_purchase_and_refund_once(billing, mu_client):
+    engine, _, fake = billing
+    with Session(engine) as session:
+        user = session.get(User, USER)
+        user.email, user.email_verified_at = "alice@example.com", datetime.now(UTC)
+        session.commit()
+    sid = checkout(mu_client)
+    paid = event("checkout.session.completed", {"id": sid}, "evt_notice_paid")
+    fake.checkouts[sid]["payment_status"] = "paid"
+    assert deliver(mu_client, paid).status_code == 200
+    assert deliver(mu_client, {**paid, "id": "evt_notice_replay"}).status_code == 200
+    refund = event(
+        "charge.refunded",
+        {
+            "id": "ch_notice",
+            "currency": "usd",
+            "amount": 1000,
+            "amount_refunded": 1000,
+            "payment_intent": f"pi_{sid}",
+        },
+        "evt_notice_refund",
+    )
+    assert deliver(mu_client, refund).status_code == 200
+    assert deliver(mu_client, {**refund, "id": "evt_refund_replay"}).status_code == 200
+    with Session(engine) as session:
+        rows = list(session.scalars(select(AccountEmail)))
+        assert [row.event for row in rows] == ["CREDIT_PURCHASE", "CREDIT_REFUND"]
+        assert all(row.recipient == "alice@example.com" for row in rows)
+
+
+def test_subscription_webhook_notices_are_atomic_and_idempotent(billing, mu_client):
+    engine, _, fake = billing
+    with Session(engine) as session:
+        user = session.get(User, USER)
+        user.email, user.email_verified_at = "alice@example.com", datetime.now(UTC)
+        session.commit()
+    sid = checkout(mu_client, "price_plan")
+    paid = paid_subscription(fake, sid)
+    payments.process_event(engine, paid, fake, now=NOW)
+    payments.process_event(engine, {**paid, "id": "evt_notice_repeat"}, fake, now=NOW)
+    fake.subscriptions["sub_test"]["cancel_at_period_end"] = True
+    update = event(
+        "customer.subscription.updated", {"id": "sub_test"}, "evt_notice_cancel", 5
+    )
+    payments.process_event(engine, update, fake, now=NOW)
+    payments.process_event(engine, {**update, "id": "evt_cancel_repeat"}, fake, now=NOW)
+    fake.subscriptions["sub_test"]["status"] = "canceled"
+    payments.process_event(
+        engine,
+        event(
+            "customer.subscription.deleted",
+            {"id": "sub_test"},
+            "evt_notice_revoked",
+            10,
+        ),
+        fake,
+        now=NOW,
+    )
+    with Session(engine) as session:
+        assert list(session.scalars(select(AccountEmail.event).order_by(AccountEmail.created_at))) == [
+            "SUBSCRIPTION_ACTIVATED",
+            "subscription_cancellation",
+            "SUBSCRIPTION_REVOKED",
+        ]

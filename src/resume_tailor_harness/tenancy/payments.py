@@ -25,6 +25,10 @@ from stripe.params.checkout import SessionCreateParams as CheckoutSessionCreateP
 
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.tenancy.quotas import _aware, _ensure_in_session, _new_period
+from resume_tailor_harness.mail.account_notifications import (
+    add_quota_entry,
+    enqueue_account_email,
+)
 from resume_tailor_harness.tenancy.system_db import (
     MemberSubscription,
     QuotaLedgerEntry,
@@ -591,7 +595,8 @@ def _ledger(
     credit: int = 0,
     source: str = "",
 ) -> None:
-    session.add(
+    add_quota_entry(
+        session,
         QuotaLedgerEntry(
             user_id=order.user_id,
             period_id=period_id,
@@ -775,9 +780,17 @@ def _apply_subscription_event(
                 event["created"] >= binding.state_event_created
                 and binding.status != "canceled"
             ):
+                previous_cancellation = binding.cancel_at_period_end
                 binding.status = sub["status"]
                 binding.cancel_at_period_end = bool(sub.get("cancel_at_period_end"))
                 binding.state_event_created = event["created"]
+                if previous_cancellation != binding.cancel_at_period_end:
+                    enqueue_account_email(
+                        session, session.get(User, order.user_id),
+                        "subscription_cancellation", {
+                            "Cancel at end of term": "Yes" if binding.cancel_at_period_end else "No",
+                        },
+                    )
                 if binding.status in TERMINAL:
                     _revoke(session, binding, order, moment, event["id"])
             if binding.status in CLOSED and order.status != "fulfilled":

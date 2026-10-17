@@ -280,7 +280,7 @@ export function AppLayout() {
             <RunActions className="ml-auto hidden flex-nowrap xl:flex" />
             <div className="ml-auto flex shrink-0 items-center gap-1 xl:ml-0">
               <NotificationsBell />
-              <LanguageSwitcher />
+              <LanguageSwitcher persist />
               <ThemeToggle />
               <LogoutButton />
             </div>

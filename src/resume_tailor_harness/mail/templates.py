@@ -1,4 +1,9 @@
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
+from resume_tailor_harness.mail.localization import (
+    detail_value,
+    normalize_language,
+    translate,
+)
 
 
 _environment = Environment(
@@ -10,8 +15,15 @@ _environment = Environment(
 )
 
 
-def render_email(template: str, **context: object) -> tuple[str, str]:
+def render_email(
+    template: str, *, language: str = "en", **context: object
+) -> tuple[str, str]:
     """Return plain text and escaped HTML from deployment-owned templates."""
+    context.update(
+        language=normalize_language(language),
+        tr=lambda text: translate(text, language),
+        detail_value=lambda label, value: detail_value(label, value, language),
+    )
     return (
         _environment.get_template(f"{template}.txt").render(**context),
         _environment.get_template(f"{template}.html").render(**context),

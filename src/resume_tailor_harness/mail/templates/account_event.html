@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 style="font-size:24px">{{ tr(title) }}</h1>
+<p>{% if language == "zh-CN" %}{{ username }}，你好：{% else %}Hello {{ username }},{% endif %}</p>
+<p>{{ tr(summary) }}</p>
+<p>{{ tr('Operation recorded at') }} {{ occurred_at }} (UTC){% if language == "zh-CN" %}。{% else %}.{% endif %}</p>
+{% if details %}
+<table style="width:100%;border-collapse:collapse">
+{% for label, value in details.items() %}
+<tr><th scope="row" style="text-align:left;vertical-align:top;padding:8px;border-bottom:1px solid #e7e5e4">{{ tr(label) }}</th><td style="padding:8px;border-bottom:1px solid #e7e5e4;overflow-wrap:anywhere">{{ detail_value(label, value) }}</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if account_url %}<p><a href="{{ account_url }}">{{ tr('Review your account') }}</a></p>{% endif %}
+<p>{{ tr('If you did not expect this change, contact your administrator.') }}</p>
+<p style="color:#78716c;font-size:12px">{{ tr('This account notice was sent to your registered email address. Account and security notices are independent of optional job-search digests.') }}</p>
+{% endblock %}

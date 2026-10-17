@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 
 export async function mockEmptyRuns(page: Page) {
+  await page.route("**/api/config/language", async (route) => route.fulfill({ json: route.request().postDataJSON() }));
   await page.route("**/api/auth/me", (route) =>
     route.fulfill({
       json: { username: null, role: null, authRequired: false },

@@ -4770,6 +4770,21 @@
         "title": "CycleTimeOut",
         "type": "object"
       },
+      "DashboardLanguageDoc": {
+        "properties": {
+          "language": {
+            "default": "en",
+            "enum": [
+              "en",
+              "zh-CN"
+            ],
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "title": "DashboardLanguageDoc",
+        "type": "object"
+      },
       "DashboardSummaryOut": {
         "properties": {
           "activeCoachSession": {
@@ -22185,6 +22200,106 @@
           }
         },
         "summary": "Put Application Profile"
+      }
+    },
+    "/api/config/language": {
+      "get": {
+        "operationId": "get_dashboard_language_api_config_language_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardLanguageDoc"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dashboard Language"
+      },
+      "put": {
+        "operationId": "put_dashboard_language_api_config_language_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardLanguageDoc"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardLanguageDoc"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Dashboard Language"
       }
     },
     "/api/config/models": {

@@ -8,6 +8,25 @@ from resume_tailor_harness.tenancy.system_db import (
     init_system_db,
     make_system_engine,
 )
+from resume_tailor_harness.tenancy.migrate_system import migrate_system_db
+
+
+def test_dashboard_language_is_added_to_existing_accounts_without_data_loss(tmp_path):
+    engine = make_system_engine(tmp_path)
+    init_system_db(engine)
+    with Session(engine) as session:
+        session.add(User(id="legacy", username="legacy", password_hash="hash"))
+        session.commit()
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE users DROP COLUMN dashboard_language"))
+    migrate_system_db(engine)
+    migrate_system_db(engine)
+    with Session(engine) as session:
+        user = session.get(User, "legacy")
+        assert user is not None
+        assert user.username == "legacy"
+        assert user.dashboard_language == "en"
+    engine.dispose()
 
 
 def test_system_metadata_is_isolated_from_workspace_metadata(tmp_path):

@@ -1091,6 +1091,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/config/language": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Language */
+        get: operations["get_dashboard_language_api_config_language_get"];
+        /** Put Dashboard Language */
+        put: operations["put_dashboard_language_api_config_language_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config/models": {
         parameters: {
             query?: never;
@@ -5841,6 +5859,15 @@ export interface components {
             sampleSize: number;
             /** Tokind */
             toKind: string;
+        };
+        /** DashboardLanguageDoc */
+        DashboardLanguageDoc: {
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "zh-CN";
         };
         /** DashboardSummaryOut */
         DashboardSummaryOut: {
@@ -13123,6 +13150,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationProfileDoc"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dashboard_language_api_config_language_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardLanguageDoc"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_dashboard_language_api_config_language_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DashboardLanguageDoc"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardLanguageDoc"];
                 };
             };
             /** @description Validation Error */

@@ -22,6 +22,9 @@ from resume_tailor_harness.render.templates import (
     resolve_template,
 )
 from resume_tailor_harness.services.config_store import ConfigStore
+from resume_tailor_harness.api.schemas.settings import DashboardLanguageDoc
+from resume_tailor_harness.services.ui_language import current_language, save_language
+from resume_tailor_harness.tenancy.context import current_context
 from resume_tailor_harness.taxonomy.location import format_free_location
 
 router = APIRouter()
@@ -29,6 +32,25 @@ router = APIRouter()
 
 def _store(request: Request) -> ConfigStore:
     return get_config_store(request)
+
+
+@router.get("/config/language", response_model=DashboardLanguageDoc)
+def get_dashboard_language(request: Request):
+    return DashboardLanguageDoc(
+        language=current_language()
+        if current_context()
+        else getattr(request.app.state, "dashboard_language", "en")
+    )
+
+
+@router.put("/config/language", response_model=DashboardLanguageDoc)
+def put_dashboard_language(body: DashboardLanguageDoc, request: Request):
+    context = current_context()
+    if context is not None and context.system_engine is not None:
+        save_language(context.system_engine, context.user_id, body.language)
+    else:
+        request.app.state.dashboard_language = body.language
+    return body
 
 
 @router.get("/config/application-profile", response_model=ApplicationProfileDoc)

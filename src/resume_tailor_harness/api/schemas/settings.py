@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from resume_tailor_harness.api.schemas.base import CamelModel
+
+
+class DashboardLanguageDoc(CamelModel):
+    language: Literal["en", "zh-CN"] = "en"
 
 
 class SettingsSectionOut(CamelModel):

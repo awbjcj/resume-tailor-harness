@@ -8,6 +8,10 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from resume_tailor_harness.mail.account_notifications import (
+    deliver_account_emails,
+    release_deletion_notices,
+)
 from resume_tailor_harness.services.email_notifications import deliver_due
 from resume_tailor_harness.tenancy.bootstrap import build_context
 from resume_tailor_harness.tenancy.context import use_context
@@ -19,14 +23,32 @@ logger = logging.getLogger(__name__)
 
 def email_notification_tick(state: Any, stop: Event | None = None) -> int:
     if state.system_engine is None:
-        return int(deliver_due(state.engine, state.mailer, state.settings, "local"))
+        return int(
+            deliver_due(
+                state.engine,
+                state.mailer,
+                state.settings,
+                "local",
+                language=getattr(state, "dashboard_language", "en"),
+            )
+        )
+    if state.app_mode == "hosted":
+        release_deletion_notices(state.system_engine, state.data_dir)
+    # Read the digest owners after account delivery, which may take time. An
+    # account deleted during delivery must not have its workspace reprovisioned.
+    sent = (
+        deliver_account_emails(
+            state.system_engine, state.mailer, state.settings, stop=stop
+        )
+        if state.app_mode == "hosted"
+        else 0
+    )
     with Session(state.system_engine, expire_on_commit=False) as session:
         query = select(User).where(User.disabled_at.is_(None))
         if state.app_mode == "local":
             query = query.where(User.id == state.default_context.user_id)
         users = list(session.scalars(query))
         session.expunge_all()
-    sent = 0
     for user in users:
         if stop is not None and stop.is_set():
             break
@@ -48,7 +70,13 @@ def email_notification_tick(state: Any, stop: Event | None = None) -> int:
                     update={"follow_up_days": context.settings.follow_up_days}
                 )
                 sent += int(
-                    deliver_due(context.engine, state.mailer, settings, user.id)
+                    deliver_due(
+                        context.engine,
+                        state.mailer,
+                        settings,
+                        user.id,
+                        language=user.dashboard_language,
+                    )
                 )
         except Exception:  # one tenant must not stop everyone else's digests
             logger.exception("Email digest failed for workspace %s", user.id)
