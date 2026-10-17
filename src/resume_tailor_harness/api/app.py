@@ -48,6 +48,7 @@ from resume_tailor_harness.api.routers import config as config_router
 from resume_tailor_harness.api.routers import cover_letters as cover_letters_router
 from resume_tailor_harness.api.routers import dashboard as dashboard_router
 from resume_tailor_harness.api.routers import email_drafts as email_drafts_router
+from resume_tailor_harness.api.routers import email_notifications as email_notifications_router
 from resume_tailor_harness.api.routers import errors as errors_router
 from resume_tailor_harness.api.routers import gmail as gmail_router
 from resume_tailor_harness.api.routers import hiring_contacts as hiring_contacts_router
@@ -187,6 +188,7 @@ def create_app(
         app.state.run_manager.sweep()  # drop stale run records (unbounded otherwise)
         app.state.gmail_scheduler_task = None
         app.state.reminder_task = None
+        app.state.email_notification_task = None
         if (
             not _is_memory_db(resolved_db)
             and resolved_settings.gmail_sync_interval_hours > 0
@@ -200,7 +202,17 @@ def create_app(
             from resume_tailor_harness.services.reminder_scheduler import reminder_loop
 
             app.state.reminder_task = asyncio.create_task(reminder_loop(app.state))
+        if not _is_memory_db(resolved_db):
+            from resume_tailor_harness.services.email_notification_scheduler import email_notification_loop
+            from resume_tailor_harness.services.email_notifications import delivery_available
+
+            if delivery_available(resolved_settings):
+                app.state.email_notification_task = asyncio.create_task(email_notification_loop(app.state))
         yield
+        if app.state.email_notification_task is not None:
+            app.state.email_notification_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await app.state.email_notification_task
         if app.state.reminder_task is not None:
             app.state.reminder_task.cancel()
             with suppress(asyncio.CancelledError):
@@ -450,6 +462,8 @@ def create_app(
     app.include_router(taxonomy_router.router, prefix="/api", dependencies=guarded)
     app.include_router(suggestions_router.router, prefix="/api", dependencies=guarded)
     app.include_router(notifications_router.router, prefix="/api", dependencies=guarded)
+    app.include_router(email_notifications_router.router, prefix="/api", dependencies=guarded)
+    app.include_router(email_notifications_router.public_router, prefix="/api")
     app.include_router(
         run_completions_router.router, prefix="/api", dependencies=guarded
     )

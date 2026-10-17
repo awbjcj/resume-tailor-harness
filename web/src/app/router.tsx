@@ -44,6 +44,7 @@ const CareerLabPage = lazy(() =>
 const SourcesPage = lazy(() =>
   import("@/features/sources/SourcesPage").then((m) => ({ default: m.SourcesPage })),
 );
+const EmailNotificationsPage = lazy(() => import("@/features/settings/pages/EmailNotificationsPage").then((m) => ({ default: m.EmailNotificationsPage })));
 const SettingsLayout = lazy(() =>
   import("@/features/settings/SettingsLayout").then((m) => ({ default: m.SettingsLayout })),
 );
@@ -173,6 +174,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/settings/search" replace /> },
           // Profile moved to a top-level workspace; keep old links working.
           { path: "profile", element: <Navigate to="/profile" replace /> },
+          { path: "notifications", element: page(<EmailNotificationsPage />) },
           { path: "search", element: page(<SearchSettingsPage />) },
           { path: "sources", element: page(<SourcesPage />) },
           { path: "keys", element: page(<KeysSettingsPage />) },

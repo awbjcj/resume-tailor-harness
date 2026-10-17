@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
 import {
   Archive,
+  Mail,
   Bot,
   FileKey2,
   FileText,
@@ -20,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import i18n from "@/i18n";
 import { cn } from "@/lib/utils";
 
 type SettingsNavItem = { to: string; label: string; icon: LucideIcon };
@@ -54,6 +56,7 @@ export function getSettingsNavigation() {
     {
       label: "System",
       items: [
+        { to: "/settings/notifications", label: i18n.t("emailNotifications.title"), icon: Mail },
         { to: "/settings/keys", label: "API keys", icon: FileKey2 },
         { to: "/settings/backup", label: "Backup", icon: Archive },
       ],
