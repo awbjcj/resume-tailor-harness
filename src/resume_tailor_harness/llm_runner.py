@@ -1424,6 +1424,30 @@ def _walk_json_schema(value: Any):
             yield from _walk_json_schema(child)
 
 
+def _openai_schema_has_dynamic_keys(output_schema: Any) -> bool:
+    """Whether an output needs dictionary keys OpenAI strict mode cannot express.
+
+    Strict objects require a closed set of properties. Agno preserves typed
+    dictionaries but omits them from ``required``, so they fail at the request
+    boundary; closing those dictionaries instead would silently erase their
+    contents. Inspect the original schema, before Agno closes untyped maps.
+    Named models may allow extras for storage compatibility without needing
+    dynamic keys in generated output, so that alone does not trigger fallback.
+    """
+    schema = _pydantic_json_schema(output_schema)
+    if schema is None:
+        return False
+    return any(
+        isinstance(node.get("additionalProperties"), dict)
+        or (
+            node.get("type") == "object"
+            and not node.get("properties")
+            and node.get("additionalProperties") is not False
+        )
+        for node in _walk_json_schema(schema)
+    )
+
+
 def _anthropic_schema_exceeds_limits(output_schema: Any) -> bool:
     """Whether Claude's native grammar compiler will reject ``output_schema``."""
     schema = _pydantic_json_schema(output_schema)
@@ -1851,16 +1875,19 @@ def _compatible_claude_class():
 def use_json_mode_for(model: Any, output_schema: Any = None) -> bool:
     """Whether an ``output_schema`` agent over ``model`` must use JSON mode.
 
-    Providers without native/json_schema structured outputs (e.g. DeepSeek)
+    Providers without native/json_schema structured outputs
     honour an ``output_schema`` only via ``response_format`` JSON mode; without
     it they intermittently return prose that agno cannot parse, falling back to
     the raw ``str``. Providers with native support keep their stricter
     structured outputs unless a Claude schema exceeds Anthropic's grammar
-    limits; oversized Claude schemas use JSON mode plus local Pydantic
-    validation instead of failing the request with HTTP 400.
+    limits or an OpenAI schema needs dynamic dictionary keys. These schemas
+    use JSON mode plus local Pydantic validation instead of failing the request
+    with HTTP 400 or losing dictionary contents to a closed object schema.
     """
     if not getattr(model, "supports_native_structured_outputs", False):
         return True
+    if getattr(model, "provider", None) == "OpenAI":
+        return _openai_schema_has_dynamic_keys(output_schema)
     return getattr(
         model, "provider", None
     ) == "Anthropic" and _anthropic_schema_exceeds_limits(output_schema)

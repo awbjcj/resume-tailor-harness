@@ -4,7 +4,7 @@ import pytest
 from pydantic import BaseModel
 
 from resume_tailor_harness.llm_runner import build_model, resolve_api_key, split_provider
-from resume_tailor_harness.models.resume import ResumeContent
+from resume_tailor_harness.models.resume import ResumeContent, TailoredSkill
 
 
 def test_split_provider_bare_id_defaults_anthropic():
@@ -167,6 +167,59 @@ def test_claude_falls_back_to_json_mode_only_for_oversized_schema():
 
     assert use_json_mode_for(model, SmallOutput) is False
     assert use_json_mode_for(model, ResumeContent) is True
+
+
+@pytest.mark.parametrize("model_id", ["openai:gpt-5.6-terra", "openai:gpt-6.1-sol"])
+def test_openai_uses_json_mode_for_resume_dictionary(model_id):
+    from resume_tailor_harness.llm_runner import use_json_mode_for
+
+    model = build_model(model_id, api_key="sk-test")
+    assert use_json_mode_for(model, ResumeContent) is True
+
+
+def test_openai_uses_json_mode_for_nested_nullable_dictionary():
+    from resume_tailor_harness.llm_runner import use_json_mode_for
+
+    class Nested(BaseModel):
+        values: dict[str, TailoredSkill] | None = None
+
+    class Output(BaseModel):
+        entries: list[Nested]
+
+    model = build_model("openai:gpt-6.1-sol", api_key="sk-test")
+    assert use_json_mode_for(model, Output) is True
+
+
+def test_openai_uses_json_mode_for_untyped_dictionary():
+    from resume_tailor_harness.llm_runner import use_json_mode_for
+
+    class Output(BaseModel):
+        values: dict
+
+    model = build_model("openai:gpt-6.1-sol", api_key="sk-test")
+    assert use_json_mode_for(model, Output) is True
+
+
+def test_openai_keeps_fixed_field_models_in_strict_mode():
+    from resume_tailor_harness.h1b.models import H1BSponsorshipEvidence
+    from resume_tailor_harness.llm_runner import use_json_mode_for
+    from resume_tailor_harness.models.profile import Contact
+
+    model = build_model("openai:gpt-6.1-sol", api_key="sk-test")
+    for schema in (Contact, H1BSponsorshipEvidence):
+        assert use_json_mode_for(model, schema) is False
+        params = model.get_request_params(response_format=schema)
+        assert params["text"]["format"]["strict"] is True
+
+
+@pytest.mark.parametrize(
+    "model_id", ["deepseek:deepseek-v4-flash", "gemini:gemini-3.6-flash"]
+)
+def test_other_providers_keep_native_resume_dictionary(model_id):
+    from resume_tailor_harness.llm_runner import use_json_mode_for
+
+    model = build_model(model_id, api_key="sk-test")
+    assert use_json_mode_for(model, ResumeContent) is False
 
 
 def test_build_model_deepseek_branch():
