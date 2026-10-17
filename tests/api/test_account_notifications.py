@@ -72,6 +72,7 @@ def test_admin_changes_notify_registered_address_once(
 def test_admin_demotion_and_shared_access_grant(mu_app, mu_client, member):
     with Session(mu_app.state.system_engine) as session:
         user = session.get(User, member)
+        assert user is not None
         user.role, user.shared_key_access = "admin", False
         session.commit()
     response = mu_client.patch(
@@ -88,6 +89,7 @@ def test_admin_demotion_and_shared_access_grant(mu_app, mu_client, member):
 def test_failed_operation_never_queues_notice(mu_app, mu_client, member):
     with Session(mu_app.state.system_engine) as session:
         owner = session.scalar(select(User).where(User.username == "owner"))
+        assert owner is not None
         owner.email, owner.email_verified_at = "owner@example.com", datetime.now(UTC)
         owner_id = owner.id
         session.commit()
@@ -113,7 +115,9 @@ def test_admin_reset_does_not_expose_password(mu_app, mu_client, member):
     assert "password was reset" in json.loads(row.context_json)["title"]
     assert password not in row.context_json
     with Session(mu_app.state.system_engine) as session:
-        assert session.get(User, member).session_epoch == 1
+        user = session.get(User, member)
+        assert user is not None
+        assert user.session_epoch == 1
 
 
 def test_delete_notice_survives_workspace_removal_and_failure_is_silent(
@@ -180,6 +184,7 @@ def test_quota_override_and_tier_allowance_notices(mu_app, mu_client, member):
 def test_security_operations_notify_without_exposing_secrets(mu_app, mu_client, member):
     with Session(mu_app.state.system_engine) as session:
         owner = session.scalar(select(User).where(User.username == "owner"))
+        assert owner is not None
         owner.email, owner.email_verified_at, owner.google_sub = (
             "owner@example.com",
             datetime.now(UTC),
@@ -243,6 +248,7 @@ def test_registered_email_change_notifies_both_verified_addresses(
 ):
     with Session(mu_app.state.system_engine) as session:
         owner = session.scalar(select(User).where(User.username == "owner"))
+        assert owner is not None
         owner.email, owner.email_verified_at = "old@example.com", datetime.now(UTC)
         session.commit()
     assert (
@@ -251,7 +257,9 @@ def test_registered_email_change_notifies_both_verified_addresses(
         ).status_code
         == 202
     )
-    code = re.search(r"\b(\d{6})\b", mu_app.state.mailer.sent[-1][2]).group(1)
+    match = re.search(r"\b(\d{6})\b", mu_app.state.mailer.sent[-1][2])
+    assert match is not None
+    code = match.group(1)
     assert (
         mu_client.post(
             "/api/account/email/verify", json={"email": "new@example.com", "code": code}
@@ -276,7 +284,9 @@ def test_verified_registration_queues_welcome_to_registered_address(mu_app, mu_c
         == 202
     )
     assert notices(mu_app) == []
-    code = re.search(r"\b(\d{6})\b", mu_app.state.mailer.sent[-1][2]).group(1)
+    match = re.search(r"\b(\d{6})\b", mu_app.state.mailer.sent[-1][2])
+    assert match is not None
+    code = match.group(1)
     assert (
         mu_client.post(
             "/api/auth/verify-email", json={"email": "new@example.com", "code": code}

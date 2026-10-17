@@ -2,6 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from threading import Event
+from typing import TypedDict
 
 import httpx
 import pytest
@@ -16,6 +17,7 @@ from resume_tailor_harness.mail.account_notifications import (
 )
 from resume_tailor_harness.mail.mailer import (
     MailDeliveryError,
+    NullMailer,
     ResendMailer,
     SmtpMailer,
 )
@@ -40,12 +42,32 @@ from resume_tailor_harness.tenancy.system_db import (
 
 USER = "alice0000000"
 SETTINGS = Settings(
-    _env_file=None, resend_api_key="test", app_base_url="https://app.example.com"
+    _env_file=None,  # type: ignore[call-arg]
+    resend_api_key="test",
+    app_base_url="https://app.example.com",
 )
 
 
-class Mailbox:
+class _SubscriptionArgs(TypedDict):
+    actor_user_id: str
+    action: str
+    tier_id: str
+    cycles: int
+    reason: str
+    idempotency_key: str
+    now: datetime
+
+
+class _OperationArgs(TypedDict):
+    preview_id: str
+    actor_user_id: str
+    reason: str
+    idempotency_key: str
+
+
+class Mailbox(NullMailer):
     def __init__(self):
+        super().__init__()
         self.messages = []
         self.fail = False
 
@@ -92,9 +114,11 @@ def enqueue(engine, event="account_updated", **kwargs):
 def test_transaction_rollback_and_unverified_addresses_stay_silent(engine):
     with Session(engine) as session:
         user = session.get(User, USER)
+        assert user is not None
         enqueue_account_email(session, user, "account_deleted")
         session.rollback()
         user = session.get(User, USER)
+        assert user is not None
         user.email_verified_at = None
         assert enqueue_account_email(session, user, "account_updated") is None
         user.email = None
@@ -137,7 +161,9 @@ def test_failure_survives_new_session_and_retries_identical_payload(engine):
         == 0
     )
     with Session(engine) as session:
-        assert session.get(AccountEmail, row_id).attempts == 1
+        row = session.get(AccountEmail, row_id)
+        assert row is not None
+        assert row.attempts == 1
     mailbox.fail = False
     changed_settings = SETTINGS.model_copy(
         update={"app_base_url": "https://changed.example.com"}
@@ -169,7 +195,9 @@ def test_worker_lease_prevents_concurrent_delivery_without_holding_writer_lock(e
             assert deliver_account_emails(engine, mailbox, SETTINGS) == 0
             # A different writer can commit while transport is blocked.
             with Session(engine) as session:
-                session.get(User, USER).username = "updated"
+                user = session.get(User, USER)
+                assert user is not None
+                user.username = "updated"
                 session.commit()
         finally:
             release.set()
@@ -182,7 +210,9 @@ def test_held_and_unconfigured_requests_wait_and_missing_url_still_delivers(engi
     mailbox = Mailbox()
     assert deliver_account_emails(engine, mailbox, SETTINGS) == 0
     with Session(engine) as session:
-        session.get(AccountEmail, row_id).ready = True
+        row = session.get(AccountEmail, row_id)
+        assert row is not None
+        row.ready = True
         session.commit()
     assert (
         deliver_account_emails(
@@ -208,6 +238,7 @@ def test_real_provider_adapters_receive_both_jinja_parts(
 ):
     with Session(engine) as session:
         user = session.get(User, USER)
+        assert user is not None
         user.dashboard_language = language
         session.commit()
     enqueue(engine)
@@ -290,22 +321,25 @@ def test_credit_reset_tier_and_automatic_renewal_notices(engine):
 
 def test_subscription_idempotency_and_expiry_notifications(engine):
     now = datetime.now(UTC)
-    kwargs = dict(
-        actor_user_id="operator",
-        action="ACTIVATE",
-        tier_id="SUBSCRIBER",
-        cycles=1,
-        reason="Paid",
-        idempotency_key="activate-once",
-        now=now,
-    )
+    kwargs: _SubscriptionArgs = {
+        "actor_user_id": "operator",
+        "action": "ACTIVATE",
+        "tier_id": "SUBSCRIBER",
+        "cycles": 1,
+        "reason": "Paid",
+        "idempotency_key": "activate-once",
+        "now": now,
+    }
     first = apply_subscription(engine, USER, **kwargs)
     assert apply_subscription(engine, USER, **kwargs) == first
     assert len(notices(engine)) == 1
     assert notices(engine)[0]["details"]["Subscription status"] == "ACTIVE"
-    apply_subscription(
-        engine, USER, **{**kwargs, "action": "RENEW", "idempotency_key": "renew-once"}
-    )
+    renewal: _SubscriptionArgs = {
+        **kwargs,
+        "action": "RENEW",
+        "idempotency_key": "renew-once",
+    }
+    apply_subscription(engine, USER, **renewal)
     assert notices(engine)[-1]["title"] == "Your subscription was renewed"
     quota_snapshot(engine, USER, now=now + timedelta(days=80))
     assert any(row["title"] == "Your subscription expired" for row in notices(engine))
@@ -320,12 +354,12 @@ def test_bulk_operation_notices_are_atomic_and_replay_safe(engine):
         action_type="GRANT_CREDIT",
         amount_micros=5_000_000,
     )
-    kwargs = dict(
-        preview_id=preview.id,
-        actor_user_id="operator",
-        reason="<b>Adjustment</b>",
-        idempotency_key="bulk-once",
-    )
+    kwargs: _OperationArgs = {
+        "preview_id": preview.id,
+        "actor_user_id": "operator",
+        "reason": "<b>Adjustment</b>",
+        "idempotency_key": "bulk-once",
+    }
     execute_operation(engine, **kwargs)
     execute_operation(engine, **kwargs)
     assert len(notices(engine)) == 1
@@ -370,6 +404,7 @@ def test_crashed_worker_lease_expires_and_request_is_recovered(engine):
     now = datetime.now(UTC)
     with Session(engine) as session:
         row = session.get(AccountEmail, row_id)
+        assert row is not None
         row.lease_until = now + timedelta(minutes=2)
         row.attempts = 1
         session.commit()
@@ -387,15 +422,21 @@ def test_deletion_release_recovers_only_completed_cleanup(engine, tmp_path):
     row_id = enqueue(engine, "account_deleted", ready=False)
     release_deletion_notices(engine, tmp_path)
     with Session(engine) as session:
-        assert session.get(AccountEmail, row_id).ready is False
+        row = session.get(AccountEmail, row_id)
+        assert row is not None
+        assert row.ready is False
         session.delete(session.get(User, USER))
         session.commit()
     tombstone = tmp_path / "users" / f".{USER}.deleting-test"
     tombstone.mkdir(parents=True)
     release_deletion_notices(engine, tmp_path)
     with Session(engine) as session:
-        assert session.get(AccountEmail, row_id).ready is False
+        row = session.get(AccountEmail, row_id)
+        assert row is not None
+        assert row.ready is False
     tombstone.rmdir()
     release_deletion_notices(engine, tmp_path)
     with Session(engine) as session:
-        assert session.get(AccountEmail, row_id).ready is True
+        row = session.get(AccountEmail, row_id)
+        assert row is not None
+        assert row.ready is True

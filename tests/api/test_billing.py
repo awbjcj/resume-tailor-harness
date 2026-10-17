@@ -1294,6 +1294,7 @@ def test_payment_notices_commit_with_purchase_and_refund_once(billing, mu_client
     engine, _, fake = billing
     with Session(engine) as session:
         user = session.get(User, USER)
+        assert user is not None
         user.email, user.email_verified_at = "alice@example.com", datetime.now(UTC)
         session.commit()
     sid = checkout(mu_client)
@@ -1324,6 +1325,7 @@ def test_subscription_webhook_notices_are_atomic_and_idempotent(billing, mu_clie
     engine, _, fake = billing
     with Session(engine) as session:
         user = session.get(User, USER)
+        assert user is not None
         user.email, user.email_verified_at = "alice@example.com", datetime.now(UTC)
         session.commit()
     sid = checkout(mu_client, "price_plan")

@@ -48,10 +48,9 @@ def test_dashboard_language_is_validated_saved_and_tenant_scoped(mu_app, mu_clie
     assert mu_client.put(path, json={"language": "zh-CN"}).status_code == 200
     assert mu_client.get(path).json() == {"language": "zh-CN"}
     with Session(mu_app.state.system_engine) as session:
-        assert (
-            session.get(User, mu_app.state.default_context.user_id).dashboard_language
-            == "zh-CN"
-        )
+        user = session.get(User, mu_app.state.default_context.user_id)
+        assert user is not None
+        assert user.dashboard_language == "zh-CN"
         session.add(
             User(
                 id="other",
@@ -89,7 +88,9 @@ def test_saved_language_reaches_verification_and_scheduled_digest(
     assert verification["subject"] == "验证接收通知的邮箱"
     assert 'lang="zh-CN"' in verification["html"]
     assert "设置 → 邮件通知" in verification["html"]
-    code = re.search(r"\b\d{6}\b", verification["body"])[0]
+    match = re.search(r"\b\d{6}\b", verification["body"])
+    assert match is not None
+    code = match.group(0)
     assert (
         mu_client.post(
             "/api/email-notifications/verify",
@@ -121,6 +122,7 @@ def test_password_reset_uses_saved_dashboard_language(mu_app, mu_client):
     mu_client.put("/api/config/language", json={"language": "zh-CN"})
     with Session(mu_app.state.system_engine) as session:
         owner = session.get(User, mu_app.state.default_context.user_id)
+        assert owner is not None
         owner.email, owner.email_verified_at = "owner@example.com", datetime.now(UTC)
         session.commit()
     mu_app.state.mailer = mailbox = Mailbox()
@@ -144,6 +146,7 @@ def test_account_notices_use_recipient_language_and_keep_it_after_deletion(
     owner_id = mu_app.state.default_context.user_id
     with Session(mu_app.state.system_engine) as session:
         user = session.get(User, owner_id)
+        assert user is not None
         user.email, user.email_verified_at = "owner@example.com", datetime.now(UTC)
         enqueue_account_email(
             session,
@@ -160,6 +163,7 @@ def test_account_notices_use_recipient_language_and_keep_it_after_deletion(
     assert "Keep this exact reason" in mailbox.sent[-1]["html"]
     with Session(mu_app.state.system_engine) as session:
         user = session.get(User, owner_id)
+        assert user is not None
         enqueue_account_email(session, user, "account_deleted")
         session.delete(user)
         session.commit()
@@ -213,6 +217,7 @@ def test_queued_notice_uses_latest_dashboard_language_at_first_delivery(
     ]:
         with Session(mu_app.state.system_engine) as session:
             user = session.get(User, owner_id)
+            assert user is not None
             user.email, user.email_verified_at = "owner@example.com", datetime.now(UTC)
             enqueue_account_email(session, user, "account_updated")
             session.commit()
@@ -252,6 +257,8 @@ def test_unsubscribe_page_uses_dashboard_language_and_get_keeps_consent(
     assert "关闭求职摘要邮件？" in confirmation.text
     assert "账户和安全通知" in confirmation.text
     with Session(mu_app.state.engine) as session:
-        assert session.get(EmailNotificationPreference, 1).enabled is True
+        preference = session.get(EmailNotificationPreference, 1)
+        assert preference is not None
+        assert preference.enabled is True
     response = mu_client.post(url)
     assert response.status_code == 200 and "求职摘要邮件已关闭" in response.text
