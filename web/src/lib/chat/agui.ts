@@ -32,7 +32,7 @@ export function parseAguiEvent(value: unknown): StreamEvent | null {
       case EventType.RUN_ERROR:
         t = "failed"; v = { message: event.message, code: event.code ?? "RUN_ERROR" }; break;
       case EventType.CUSTOM:
-        if (event.name !== "resume.notice" && event.name !== "resume.settled") return null;
+        if (!["resume.notice", "resume.settled", "resume.sources"].includes(event.name)) return null;
         t = event.name.slice("resume.".length); v = event.value; break;
       default:
         return null;

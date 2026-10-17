@@ -100,7 +100,7 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
   is the enforcement.** `gemini-3.8-flash` and `gemini-3.7-flash` support only
   `low`/`medium`/`high` — they dropped the `minimal` level that `gemini-3.6-flash` and
   `gemini-3.5-flash` both have. No generation check guards this because none is
-  needed: `_gemini_interactions_thinking_level_for` returns `"minimal"` only
+  needed: `_reasoning_effort_for` returns `"minimal"` only
   for an effort that is *in* the entry's `reasoning_efforts`, so omitting it
   from the tuple makes it unreachable, and `build_model`'s non-reasoning branch
   bounds at `"low"`, which every Gemini 3 snapshot accepts. Do not borrow a
@@ -144,9 +144,11 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
     `response.reasoning_text.delta` (measured: 177 deltas on one `effort="max"`
     turn); agno has a branch only for `response.reasoning_summary_text.delta`.
     `_parse_provider_response_delta` is overridden to map it.
-  - **Native `web_search` works** (`DEEPSEEK_WEB_SEARCH_TOOL`, strategy
-    `native_deepseek`), executed server-side, with automatic context caching
-    (measured: 15,488 cached tokens on one search turn). But it returns **no
+  - **Native `web_search` requires `deepseek-v4-pro`** (`DEEPSEEK_WEB_SEARCH_TOOL`,
+    strategy `native_deepseek`). Flash accepts but ignores the tool. `auto`
+    therefore selects the application search tool for Flash; explicit `native`
+    fails with an actionable error. Pro executes search server-side and uses
+    automatic context caching. It returns **no
     `url_citation` annotations**, so `provider_capabilities` keeps
     `supports_native_citations=False`.
 - **DeepSeek's `json_schema` validator is not OpenAI's, and `json_object` was the
@@ -311,8 +313,9 @@ model` heuristic was right only for the catalog and 400'd for any pre-4.6 id
   (`h1b/service.py::_resolve_company_name`). This also closes a real hole in
   `expect_text`: half a JSON body parses as nothing, but half a _sentence_ is a
   non-empty `str` on a successful run, so truncated prose used to reach the
-  caller as a whole answer. Streaming never calls `_parse_provider_response`,
-  so a truncated **streamed** turn is still undetected.
+  caller as a whole answer. `provider_stream.py` handles streaming separately:
+  incomplete/failed Responses events, native stop reasons, and EOF without a
+  terminal marker become failures before session persistence.
 - **`_openai_max_output_tokens` is deliberately not `_anthropic_max_tokens`.**
   Anthropic's ~16000 exists because the SDK enforces a per-model non-streaming
   ceiling (`MODEL_NONSTREAMING_TOKENS`) and raises above it. The Responses API

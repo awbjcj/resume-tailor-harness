@@ -19,6 +19,10 @@ function samePart(left: ChatPart, right: ChatPart): boolean {
   if (left.kind === "notice") {
     return right.kind === "notice" && left.message === right.message;
   }
+  if (left.kind === "sources") {
+    return right.kind === "sources" && left.items.length === right.items.length &&
+      left.items.every((item, index) => item.url === right.items[index].url && item.title === right.items[index].title);
+  }
   if (left.kind === "audio") {
     return right.kind === "audio" &&
       left.url === right.url &&
@@ -76,6 +80,12 @@ export const ChatMessage = memo(function ChatMessage({
     if (part.kind === "text") {
       rendered.push(
         <TextPart key={key} text={part.text} caret={streaming && index === visible.length - 1} />,
+      );
+    } else if (part.kind === "sources") {
+      rendered.push(
+        <ul key={key} aria-label="Sources" className="flex flex-wrap gap-2 text-sm">
+          {part.items.map((item) => <li key={item.url}><a className="text-primary underline underline-offset-2" href={item.url} target="_blank" rel="noopener noreferrer">{item.title}</a></li>)}
+        </ul>,
       );
     } else if (part.kind === "audio") {
       rendered.push(<AudioPart key={key} part={part} />);

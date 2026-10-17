@@ -11463,5 +11463,25 @@
     "key": "ui_18bbfd7a96e5",
     "en": "Selected resume",
     "zh-CN": "所选简历"
+  },
+  "Reconnecting to your response": {
+    "key": "ui_c369b594e138",
+    "en": "Reconnecting to your response",
+    "zh-CN": "正在重新连接回复"
+  },
+  "Stopping the response": {
+    "key": "ui_a8dd04130b2b",
+    "en": "Stopping the response",
+    "zh-CN": "正在停止回复"
+  },
+  "Response stopped. You can retry your message.": {
+    "key": "ui_14e8631727a5",
+    "en": "Response stopped. You can retry your message.",
+    "zh-CN": "回复已停止。你可以重新发送这条消息。"
+  },
+  "Could not stop the response. Please try again.": {
+    "key": "ui_22299a02dd51",
+    "en": "Could not stop the response. Please try again.",
+    "zh-CN": "无法停止回复，请重试。"
   }
 }
