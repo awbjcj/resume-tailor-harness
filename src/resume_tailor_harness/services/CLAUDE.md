@@ -58,3 +58,8 @@ null`; the domain model rejects that outright, so turning the budget off
   redundant employer requirements or job-description text. Application profile
   settings are included in settings bundles, validated on import, and reset
   through the section registry.
+  Common screening answers keep U.S. worker category, legal-right verification,
+  authorization, and sponsorship separate. Employer history, referral sources,
+  and friends/relatives answers must name the employer; citizenship country lists
+  and government-employment lookback periods must match the live question.
+  Saved answers never authorize terms, attestations, or final submission.

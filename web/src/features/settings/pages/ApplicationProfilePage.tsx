@@ -48,9 +48,33 @@ function getGroups(): { title: string; description?: string; fields: AnswerField
         { key: "expectedSalary", label: "Expected salary", placeholder: "e.g. USD 120,000–140,000 base per year; negotiable" },
         { key: "workAuthorization", label: "Work authorization", placeholder: "Country and current authorization to work" },
         { key: "sponsorshipNeeded", label: "Sponsorship needed", placeholder: "State whether sponsorship is needed now or in the future" },
+        { key: "usWorkerCategory", label: "U.S. worker category", placeholder: "U.S. citizen, national, permanent resident, refugee, or person granted asylum: Yes / No" },
+        { key: "workAuthorizationVerification", label: "Verification of legal right to work", placeholder: "Country and whether you can provide verification if offered employment" },
         { key: "availability", label: "Start date / notice period" },
         { key: "relocation", label: "Relocation preference" },
         { key: "remotePreference", label: "Remote / hybrid / on-site preference" },
+      ],
+    },
+    {
+      title: "Common screening answers",
+      description: "Use explicit answers only. Include the exact country list for citizenship questions and the country and lookback period for government employment. Leave unknown answers blank.",
+      fields: [
+        { key: "atLeast18", label: "At least 18 years old" },
+        { key: "terminationHistory", label: "Termination / requested resignation history", placeholder: "e.g. No; terminated for cause; layoff, restructuring or downsizing" },
+        { key: "exportControlCitizenship", label: "Export-control citizenship / dual citizenship", placeholder: "Name the countries and your answer for that list", multiline: true },
+        { key: "plannedBoardMembership", label: "Plans to join a for-profit company board before starting" },
+        { key: "currentBoardMembership", label: "Current for-profit company board membership" },
+        { key: "governmentEmployment", label: "Government employment", placeholder: "Country, federal/state/local scope, lookback period, and answer", multiline: true },
+      ],
+    },
+    {
+      title: "Employer-specific answers",
+      description: "Name the employer for every answer. These answers apply only to that employer; they do not authorize accepting terms or submitting an application.",
+      fields: [
+        { key: "referralSources", label: "How you heard about each employer", multiline: true },
+        { key: "previousEmployment", label: "Previous employment with each employer", multiline: true },
+        { key: "previousApplications", label: "Previous applications to each employer", multiline: true },
+        { key: "employerRelationships", label: "Friends / relatives employed by each employer", multiline: true },
       ],
     },
     {

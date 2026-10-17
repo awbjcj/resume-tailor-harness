@@ -4528,10 +4528,20 @@ export interface components {
              */
             address: string;
             /**
+             * Atleast18
+             * @default
+             */
+            atLeast18: string;
+            /**
              * Availability
              * @default
              */
             availability: string;
+            /**
+             * Currentboardmembership
+             * @default
+             */
+            currentBoardMembership: string;
             /**
              * Disabilitystatus
              * @default
@@ -4548,6 +4558,11 @@ export interface components {
              */
             email: string;
             /**
+             * Employerrelationships
+             * @default
+             */
+            employerRelationships: string;
+            /**
              * Ethnicity
              * @default
              */
@@ -4563,6 +4578,11 @@ export interface components {
              */
             experienceNotes: string;
             /**
+             * Exportcontrolcitizenship
+             * @default
+             */
+            exportControlCitizenship: string;
+            /**
              * Fullname
              * @default
              */
@@ -4572,6 +4592,11 @@ export interface components {
              * @default
              */
             gender: string;
+            /**
+             * Governmentemployment
+             * @default
+             */
+            governmentEmployment: string;
             /**
              * Linkedinurl
              * @default
@@ -4583,6 +4608,11 @@ export interface components {
              */
             phone: string;
             /**
+             * Plannedboardmembership
+             * @default
+             */
+            plannedBoardMembership: string;
+            /**
              * Portfoliourl
              * @default
              */
@@ -4593,10 +4623,25 @@ export interface components {
              */
             preferredName: string;
             /**
+             * Previousapplications
+             * @default
+             */
+            previousApplications: string;
+            /**
+             * Previousemployment
+             * @default
+             */
+            previousEmployment: string;
+            /**
              * Pronouns
              * @default
              */
             pronouns: string;
+            /**
+             * Referralsources
+             * @default
+             */
+            referralSources: string;
             /**
              * Relocation
              * @default
@@ -4613,6 +4658,16 @@ export interface components {
              */
             sponsorshipNeeded: string;
             /**
+             * Terminationhistory
+             * @default
+             */
+            terminationHistory: string;
+            /**
+             * Usworkercategory
+             * @default
+             */
+            usWorkerCategory: string;
+            /**
              * Veteranstatus
              * @default
              */
@@ -4622,6 +4677,11 @@ export interface components {
              * @default
              */
             workAuthorization: string;
+            /**
+             * Workauthorizationverification
+             * @default
+             */
+            workAuthorizationVerification: string;
         };
         /** ApplicationPromptOut */
         ApplicationPromptOut: {

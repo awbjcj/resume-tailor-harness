@@ -156,6 +156,52 @@ def test_answers_persist_can_be_cleared_and_validate_lengths(app_client):
     assert client.get(route).json()["veteranStatus"] == ""
 
 
+def test_common_screening_answers_roundtrip_into_prompt_and_can_be_cleared(app_client):
+    client, job_id, _ = app_client
+    route = "/api/config/application-profile"
+    answers = {
+        "atLeast18": "Yes",
+        "usWorkerCategory": "No",
+        "workAuthorizationVerification": "U.S.: Yes",
+        "terminationHistory": "No",
+        "exportControlCitizenship": "Cuba, Iran, North Korea, Syria: No",
+        "plannedBoardMembership": "No",
+        "currentBoardMembership": "No",
+        "governmentEmployment": "U.S. federal/state/local; last 5 years: No",
+        "referralSources": "Acme: LinkedIn",
+        "previousEmployment": "Acme: No",
+        "previousApplications": "Acme: No",
+        "employerRelationships": "Acme: No",
+    }
+    assert all(client.get(route).json()[key] == "" for key in answers)
+    saved = client.put(
+        route, json={key: f"  {value}  " for key, value in answers.items()}
+    )
+    assert saved.status_code == 200
+    for key, value in answers.items():
+        assert saved.json()[key] == value
+        assert client.get(route).json()[key] == value
+    prompt = prompt_from(client.get(f"/api/jobs/{job_id}/application-prompt"))
+    assert "## Common screening answers" in prompt
+    assert "## Employer-specific answers" in prompt
+    assert "- Previous employment with the employer: Acme: No" in prompt
+    assert "- Can provide verification of legal right to work: U.S.: Yes" in prompt
+    assert "- At least 18 years old: Yes" in prompt
+    assert (
+        client.put(route, json={"exportControlCitizenship": "x" * 4001}).status_code
+        == 422
+    )
+    assert (
+        client.get(route).json()["exportControlCitizenship"]
+        == answers["exportControlCitizenship"]
+    )
+    assert client.put(route, json={}).status_code == 200
+    assert all(client.get(route).json()[key] == "" for key in answers)
+    cleared = prompt_from(client.get(f"/api/jobs/{job_id}/application-prompt"))
+    assert "## Common screening answers" not in cleared
+    assert "## Employer-specific answers" not in cleared
+
+
 def test_hosted_endpoints_require_authentication(mu_client):
     assert mu_client.get("/api/config/application-profile").status_code == 401
     assert mu_client.put("/api/config/application-profile", json={}).status_code == 401
