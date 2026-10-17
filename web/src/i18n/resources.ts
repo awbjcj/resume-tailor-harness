@@ -1,3 +1,4 @@
+import { emailNotificationsEn, emailNotificationsZh } from "./email-notifications";
 import autoEn from "./auto-en.json";
 import { billingEn, billingZh } from "./billing";
 
@@ -13,6 +14,7 @@ export async function loadAutoTranslations(
 
 const en = {
   billing: billingEn,
+  emailNotifications: emailNotificationsEn,
   subscription: {
     overrideHelp: "Advanced tier assignment below replaces a finite subscription with an indefinitely recurring allowance. Use renewal above for paid extensions.",
     ledger: { allowanceGrant: "Cycle allowance granted", activated: "Subscription activated", renewed: "Subscription renewed", expired: "Subscription expired", revoked: "Subscription revoked" },
@@ -836,6 +838,7 @@ const zhCN = {
     }
   },
   billing: billingZh,
+  emailNotifications: emailNotificationsZh,
   auto: autoZhCN,
   app: {
     documentTitle: "求职助手",

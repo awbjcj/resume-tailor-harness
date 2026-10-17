@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 style="font-size:24px">Verify your notification email</h1>
+<p>Enter this code in Settings → Email notifications to confirm this address.</p>
+<p style="font-size:32px;font-weight:bold;letter-spacing:6px">{{ code }}</p>
+<p>The code expires in 15 minutes. Digests start only after verification and opt-in.</p>
+<p style="color:#78716c">If you did not request this, ignore this email.</p>
+{% endblock %}

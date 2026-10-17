@@ -1,0 +1,6 @@
+Verify your notification email
+
+Enter this code in Settings > Email notifications: {{ code }}
+
+The code expires in 15 minutes. Digests start only after verification and opt-in.
+If you did not request this, ignore this email.
