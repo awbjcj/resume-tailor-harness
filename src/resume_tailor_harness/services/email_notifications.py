@@ -321,7 +321,7 @@ def _digest_context(
                     col(Application.updated_at)
                     <= moment - timedelta(days=settings.follow_up_days),
                 )
-                .order_by(Application.updated_at)
+                .order_by(col(Application.updated_at))
             ).all()
             completed = set(
                 session.exec(
@@ -336,7 +336,7 @@ def _digest_context(
             actionable = [
                 (application, job)
                 for application, job in followups
-                if (
+                if application.id is not None and (
                     application.id,
                     follow_up_key(application.id, application.updated_at),
                 )

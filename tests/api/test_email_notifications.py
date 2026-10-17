@@ -78,7 +78,9 @@ def test_verified_subscription_and_public_unsubscribe_are_separate_from_account_
         json={"email": "different@example.com", "enabled": True, "frequency": "weekly"},
     )
     assert mu_client.post("/api/email-notifications/verification").status_code == 200
-    code = re.search(r"\b(\d{6})\b", mu_app.state.mailer.sent[-1][2])[1]
+    match = re.search(r"\b(\d{6})\b", mu_app.state.mailer.sent[-1][2])
+    assert match is not None
+    code = match[1]
     response = mu_client.post(
         "/api/email-notifications/verify",
         json={"email": "different@example.com", "code": code},
@@ -86,13 +88,17 @@ def test_verified_subscription_and_public_unsubscribe_are_separate_from_account_
     assert response.status_code == 200
     assert response.json()["verifiedAt"] and response.json()["nextSendAt"]
     with Session(mu_app.state.engine) as session:
-        token = session.get(Preference, 1).unsubscribe_token
+        preference = session.get(Preference, 1)
+        assert preference is not None
+        token = preference.unsubscribe_token
     user_id = mu_app.state.default_context.user_id
     mu_client.cookies.clear()
     url = f"/api/email-notifications/unsubscribe/{user_id}/{token}"
     assert mu_client.get(url).status_code == 200
     with Session(mu_app.state.engine) as session:
-        assert session.get(Preference, 1).enabled is True
+        preference = session.get(Preference, 1)
+        assert preference is not None
+        assert preference.enabled is True
     assert (
         mu_client.post(url, data={"List-Unsubscribe": "One-Click"}).status_code == 200
     )
@@ -107,6 +113,7 @@ def test_verified_subscription_and_public_unsubscribe_are_separate_from_account_
     assert mu_client.get("/api/email-notifications").json()["enabled"] is False
     with Session(mu_app.state.system_engine) as session:
         user = session.get(User, user_id)
+        assert user is not None
         assert user.email is None  # notification email never changes login identity
 
 
@@ -139,7 +146,9 @@ def test_scheduler_isolates_recipients_skips_disabled_accounts_and_respects_loca
     )
     contexts = {}
     with Session(state.system_engine) as session:
-        users = [session.get(User, state.default_context.user_id)]
+        owner = session.get(User, state.default_context.user_id)
+        assert owner is not None
+        users = [owner]
         for name in ("second", "disabled"):
             user = User(
                 id=name,
@@ -195,6 +204,7 @@ def test_scheduler_isolates_recipients_skips_disabled_accounts_and_respects_loca
     for context in contexts.values():
         with Session(context.engine) as workspace:
             row = workspace.get(Preference, 1)
+            assert row is not None
             row.next_send_at = moment - timedelta(minutes=1)
             workspace.add(row)
             workspace.commit()
@@ -218,6 +228,7 @@ def test_cooldown_does_not_consume_send_allowance(mu_app, mu_client):
     for _ in range(2):
         with Session(mu_app.state.engine) as session:
             row = session.get(Preference, 1)
+            assert row is not None
             row.code_sent_at = datetime.now(timezone.utc) - timedelta(minutes=2)
             session.add(row)
             session.commit()

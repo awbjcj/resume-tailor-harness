@@ -7,6 +7,7 @@ the delivery cause has to be recorded here or it is lost for good.
 import json
 import logging
 import smtplib
+from email.message import EmailMessage
 from typing import Self
 
 import httpx
@@ -48,7 +49,7 @@ class FakeSMTP:
 
     def __init__(self, fail_with: BaseException | None = None) -> None:
         self.fail_with = fail_with
-        self.sent: list[object] = []
+        self.sent: list[EmailMessage] = []
 
     def __call__(self, host: str, port: int, timeout: int = 0) -> "FakeSMTP":
         self.host, self.port = host, port
@@ -67,7 +68,7 @@ class FakeSMTP:
         if self.fail_with is not None:
             raise self.fail_with
 
-    def send_message(self, message: object) -> None:
+    def send_message(self, message: EmailMessage) -> None:
         self.sent.append(message)
 
 
@@ -330,10 +331,10 @@ def test_smtp_sends_multipart_digest_with_unsubscribe_headers(monkeypatch):
     )
     message = smtp.sent[0]
     assert message.get_content_type() == "multipart/alternative"
-    assert message.get_body(preferencelist=("plain",)).get_content().strip() == "Text"
-    assert (
-        message.get_body(preferencelist=("html",)).get_content().strip()
-        == "<p>Text</p>"
-    )
+    plain = message.get_body(preferencelist=("plain",))
+    html = message.get_body(preferencelist=("html",))
+    assert plain is not None and html is not None
+    assert plain.get_content().strip() == "Text"
+    assert html.get_content().strip() == "<p>Text</p>"
     assert message["List-Unsubscribe"] == "<https://example.com/unsubscribe>"
     assert message["Message-ID"] == "<digest-123@resume-tailor-harness>"

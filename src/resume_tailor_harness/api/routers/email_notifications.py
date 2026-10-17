@@ -67,7 +67,18 @@ def put_preferences(
 @router.post("/verification", response_model=CodeSentResponse)
 def send_verification(request: Request, engine: Engine = Depends(get_engine)):
     system_engine = request.app.state.system_engine
+    reserve_send: Callable[[str], bool] | None = None
     if system_engine is not None:
+
+        def reserve(email: str, rate_engine: Engine = system_engine) -> bool:
+            return attempts.consume(
+                rate_engine,
+                email=f"notification:{email}",
+                ip=request.client.host if request.client else "unknown",
+                scopes=attempts.RESEND_ONLY,
+            )
+
+        reserve_send = reserve
         row = service.get_preference(engine)
         if not attempts.consume(
             system_engine,
@@ -85,16 +96,7 @@ def send_verification(request: Request, engine: Engine = Depends(get_engine)):
             engine,
             request.app.state.mailer,
             request.app.state.settings,
-            reserve_send=(
-                lambda email: attempts.consume(
-                    system_engine,
-                    email=f"notification:{email}",
-                    ip=request.client.host if request.client else "unknown",
-                    scopes=attempts.RESEND_ONLY,
-                )
-            )
-            if system_engine is not None
-            else None,
+            reserve_send=reserve_send,
         )
     )
     return CodeSentResponse()
