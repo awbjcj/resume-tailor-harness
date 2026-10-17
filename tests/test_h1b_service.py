@@ -12,6 +12,7 @@ from resume_tailor_harness.h1b.models import (
     H1B_MCP_UNAVAILABLE_REASON,
     HISTORICAL_ONLY_CAVEAT,
     H1BSponsorshipEvidence,
+    H1BWageSummary,
 )
 from resume_tailor_harness.h1b.service import check_job_sponsorship, enrich_companies
 from resume_tailor_harness.tracking.tables import Job
@@ -26,7 +27,7 @@ def _evidence(company: str) -> H1BSponsorshipEvidence:
         fiscal_periods=["2024"],
         filing_count=2,
         certified_count=1,
-        wage_summary={"median": 150000.0},
+        wage_summary=H1BWageSummary(median=150000.0),
         source_url="https://example.com/data",
         data_version="fixture-v1",
         retrieved_at=now,

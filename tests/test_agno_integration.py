@@ -6,6 +6,7 @@ must survive the model parser and run aggregation into our operational trace.
 """
 
 import json
+from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 from agno.agent import Agent
@@ -22,6 +23,7 @@ from resume_tailor_harness.llm_runner import (
     use_json_mode_for,
 )
 from resume_tailor_harness.models.resume import ResumeContent
+from resume_tailor_harness.h1b.models import H1BSponsorshipEvidence
 from resume_tailor_harness.sessions.stream import Completed, Failed, ToolCompleted
 
 
@@ -73,6 +75,223 @@ def _sse_response(response: dict[str, Any]) -> httpx.Response:
     )
 
 
+@pytest.mark.parametrize("mode", ["sync", "async"])
+@pytest.mark.parametrize("status_code, expected_requests", [(400, 1), (429, 3)])
+async def test_evidence_provider_errors_use_the_correct_retry_policy(
+    mode, status_code, expected_requests
+):
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_api_key="offline-key",
+        openai_base_url="https://provider.invalid/v1",
+        openai_route_mode="api",
+        llm_retries=2,
+        llm_retry_delay=0,
+    )
+    model = build_model("openai:gpt-6.1-sol", settings=settings)
+    model.max_retries = 0
+    requests = []
+
+    def reject(request):
+        requests.append(request)
+        return httpx.Response(
+            status_code,
+            json={
+                "error": {
+                    "code": "invalid_json_schema"
+                    if status_code == 400
+                    else "rate_limit_exceeded",
+                    "message": "Invalid schema"
+                    if status_code == 400
+                    else "Rate limit reached",
+                    "param": "text.format.schema",
+                    "type": "invalid_request_error",
+                }
+            },
+        )
+
+    runner = AgentRunner(
+        Agent(
+            model=model,
+            output_schema=H1BSponsorshipEvidence,
+            telemetry=False,
+            **retry_kwargs(),
+        ),
+        settings=settings,
+    )
+    transport = httpx.MockTransport(reject)
+    if mode == "async":
+        async with httpx.AsyncClient(transport=transport) as client:
+            model.http_client = client
+            try:
+                result = await runner.arun("Check historical evidence.")
+            finally:
+                await runner.aclose()
+    else:
+        with httpx.Client(transport=transport) as client:
+            model.http_client = client
+            result = runner.run("Check historical evidence.")
+    assert result.status.value == "ERROR"
+    assert (
+        "Invalid schema" if status_code == 400 else "Rate limit reached"
+    ) in result.content
+    assert len(requests) == expected_requests
+
+
+@pytest.mark.parametrize("surface", ["discovery", "manual"])
+async def test_h1b_tool_evidence_reaches_cache_and_api(monkeypatch, surface):
+    from sqlmodel import Session
+
+    from resume_tailor_harness.api.schemas.jobs import H1BSponsorshipEvidenceOut
+    from resume_tailor_harness.h1b import service
+    from resume_tailor_harness.h1b.cache import load_company_evidence
+    from resume_tailor_harness.h1b.models import HISTORICAL_ONLY_CAVEAT
+    from resume_tailor_harness.db import init_db, make_engine
+    from resume_tailor_harness.tracking.tables import Job
+
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_api_key="offline-key",
+        openai_base_url="https://provider.invalid/v1",
+        openai_route_mode="api",
+        mid_model="openai:gpt-6.1-sol",
+        h1b_mcp_enabled=True,
+        h1b_mcp_command="offline-fixture",
+        llm_retries=0,
+    )
+    wages = {"min": None, "max": None, "mean": None, "median": 150000.0}
+    payload = {
+        "status": "matched",
+        "normalized_company": "acme",
+        "display_company": "Acme",
+        "fiscal_periods": ["FY2026-Q1"],
+        "filing_count": 10,
+        "certified_count": 9,
+        "denied_count": 1,
+        "periods": [
+            {
+                "period": "FY2026-Q1",
+                "filing_count": 10,
+                "certified_count": 9,
+                "denied_count": 1,
+                "wage_summary": wages,
+            }
+        ],
+        "wage_summary": wages,
+        "source_url": None,
+        "data_version": None,
+        "retrieved_at": None,
+        "expires_at": None,
+        "confidence": 0.9,
+        "caveat": HISTORICAL_ONLY_CAVEAT,
+        "unavailable_reason": None,
+    }
+    tool_calls = []
+
+    def get_company_stats(company: str) -> str:
+        """Read historical filings for the named employer."""
+        tool_calls.append(company)
+        return json.dumps(
+            {"filings": 10, "certified": 9, "denied": 1, "wage_stats": wages}
+        )
+
+    @asynccontextmanager
+    async def fake_tools(_settings):
+        yield get_company_stats
+
+    requests = []
+
+    def respond(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        assert body["text"]["format"]["strict"] is True
+        output = (
+            [
+                {
+                    "type": "function_call",
+                    "id": "fc_h1b",
+                    "call_id": "call_h1b",
+                    "name": "get_company_stats",
+                    "arguments": '{"company":"Acme"}',
+                    "status": "completed",
+                }
+            ]
+            if len(requests) == 1
+            else [
+                {
+                    "type": "message",
+                    "id": "msg_h1b",
+                    "role": "assistant",
+                    "status": "completed",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": json.dumps(payload),
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ]
+        )
+        return httpx.Response(200, json=_response("gpt-6.1-sol", output))
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    monkeypatch.setattr(service, "h1b_tools", fake_tools)
+    monkeypatch.setattr(service, "Agent", lambda **kwargs: Agent(telemetry=False, **kwargs))
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+
+        def offline_model(model_id, **kwargs):
+            model = build_model(model_id, settings=settings, **kwargs)
+            model.http_client = client
+            return model
+
+        monkeypatch.setattr(service, "build_model", offline_model)
+        factory = service.DefaultSponsorshipAgentFactory(settings)
+        if surface == "discovery":
+            report = await service.enrich_companies(
+                engine,
+                ["Acme"],
+                settings=settings,
+                agent_factory=factory,
+            )
+            assert report.researched == 1
+            assert report.unavailable == 0
+        else:
+            with Session(engine) as session:
+                job = Job(source="manual", company="Acme", jd_text="Engineer")
+                session.add(job)
+                session.commit()
+                evidence = await service.check_job_sponsorship(
+                    session,
+                    job,
+                    settings=settings,
+                    agent_factory=factory,
+                )
+                assert evidence is not None and evidence.status == "matched"
+                assert job.analysis_meta_json is not None
+                assert job.analysis_meta_json["h1b_evidence_id"] is not None
+        cached = await service.enrich_companies(
+            engine,
+            ["Acme"],
+            settings=settings,
+            agent_factory=factory,
+        )
+        assert cached.cache_hits == 1
+        assert cached.researched == 0
+    assert len(requests) == 2
+    assert tool_calls == ["Acme"]
+    assert any(
+        item.get("type") == "function_call_output" for item in requests[1]["input"]
+    )
+    with Session(engine) as session:
+        evidence = load_company_evidence(session, ["Acme"])["acme"]
+        api = H1BSponsorshipEvidenceOut.from_evidence(evidence)
+    assert api.filing_count == 10
+    assert api.wage_summary == {"median": 150000.0}
+    assert api.periods[0].wage_summary == {"median": 150000.0}
+
+
 @pytest.mark.parametrize("mode", ["sync", "async", "stream"])
 @pytest.mark.parametrize("model_id", ["openai:gpt-5.6-terra", "openai:gpt-6.1-sol"])
 async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, model_id):
@@ -87,7 +306,9 @@ async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, mo
     expected = ResumeContent.model_validate({"contact": {"name": "Test User"}})
     calls = []
 
-    def lookup_profile(fact_id: Annotated[str, "Verified profile fact identifier"]) -> str:
+    def lookup_profile(
+        fact_id: Annotated[str, "Verified profile fact identifier"],
+    ) -> str:
         """Read one verified profile fact without changing the profile."""
         calls.append(fact_id)
         return "Test User" if fact_id == "contact-name" else "Unknown fact"

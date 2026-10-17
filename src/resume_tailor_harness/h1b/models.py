@@ -6,7 +6,13 @@ from datetime import datetime
 from typing import Any, Literal
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
 HISTORICAL_ONLY_CAVEAT = (
     "Historical H-1B filings do not confirm current sponsorship for this role "
@@ -54,6 +60,28 @@ class H1BCompanyResolution(BaseModel):
         return data
 
 
+class H1BWageSummary(BaseModel):
+    """The four aggregates supplied by the historical H-1B tools.
+
+    Explicit nullable fields give structured-output providers a closed object
+    schema. Missing statistics remain unknown, while cache/API serialization
+    keeps the existing sparse numeric dictionary contract.
+    """
+
+    min: float | None = None
+    max: float | None = None
+    mean: float | None = None
+    median: float | None = None
+
+    @model_serializer
+    def serialize_metrics(self) -> dict[str, float]:
+        return {
+            name: value
+            for name in type(self).model_fields
+            if (value := getattr(self, name)) is not None
+        }
+
+
 class H1BPeriodStat(BaseModel):
     """One fiscal quarter of historical filing figures for a company."""
 
@@ -61,7 +89,7 @@ class H1BPeriodStat(BaseModel):
     filing_count: int | None = Field(default=None, ge=0)
     certified_count: int | None = Field(default=None, ge=0)
     denied_count: int | None = Field(default=None, ge=0)
-    wage_summary: dict[str, float] | None = None
+    wage_summary: H1BWageSummary | None = None
 
     @model_validator(mode="after")
     def validate_outcome_counts(self) -> H1BPeriodStat:
@@ -96,7 +124,7 @@ class H1BSponsorshipEvidence(BaseModel):
     certified_count: int | None = Field(default=None, ge=0)
     denied_count: int | None = Field(default=None, ge=0)
     periods: list[H1BPeriodStat] = Field(default_factory=list, max_length=12)
-    wage_summary: dict[str, float] | None = None
+    wage_summary: H1BWageSummary | None = None
     source_url: str | None = None
     data_version: str | None = None
     retrieved_at: datetime | None = None

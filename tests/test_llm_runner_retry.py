@@ -2,6 +2,7 @@ import asyncio
 from types import SimpleNamespace
 
 import pytest
+from agno.run import RunStatus
 from pydantic import BaseModel
 
 import resume_tailor_harness.llm_runner as llm_runner
@@ -100,8 +101,8 @@ class _StructuredAgent:
     def run(self, prompt):
         self.calls += 1
         if self.calls <= self._unparsed:
-            return SimpleNamespace(content='{"value": 1')
-        return SimpleNamespace(content=_Schema(value=1))
+            return SimpleNamespace(content='{"value": 1', status=RunStatus.completed)
+        return SimpleNamespace(content=_Schema(value=1), status=RunStatus.completed)
 
     async def arun(self, prompt):
         return self.run(prompt)

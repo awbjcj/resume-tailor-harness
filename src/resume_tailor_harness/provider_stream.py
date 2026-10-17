@@ -1,4 +1,4 @@
-"""Preserve provider stream facts that Agno does not expose consistently.
+"""Preserve provider failures and stream facts that Agno does not expose consistently.
 
 State belongs to one HTTP request, never to a shared model or tenant. The small
 provider_data envelope survives Agno's model-to-run projection; it contains
@@ -95,10 +95,32 @@ def capture_errors():
 
 
 class StreamLifecycle:
-    """Detect a clean HTTP EOF that lacks the provider's completion marker."""
+    """Preserve provider failures and detect streams without completion markers."""
 
     # This cooperative mixin precedes an Agno Model in every adapter's MRO.
     # Cast the super proxy so static analysis can see that provider contract.
+
+    def invoke(self, *args, **kwargs):
+        from agno.models.base import Model
+
+        try:
+            return cast(Model, super()).invoke(*args, **kwargs)
+        except Exception as exc:
+            errors = _errors.get()
+            if errors is not None:
+                errors.append(exc)
+            raise
+
+    async def ainvoke(self, *args, **kwargs):
+        from agno.models.base import Model
+
+        try:
+            return await cast(Model, super()).ainvoke(*args, **kwargs)
+        except Exception as exc:
+            errors = _errors.get()
+            if errors is not None:
+                errors.append(exc)
+            raise
 
     async def arun_function_call(self, function_call):
         from inspect import isasyncgenfunction, iscoroutine, iscoroutinefunction
