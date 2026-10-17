@@ -1,4 +1,3 @@
-import json
 import io
 import tarfile
 
@@ -48,9 +47,9 @@ def app_client(tmp_path):
         yield client, job_id, tmp_path
 
 
-def data_from(response):
+def prompt_from(response):
     assert response.status_code == 200
-    return json.loads(response.json()["prompt"].split("## Application data\n\n", 1)[1])
+    return response.json()["prompt"]
 
 
 def test_prompt_combines_resume_and_explicit_answers_without_inference(app_client):
@@ -99,39 +98,28 @@ def test_prompt_combines_resume_and_explicit_answers_without_inference(app_clien
     assert saved.status_code == 200
     response = client.get(f"/api/jobs/{job_id}/application-prompt")
     assert response.headers["cache-control"] == "no-store"
-    data = data_from(response)
-    assert data["Applicant identity"]["Full name"] == "Ada Application"
-    assert data["Applicant identity"]["Email"] == "ada@example.com"
-    assert (
-        data["User-supplied application answers"]["Expected salary"]
-        == "USD 140,000 base/year"
-    )
-    assert (
-        data["User-supplied application answers"]["Sponsorship needed"]
-        == "Yes, in the future"
-    )
-    assert (
-        data["User-supplied application answers"]["Ethnicity"]
-        == "Prefer not to disclose"
-    )
-    assert data["User-supplied application answers"]["Disability status"].startswith(
-        "Not provided"
-    )
-    assert data["User-supplied application answers"]["Relocation"].startswith(
-        "Not provided"
-    )
-    assert data["Skills covered (exact names or saved aliases only)"] == ["PY"]
-    assert (
-        data["Saved resume facts"]["education"][0]["institution"]
-        == "Example University"
-    )
-    assert (
-        data["Saved resume facts"]["experience"][0]["bullets"][0]["text"]
-        == "Built Python services"
-    )
+    prompt = prompt_from(response)
+    assert prompt.startswith("# Job application\n\nOpen the application link")
+    assert "- Full name: Ada Application" in prompt
+    assert "- Email: ada@example.com" in prompt
+    assert "- Expected salary: USD 140,000 base/year" in prompt
+    assert "- Sponsorship needed: Yes, in the future" in prompt
+    assert "- Race / ethnicity: Prefer not to disclose" in prompt
+    assert "Disability status:" not in prompt
+    assert "Relocation preference:" not in prompt
+    assert "- Skills matching this job: PY\n" in prompt
+    assert "### BS in CS — Example University" in prompt
+    assert "### Engineer — Old Co\n- Dates: From 2020-01" in prompt
+    assert "- Built Python services" in prompt
+    assert "Leadership" not in prompt  # An inferred skill is not an answer.
+    assert "Rust" not in prompt  # Employer requirements are not qualifications.
+    assert "90000" not in prompt
+    assert "Build Python services." not in prompt  # No redundant job-description dump.
+    assert "Not provided" not in prompt
+    assert '"education":' not in prompt
     assert "private/path" not in response.text
     assert "Stop before final submission" in response.json()["prompt"]
-    assert data["Job"]["Application / posting link"] == "https://example.com/apply/42"
+    assert "- Application link: https://example.com/apply/42" in prompt
 
 
 def test_missing_profile_and_search_defaults_are_not_application_answers(app_client):
@@ -139,14 +127,16 @@ def test_missing_profile_and_search_defaults_are_not_application_answers(app_cli
     client.put(
         "/api/config/search", json={"minSalary": 90000, "sponsorshipRequired": False}
     )
-    data = data_from(client.get(f"/api/jobs/{job_id}/application-prompt"))
-    assert data["Saved resume facts"].startswith("Not provided")
-    assert data["User-supplied application answers"]["Sponsorship needed"].startswith(
-        "Not provided"
-    )
-    assert data["User-supplied application answers"]["Expected salary"].startswith(
-        "Not provided"
-    )
+    prompt = prompt_from(client.get(f"/api/jobs/{job_id}/application-prompt"))
+    assert "## Applicant" not in prompt
+    assert "## Education" not in prompt
+    assert "## Application answers" not in prompt
+    assert "## Voluntary self-identification" not in prompt
+    assert "Sponsorship needed:" not in prompt
+    assert "Expected salary:" not in prompt
+    assert "90000" not in prompt
+    assert "Ask me for required missing information" in prompt
+    assert "leave unanswered optional fields blank" in prompt
     assert client.get("/api/jobs/99999/application-prompt").status_code == 404
 
 
@@ -228,7 +218,7 @@ def test_hosted_profiles_jobs_and_facts_are_isolated_and_resettable(mu_app, mu_c
     response = mu_client.get(f"/api/jobs/{alice_job}/application-prompt")
     assert "Private Owner" not in response.text
     assert "Private resume summary" not in response.text
-    assert data_from(response)["Job"]["Job name"] == "Alice role"
+    assert "- Role: Alice role" in prompt_from(response)
 
     login("owner", "owner-password")
     archive = mu_client.get("/api/settings/bundle").content
