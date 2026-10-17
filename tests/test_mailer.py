@@ -293,3 +293,47 @@ def test_resend_notify_swallows_delivery_failure() -> None:
     mailer = ResendMailer(make_resend_settings(), client=resend_client(reject_handler))
 
     mailer.notify(to="user@example.com", subject="Password changed", body="fyi")
+
+
+def test_resend_sends_html_unsubscribe_headers_and_idempotency_key():
+    seen = {}
+
+    def handler(request):
+        seen["payload"] = json.loads(request.content)
+        seen["idempotency"] = request.headers["Idempotency-Key"]
+        return httpx.Response(200, json={"id": "digest"})
+
+    ResendMailer(make_resend_settings(), client=resend_client(handler)).send(
+        to="user@example.com",
+        subject="Digest",
+        body="Text",
+        html="<p>Text</p>",
+        headers={"List-Unsubscribe": "<https://example.com/unsubscribe>"},
+        idempotency_key="digest-123",
+    )
+    assert seen["payload"]["text"] == "Text"
+    assert seen["payload"]["html"] == "<p>Text</p>"
+    assert seen["payload"]["headers"]["List-Unsubscribe"].startswith("<https:")
+    assert seen["idempotency"] == "digest-123"
+
+
+def test_smtp_sends_multipart_digest_with_unsubscribe_headers(monkeypatch):
+    smtp = FakeSMTP()
+    monkeypatch.setattr(smtplib, "SMTP", smtp)
+    SmtpMailer(make_settings()).send(
+        to="user@example.com",
+        subject="Digest",
+        body="Text",
+        html="<p>Text</p>",
+        headers={"List-Unsubscribe": "<https://example.com/unsubscribe>"},
+        idempotency_key="digest-123",
+    )
+    message = smtp.sent[0]
+    assert message.get_content_type() == "multipart/alternative"
+    assert message.get_body(preferencelist=("plain",)).get_content().strip() == "Text"
+    assert (
+        message.get_body(preferencelist=("html",)).get_content().strip()
+        == "<p>Text</p>"
+    )
+    assert message["List-Unsubscribe"] == "<https://example.com/unsubscribe>"
+    assert message["Message-ID"] == "<digest-123@resume-tailor-harness>"

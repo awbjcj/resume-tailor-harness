@@ -1459,6 +1459,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/email-notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Preferences */
+        get: operations["get_preferences_api_email_notifications_get"];
+        /** Put Preferences */
+        put: operations["put_preferences_api_email_notifications_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email-notifications/verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Verification */
+        post: operations["send_verification_api_email_notifications_verification_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/email-notifications/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify */
+        post: operations["verify_api_email_notifications_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/errors": {
         parameters: {
             query?: never;
@@ -5874,6 +5926,95 @@ export interface components {
             /** Instructions */
             instructions?: string | null;
         };
+        /** EmailNotificationOut */
+        EmailNotificationOut: {
+            /**
+             * Deliveryavailable
+             * @default false
+             */
+            deliveryAvailable: boolean;
+            /**
+             * Deliveryfailed
+             * @default false
+             */
+            deliveryFailed: boolean;
+            /**
+             * Email
+             * @default
+             */
+            email: string | "";
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * Frequency
+             * @default weekly
+             * @enum {string}
+             */
+            frequency: "daily" | "weekly" | "monthly";
+            /** Lastsentat */
+            lastSentAt?: string | null;
+            /** Nextsendat */
+            nextSendAt?: string | null;
+            /**
+             * Pendingreviews
+             * @default true
+             */
+            pendingReviews: boolean;
+            /**
+             * Reminders
+             * @default true
+             */
+            reminders: boolean;
+            /**
+             * Statistics
+             * @default true
+             */
+            statistics: boolean;
+            /**
+             * Verificationpending
+             * @default false
+             */
+            verificationPending: boolean;
+            /** Verifiedat */
+            verifiedAt?: string | null;
+        };
+        /** EmailNotificationUpdate */
+        EmailNotificationUpdate: {
+            /**
+             * Email
+             * @default
+             */
+            email: string | "";
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * Frequency
+             * @default weekly
+             * @enum {string}
+             */
+            frequency: "daily" | "weekly" | "monthly";
+            /**
+             * Pendingreviews
+             * @default true
+             */
+            pendingReviews: boolean;
+            /**
+             * Reminders
+             * @default true
+             */
+            reminders: boolean;
+            /**
+             * Statistics
+             * @default true
+             */
+            statistics: boolean;
+        };
         /** ErrorRecordOut */
         ErrorRecordOut: {
             /**
@@ -7272,6 +7413,16 @@ export interface components {
             state: string;
             /** Title */
             title?: string | null;
+        };
+        /** NotificationVerification */
+        NotificationVerification: {
+            /** Code */
+            code: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
         };
         /** ObservationOut */
         ObservationOut: {
@@ -13782,6 +13933,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EmailDraftOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_preferences_api_email_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailNotificationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_preferences_api_email_notifications_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailNotificationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailNotificationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_verification_api_email_notifications_verification_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeSentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_api_email_notifications_verify_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationVerification"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailNotificationOut"];
                 };
             };
             /** @description Validation Error */

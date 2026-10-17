@@ -1,0 +1,33 @@
+Your job-search digest
+{{ date }} · {{ frequency }} digest
+
+{% if pending_reviews %}
+{{ pending_count }} jobs awaiting review
+{% for job in jobs %}
+- {{ job.company or "Unknown company" }} — {{ job.title or "Untitled job" }}
+{% endfor %}
+Review your shortlist: {{ base_url }}/shortlist
+
+{% endif %}
+{% if statistics %}
+Workspace statistics
+{{ stats.active_jobs }} active jobs
+{{ stats.applications }} applications submitted
+{{ stats.interviews }} applications in interview
+{{ stats.offers }} offers
+View statistics: {{ base_url }}/analytics
+
+{% endif %}
+{% if reminders %}
+Reminders
+{% for reminder in reminder_items %}
+- {{ reminder }}
+{% else %}
+No upcoming events or follow-ups due.
+{% endfor %}
+Open applications: {{ base_url }}/applications
+
+{% endif %}
+You opted in to these emails.
+Manage preferences: {{ base_url }}/settings/notifications
+Unsubscribe: {{ unsubscribe_url }}

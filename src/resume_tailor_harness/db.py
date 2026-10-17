@@ -8,6 +8,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from resume_tailor_harness.config import get_settings
 
 # Import tables so their metadata is registered before create_all().
+from resume_tailor_harness.mail import tables as mail_tables  # noqa: F401
 from resume_tailor_harness.tracking import tables  # noqa: F401
 from resume_tailor_harness.discovery.scraper import tables as scrape_tables  # noqa: F401
 from resume_tailor_harness.tracking.migrate import (
