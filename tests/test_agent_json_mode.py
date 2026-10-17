@@ -1,8 +1,7 @@
 """Regression guard: structured-output agents pick the right output mode per provider.
 
-Every supported provider now exposes native/json_schema structured outputs, so
-JSON mode is reserved for the one case that still needs it: a Claude schema that
-exceeds Anthropic's grammar limits.
+JSON mode is reserved for schemas a provider cannot enforce: Claude schemas
+that exceed its grammar limits and OpenAI schemas with dynamic dictionary keys.
 
 DeepSeek used to be the exception. On Chat Completions it advertised
 ``supports_native_structured_outputs = False``, so an ``output_schema`` was sent
@@ -35,11 +34,15 @@ from resume_tailor_harness.discovery.relevance import build_relevance_agent
 from resume_tailor_harness.discovery.url_ingest.llm import build_url_extract_agent
 from resume_tailor_harness.llm_runner import AgentRunner, build_model, use_json_mode_for
 from resume_tailor_harness.profile.extractor import build_extractor_agent
-from resume_tailor_harness.tailor.agents import build_reviewer_agent, build_tailor_agent
+from resume_tailor_harness.tailor.agents import (
+    build_reviewer_agent,
+    build_reviser_agent,
+    build_revision_agent,
+    build_tailor_agent,
+)
 
 # (model_id, expected use_json_mode): every provider keeps native structured
-# outputs. JSON mode now has exactly one trigger, covered separately below:
-# a Claude schema too large for Anthropic's grammar compiler.
+# outputs when no schema-specific limitation applies.
 _CASES = [
     pytest.param("deepseek:deepseek-v4-flash", False, id="deepseek-native"),
     pytest.param("claude-haiku-4-5-20251001", False, id="anthropic-native"),
@@ -74,12 +77,13 @@ def test_url_extract_builder_threads_json_mode(model_id, expected):
 
 
 @pytest.mark.parametrize("model_id, expected", _CASES)
-def test_tailor_builder_threads_json_mode(model_id, expected):
-    if model_id.startswith("claude-"):
+@pytest.mark.parametrize(
+    "builder", [build_tailor_agent, build_reviser_agent, build_revision_agent]
+)
+def test_tailor_builder_threads_json_mode(model_id, expected, builder):
+    if model_id.startswith(("claude-", "openai:")):
         expected = True
-    assert (
-        cast(AgentRunner, build_tailor_agent(model_id))._agent.use_json_mode is expected
-    )
+    assert cast(AgentRunner, builder(model_id))._agent.use_json_mode is expected
 
 
 @pytest.mark.parametrize("model_id, expected", _CASES)
@@ -102,7 +106,7 @@ def test_cover_letter_builder_threads_json_mode(model_id, expected):
 
 @pytest.mark.parametrize("model_id, expected", _CASES)
 def test_profile_extractor_builder_threads_json_mode(model_id, expected):
-    if model_id.startswith("claude-"):
+    if model_id.startswith(("claude-", "openai:")):
         expected = True
     assert (
         cast(AgentRunner, build_extractor_agent(model_id))._agent.use_json_mode

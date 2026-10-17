@@ -303,7 +303,17 @@ async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, mo
         llm_retries=0,
     )
     model = build_model(model_id, reasoning=True, settings=settings)
-    expected = ResumeContent.model_validate({"contact": {"name": "Test User"}})
+    expected = ResumeContent.model_validate(
+        {
+            "contact": {"name": "Test User"},
+            "skills": {
+                "Languages": [{"name": "Python", "provenance": "skill-python"}],
+                "Data platforms": [
+                    {"name": "PostgreSQL", "provenance": "skill-postgres"}
+                ],
+            },
+        }
+    )
     calls = []
 
     def lookup_profile(
@@ -335,6 +345,24 @@ async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, mo
         assert str(request.url) == "https://provider.invalid/v1/responses"
         assert request.headers["authorization"] == "Bearer offline-key"
         assert len(requests) <= 2, "The read-only tool loop must finish after one lookup"
+        output_format = body["text"]["format"]
+        if output_format.get("strict"):
+            schema = output_format["schema"]
+            missing = set(schema["properties"]) - set(schema.get("required", []))
+            if missing:
+                return httpx.Response(
+                    400,
+                    json={
+                        "error": {
+                            "code": "invalid_json_schema",
+                            "type": "invalid_request_error",
+                            "param": "text.format.schema",
+                            "message": "Invalid schema for response_format 'ResumeContent': "
+                            "'schema.required' is required to include every key in properties. "
+                            f"Missing {sorted(missing)!r}.",
+                        }
+                    },
+                )
         output = (
             [reasoning, function_call]
             if len(requests) == 1
@@ -405,7 +433,12 @@ async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, mo
         assert "reasoning.encrypted_content" in body.get("include", [])
         tool = next(t for t in body["tools"] if t.get("name") == "lookup_profile")
         assert tool["parameters"]["properties"]["fact_id"]["type"] == "string"
-        assert body["text"]["format"]["name"] == "ResumeContent"
+        assert body["text"]["format"] == {"type": "json_object"}
+        # Agno must still instruct JSON generation and carry the full skill
+        # value schema in the prompt when native grammar enforcement is unavailable.
+        prompt = json.dumps(body["input"])
+        assert "JSON" in prompt
+        assert "TailoredSkill" in prompt
 
     replay = requests[1]["input"]
     assert reasoning in replay

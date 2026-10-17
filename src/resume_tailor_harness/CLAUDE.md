@@ -55,6 +55,16 @@ builder imports a concrete agno model class directly.
   schema; the types and numeric bounds remain, and local Pydantic validation
   still enforces the full decimal contract. Public OpenAPI schemas are not
   rewritten, and the DeepSeek subclass keeps its existing schema path.
+- **OpenAI output dictionaries use JSON mode with local validation.** Strict
+  output schemas require closed objects and every property in `required`.
+  Agno preserves typed dictionaries but omits them from `required`, causing
+  `ResumeContent.skills` to fail before generation. Adding `skills` to
+  `required` alone still leaves an unsupported open dictionary; closing it
+  would erase its categories. `use_json_mode_for` inspects the original schema
+  for dynamic keys (including nested and nullable maps) and selects JSON mode.
+  Agno still prompts with and parses the full Pydantic schema, and the usual
+  retry, provenance, and fact-lock gates remain active. Fixed-field outputs
+  retain strict mode; Gemini and DeepSeek retain their existing schema paths.
 - **OpenAI must always request a reasoning summary — otherwise agno relabels the
   answer as reasoning.** agno's Responses adapter reads "a `reasoning` config
   was sent but no `reasoning_summary`" as "the visible output text _is_ the
