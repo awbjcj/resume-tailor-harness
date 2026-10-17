@@ -1,6 +1,7 @@
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import pytest
 from sqlmodel import Session
@@ -17,8 +18,9 @@ from resume_tailor_harness.tracking.tables import Application, ApplicationEvent,
 
 
 NOW = datetime(2026, 10, 16, 12, tzinfo=timezone.utc)
+SETTINGS_OPTIONS: dict[str, Any] = {"_env_file": None}
 SETTINGS = Settings(
-    _env_file=None,
+    **SETTINGS_OPTIONS,
     resend_api_key="test-key",
     mail_from="test@example.com",
     app_base_url="https://app.example.com",
@@ -61,7 +63,9 @@ def values(**overrides):
 
 def request_code(engine, box, *, now=NOW):
     service.request_verification(engine, box, SETTINGS, now=now)
-    return re.search(r"\b([0-9]{6})\b", box.sent[-1]["body"])[1]
+    match = re.search(r"\b([0-9]{6})\b", box.sent[-1]["body"])
+    assert match is not None
+    return match[1]
 
 
 def subscribe(engine, box, **overrides):
@@ -80,6 +84,7 @@ def test_requires_verification_and_delivers_only_at_selected_interval(engine):
     code = request_code(engine, box)
     assert code not in service.get_preference(engine).code_hash
     row = service.verify_address(engine, "USER@example.com", code, SETTINGS, now=NOW)
+    assert row.next_send_at is not None
     assert service.utc(row.next_send_at) == NOW + timedelta(days=1)
     with pytest.raises(service.NotificationError):
         service.verify_address(engine, row.email, code, SETTINGS, now=NOW)
@@ -110,6 +115,7 @@ def test_frequency_reschedules_and_verified_opt_back_in_does_not_require_new_cod
     )
     row = service.update_preference(engine, values(frequency=frequency), now=NOW)
     assert row.verified_at is not None
+    assert row.next_send_at is not None
     assert service.utc(row.next_send_at) == NOW + timedelta(days=days)
 
 
@@ -181,6 +187,7 @@ def test_digest_filters_content_escapes_html_and_uses_current_reminders(engine):
         session.add_all([visible, hidden])
         session.commit()
         session.refresh(visible)
+        assert visible.id is not None
         application = Application(
             job_id=visible.id,
             status="interview",
@@ -190,6 +197,7 @@ def test_digest_filters_content_escapes_html_and_uses_current_reminders(engine):
         session.add(application)
         session.commit()
         session.refresh(application)
+        assert application.id is not None
         session.add_all(
             [
                 ApplicationEvent(
@@ -313,9 +321,11 @@ def test_digest_respects_followup_episode_state(engine, state):
         job = Job(source="test", title="Follow-up job")
         session.add(job)
         session.commit()
+        assert job.id is not None
         app = Application(job_id=job.id, status="submitted", updated_at=anchor)
         session.add(app)
         session.commit()
+        assert app.id is not None
         session.add(
             Notification(
                 application_id=app.id,
@@ -347,9 +357,11 @@ def test_resolved_followups_do_not_fill_digest_limit(engine):
             job = Job(source="test", title=f"Job {index}")
             session.add(job)
             session.commit()
+            assert job.id is not None
             app = Application(job_id=job.id, status="submitted", updated_at=anchor)
             session.add(app)
             session.commit()
+            assert app.id is not None
             if index < 10:
                 session.add(
                     Notification(

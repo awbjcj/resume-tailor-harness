@@ -2,6 +2,7 @@
 
 import json
 from types import SimpleNamespace
+from typing import Any
 
 import httpx
 import pytest
@@ -25,6 +26,11 @@ MODELS = {
     "anthropic": "claude-sonnet-5",
     "gemini": "gemini:gemini-3.8-flash",
 }
+
+
+def stream_settings(**overrides: Any) -> Settings:
+    options: dict[str, Any] = {"_env_file": None, **overrides}
+    return Settings(**options)
 
 
 def sse(events):
@@ -319,8 +325,7 @@ def test_gemini_hosted_tools_without_optional_ids_remain_streamable(interruptibl
 
 
 def configured(provider, respond, *, interruptible=False):
-    settings = Settings(
-        _env_file=None,
+    settings = stream_settings(
         sub2api_base_url="https://gateway.invalid",
         **{
             f"sub2api_{provider}_key": "offline-key",
@@ -500,7 +505,7 @@ def test_silent_provider_is_cancelled_and_closed_before_first_token():
         if time.monotonic() - started > 0.1:
             raise RuntimeError("cancelled by user")
 
-    settings = SimpleNamespace(llm_retries=0, llm_retry_delay=0)
+    settings = stream_settings(llm_retries=0, llm_retry_delay=0)
     events = list(
         AgentRunner(Silent(), settings=settings).stream("p", checkpoint=checkpoint)
     )
@@ -516,7 +521,7 @@ def test_run_cancellation_during_silent_io_emits_one_cancelled_terminal(
     import time
 
     from resume_tailor_harness.api.runs.conversation import with_conversation_stream
-    from resume_tailor_harness.api.runs.manager import RunCancelled
+    from resume_tailor_harness.api.runs.manager import RunCancelled, RunManager
     from resume_tailor_harness.sessions.turns import persona_output
 
     monkeypatch.setattr(
@@ -542,13 +547,11 @@ def test_run_cancellation_during_silent_io_emits_one_cancelled_terminal(
             raise RunCancelled
 
     path = tmp_path / "stream.ndjson"
-    manager = SimpleNamespace(
-        stream_path=lambda _: path,
-        notifier=lambda _: SimpleNamespace(notify=lambda: None),
-    )
+    manager = RunManager(root=tmp_path / "runs")
+    monkeypatch.setattr(manager, "stream_path", lambda _: path)
     reporter = SimpleNamespace(run_id="cancel", checkpoint=checkpoint)
     runner = AgentRunner(
-        Silent(), settings=SimpleNamespace(llm_retries=0, llm_retry_delay=0)
+        Silent(), settings=stream_settings(llm_retries=0, llm_retry_delay=0)
     )
     work = with_conversation_stream(
         manager,
@@ -556,6 +559,7 @@ def test_run_cancellation_during_silent_io_emits_one_cancelled_terminal(
     )
     with pytest.raises(RunCancelled):
         work(reporter)
+    manager.shutdown()
     assert closed == [True]
     rows = [json.loads(row) for row in path.read_text(encoding="utf-8").splitlines()]
     assert [(row["t"], row["v"].get("code")) for row in rows] == [
@@ -568,8 +572,7 @@ def test_interleaved_responses_function_arguments_keep_call_identity(provider):
     from agno.models.message import Message
     from resume_tailor_harness.llm_runner import build_model
 
-    settings = Settings(
-        _env_file=None,
+    settings = stream_settings(
         **{f"{provider}_route_mode": "api", f"{provider}_api_key": "offline-key"},
     )
     model = build_model(MODELS[provider], settings=settings)
