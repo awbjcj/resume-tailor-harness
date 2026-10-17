@@ -22,10 +22,20 @@ from resume_tailor_harness.provider_registry import (
     PROVIDER_SPECS,
     provider_spec,
 )
+from resume_tailor_harness.provider_stream import (
+    STREAM_KEY,
+    StreamLifecycle,
+    anthropic_delta,
+    capture_errors,
+    gemini_delta,
+    responses_delta,
+    value,
+)
 from resume_tailor_harness.sessions.stream import (
     Completed,
     Failed,
     ReasoningDelta,
+    Sources,
     StreamEvent,
     TextDelta,
     ToolCompleted,
@@ -45,12 +55,14 @@ class Runner(Protocol):
 
 class _ModelWithAsyncClient(Protocol):
     async_client: Any | None
+    client: Any | None
 
 
 # Failures worth retrying: rate limits, overload, timeouts, dropped connections.
 # Matched by status code and class name so no provider SDK is imported here
 # (the same lazy-import rule build_model follows).
 _TRANSIENT_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
+_TRANSIENT_STREAM_CODES = {"server_error", "rate_limit_exceeded", "overloaded_error"}
 _TRANSIENT_NAMES = {
     "APIConnectionError",
     "APITimeoutError",
@@ -78,6 +90,13 @@ class _UnparsedRetry(Exception):
     def __init__(self, response: Any) -> None:
         super().__init__("agent returned unparsed structured output")
         self.response = response
+
+
+class _StreamFailure(Exception):
+    def __init__(self, event: Failed, retryable: bool = False):
+        super().__init__(event.message)
+        self.event = event
+        self.retryable = retryable
 
 
 def _unparsed_structured_output(agent: Any, response: Any) -> bool:
@@ -393,38 +412,59 @@ class AgentRunner:
                 await asyncio.sleep(settings.llm_retry_delay * (2**attempt))
         raise AssertionError("unreachable")
 
-    def stream(self, prompt: str) -> Iterator[StreamEvent]:
+    def stream(
+        self, prompt: str, *, checkpoint: Callable[[], None] | None = None
+    ) -> Iterator[StreamEvent]:
         """Yield provider-neutral events, retrying only before visible output."""
         settings = self._settings or get_settings()
         for attempt in range(settings.llm_retries + 1):
             emitted = False
+            raw_stream = None
+            captured = None
+            accounted = False
             try:
                 self._enter(settings)
                 try:
-                    raw_stream = self._agent.run(
-                        prompt,
-                        stream=True,
-                        stream_events=True,
-                        yield_run_output=True,
-                    )
-                    terminal_output: Any | None = None
-                    for raw in raw_stream:
-                        tag = _stream_event_tag(raw)
-                        if tag is None:
-                            terminal_output = raw
-                            continue
-                        for event in _map_stream_event(tag, raw):
-                            if isinstance(event, Failed):
+                    with capture_errors() as errors:
+                        captured = errors
+                        if checkpoint is not None:
+                            from resume_tailor_harness.stream_execution import (
+                                interruptible_stream,
+                            )
+
+                            raw_stream = interruptible_stream(
+                                self._agent, prompt, checkpoint, self.aclose
+                            )
+                        else:
+                            raw_stream = self._agent.run(
+                                prompt,
+                                stream=True,
+                                stream_events=True,
+                                yield_run_output=True,
+                            )
+                        terminal_output: Any | None = None
+                        for raw in raw_stream:
+                            tag = _stream_event_tag(raw)
+                            if tag is None:
+                                terminal_output = raw
+                                continue
+                            for event in _map_stream_event(tag, raw):
+                                if isinstance(event, Failed):
+                                    retryable = (
+                                        any(is_transient(error) for error in errors)
+                                        or event.code in _TRANSIENT_NAMES
+                                        or event.code in _TRANSIENT_STREAM_CODES
+                                    )
+                                    raise _StreamFailure(event, retryable)
+                                emitted = True
                                 yield event
-                                return
-                            emitted = True
-                            yield event
                     if terminal_output is None:
                         yield Failed(
                             "The model stream ended without a final response.",
                             "MISSING_RUN_OUTPUT",
                         )
                         return
+                    accounted = True
                     record_call(self._agent, terminal_output)
                     if _run_failed(terminal_output):
                         message = (
@@ -433,15 +473,67 @@ class AgentRunner:
                         )
                         yield Failed(str(message), "RUN_ERROR")
                         return
+                    if _incomplete_detail(terminal_output):
+                        yield Failed(
+                            _describe_unparsed(
+                                terminal_output,
+                                getattr(terminal_output, "content", ""),
+                                "The response stopped early",
+                            ),
+                            "INCOMPLETE_RESPONSE",
+                        )
+                        return
+                    record_agent_run(self, terminal_output, retries=attempt)
                     yield Completed(terminal_output)
                     return
                 finally:
-                    self._exit()
+                    try:
+                        close = getattr(raw_stream, "close", None)
+                        if close is not None:
+                            close()
+                    finally:
+                        try:
+                            if (
+                                not accounted
+                                and captured is not None
+                                and captured.metrics is not None
+                            ):
+                                from types import SimpleNamespace
+                                from uuid import uuid4
+
+                                record_call(
+                                    self._agent,
+                                    SimpleNamespace(
+                                        metrics=captured.metrics,
+                                        run_id=f"stream-{uuid4().hex}",
+                                    ),
+                                )
+                        finally:
+                            self._exit()
             except Exception as exc:
-                if emitted or attempt >= settings.llm_retries or not is_transient(exc):
-                    yield Failed(str(exc), type(exc).__name__)
+                retryable = (
+                    exc.retryable
+                    if isinstance(exc, _StreamFailure)
+                    else is_transient(exc)
+                )
+                if emitted or attempt >= settings.llm_retries or not retryable:
+                    record_agent_run(
+                        self, None, retries=attempt, status="error", error=str(exc)
+                    )
+                    yield (
+                        exc.event
+                        if isinstance(exc, _StreamFailure)
+                        else Failed(str(exc), type(exc).__name__)
+                    )
                     return
-                time.sleep(settings.llm_retry_delay * (2**attempt))
+                delay = settings.llm_retry_delay * (2**attempt)
+                if checkpoint is None:
+                    time.sleep(delay)
+                else:
+                    deadline = time.monotonic() + delay
+                    while time.monotonic() < deadline:
+                        checkpoint()
+                        time.sleep(min(0.05, max(0, deadline - time.monotonic())))
         raise AssertionError("unreachable")
 
     async def aclose(self) -> None:
@@ -451,6 +543,16 @@ class AgentRunner:
             return
         client = getattr(model, "async_client", None)
         if client is None:
+            # google-genai owns its async transport under the same Client.
+            shared_client = getattr(model, "client", None)
+            aio = getattr(shared_client, "aio", None)
+            if aio is not None:
+                try:
+                    await aio.aclose()
+                    shared_client.close()
+                finally:
+                    if getattr(model, "client", None) is shared_client:
+                        model.client = None
             return
         try:
             close = getattr(client, "close", None) or getattr(client, "aclose", None)
@@ -482,6 +584,26 @@ def _map_stream_event(tag: str, raw: Any) -> list[StreamEvent]:
     """Map one pinned-Agno event to zero or more stable application events."""
     if tag in {"RunContent", "RunIntermediateContent"}:
         events: list[StreamEvent] = []
+        envelope = value(getattr(raw, "model_provider_data", None), STREAM_KEY, {})
+        for row in value(envelope, "events", []):
+            payload = row["v"]
+            if row["t"] == "failed":
+                events.append(Failed(payload["message"], payload["code"]))
+            elif row["t"] == "tool_started":
+                events.append(
+                    ToolStarted(
+                        payload["callId"], payload["name"], payload["argsPreview"]
+                    )
+                )
+            elif row["t"] == "tool_completed":
+                events.append(
+                    ToolCompleted(
+                        payload["callId"],
+                        payload["name"],
+                        payload["resultPreview"],
+                        payload["ok"],
+                    )
+                )
         reasoning = getattr(raw, "reasoning_content", None)
         content = getattr(raw, "content", None)
         # A provider adapter that hands back the visible answer as "reasoning"
@@ -494,6 +616,27 @@ def _map_stream_event(tag: str, raw: Any) -> list[StreamEvent]:
             events.append(ReasoningDelta(reasoning))
         if isinstance(content, str) and content:
             events.append(TextDelta(content))
+        from urllib.parse import urlsplit
+
+        sources = []
+        for citation in value(getattr(raw, "citations", None), "urls", []) or []:
+            url = value(citation, "url")
+            if not isinstance(url, str):
+                continue
+            try:
+                parsed = urlsplit(url)
+                safe = (
+                    parsed.scheme in {"https", "http"}
+                    and bool(parsed.hostname)
+                    and not parsed.username
+                    and not parsed.password
+                )
+            except ValueError:
+                safe = False
+            if safe:
+                sources.append((url, str(value(citation, "title") or url)))
+        if sources:
+            events.append(Sources(tuple(dict.fromkeys(sources))))
         return events
     if tag == "ReasoningContentDelta":
         content = getattr(raw, "reasoning_content", None) or getattr(raw, "content", "")
@@ -511,7 +654,7 @@ def _map_stream_event(tag: str, raw: Any) -> list[StreamEvent]:
         call_id = str(getattr(tool, "tool_call_id", "") or name)
         error = getattr(raw, "error", None) or getattr(tool, "tool_call_error", None)
         ok = tag == "ToolCallCompleted" and not error
-        result = error if error else getattr(tool, "result", "")
+        result = error if isinstance(error, str) else getattr(tool, "result", "")
         return [ToolCompleted(call_id, name, _stream_preview(result), ok)]
     if tag == "RunError":
         message = getattr(raw, "content", None) or "The model reported an error."
@@ -729,9 +872,6 @@ class ModelCatalogEntry:
     reasoning_efforts: tuple[str, ...] = ()
 
 
-GeminiInteractionsThinkingLevel = Literal["minimal", "low", "medium", "high"]
-
-
 # Curated model choices per provider for the tier pickers, so a UI can offer a
 # closed dropdown instead of free text a user could mistype. Ids follow the
 # same ``provider:model`` convention as everywhere else in this module — bare
@@ -826,7 +966,7 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
     "gemini": [
         # 3.8 and 3.7 Flash both reject `minimal`: their documented levels are
         # low/medium/high only (default medium, thinking always on). The tuple
-        # is the whole guard: `_gemini_interactions_thinking_level_for` can only
+        # is the whole guard: `_reasoning_effort_for` can only
         # return "minimal" for an effort that is *in* this tuple, and
         # `build_model`'s non-reasoning Gemini-3 branch bounds at "low", which
         # both snapshots accept. So no generation check is needed here.
@@ -997,10 +1137,14 @@ def plan_search(model_id: str, mode: SearchMode) -> SearchPlan:
     if mode == "tool":
         return SearchPlan(provider, "tool")
 
-    native_strategy = _NATIVE_SEARCH_STRATEGIES.get(provider)
+    native_strategy = (
+        _NATIVE_SEARCH_STRATEGIES.get(provider)
+        if supports_native_search(model_id)
+        else None
+    )
     if mode == "native" and native_strategy is None:
         raise ValueError(
-            f"search_mode=native but provider {provider!r} has no native web search"
+            f"search_mode=native but model {model_id!r} has no native web search; use auto or tool"
         )
     return SearchPlan(provider, native_strategy or "tool")
 
@@ -1059,14 +1203,11 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
 
 
 def supports_native_search(model_id: str) -> bool:
-    """Whether ``model_id``'s provider gets provider-native web search.
-
-    Every supported provider now has one. A provider outside this set still gets
-    search under ``search_mode=auto`` — ``plan_search`` falls back to the
-    DuckDuckGo tool — just not the higher-quality native variant.
-    """
-    provider, _model = split_provider(model_id)
-    return provider in _NATIVE_SEARCH_STRATEGIES
+    """Whether this model implements native search rather than ignoring it."""
+    provider, model = split_provider(model_id)
+    if provider == "deepseek" and model != "deepseek-v4-pro":
+        return False
+    return bool(_NATIVE_SEARCH_STRATEGIES.get(provider))
 
 
 def _settings_provider_key(settings: Settings, provider: str) -> str:
@@ -1165,6 +1306,7 @@ def _apply_endpoint(model: Any, provider: str, base_url: str | None) -> None:
     params = dict(getattr(model, "client_params", None) or {})
     if provider == "anthropic":
         params.pop("base_url", None)
+        params.update(_endpoint_kwargs(provider, base_url).get("client_params", {}))
     elif provider == "gemini":
         http_options = dict(params.get("http_options") or {})
         http_options.pop("base_url", None)
@@ -1174,7 +1316,6 @@ def _apply_endpoint(model: Any, provider: str, base_url: str | None) -> None:
             params["http_options"] = http_options
         else:
             params.pop("http_options", None)
-    params.update(_endpoint_kwargs(provider, base_url).get("client_params", {}))
     model.client_params = params or None
 
 
@@ -1323,8 +1464,58 @@ def _without_openai_regex_lookaround(schema: dict[str, Any]) -> dict[str, Any]:
 def _compatible_openai_responses_class():
     from agno.models.openai.responses import OpenAIResponses
 
-    class CompatibleOpenAIResponses(OpenAIResponses):
+    class CompatibleOpenAIResponses(StreamLifecycle, OpenAIResponses):
         """Emit legal reference nodes, omit empty reasoning, keep truncation."""
+
+        def _format_messages(self, messages, compress_tool_results=False, tools=None):
+            from agno.utils.message import (
+                normalize_tool_messages,
+                reformat_tool_call_ids,
+            )
+
+            messages = reformat_tool_call_ids(
+                normalize_tool_messages(messages), provider="openai_responses"
+            )
+            formatted = super()._format_messages(messages, compress_tool_results, tools)
+            if self._chains_responses():
+                return formatted
+            # Stateless tool continuations must retain server search results.
+            # Keep their opaque provider payload out of the browser event stream.
+            for message in messages:
+                searches = (message.provider_data or {}).get("native_search_items", [])
+                if not searches or message.role != "assistant":
+                    continue
+                call_ids = {
+                    call.get("call_id", call.get("id"))
+                    for call in message.tool_calls or []
+                }
+                for index, row in enumerate(formatted):
+                    if not isinstance(row, dict):
+                        continue
+                    owns_call = (
+                        row.get("type") == "function_call"
+                        and row.get("call_id") in call_ids
+                    )
+                    owns_text = (
+                        not call_ids
+                        and row.get("role") == "assistant"
+                        and row.get("content") == message.content
+                    )
+                    if owns_call or owns_text:
+                        formatted[index:index] = searches
+                        break
+            return formatted
+
+        def _parse_provider_response_delta(
+            self, stream_event, assistant_message, tool_use
+        ):
+            return responses_delta(
+                self,
+                stream_event,
+                assistant_message,
+                tool_use,
+                super()._parse_provider_response_delta,
+            )
 
         def _parse_provider_response(self, response, **kwargs):
             """Preserve "this response stopped early" past agno's parser.
@@ -1346,6 +1537,14 @@ def _compatible_openai_responses_class():
             ``UnparsedAgentOutput``.
             """
             parsed = super()._parse_provider_response(response, **kwargs)
+            searches = [
+                item.model_dump(exclude_none=True)
+                for item in response.output or []
+                if item.type == "web_search_call"
+            ]
+            if searches:
+                parsed.provider_data = dict(parsed.provider_data or {})
+                parsed.provider_data["native_search_items"] = searches
             if getattr(response, "status", None) != "incomplete":
                 return parsed
             details = getattr(response, "incomplete_details", None)
@@ -1498,8 +1697,68 @@ def _compatible_deepseek_responses_class():
 def _compatible_gemini_class():
     from agno.models.google import Gemini
 
-    class CompatibleGemini(Gemini):
+    class CompatibleGemini(StreamLifecycle, Gemini):
         """Gemini adapter that preserves dictionaries and referenced item types."""
+
+        def _parse_provider_response_delta(self, response_delta, **kwargs):
+            parsed = gemini_delta(
+                response_delta,
+                super()._parse_provider_response_delta(response_delta, **kwargs),
+            )
+            return self._keep_parts(response_delta, parsed)
+
+        def _parse_provider_response(self, response, **kwargs):
+            return self._keep_parts(
+                response, super()._parse_provider_response(response, **kwargs)
+            )
+
+        @staticmethod
+        def _keep_parts(response, parsed):
+            candidates = getattr(response, "candidates", None) or []
+            parts = (
+                getattr(getattr(candidates[0], "content", None), "parts", None)
+                if candidates
+                else None
+            )
+            if parts:
+                parsed.provider_data = dict(parsed.provider_data or {})
+                parsed.provider_data["gemini_content_parts"] = [
+                    part.model_dump_json(exclude_none=True) for part in parts
+                ]
+            return parsed
+
+        def _format_messages(self, messages, compress_tool_results=False):
+            from google.genai.types import Content, Part
+            from agno.utils.message import normalize_tool_messages
+
+            formatted = []
+            system = None
+            for message in normalize_tool_messages(messages):
+                saved = (message.provider_data or {}).get("gemini_content_parts")
+                if message.role == "assistant" and saved:
+                    rows = [
+                        Content(
+                            role="model",
+                            parts=[Part.model_validate_json(part) for part in saved],
+                        )
+                    ]
+                else:
+                    rows, instruction = super()._format_messages(
+                        [message], compress_tool_results
+                    )
+                    if instruction is not None:
+                        system = instruction
+                    if message.role == "tool" and message.tool_call_id:
+                        for row in rows:
+                            for part in row.parts or []:
+                                if part.function_response is not None:
+                                    part.function_response.id = message.tool_call_id
+                for row in rows:
+                    if formatted and formatted[-1].role == row.role:
+                        formatted[-1].parts.extend(row.parts or [])
+                    else:
+                        formatted.append(row)
+            return formatted, system
 
         def get_request_params(
             self,
@@ -1508,20 +1767,12 @@ def _compatible_gemini_class():
             tools=None,
             tool_choice=None,
         ):
-            if not (
-                isinstance(response_format, type)
-                and issubclass(response_format, BaseModel)
-            ):
-                return super().get_request_params(
-                    system_message=system_message,
-                    response_format=response_format,
-                    tools=tools,
-                    tool_choice=tool_choice,
-                )
-
+            structured = isinstance(response_format, type) and issubclass(
+                response_format, BaseModel
+            )
             params = super().get_request_params(
                 system_message=system_message,
-                response_format=None,
+                response_format=None if structured else response_format,
                 tools=tools,
                 tool_choice=tool_choice,
             )
@@ -1531,14 +1782,42 @@ def _compatible_gemini_class():
 
                 config = GenerateContentConfig()
                 params["config"] = config
-            config.response_mime_type = "application/json"
-            config.response_schema = None
-            config.response_json_schema = _without_ref_siblings(
-                response_format.model_json_schema()
-            )
+            if self.search and tools:
+                from agno.utils.gemini import format_function_definitions
+                from google.genai.types import ToolConfig
+
+                if not self.id.startswith(("gemini-3", "gemini-4")):
+                    raise ValueError(
+                        "This Gemini model cannot combine native search with function tools; select tool search mode."
+                    )
+                config.tools = [
+                    *(config.tools or []),
+                    format_function_definitions(tools),
+                ]
+                config.tool_config = config.tool_config or ToolConfig()
+                config.tool_config.include_server_side_tool_invocations = True
+            if structured:
+                config.response_mime_type = "application/json"
+                config.response_schema = None
+                config.response_json_schema = _without_ref_siblings(
+                    response_format.model_json_schema()
+                )
             return params
 
     return CompatibleGemini
+
+
+@lru_cache(maxsize=1)
+def _compatible_claude_class():
+    from agno.models.anthropic import Claude
+
+    class CompatibleClaude(StreamLifecycle, Claude):
+        def _parse_provider_response_delta(self, response, **kwargs):
+            return anthropic_delta(
+                response, super()._parse_provider_response_delta(response, **kwargs)
+            )
+
+    return CompatibleClaude
 
 
 def use_json_mode_for(model: Any, output_schema: Any = None) -> bool:
@@ -1806,20 +2085,6 @@ def _build_deepseek_responses(
     )
 
 
-def _gemini_interactions_thinking_level_for(
-    model_id: str, provider: str
-) -> GeminiInteractionsThinkingLevel:
-    """Return a Gemini Interactions-compatible thinking level."""
-    effort = _reasoning_effort_for(model_id, provider)
-    if effort == "minimal":
-        return "minimal"
-    if effort == "low":
-        return "low"
-    if effort == "medium":
-        return "medium"
-    return "high"
-
-
 def prompt_cache_for(model_id: str, *, settings: Settings | None = None) -> bool:
     """Whether this agent should ask its provider to cache its system block.
 
@@ -1909,6 +2174,7 @@ def _build_model_from_route(
                 id=model,
                 api_key=key,
                 thinking_level=reasoning_effort if reasoning else "low",
+                include_thoughts=reasoning,
                 **_endpoint_kwargs("gemini", base_url),
             )
         # Pre-3 ids have no thinking_level at all -- sending one is the mirror
@@ -1919,13 +2185,14 @@ def _build_model_from_route(
             id=model,
             api_key=key,
             thinking_budget=None if reasoning else 0,
+            include_thoughts=reasoning,
             **_endpoint_kwargs("gemini", base_url),
         )
     if provider == "deepseek":
         return _build_deepseek_responses(
             model_id, api_key=key, reasoning=reasoning, base_url=base_url
         )
-    from agno.models.anthropic import Claude
+    Claude = _compatible_claude_class()
 
     thinking, output_config = _anthropic_thinking(model, reasoning=reasoning)
     if output_config is not None and reasoning_effort is not None:
@@ -1959,7 +2226,6 @@ def build_search_equipped(
     plan = plan_search(model_id, mode or resolved_settings.search_mode)
     if plan.strategy == "none":
         raise ValueError("advisor web search is disabled by search_mode=off")
-    _provider, model_name = split_provider(model_id)
     route = resolve_route(model_id, settings=resolved_settings)
     api_key = route.api_key or None
     base_url = route.base_url
@@ -1980,32 +2246,11 @@ def build_search_equipped(
             [DEEPSEEK_WEB_SEARCH_TOOL],
         )
     if plan.strategy == "native_gemini":
-        from agno.models.google.gemini_interactions import GeminiInteractions
-
-        # Same "unset means provider decides" rule `build_model` guards: leaving
-        # thinking_level unset buys an unbounded automatic budget, so a
-        # non-reasoning research agent bounds it at "low" rather than omitting
-        # it - but only on Gemini 3, which is the only generation that accepts
-        # thinking_level at all. A pre-3 id (e.g. a custom gemini-2.5-* advisor
-        # model) has no thinking_level and mirrors the `build_model` guard by
-        # omitting it, leaving reasoning to the provider's own budget.
-        kwargs: dict[str, Any] = {
-            "id": model_name,
-            "api_key": api_key,
-            # Agno maps this to Gemini's provider-native Google Search tool;
-            # unlike tool-backed search it belongs to the model request and
-            # therefore returns no callable in the agent tool list.
-            "search": True,
-            "store": False,
-            **_endpoint_kwargs("gemini", base_url),
-        }
-        if model_name.casefold().startswith("gemini-3"):
-            kwargs["thinking_level"] = (
-                _gemini_interactions_thinking_level_for(model_id, plan.provider)
-                if reasoning
-                else "low"
-            )
-        return (GeminiInteractions(**kwargs), [])
+        # Sub2API implements GenerateContent, not /interactions. Reuse the
+        # same native model for search so tools, thinking and routing agree.
+        model = _build_model_from_route(model_id, route, reasoning=reasoning)
+        model.search = True
+        return model, []
 
     model = _build_model_from_route(
         model_id,

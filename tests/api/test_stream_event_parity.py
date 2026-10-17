@@ -7,6 +7,7 @@ from resume_tailor_harness.sessions.stream import (
     Notice,
     ReasoningDelta,
     Settled,
+    Sources,
     TextDelta,
     ToolCompleted,
     ToolStarted,
@@ -24,6 +25,7 @@ def test_typescript_tags_match_python_events():
         ToolCompleted,
         Notice,
         Settled,
+        Sources,
         Completed,
         Failed,
     )

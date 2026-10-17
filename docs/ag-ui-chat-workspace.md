@@ -37,6 +37,14 @@ be mistaken for persisted completion. Tool arguments and results intentionally
 remain bounded previews; structured research cards resolve persisted proposal
 IDs instead of parsing those previews or executing model-generated components.
 
+`resume.sources` projects validated citation URLs and titles. Repeated tool-start
+events update one card's argument preview by call ID. Stop preserves partial
+output while awaiting server cancellation; a failed cancellation request leaves
+the stream attached. Reconnect uses bounded backoff and resumes from the last
+contiguous row, including when a gap is detected. See
+[provider conversation streaming](provider-conversation-streaming.md) for native
+endpoint behavior and provider validation.
+
 Shared context uses the existing typed per-turn context contract and session
 query cache. Draft revisions reference an exact session and turn, then prepare
 an editable request in the composer. They never overwrite an earlier artifact.

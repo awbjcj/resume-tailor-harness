@@ -42,18 +42,16 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
   const [resumeVersionId, setResumeVersionId] = useState<number>();
   const [includeProfile, setIncludeProfile] = useState(false);
   const [localRunId, setLocalRunId] = useState<string | null>(null);
-  const [stoppedId, setStoppedId] = useState<string | null>(null);
   const [pending, setPending] = useState<{ text: string; baseline: number } | null>(null);
   const [error, setError] = useState("");
   const finished = useRef(new Set<string>());
-  const ignored = useRef(new Set<string>());
   const recovered = useRunStore((state) => Object.values(state.runs).find((run) =>
     run.kind.startsWith("career-lab") && ["queued", "running", "cancelling"].includes(run.status) &&
     (run.meta?.jobId === jobId || (sessionId && run.meta?.sessionId === sessionId)),
   ));
-  const runId = localRunId ?? (recovered?.runId !== stoppedId ? recovered?.runId ?? null : null);
+  const runId = localRunId ?? recovered?.runId ?? null;
   const stream = useChatStream(runId);
-  const busy = Boolean(runId) || start.isPending || send.isPending;
+  const busy = Boolean(runId && !["done", "error", "stopped"].includes(stream.status)) || start.isPending || send.isPending;
   const turns = session.data?.turns ?? [];
   const baseline = pending?.baseline ?? (typeof recovered?.meta?.turnCount === "number" ? recovered.meta.turnCount : turns.length);
   const advanced = turns.length > baseline;
@@ -62,10 +60,10 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
 
   const onDone = (run: RunRecord, submitted: string) => {
     finished.current.add(run.runId);
-    if (ignored.current.delete(run.runId)) return;
-    setLocalRunId((current) => current === run.runId ? null : current);
     setPending(null);
-    if (run.status !== "succeeded") { setError(run.error ?? "The response could not be completed. Your request is ready to retry."); return; }
+    const cancelled = run.status === "cancelled";
+    if (run.status !== "succeeded") { setError(cancelled ? "" : run.error ?? "The response could not be completed. Your request is ready to retry."); return; }
+    setLocalRunId((current) => current === run.runId ? null : current);
     const result = run.result as { sessionId?: string } | null;
     if (result?.sessionId) setOpenedId(result.sessionId);
     setMessage((current) => current.trim() === submitted ? "" : current);
@@ -73,7 +71,7 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
   const submit = async () => {
     if (!message.trim() || busy || sessions.isPending || sessions.isError || session.isError || (sessionId && session.isPending)) return;
     const text = message.trim();
-    setError(""); setStoppedId(null); stream.reset();
+    setError(""); stream.reset();
     setPending({ text, baseline: turns.length });
     const context = { jobId, resumeVersionId, profileSnapshot: includeProfile ? "current" as const : undefined, offerApplicationIds: [] };
     try {
@@ -84,8 +82,7 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
     } catch (caught) { setPending(null); setError(caught instanceof Error ? caught.message : "Unable to start the response."); }
   };
   const stop = () => {
-    if (runId) { ignored.current.add(runId); setStoppedId(runId); }
-    stream.stop(); setLocalRunId(null); setPending(null);
+    void stream.stop();
   };
   return <div className="flex min-h-0 flex-1 flex-col gap-4 p-4">
     <details className="rounded-xl border bg-muted/20 p-3">
@@ -99,7 +96,7 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
     {sessions.isError || session.isError ? <div role="alert" className="text-sm text-destructive">Unable to load this job’s conversation.<Button variant="outline" size="sm" onClick={() => { void sessions.refetch(); void session.refetch(); }}>Retry loading</Button></div> : null}
     {!messages.length && !busy ? <div className="space-y-3 py-6 text-sm text-muted-foreground"><p>Ask a question while keeping the job open.</p><div className="flex flex-wrap gap-2">{["Which requirements should I address?", "Help me draft an application answer", "Prepare questions for the recruiter"].map((prompt) => <Button key={prompt} size="sm" variant="outline" onClick={() => setMessage(prompt)}>{prompt}</Button>)}</div></div> : null}
     <ChatThread messages={messages} streaming={advanced ? null : stream.parts} streamingActive={stream.status === "streaming"} showReasoning={false} assistantName="Career assistant" assistantIcon={icon} />
-    <ChatRunProgress runId={runId} status={stream.status} />
+    <ChatRunProgress runId={runId} status={stream.status} reconnecting={stream.reconnecting} />
     {error || stream.error ? <p role="alert" className="text-sm text-destructive">{error || stream.error}</p> : null}
     <ChatComposer value={message} onChange={setMessage} onSend={() => void submit()} onStop={stop} busy={busy} disabled={sessions.isPending || sessions.isError || session.isError || Boolean(sessionId && session.isPending)} settling={stream.status === "settled"} ariaLabel="Ask about this job" placeholder="Ask about this role or selected resume…" />
     {sessionId ? <Link to={`/career-lab?session=${encodeURIComponent(sessionId)}`} className="text-center text-xs font-medium text-primary underline underline-offset-4">Open full workspace</Link> : null}

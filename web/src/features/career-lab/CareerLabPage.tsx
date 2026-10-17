@@ -100,8 +100,7 @@ export function CareerLabPage() {
   const rename = useRenameCareerLabSession();
   const recoveredRun = useCareerLabRecoveredRun(displayedSessionId);
   const [streamRunId, setStreamRunId] = useState<string | null>(null);
-  const [suppressedRunId, setSuppressedRunId] = useState<string | null>(null);
-  const runId = streamRunId ?? (recoveredRun && recoveredRun.runId !== suppressedRunId ? recoveredRun.runId : null);
+  const runId = streamRunId ?? recoveredRun?.runId ?? null;
   const stream = useChatStream(runId);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
@@ -115,7 +114,6 @@ export function CareerLabPage() {
   const [runError, setRunError] = useState("");
   const [retryMessage, setRetryMessage] = useState("");
   const skillRef = useRef<HTMLSelectElement>(null);
-  const ignoredRuns = useRef(new Set<string>());
   const attachedRuns = useRef(new Set<string>());
   const completedBeforeAttach = useRef(new Set<string>());
 
@@ -136,16 +134,16 @@ export function CareerLabPage() {
   const active = session.data;
   const sessionLoading = Boolean(displayedSessionId && session.isPending);
   const baseline = pending?.baseline ?? active?.turns?.length ?? 0;
-  const busy = start.isPending || send.isPending || Boolean(runId && ["streaming", "settled"].includes(stream.status));
+  const busy = start.isPending || send.isPending || Boolean(runId && !["done", "error", "stopped"].includes(stream.status));
 
   const onDone = (completed: RunRecord, message?: string) => {
-    if (ignoredRuns.current.delete(completed.runId)) return;
-    detachRun(completed.runId);
     if (completed.status !== "succeeded") {
       setPending(null);
-      setRunError(completed.error ?? "Career Lab run did not complete");
+      const cancelled = completed.status === "cancelled";
+      setRunError(cancelled ? "" : completed.error ?? "Career Lab run did not complete");
       return;
     }
+    detachRun(completed.runId);
     const result = completed.result as { sessionId?: string } | null;
     if (result?.sessionId) {
       setPending(null);
@@ -163,7 +161,6 @@ export function CareerLabPage() {
     if (!message || busy) return;
     setRunError("");
     setRetryMessage(message);
-    setSuppressedRunId(null);
     stream.reset();
     setPending({ text: message, baseline: forceNewSession ? 0 : active?.turns?.length ?? 0 });
     try {
@@ -191,14 +188,7 @@ export function CareerLabPage() {
   };
 
   const stop = () => {
-    if (!runId) return;
-    ignoredRuns.current.add(runId);
-    attachedRuns.current.delete(runId);
-    completedBeforeAttach.current.delete(runId);
-    setSuppressedRunId(runId);
-    stream.stop();
-    setStreamRunId(null);
-    setPending(null);
+    void stream.stop();
   };
 
   const endSession = async () => {
@@ -331,7 +321,7 @@ export function CareerLabPage() {
               ) : null}
             </CardContent>
             {canCompose ? <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
-              <ChatRunProgress runId={runId} status={stream.status} />
+              <ChatRunProgress runId={runId} status={stream.status} reconnecting={stream.reconnecting} />
               <CareerLabContextSummary context={context} onChange={setContext} disabled={busy} />
               <ChatComposer
                 value={composer}

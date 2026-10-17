@@ -55,6 +55,14 @@ async def test_supported_providers_send_responses_with_tools_and_resume_schema(
         model = build_model(model_id, reasoning=reasoning, settings=settings)
         native_tools = []
     else:
+        if (
+            search_mode == "native"
+            and model_id.startswith("deepseek:")
+            and model_id != "deepseek:deepseek-v4-pro"
+        ):
+            with pytest.raises(ValueError, match="no native web search"):
+                build_search_equipped(model_id, mode=search_mode, settings=settings)
+            return
         model, tools = build_search_equipped(
             model_id,
             mode=search_mode,

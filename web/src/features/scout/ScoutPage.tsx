@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Bot, Building2, CheckCircle2, Clock3, Compass, MessageCircleQuestion, Search } from "lucide-react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
@@ -54,21 +54,19 @@ export function ScoutPage() {
   const [runError, setRunError] = useState("");
   const [streamRunId, setStreamRunId] = useState<string | null>(null);
   const [streamBaseline, setStreamBaseline] = useState(0);
-  const [suppressedRunId, setSuppressedRunId] = useState<string | null>(null);
-  const ignoredRuns = useRef(new Set<string>());
   const recovered = useRunStore((state) => Object.values(state.runs).find((run) =>
     ["scout-start", "scout-turn", "scout-end"].includes(run.kind) &&
     ["queued", "running", "cancelling"].includes(run.status) &&
     (run.kind === "scout-start" || run.meta?.sessionId === displayedId),
   )) ?? null;
-  const recoveredId = recovered?.runId !== suppressedRunId ? recovered?.runId ?? null : null;
+  const recoveredId = recovered?.runId ?? null;
   const attachedRunId = streamRunId ?? recoveredId;
   const baseline = streamRunId ? streamBaseline : typeof recovered?.meta?.turnCount === "number" ? recovered.meta.turnCount : 0;
   const stream = useChatStream(attachedRunId);
   const active = session.data;
   const durableTurns = active?.turns?.length ?? 0;
   const streaming = durableTurns > baseline ? null : stream.parts;
-  const busy = Boolean(attachedRunId && stream.status !== "done" && stream.status !== "error") || start.isPending || send.isPending || end.isPending;
+  const busy = Boolean(attachedRunId && !["done", "error", "stopped"].includes(stream.status)) || start.isPending || send.isPending || end.isPending;
 
   const messages: ChatThreadMessage[] = useMemo(() => {
     const durable = (active?.turns ?? []).map((turn, index): ChatThreadMessage => ({ id: `${turn.at}-${index}`, role: turn.role === "scout" ? "assistant" : "user", parts: [{ kind: "text", text: turn.text }, ...(turn.notice ? [{ kind: "notice" as const, message: turn.notice }] : [])] }));
@@ -82,31 +80,30 @@ export function ScoutPage() {
 
   const launchMessage = async (message = composer.trim()) => {
     if (!message || busy) return;
-    setLastMessage(message); setRunError(""); setSuppressedRunId(null); stream.reset();
+    setLastMessage(message); setRunError(""); stream.reset();
     setPending({ text: message, baseline: durableTurns });
     try {
       if (!active) {
         setStreamBaseline(0);
         const run = await start.mutateAsync({ message, onDone: (done: RunRecord) => {
-          if (ignoredRuns.current.delete(done.runId)) return;
-          setStreamRunId(null); setPending(null);
-          if (done.status === "succeeded") { const result = done.result as { sessionId?: string } | null; if (result?.sessionId) setSelectedId(result.sessionId); setComposer(""); }
-          else setRunError(done.error ?? "Scout could not start");
+          setPending(null);
+          if (done.status === "succeeded") { setStreamRunId(null); const result = done.result as { sessionId?: string } | null; if (result?.sessionId) setSelectedId(result.sessionId); setComposer(""); }
+          else if (done.status !== "cancelled") setRunError(done.error ?? "Scout could not start");
         } });
         setStreamRunId(run.runId);
       } else {
         setStreamBaseline(durableTurns);
-        const run = await send.mutateAsync({ sessionId: active.sessionId, message, onDone: (done: RunRecord) => { if (ignoredRuns.current.delete(done.runId)) return; setStreamRunId(null); setPending(null); if (done.status === "succeeded") setComposer(""); else setRunError(done.error ?? "Scout could not reply"); } });
+        const run = await send.mutateAsync({ sessionId: active.sessionId, message, onDone: (done: RunRecord) => { setPending(null); if (done.status === "succeeded") { setStreamRunId(null); setComposer(""); } else if (done.status !== "cancelled") setRunError(done.error ?? "Scout could not reply"); } });
         setStreamRunId(run.runId);
       }
     } catch (caught) { setPending(null); setRunError(caught instanceof Error ? caught.message : "Scout request failed"); }
   };
 
-  const stop = () => { if (attachedRunId) ignoredRuns.current.add(attachedRunId); setSuppressedRunId(attachedRunId); setStreamRunId(null); stream.stop(); setPending(null); setRunError(""); };
+  const stop = () => { void stream.stop(); };
   const endSession = async () => {
     if (!active || busy) return;
     setStreamBaseline(durableTurns); setRunError(""); stream.reset();
-    try { const run = await end.mutateAsync({ sessionId: active.sessionId, onDone: (done: RunRecord) => { if (ignoredRuns.current.delete(done.runId)) return; setStreamRunId(null); if (done.status !== "succeeded") setRunError(done.error ?? "Could not end session"); } }); setStreamRunId(run.runId); }
+    try { const run = await end.mutateAsync({ sessionId: active.sessionId, onDone: (done: RunRecord) => { if (done.status === "succeeded") setStreamRunId(null); else if (done.status !== "cancelled") setRunError(done.error ?? "Could not end session"); } }); setStreamRunId(run.runId); }
     catch (caught) { setRunError(caught instanceof Error ? caught.message : "Could not end session"); }
   };
 
@@ -155,7 +152,7 @@ export function ScoutPage() {
         ) : null}
         <CardContent className={cn("flex flex-col gap-4", active || busy ? "p-4 sm:p-6" : "p-0", CHAT_SURFACE_HEIGHT)}>
           {!active && !busy ? <WorkspaceEmptyState icon={Compass} title="Set your search direction" description="Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything." actionLabel="Create Scout session" onAction={() => setNewOpen(true)} steps={[{ icon: MessageCircleQuestion, title: "Describe the search", description: "Share roles, locations, industries, and boundaries in plain language." }, { icon: Search, title: "Review the research", description: "The Scout returns separate proposals with citations. It waits for your approval before changing settings." }, { icon: CheckCircle2, title: "Approve what fits", description: "Add or dismiss each company and search term yourself." }]} /> : <ChatThread messages={messages} streaming={streaming?.length ? streaming : null} streamingActive={stream.status === "streaming"} showReasoning renderAfter={(message) => active ? <ScoutResearchCards session={active} proposalIds={turnByMessageId.get(message.id)?.proposalIds ?? []} /> : null} assistantName="Discovery Scout" assistantIcon={<Compass className="size-4" aria-hidden="true" />} />}
-          <ChatRunProgress runId={attachedRunId} status={stream.status} />
+          <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />
           {active?.recap ? <div className="rounded-xl border bg-muted/35 p-3 text-sm"><span className="font-medium">Recap: </span>{active.recap}</div> : null}
           {active?.status === "active" ? <ChatComposer value={composer} onChange={setComposer} onSend={() => launchMessage()} onStop={stop} busy={busy} settling={stream.status === "settled"} ariaLabel="Discovery request" placeholder="Ask for a change…" /> : active ? <p className="rounded-xl bg-muted/50 p-3 text-center text-sm text-muted-foreground">This conversation has ended. Pending proposals remain available to review.</p> : null}
         </CardContent>

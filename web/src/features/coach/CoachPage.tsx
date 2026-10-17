@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Bot, Clock3, FileCheck2, MessageCircleQuestion, SearchCheck, Sparkles, SquareCheckBig } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
@@ -100,8 +100,6 @@ export function CoachPage() {
   const [runError, setRunError] = useState("");
   const [streamRunId, setStreamRunId] = useState<string | null>(null);
   const [streamBaseline, setStreamBaseline] = useState(0);
-  const [suppressedRunId, setSuppressedRunId] = useState<string | null>(null);
-  const ignoredRuns = useRef(new Set<string>());
   const [starting, setStarting] = useState(false);
   const [ending, setEnding] = useState(false);
   const [build, setBuild] = useState(true);
@@ -125,7 +123,7 @@ export function CoachPage() {
   });
   const attachedRunId =
     streamRunId ??
-    (recoveredRunId && recoveredRunId !== suppressedRunId ? recoveredRunId : null);
+    recoveredRunId;
   const attachedBaseline = streamRunId ? streamBaseline : recoveredBaseline;
   const stream = useChatStream(attachedRunId);
 
@@ -134,17 +132,15 @@ export function CoachPage() {
     setStarting(true);
     setRunError("");
     setStreamBaseline(0);
-    setSuppressedRunId(null);
     stream.reset();
     try {
       const launched = await start.mutateAsync({
         onDone: (completed: RunRecord) => {
-          if (ignoredRuns.current.delete(completed.runId)) return;
           setStarting(false);
           if (completed.status === "succeeded") {
             const result = completed.result as { sessionId?: string } | null;
             if (result?.sessionId) setCurrentSessionId(result.sessionId);
-          } else {
+          } else if (completed.status !== "cancelled") {
             setRunError(completed.error ?? "Session setup failed");
           }
         },
@@ -162,7 +158,6 @@ export function CoachPage() {
     setRunState("running");
     setRunError("");
     setStreamBaseline(session.data.turns?.length ?? 0);
-    setSuppressedRunId(null);
     stream.reset();
     setPending({ text: message, baseline: session.data.turns?.length ?? 0 });
     try {
@@ -170,11 +165,13 @@ export function CoachPage() {
         sessionId: session.data.sessionId,
         message,
         onDone: (completed: RunRecord) => {
-          if (ignoredRuns.current.delete(completed.runId)) return;
           setPending(null);
           if (completed.status === "succeeded") {
             setComposer((current) => current.trim() === message ? "" : current);
             setRunState("idle");
+          } else if (completed.status === "cancelled") {
+            setRunState("idle");
+            setRunError("");
           } else {
             setRunState("error");
             setRunError(completed.error ?? "Message failed");
@@ -190,34 +187,24 @@ export function CoachPage() {
   };
 
   const stopMessage = () => {
-    if (attachedRunId) ignoredRuns.current.add(attachedRunId);
-    setSuppressedRunId(attachedRunId);
-    stream.stop();
-    setStreamRunId(null);
-    setStarting(false);
-    setEnding(false);
-    setRunState("idle");
-    setRunError("");
-    setPending(null);
+    void stream.stop();
   };
 
   const endSession = async () => {
     if (!session.data) return;
     setEnding(true);
     setStreamBaseline(session.data.turns?.length ?? 0);
-    setSuppressedRunId(null);
     stream.reset();
     try {
       const launched = await end.mutateAsync({
         sessionId: session.data.sessionId,
         build,
         onDone: (completed: RunRecord) => {
-          if (ignoredRuns.current.delete(completed.runId)) return;
           setEnding(false);
           if (completed.status === "succeeded") {
             const result = completed.result as { session?: { sessionId?: string } } | null;
             if (result?.session?.sessionId) setCurrentSessionId(result.session.sessionId);
-          } else {
+          } else if (completed.status !== "cancelled") {
             setRunError(completed.error ?? "Could not end session");
           }
         },
@@ -275,7 +262,7 @@ export function CoachPage() {
   const turnIndexById = new Map(chatMessages.map((message, index) => [message.id, index]));
   const durableAdvanced = durableTurns > attachedBaseline;
   const streamingParts = attachedRunId && !durableAdvanced ? stream.parts : null;
-  const busy = send.isPending || runState === "running" || stream.status === "streaming";
+  const busy = send.isPending || runState === "running" || ["streaming", "stopping"].includes(stream.status);
   const visibleError = stream.error || runError;
   const latestQuestion = [...(active?.turns ?? [])].reverse().find(
     (turn) => turn.role === "coach" && turn.kind === "question",
@@ -433,7 +420,7 @@ export function CoachPage() {
               </div>
               {active.status === "active" ? (
                 <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
-                  <ChatRunProgress runId={attachedRunId} status={stream.status} />
+                  <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />
                   <ChatComposer
                     value={composer}
                     onChange={setComposer}
