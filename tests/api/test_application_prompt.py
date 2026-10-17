@@ -156,6 +156,45 @@ def test_answers_persist_can_be_cleared_and_validate_lengths(app_client):
     assert client.get(route).json()["veteranStatus"] == ""
 
 
+def test_prompt_reads_current_search_preferences_without_copying_them_to_profile(
+    app_client,
+):
+    client, job_id, _ = app_client
+    search_route = "/api/config/search"
+    profile_route = "/api/config/application-profile"
+    prompt_route = f"/api/jobs/{job_id}/application-prompt"
+    assert (
+        client.put(
+            search_route,
+            json={
+                "sponsorshipRequired": True,
+                "remotePolicy": ["hybrid", "onsite"],
+                "minSalary": 130000,
+            },
+        ).status_code
+        == 200
+    )
+    prompt = prompt_from(client.get(prompt_route))
+    assert "- Sponsorship needed: Yes (saved Search setting" in prompt
+    assert "Hybrid; On-site (saved Search settings)" in prompt
+    assert "Expected salary:" not in prompt
+    profile = client.get(profile_route).json()
+    assert profile["sponsorshipNeeded"] == ""
+    assert profile["remotePreference"] == ""
+
+    assert (
+        client.put(
+            search_route,
+            json={"sponsorshipRequired": False, "remotePolicy": ["remote"]},
+        ).status_code
+        == 200
+    )
+    updated = prompt_from(client.get(prompt_route))
+    assert "Sponsorship needed:" not in updated
+    assert "Remote (saved Search settings)" in updated
+    assert "Hybrid; On-site" not in updated
+
+
 def test_common_screening_answers_roundtrip_into_prompt_and_can_be_cleared(app_client):
     client, job_id, _ = app_client
     route = "/api/config/application-profile"
@@ -236,6 +275,13 @@ def test_hosted_profiles_jobs_and_facts_are_isolated_and_resettable(mu_app, mu_c
     login("owner", "owner-password")
     assert (
         mu_client.put(
+            "/api/config/search",
+            json={"sponsorshipRequired": True, "remotePolicy": ["hybrid"]},
+        ).status_code
+        == 200
+    )
+    assert (
+        mu_client.put(
             route,
             json={"fullName": "Private Owner", "disabilityStatus": "Owner answer"},
         ).status_code
@@ -254,8 +300,19 @@ def test_hosted_profiles_jobs_and_facts_are_isolated_and_resettable(mu_app, mu_c
         "Private resume summary"
         in mu_client.get(f"/api/jobs/{owner_job}/application-prompt").text
     )
+    owner_prompt = prompt_from(
+        mu_client.get(f"/api/jobs/{owner_job}/application-prompt")
+    )
+    assert "Hybrid (saved Search settings)" in owner_prompt
+    assert "- Sponsorship needed: Yes (saved Search setting" in owner_prompt
 
     login("alice", "alice-password")
+    assert (
+        mu_client.put(
+            "/api/config/search", json={"remotePolicy": ["remote"]}
+        ).status_code
+        == 200
+    )
     assert mu_client.get(route).json()["fullName"] == ""
     assert mu_client.get(f"/api/jobs/{owner_job}/application-prompt").status_code == 404
     alice_job = mu_client.post(
@@ -265,6 +322,9 @@ def test_hosted_profiles_jobs_and_facts_are_isolated_and_resettable(mu_app, mu_c
     assert "Private Owner" not in response.text
     assert "Private resume summary" not in response.text
     assert "- Role: Alice role" in prompt_from(response)
+    assert "Hybrid (saved Search settings)" not in prompt_from(response)
+    assert "Sponsorship needed:" not in prompt_from(response)
+    assert "Remote (saved Search settings)" in prompt_from(response)
 
     login("owner", "owner-password")
     archive = mu_client.get("/api/settings/bundle").content

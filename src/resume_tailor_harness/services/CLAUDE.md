@@ -49,8 +49,13 @@ null`; the domain model rejects that outright, so turning the budget off
 
 - **Application handoffs are deterministic.** `application_prompt.py` combines
   the tenant's saved resume facts, job, and optional `application_profile` config.
-  Blank application answers mean unknown; search defaults, inferred skills, and
-  employer requirements never become applicant answers. Contact overrides are
+  Blank application answers mean unknown; inferred skills, employer requirements,
+  and salary search filters never become applicant answers. Saved Search settings
+  supply a positive sponsorship requirement and selected work-policy preferences
+  when application-specific answers are blank. The legacy False sponsorship default
+  remains unknown, not an explicit No. Read both settings from the active tenant's
+  ConfigStore on each request; never cache or copy them into the application profile.
+  Explicit application answers take precedence. Contact overrides are
   explicit. Prompts remain English regardless of UI language, contain no source
   paths, and do not attach files. Render a ready-to-use Markdown prompt with
   populated applicant fields and readable education/work history, never a JSON
