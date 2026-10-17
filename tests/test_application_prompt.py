@@ -1,4 +1,7 @@
-from resume_tailor_harness.api.schemas.config import ApplicationProfileDoc
+from resume_tailor_harness.api.schemas.config import (
+    ApplicationProfileDoc,
+    SearchConfigDoc,
+)
 from resume_tailor_harness.models.profile import (
     Award,
     Bullet,
@@ -357,3 +360,55 @@ def test_resume_contact_fallback_preserves_all_supplied_contact_information(tmp_
     assert "- Address:" not in prompt
     assert "- Relocation preference:" not in prompt
     assert "This prompt does not attach a resume or cover letter" in prompt
+
+
+def test_reuses_saved_search_sponsorship_and_work_policy_without_salary_inference(
+    tmp_path,
+):
+    prompt = build_application_prompt(
+        Job(source="manual", title="Engineer"),
+        ApplicationProfileDoc(),
+        tmp_path / "missing.json",
+        search=SearchConfigDoc(
+            sponsorship_required=True,
+            remote_policy=["hybrid", "onsite", "hybrid"],
+            min_salary=130000,
+        ),
+    )
+    assert (
+        "- Sponsorship needed: Yes (saved Search setting; confirm country and timeframe if required)"
+        in prompt
+    )
+    assert (
+        "- Remote / hybrid / on-site preference: Hybrid; On-site (saved Search settings)"
+        in prompt
+    )
+    assert "Expected salary:" not in prompt
+    assert "130000" not in prompt
+    assert "Work authorization:" not in prompt
+
+
+def test_explicit_application_answers_override_search_preferences(tmp_path):
+    prompt = build_application_prompt(
+        Job(source="manual", title="Engineer"),
+        ApplicationProfileDoc(
+            sponsorship_needed="Canada: No",
+            remote_preference="Remote only",
+        ),
+        tmp_path / "missing.json",
+        search=SearchConfigDoc(sponsorship_required=True, remote_policy=["onsite"]),
+    )
+    assert "- Sponsorship needed: Canada: No" in prompt
+    assert "- Remote / hybrid / on-site preference: Remote only" in prompt
+    assert "saved Search setting" not in prompt
+
+
+def test_unset_search_preferences_never_establish_negative_answers(tmp_path):
+    prompt = build_application_prompt(
+        Job(source="manual", title="Engineer"),
+        ApplicationProfileDoc(),
+        tmp_path / "missing.json",
+        search=SearchConfigDoc(remote_policy=["  "]),
+    )
+    assert "Sponsorship needed:" not in prompt
+    assert "Remote / hybrid / on-site preference:" not in prompt

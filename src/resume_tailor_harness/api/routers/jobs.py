@@ -26,6 +26,7 @@ from resume_tailor_harness.api.schemas.bulk import BulkRequest, BulkResultOut
 from resume_tailor_harness.api.schemas.config import (
     ApplicationProfileDoc,
     ReviewConfigDoc,
+    SearchConfigDoc,
 )
 from resume_tailor_harness.api.schemas.application_prompt import ApplicationPromptOut
 from resume_tailor_harness.services.application_prompt import build_application_prompt
@@ -88,13 +89,13 @@ def application_prompt(
     job = get_job(session, job_id)
     if job is None:
         raise ApiException(404, "NOT_FOUND", f"Job #{job_id} not found")
-    answers = cast(
-        ApplicationProfileDoc, get_config_store(request).get("application_profile")
-    )
+    store = get_config_store(request)
+    answers = cast(ApplicationProfileDoc, store.get("application_profile"))
+    search = cast(SearchConfigDoc, store.get("search"))
     response.headers["Cache-Control"] = "no-store"
     return ApplicationPromptOut(
         prompt=build_application_prompt(
-            job, answers, get_profile_dir(request) / "facts.json"
+            job, answers, get_profile_dir(request) / "facts.json", search=search
         )
     )
 

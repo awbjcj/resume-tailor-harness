@@ -11773,5 +11773,10 @@
     "key": "ui_c266f5436e9f",
     "en": "Friends / relatives employed by each employer",
     "zh-CN": "在各雇主任职的朋友／亲属"
+  },
+  "Sponsorship and work-policy answers reuse your saved Search settings when left blank here. Add application-specific details only when needed.": {
+    "key": "ui_a289d30b9c14",
+    "en": "Sponsorship and work-policy answers reuse your saved Search settings when left blank here. Add application-specific details only when needed.",
+    "zh-CN": "此处留空时，签证担保需求和办公方式偏好会沿用已保存的搜索设置。仅在需要时填写本次申请的具体说明。"
   }
 }

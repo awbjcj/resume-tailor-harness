@@ -5,7 +5,10 @@ from __future__ import annotations
 from collections.abc import Iterable
 from pathlib import Path
 
-from resume_tailor_harness.api.schemas.config import ApplicationProfileDoc
+from resume_tailor_harness.api.schemas.config import (
+    ApplicationProfileDoc,
+    SearchConfigDoc,
+)
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.tracking.tables import Job
@@ -175,7 +178,11 @@ def _resume_sections(facts: ProfileFacts) -> list[str]:
 
 
 def build_application_prompt(
-    job: Job, answers: ApplicationProfileDoc, facts_path: Path
+    job: Job,
+    answers: ApplicationProfileDoc,
+    facts_path: Path,
+    *,
+    search: SearchConfigDoc | None = None,
 ) -> str:
     facts = load_facts(facts_path) if facts_path.is_file() else None
     contact = facts.contact if facts else None
@@ -207,6 +214,25 @@ def build_application_prompt(
             applicant.extend(_fields([(link.label, link.url)]))
             seen_links.add(link.url)
 
+    # Search settings already collect these preferences. An unchecked legacy
+    # sponsorship switch defaults to False, so it cannot establish an explicit No.
+    sponsorship = answers.sponsorship_needed
+    if not sponsorship and search is not None and search.sponsorship_required:
+        sponsorship = (
+            "Yes (saved Search setting; confirm country and timeframe if required)"
+        )
+    remote_preference = answers.remote_preference
+    if not remote_preference and search is not None:
+        policies = dict.fromkeys(
+            _line(policy) for policy in search.remote_policy if policy.strip()
+        )
+        labels = {"remote": "Remote", "hybrid": "Hybrid", "onsite": "On-site"}
+        if policies:
+            remote_preference = (
+                "; ".join(labels.get(policy, policy) for policy in policies)
+                + " (saved Search settings)"
+            )
+
     application_answers = _fields(
         [
             ("Expected salary", answers.expected_salary),
@@ -215,7 +241,7 @@ def build_application_prompt(
                 answers.work_authorization
                 or (contact.work_authorization if contact else None),
             ),
-            ("Sponsorship needed", answers.sponsorship_needed),
+            ("Sponsorship needed", sponsorship),
             (
                 "U.S. worker category (U.S. citizen, national, permanent resident, "
                 "refugee, or person granted asylum)",
@@ -228,7 +254,7 @@ def build_application_prompt(
             ("Start date / notice period", answers.availability),
             # A legacy contact's default False is not a self-reported relocation answer.
             ("Relocation preference", answers.relocation),
-            ("Remote / hybrid / on-site preference", answers.remote_preference),
+            ("Remote / hybrid / on-site preference", remote_preference),
         ]
     )
     screening_answers = _fields(

@@ -44,6 +44,7 @@ function getGroups(): { title: string; description?: string; fields: AnswerField
     },
     {
       title: "Application preferences",
+      description: "Sponsorship and work-policy answers reuse your saved Search settings when left blank here. Add application-specific details only when needed.",
       fields: [
         { key: "expectedSalary", label: "Expected salary", placeholder: "e.g. USD 120,000–140,000 base per year; negotiable" },
         { key: "workAuthorization", label: "Work authorization", placeholder: "Country and current authorization to work" },
