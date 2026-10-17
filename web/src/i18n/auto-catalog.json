@@ -11668,5 +11668,110 @@
     "key": "ui_44a91e42a510",
     "en": "These details are included when you copy an application prompt and in settings exports. Only save information you want to share with your application assistant.",
     "zh-CN": "复制申请提示词或导出设置时，也会包含这里填写的内容。请只保存你愿意提供给申请助手的信息。"
+  },
+  "U.S. worker category": {
+    "key": "ui_f11bd4ad461e",
+    "en": "U.S. worker category",
+    "zh-CN": "美国劳工身份类别"
+  },
+  "U.S. citizen, national, permanent resident, refugee, or person granted asylum: Yes / No": {
+    "key": "ui_6756179c8565",
+    "en": "U.S. citizen, national, permanent resident, refugee, or person granted asylum: Yes / No",
+    "zh-CN": "是否属于美国公民、美国国民、永久居民、难民或获准庇护者：是／否"
+  },
+  "Verification of legal right to work": {
+    "key": "ui_0ee4c8f88b9f",
+    "en": "Verification of legal right to work",
+    "zh-CN": "合法工作资格证明"
+  },
+  "Country and whether you can provide verification if offered employment": {
+    "key": "ui_e24d279da6b8",
+    "en": "Country and whether you can provide verification if offered employment",
+    "zh-CN": "请注明国家，以及获得录用后能否提供合法工作资格证明"
+  },
+  "Common screening answers": {
+    "key": "ui_ea9856dc4a6f",
+    "en": "Common screening answers",
+    "zh-CN": "常见筛选问题的回答"
+  },
+  "Use explicit answers only. Include the exact country list for citizenship questions and the country and lookback period for government employment. Leave unknown answers blank.": {
+    "key": "ui_3e476b577ec9",
+    "en": "Use explicit answers only. Include the exact country list for citizenship questions and the country and lookback period for government employment. Leave unknown answers blank.",
+    "zh-CN": "仅填写已明确确认的回答。国籍问题请注明完整国家名单；政府任职问题请注明国家及回溯时段。不确定的内容请留空。"
+  },
+  "At least 18 years old": {
+    "key": "ui_fc8b3e391a5b",
+    "en": "At least 18 years old",
+    "zh-CN": "是否年满18岁"
+  },
+  "Termination / requested resignation history": {
+    "key": "ui_77c906a16d31",
+    "en": "Termination / requested resignation history",
+    "zh-CN": "被解雇／被要求辞职的经历"
+  },
+  "e.g. No; terminated for cause; layoff, restructuring or downsizing": {
+    "key": "ui_25a128ff1f23",
+    "en": "e.g. No; terminated for cause; layoff, restructuring or downsizing",
+    "zh-CN": "例如：无；因故被解雇；因裁员、重组或缩编离职"
+  },
+  "Export-control citizenship / dual citizenship": {
+    "key": "ui_df3b19be957f",
+    "en": "Export-control citizenship / dual citizenship",
+    "zh-CN": "出口管制所涉国籍／双重国籍"
+  },
+  "Name the countries and your answer for that list": {
+    "key": "ui_e21fdcf8b213",
+    "en": "Name the countries and your answer for that list",
+    "zh-CN": "请注明国家名单及针对该名单的回答"
+  },
+  "Plans to join a for-profit company board before starting": {
+    "key": "ui_11a60b0bfb83",
+    "en": "Plans to join a for-profit company board before starting",
+    "zh-CN": "入职前是否计划加入营利性公司董事会"
+  },
+  "Current for-profit company board membership": {
+    "key": "ui_7c50b43bc543",
+    "en": "Current for-profit company board membership",
+    "zh-CN": "目前是否担任营利性公司董事"
+  },
+  "Government employment": {
+    "key": "ui_d6bc0f27d6d1",
+    "en": "Government employment",
+    "zh-CN": "政府任职经历"
+  },
+  "Country, federal/state/local scope, lookback period, and answer": {
+    "key": "ui_52161a6713bf",
+    "en": "Country, federal/state/local scope, lookback period, and answer",
+    "zh-CN": "请注明国家、联邦／州／地方政府范围、回溯时段及回答"
+  },
+  "Employer-specific answers": {
+    "key": "ui_ad6523f6d5e4",
+    "en": "Employer-specific answers",
+    "zh-CN": "针对特定雇主的回答"
+  },
+  "Name the employer for every answer. These answers apply only to that employer; they do not authorize accepting terms or submitting an application.": {
+    "key": "ui_4c4e9988a074",
+    "en": "Name the employer for every answer. These answers apply only to that employer; they do not authorize accepting terms or submitting an application.",
+    "zh-CN": "每项回答均须注明雇主。这些回答仅适用于该雇主，不代表授权接受条款或提交申请。"
+  },
+  "How you heard about each employer": {
+    "key": "ui_2c5b74e7cd57",
+    "en": "How you heard about each employer",
+    "zh-CN": "了解各雇主的渠道"
+  },
+  "Previous employment with each employer": {
+    "key": "ui_6f8c2f64b4d6",
+    "en": "Previous employment with each employer",
+    "zh-CN": "在各雇主处的任职经历"
+  },
+  "Previous applications to each employer": {
+    "key": "ui_cc049dff5ccd",
+    "en": "Previous applications to each employer",
+    "zh-CN": "向各雇主提交过的申请"
+  },
+  "Friends / relatives employed by each employer": {
+    "key": "ui_c266f5436e9f",
+    "en": "Friends / relatives employed by each employer",
+    "zh-CN": "在各雇主任职的朋友／亲属"
   }
 }

@@ -12,8 +12,12 @@ from typing import Annotated, Any, Literal
 from pydantic import Field, field_validator, model_validator
 
 from resume_tailor_harness.api.schemas.base import CamelModel
-from resume_tailor_harness.tailor.review_config import LengthBudget as DomainLengthBudget
-from resume_tailor_harness.tailor.review_config import ReviewConfig as DomainReviewConfig
+from resume_tailor_harness.tailor.review_config import (
+    LengthBudget as DomainLengthBudget,
+)
+from resume_tailor_harness.tailor.review_config import (
+    ReviewConfig as DomainReviewConfig,
+)
 
 
 class SearchConfigDoc(CamelModel):
@@ -265,9 +269,21 @@ class ApplicationProfileDoc(CamelModel):
     expected_salary: ApplicationAnswer = ""
     work_authorization: ApplicationAnswer = ""
     sponsorship_needed: ApplicationAnswer = ""
+    us_worker_category: ApplicationAnswer = ""
+    work_authorization_verification: ApplicationAnswer = ""
     availability: ApplicationAnswer = ""
     relocation: ApplicationAnswer = ""
     remote_preference: ApplicationAnswer = ""
+    at_least_18: ApplicationAnswer = ""
+    termination_history: ApplicationAnswer = ""
+    export_control_citizenship: ApplicationAnswer = ""
+    planned_board_membership: ApplicationAnswer = ""
+    current_board_membership: ApplicationAnswer = ""
+    government_employment: ApplicationAnswer = ""
+    referral_sources: ApplicationAnswer = ""
+    previous_employment: ApplicationAnswer = ""
+    previous_applications: ApplicationAnswer = ""
+    employer_relationships: ApplicationAnswer = ""
     pronouns: ApplicationAnswer = ""
     gender: ApplicationAnswer = ""
     ethnicity: ApplicationAnswer = ""

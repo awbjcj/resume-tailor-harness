@@ -228,6 +228,53 @@ def test_omits_blank_answers_but_preserves_explicit_no_and_multiline_notes(tmp_p
     assert "Race / ethnicity:" not in prompt
     assert "## Skills" not in prompt
     assert "Not provided" not in prompt
+    assert "## Common screening answers" not in prompt
+    assert "## Employer-specific answers" not in prompt
+
+
+def test_common_questions_keep_explicit_answers_and_their_scope(tmp_path):
+    prompt = build_application_prompt(
+        Job(source="manual", title="Engineer", company="Other Co"),
+        ApplicationProfileDoc(
+            at_least_18="Yes",
+            termination_history="No",
+            export_control_citizenship="Cuba, Iran, North Korea, Syria: No",
+            planned_board_membership="No",
+            current_board_membership="No",
+            government_employment="U.S. federal, state, or local; last 5 years: No",
+            referral_sources="Acme: LinkedIn\nOther Co: Career website",
+            previous_employment="Acme: No",
+            previous_applications="Acme: No",
+            employer_relationships="Acme: No",
+            us_worker_category="No",
+            sponsorship_needed="U.S.: Yes, now or in the future",
+            work_authorization_verification="U.S.: Yes, if offered employment",
+            availability="Within 1 month after offer acceptance",
+        ),
+        tmp_path / "missing.json",
+    )
+    assert "- At least 18 years old: Yes" in prompt
+    assert "- Termination / requested resignation history: No" in prompt
+    assert "Cuba, Iran, North Korea, Syria: No" in prompt
+    assert "- Plans to join a for-profit company board before starting: No" in prompt
+    assert "- Current for-profit company board membership: No" in prompt
+    assert "U.S. federal, state, or local; last 5 years: No" in prompt
+    assert (
+        "- How I heard about the employer: Acme: LinkedIn\n  Other Co: Career website"
+        in prompt
+    )
+    assert "- Previous employment with the employer: Acme: No" in prompt
+    assert "- Previous applications to the employer: Acme: No" in prompt
+    assert "- Friends / relatives employed by the employer: Acme: No" in prompt
+    assert "refugee, or person granted asylum): No" in prompt
+    assert "- Sponsorship needed: U.S.: Yes, now or in the future" in prompt
+    assert "- Can provide verification of legal right to work: U.S.: Yes" in prompt
+    assert (
+        "- Start date / notice period: Within 1 month after offer acceptance" in prompt
+    )
+    assert "Apply employer-specific answers only to the named employer" in prompt
+    assert "exact country list" in prompt
+    assert "Saved answers never authorize accepting terms" in prompt
 
 
 def test_missing_end_date_does_not_claim_current_employment(tmp_path):
@@ -253,3 +300,60 @@ def test_missing_end_date_does_not_claim_current_employment(tmp_path):
     assert "- Dates: From 2020" in prompt
     assert "Present" not in prompt
     assert "Current role" not in prompt
+
+
+def test_every_saved_application_answer_is_included_in_the_copied_prompt(tmp_path):
+    """A new settings field must never silently disappear from the handoff."""
+    values = {
+        name: f"explicit-answer-{name}-end"
+        for name in ApplicationProfileDoc.model_fields
+    }
+    prompt = build_application_prompt(
+        Job(source="manual", title="Engineer", company="Acme"),
+        ApplicationProfileDoc(**values),
+        tmp_path / "missing.json",
+    )
+    for name, value in values.items():
+        assert prompt.count(value) == 1, (
+            f"Missing or duplicated application answer: {name}"
+        )
+
+
+def test_resume_contact_fallback_preserves_all_supplied_contact_information(tmp_path):
+    path = tmp_path / "facts.json"
+    save_facts(
+        ProfileFacts(
+            contact=Contact(
+                name="Resume Applicant",
+                headline="Software Engineer",
+                email="applicant@example.com",
+                phone="+1 555 0100",
+                location="Boston, MA",
+                work_authorization="U.S.: requires sponsorship",
+                links=[
+                    Link(label="LinkedIn", url="https://linkedin.com/in/applicant"),
+                    Link(label="Portfolio", url="https://applicant.example.com"),
+                    Link(label="GitHub", url="https://github.com/applicant"),
+                ],
+            )
+        ),
+        path,
+    )
+    prompt = build_application_prompt(
+        Job(source="manual", title="Engineer"), ApplicationProfileDoc(), path
+    )
+    for text in [
+        "- Full name: Resume Applicant",
+        "- Professional headline: Software Engineer",
+        "- Email: applicant@example.com",
+        "- Phone: +1 555 0100",
+        "- Resume location (not a full mailing address): Boston, MA",
+        "- Work authorization: U.S.: requires sponsorship",
+        "- LinkedIn: https://linkedin.com/in/applicant",
+        "- Portfolio: https://applicant.example.com",
+        "- GitHub: https://github.com/applicant",
+    ]:
+        assert text in prompt
+    assert "- Address:" not in prompt
+    assert "- Relocation preference:" not in prompt
+    assert "This prompt does not attach a resume or cover letter" in prompt
