@@ -5,6 +5,7 @@ import { api, unwrap } from "@/lib/api/client";
 import type { paths } from "@/lib/api/schema";
 
 export type ConfigPath =
+  | "/api/config/application-profile"
   | "/api/config/search"
   | "/api/config/review"
   | "/api/config/review-deep"

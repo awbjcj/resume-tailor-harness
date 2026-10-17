@@ -25,6 +25,48 @@ def _evidence(**overrides) -> H1BSponsorshipEvidence:
     return H1BSponsorshipEvidence(**payload)
 
 
+def test_openai_evidence_request_has_closed_objects_including_quarterly_wages():
+    from resume_tailor_harness.llm_runner import build_model, _walk_json_schema
+
+    model = build_model("openai:gpt-6.1-sol", api_key="offline-key")
+    output_format = model.get_request_params(response_format=H1BSponsorshipEvidence)[
+        "text"
+    ]["format"]
+    assert output_format["strict"] is True
+    objects = [
+        node
+        for node in _walk_json_schema(output_format["schema"])
+        if node.get("type") == "object"
+    ]
+    for node in objects:
+        assert "properties" in node, node
+        assert node.get("additionalProperties") is False, node
+        assert set(node.get("required", [])) == set(node["properties"]), node
+    assert any(
+        set(node["properties"]) == {"min", "max", "mean", "median"} for node in objects
+    )
+
+
+def test_missing_wage_metrics_roundtrip_without_fabricated_numbers():
+    from resume_tailor_harness.api.schemas.jobs import H1BSponsorshipEvidenceOut
+
+    evidence = _evidence(
+        wage_summary={"min": None, "max": None, "mean": None, "median": 150000},
+        periods=[
+            {"period": "FY2026-Q1", "wage_summary": {"mean": 0, "median": None}},
+            {"period": "FY2025-Q4", "wage_summary": None},
+        ],
+    )
+    payload = evidence.model_dump(mode="json")
+    assert payload["wage_summary"] == {"median": 150000.0}
+    assert payload["periods"][0]["wage_summary"] == {"mean": 0.0}
+    assert payload["periods"][1]["wage_summary"] is None
+    assert H1BSponsorshipEvidence.model_validate(payload) == evidence
+    api = H1BSponsorshipEvidenceOut.from_evidence(evidence)
+    assert api.wage_summary == {"median": 150000.0}
+    assert api.periods[0].wage_summary == {"mean": 0.0}
+
+
 def test_rollup_overwrites_totals_that_disagree_with_their_parts():
     evidence = _evidence(
         filing_count=999,

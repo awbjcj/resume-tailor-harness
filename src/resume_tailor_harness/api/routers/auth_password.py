@@ -24,6 +24,7 @@ from resume_tailor_harness.api.schemas.auth_email import (
 )
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.mail import messages
+from resume_tailor_harness.mail.account_notifications import enqueue_account_email
 from resume_tailor_harness.tenancy.system_db import PasswordResetCode, User
 
 
@@ -65,7 +66,9 @@ def forgot_password(
             )
         )
         session.flush()
-        send_or_fail(request, body.email, messages.reset_code(code))
+        send_or_fail(
+            request, body.email, messages.reset_code(code, user.dashboard_language)
+        )
         session.commit()
     return CodeSentResponse()
 
@@ -122,6 +125,7 @@ def reset_password(
             )
         user.password_hash = auth.hash_password(body.new_password)
         user.session_epoch += 1
+        enqueue_account_email(session, user, "password_changed")
         attempts.clear_lockout(user)
         row.consumed_at = datetime.now(timezone.utc)
         session.commit()
@@ -140,10 +144,6 @@ def reset_password(
         request,
         response,
         auth.issue_user_session(settings, user_id=user_id, epoch=epoch),
-    )
-    notice = messages.password_changed(settings.app_base_url)
-    request.app.state.mailer.notify(
-        to=body.email, subject=notice.subject, body=notice.body
     )
     return MeResponse(
         username=username,

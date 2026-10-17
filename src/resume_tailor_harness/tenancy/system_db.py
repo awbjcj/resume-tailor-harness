@@ -68,6 +68,9 @@ class User(SystemBase):
     )
     email: Mapped[str | None] = mapped_column(String(320), unique=True, index=True)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    dashboard_language: Mapped[str] = mapped_column(
+        String(8), default="en", server_default="en"
+    )
     google_sub: Mapped[str | None] = mapped_column(String(64), unique=True)
     session_epoch: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     failed_login_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -78,6 +81,34 @@ class User(SystemBase):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
     )
+
+
+class AccountEmail(SystemBase):
+    """Transactional outbox, independent of workspace consent and user lifetime."""
+
+    __tablename__ = "account_emails"
+    __table_args__ = (
+        Index("ix_account_emails_due", "sent_at", "next_attempt_at"),
+        Index("ix_account_emails_held", "ready", "event"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(12), index=True)
+    recipient: Mapped[str] = mapped_column(String(320))
+    event: Mapped[str] = mapped_column(String(64))
+    context_json: Mapped[str] = mapped_column(Text)
+    payload_json: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now
+    )
+    # Deletion notices remain held until filesystem cleanup succeeds.
+    ready: Mapped[bool] = mapped_column(Boolean, default=True)
+    next_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now
+    )
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class InviteCode(SystemBase):

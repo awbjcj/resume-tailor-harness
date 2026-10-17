@@ -25,3 +25,9 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   reach that map without an agent call; expired entries deferred by the cap are
   display-only until refreshed. `h1b_evidence_id` is updated for every covered
   in-scope job as provenance, while no job writes a snapshot.
+- **Wage aggregates have a closed agent schema.** `H1BWageSummary` declares
+  the MCP tool's `min`, `max`, `mean`, and `median` as nullable numbers, for
+  both the report and each quarter. A free-form dictionary has no declared
+  properties and is rejected by OpenAI strict structured outputs before
+  generation. Serialization omits unknown metrics, preserving the sparse
+  numeric dictionaries used by the cache and public API without inventing zeros.

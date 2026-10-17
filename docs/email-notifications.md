@@ -1,5 +1,73 @@
 # Email notifications
 
+Email subjects and bodies follow the language selected in the dashboard
+(English or Simplified Chinese). The dashboard saves that selection to the
+account when opened and when the language changes, so background digests and
+account notices use it too. Existing accounts default to English until their
+dashboard language is saved. Verification and password-reset emails use the
+same account preference; registration codes use the language of the registration
+page. Names, job titles and user-written reasons stay as entered. A delivery
+already attempted keeps its rendered payload for retries and provider idempotency.
+The notification settings, verification errors, and public unsubscribe pages
+also use the selected interface language. There is no separate email-language
+setting. Account notices waiting for their first delivery use the recipient's
+latest saved choice; deletion notices retain that choice after account removal.
+
+## Account activity notices
+
+Hosted accounts automatically receive transactional notices at their **registered,
+verified sign-in email address**, using the same platform Resend or SMTP provider
+as registration and password reset. These notices do not use the optional digest
+recipient and do not require digest opt-in. Disabling digests does not disable
+account notices. Legacy accounts without a verified registered email cannot
+receive them until they verify an account address.
+
+Notices cover:
+
+- Account creation and administrator deletion, disabling, and re-enabling.
+- Administrator/member role changes, granting/revoking shared-key access, and
+  changes to active-job and concurrent-run limits.
+- Password changes and resets, Google identity linking/unlinking, personal access
+  token creation/revocation, and revoking sign-in sessions.
+- Registered-email changes: confirmation to the new verified address and a notice
+  to the previous verified address.
+- Credit grants, deductions, purchases, refunds, payment disputes, quota resets,
+  individual allowance overrides, tier assignments, and tier configuration changes.
+- Subscription activation, renewal, revocation, expiry, scheduled cancellation
+  changes, and automatic quota-period renewals.
+
+Notices describe the resulting settings, amounts, dates, and adjustment reason
+where available. Passwords, verification codes, and access-token secrets are never
+included in activity notices. Ordinary page reads and individual LLM usage charges
+do not generate activity emails. Automatic period renewals and subscription expiry
+are detected when the existing quota lifecycle advances the account; several
+missed periods produce one renewal notice.
+
+The operation and notice are committed together in the system database's
+`account_emails` outbox. Failed transactions and unchanged settings do not send
+notices; replayed billing webhooks and idempotent quota/subscription operations
+do not create duplicate notices. Deletion notices retain the registered address
+after account/workspace removal and remain held until cleanup succeeds. A cleanup
+failure restores the account and removes its deletion notice.
+
+The existing mail worker dispatches up to 50 account notices per minute while
+the server runs, including notices for disabled/deleted accounts. Delivery failures
+retry after 2, 4, 8 minutes, increasing to a maximum six-hour interval, and survive
+restarts. The exact rendered HTML/text request and provider idempotency key are
+persisted before sending. Workers lease requests without holding a database writer
+lock during network delivery. SMTP has no idempotent send API, and Resend retains
+idempotency keys for 24 hours: an ambiguous delivery failure can still duplicate
+a notice, especially after a prolonged outage.
+
+Both versions use Jinja templates `account_event.html` and `account_event.txt`,
+with HTML autoescaping and the shared email layout. Configure the provider as
+described below. `APP_BASE_URL` adds a link to the account page; account notices
+can still deliver without it. No separate user setting or provider credential is
+required. Restart the server after deploying to create the outbox table and start
+the worker with the configured mail provider.
+
+## Optional job-search digests
+
 Open **Settings → Email notifications** to enter a recipient address, opt in,
 choose **Daily**, **Weekly**, or **Every 30 days**, and select digest topics:
 

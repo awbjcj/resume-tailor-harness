@@ -21,7 +21,7 @@ from pathlib import Path, PurePosixPath
 
 import yaml
 
-from resume_tailor_harness.api.schemas.config import ProfileConfigDoc
+from resume_tailor_harness.api.schemas.config import ApplicationProfileDoc, ProfileConfigDoc
 from resume_tailor_harness.discovery.connectors.config import ConnectorsConfig
 from resume_tailor_harness.discovery.search_config import SearchConfig
 from resume_tailor_harness.profile.group_corrections import GroupCorrections
@@ -166,6 +166,7 @@ def _check_taxonomy_corrections(path: Path) -> None:
 
 
 _VALIDATORS: dict[str, Callable[[Path], None]] = {
+    "config/application_profile.yaml": _yaml_doc(ApplicationProfileDoc),
     "config/connectors.yaml": _yaml_doc(ConnectorsConfig),
     "config/search.yaml": _yaml_doc(SearchConfig),
     "config/review.yaml": _yaml_doc(ReviewConfig),

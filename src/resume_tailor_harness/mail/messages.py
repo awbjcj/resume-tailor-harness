@@ -14,14 +14,24 @@ def _links(base_url: str, *paths: tuple[str, str]) -> str:
     return "".join(f"\n{label}: {root}{path}\n" for path, label in paths)
 
 
-def verification_code(code: str) -> Message:
+def verification_code(code: str, language: str = "en") -> Message:
+    if language == "zh-CN":
+        return Message(
+            "Résumé Tailor Harness 邮箱验证码",
+            f"邮箱验证码：{code}\n\n15 分钟内有效，仅可使用一次。\n",
+        )
     return Message(
         "Your Résumé Tailor Harness verification code",
         f"Your verification code is {code}\n\nIt expires in 15 minutes and can be used once.\n",
     )
 
 
-def reset_code(code: str) -> Message:
+def reset_code(code: str, language: str = "en") -> Message:
+    if language == "zh-CN":
+        return Message(
+            "Résumé Tailor Harness 密码重置验证码",
+            f"重置密码的验证码：{code}\n\n15 分钟内有效，仅可使用一次。\n",
+        )
     return Message(
         "Your Résumé Tailor Harness password reset code",
         f"Your password reset code is {code}\n\nIt expires in 15 minutes and can be used once.\n",
@@ -52,7 +62,13 @@ def google_unlinked(base_url: str) -> Message:
     )
 
 
-def signup_on_existing(base_url: str) -> Message:
+def signup_on_existing(base_url: str, language: str = "en") -> Message:
+    if language == "zh-CN":
+        return Message(
+            "有人尝试使用你的邮箱注册",
+            "此邮箱已注册账户，本次未创建新账户。"
+            + _links(base_url, ("/login", "登录"), ("/forgot-password", "重置密码")),
+        )
     return Message(
         "Someone tried to sign up with your email",
         "An account already exists for this address; no new account was created."

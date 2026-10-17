@@ -1,6 +1,7 @@
 import { Archive, ArchiveRestore, ExternalLink, Trash2 } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CopyApplicationPromptButton } from "@/features/job/CopyApplicationPromptButton";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useArchiveJob } from "./use-archive-job";
@@ -21,6 +22,7 @@ export function JobQuickActions({
   const deleteJob = useDeleteJob();
   return (
     <>
+      <CopyApplicationPromptButton jobId={jobId} compact />
       {url && (
         <a
           href={url}

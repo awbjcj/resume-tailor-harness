@@ -109,6 +109,13 @@ def _unparsed_structured_output(agent: Any, response: Any) -> bool:
     where the retry budget already lives, so one malformed body costs a retry
     rather than a degraded result.
     """
+    status = getattr(response, "status", None)
+    status = getattr(status, "value", status)
+    if status is not None and str(status).lower() != "completed":
+        # Agno also returns error text as content for rejected requests. It is
+        # not generated output to repair; keep the original status/diagnostic
+        # for expect_schema instead of replaying a permanent provider failure.
+        return False
     schema = getattr(agent, "output_schema", None)
     if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
         return False
@@ -344,11 +351,19 @@ class AgentRunner:
             try:
                 self._enter(settings)
                 try:
-                    response = self._agent.run(prompt)
+                    with capture_errors() as errors:
+                        response = self._agent.run(prompt)
                     record_call(self._agent, response)
                 finally:
                     self._exit()
                 record_agent_run(self, response, retries=attempt)
+                if (
+                    errors
+                    and _run_failed(response)
+                    and is_transient(errors[-1])
+                    and attempt < settings.llm_retries
+                ):
+                    raise errors[-1]
                 if _unparsed_structured_output(self._agent, response):
                     raise _UnparsedRetry(response)
                 return response
@@ -379,7 +394,8 @@ class AgentRunner:
                 # fan-out shares, that stalls every sibling call in the batch.
                 await self._enter_async(settings)
                 try:
-                    response = await self._agent.arun(prompt)
+                    with capture_errors() as errors:
+                        response = await self._agent.arun(prompt)
                     recording = asyncio.create_task(
                         asyncio.to_thread(record_call, self._agent, response)
                     )
@@ -391,6 +407,13 @@ class AgentRunner:
                 finally:
                     self._exit()
                 record_agent_run(self, response, retries=attempt)
+                if (
+                    errors
+                    and _run_failed(response)
+                    and is_transient(errors[-1])
+                    and attempt < settings.llm_retries
+                ):
+                    raise errors[-1]
                 if _unparsed_structured_output(self._agent, response):
                     raise _UnparsedRetry(response)
                 return response

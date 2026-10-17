@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ tr('Unsubscribe') }}</title></head>
+<body><main>
+{% if unsubscribed %}
+<h1>{{ tr('You are unsubscribed') }}</h1>
+<p>{{ tr('Email notifications are off. You can opt in again in Settings → Email notifications.') }}</p>
+{% else %}
+<h1>{{ tr('Unsubscribe from email notifications?') }}</h1>
+<p>{{ tr('Account security emails will continue.') }}</p>
+<form method="post"><button type="submit">{{ tr('Unsubscribe') }}</button></form>
+{% endif %}
+</main></body></html>

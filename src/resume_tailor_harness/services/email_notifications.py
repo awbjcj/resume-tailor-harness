@@ -18,6 +18,7 @@ from resume_tailor_harness.config import Settings
 from resume_tailor_harness.mail.mailer import Mailer, MailDeliveryError, mail_configured
 from resume_tailor_harness.mail.tables import EmailNotificationPreference as Preference
 from resume_tailor_harness.mail.templates import render_email
+from resume_tailor_harness.mail.localization import normalize_language, translate
 from resume_tailor_harness.tracking.queries import reminder_event_job_rows
 from resume_tailor_harness.services.reminders import (
     _REMINDABLE_INTERVIEW_KINDS,
@@ -129,6 +130,7 @@ def request_verification(
     *,
     now: datetime | None = None,
     reserve_send: Callable[[str], bool] | None = None,
+    language: str = "en",
 ) -> None:
     if not delivery_available(settings):
         raise NotificationError(
@@ -169,12 +171,12 @@ def request_verification(
         row.attempts = 0
         row.code_sent_at = moment
         row.send_count += 1
-        body, html = render_email("verify_notifications", code=code)
+        body, html = render_email("verify_notifications", code=code, language=language)
         # Keep the rate budget on delivery failure, but invalidate the failed code.
         try:
             mailer.send(
                 to=row.email,
-                subject="Verify your notification email",
+                subject=translate("Verify your notification email", language),
                 body=body,
                 html=html,
             )
@@ -255,7 +257,11 @@ def unsubscribe(engine: Engine, token: str) -> bool:
 
 
 def _digest_context(
-    session: Session, row: Preference, settings: Settings, moment: datetime
+    session: Session,
+    row: Preference,
+    settings: Settings,
+    moment: datetime,
+    language: str = "en",
 ) -> dict:
     active = col(Job.archived_at).is_(None)
     shortlisted = (active, Job.status == "shortlisted")
@@ -308,9 +314,13 @@ def _digest_context(
                 else "Interview / assessment"
             )
             date = utc(event.occurred_at or moment).strftime(
-                "%b %d" if event.all_day else "%b %d, %H:%M UTC"
+                ("%m月%d日" if event.all_day else "%m月%d日 %H:%M UTC")
+                if normalize_language(language) == "zh-CN"
+                else ("%b %d" if event.all_day else "%b %d, %H:%M UTC")
             )
-            reminders.append(f"{label} {date}: {job.company or ''} — {job.title or ''}")
+            reminders.append(
+                f"{translate(label, language)} {date}: {job.company or ''} — {job.title or ''}"
+            )
         if settings.follow_up_days > 0:
             followups = session.exec(
                 select(Application, Job)
@@ -336,21 +346,30 @@ def _digest_context(
             actionable = [
                 (application, job)
                 for application, job in followups
-                if application.id is not None and (
+                if application.id is not None
+                and (
                     application.id,
                     follow_up_key(application.id, application.updated_at),
                 )
                 not in completed
             ]
             for application, job in actionable[:10]:
-                reminders.append(
-                    f"Follow up after {(moment - utc(application.updated_at)).days} days without activity: {job.company or ''} — {job.title or ''}"
-                )
+                label = translate(
+                    "Follow up after {days} days without activity", language
+                ).format(days=(moment - utc(application.updated_at)).days)
+                reminders.append(f"{label}: {job.company or ''} — {job.title or ''}")
     return dict(
-        date=moment.strftime("%b %d, %Y"),
-        frequency={"daily": "Daily", "weekly": "Weekly", "monthly": "Every 30 days"}[
-            row.frequency
-        ],
+        date=moment.strftime(
+            "%Y年%m月%d日" if normalize_language(language) == "zh-CN" else "%b %d, %Y"
+        ),
+        frequency=translate(
+            {
+                "daily": "Daily digest",
+                "weekly": "Weekly digest",
+                "monthly": "Digest every 30 days",
+            }[row.frequency],
+            language,
+        ),
         pending_reviews=row.pending_reviews,
         statistics=row.statistics,
         reminders=row.reminders,
@@ -368,6 +387,7 @@ def deliver_due(
     user_id: str,
     *,
     now: datetime | None = None,
+    language: str = "en",
 ) -> bool:
     """Serialize dispatch with preference edits; preserve requests across retries.
 
@@ -400,7 +420,7 @@ def deliver_due(
             session.commit()
             return False
         if not row.pending_payload:
-            context = _digest_context(session, row, settings, moment)
+            context = _digest_context(session, row, settings, moment, language)
             if (
                 not row.statistics
                 and not context["pending_count"]
@@ -413,12 +433,16 @@ def deliver_due(
             base_url = validate_public_origin(settings.app_base_url)
             unsubscribe_url = f"{base_url}/api/email-notifications/unsubscribe/{user_id}/{row.unsubscribe_token}"
             body, html = render_email(
-                "digest", **context, base_url=base_url, unsubscribe_url=unsubscribe_url
+                "digest",
+                **context,
+                base_url=base_url,
+                unsubscribe_url=unsubscribe_url,
+                language=language,
             )
             row.pending_payload = json.dumps(
                 dict(
                     to=row.email,
-                    subject="Your job-search digest",
+                    subject=translate("Your job-search digest", language),
                     body=body,
                     html=html,
                     headers={

@@ -11,6 +11,7 @@ from resume_tailor_harness.h1b.models import (
     HISTORICAL_ONLY_CAVEAT,
     H1BEnrichmentReport,
     H1BSponsorshipEvidence,
+    H1BWageSummary,
 )
 from resume_tailor_harness.tracking.tables import H1BCompanyEvidence, Job, JobStatus
 
@@ -100,7 +101,7 @@ def test_manual_h1b_check_returns_evidence(monkeypatch, tmp_path):
         fiscal_periods=["2024"],
         filing_count=2,
         certified_count=1,
-        wage_summary={"median": 150000.0},
+        wage_summary=H1BWageSummary(median=150000.0),
         source_url="https://example.com/data",
         data_version="fixture-v1",
         retrieved_at=now,

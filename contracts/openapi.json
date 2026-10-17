@@ -1371,6 +1371,152 @@
         "title": "ApplicationOut",
         "type": "object"
       },
+      "ApplicationProfileDoc": {
+        "description": "Optional, explicitly supplied answers; blank never means no.",
+        "properties": {
+          "additionalAnswers": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Additionalanswers",
+            "type": "string"
+          },
+          "address": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Address",
+            "type": "string"
+          },
+          "availability": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Availability",
+            "type": "string"
+          },
+          "disabilityStatus": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Disabilitystatus",
+            "type": "string"
+          },
+          "educationNotes": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Educationnotes",
+            "type": "string"
+          },
+          "email": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Email",
+            "type": "string"
+          },
+          "ethnicity": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Ethnicity",
+            "type": "string"
+          },
+          "expectedSalary": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Expectedsalary",
+            "type": "string"
+          },
+          "experienceNotes": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Experiencenotes",
+            "type": "string"
+          },
+          "fullName": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Fullname",
+            "type": "string"
+          },
+          "gender": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Gender",
+            "type": "string"
+          },
+          "linkedinUrl": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Linkedinurl",
+            "type": "string"
+          },
+          "phone": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Phone",
+            "type": "string"
+          },
+          "portfolioUrl": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Portfoliourl",
+            "type": "string"
+          },
+          "preferredName": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Preferredname",
+            "type": "string"
+          },
+          "pronouns": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Pronouns",
+            "type": "string"
+          },
+          "relocation": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Relocation",
+            "type": "string"
+          },
+          "remotePreference": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Remotepreference",
+            "type": "string"
+          },
+          "sponsorshipNeeded": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Sponsorshipneeded",
+            "type": "string"
+          },
+          "veteranStatus": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Veteranstatus",
+            "type": "string"
+          },
+          "workAuthorization": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Workauthorization",
+            "type": "string"
+          }
+        },
+        "title": "ApplicationProfileDoc",
+        "type": "object"
+      },
+      "ApplicationPromptOut": {
+        "properties": {
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "ApplicationPromptOut",
+        "type": "object"
+      },
       "ApplicationUpsert": {
         "properties": {
           "notes": {
@@ -4622,6 +4768,21 @@
           "sampleSize"
         ],
         "title": "CycleTimeOut",
+        "type": "object"
+      },
+      "DashboardLanguageDoc": {
+        "properties": {
+          "language": {
+            "default": "en",
+            "enum": [
+              "en",
+              "zh-CN"
+            ],
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "title": "DashboardLanguageDoc",
         "type": "object"
       },
       "DashboardSummaryOut": {
@@ -21941,6 +22102,206 @@
         "summary": "List Career Lab Skills"
       }
     },
+    "/api/config/application-profile": {
+      "get": {
+        "operationId": "get_application_profile_api_config_application_profile_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationProfileDoc"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Application Profile"
+      },
+      "put": {
+        "operationId": "put_application_profile_api_config_application_profile_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationProfileDoc"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationProfileDoc"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Application Profile"
+      }
+    },
+    "/api/config/language": {
+      "get": {
+        "operationId": "get_dashboard_language_api_config_language_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardLanguageDoc"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dashboard Language"
+      },
+      "put": {
+        "operationId": "put_dashboard_language_api_config_language_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DashboardLanguageDoc"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardLanguageDoc"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Dashboard Language"
+      }
+    },
     "/api/config/models": {
       "get": {
         "operationId": "get_models_api_config_models_get",
@@ -25413,6 +25774,61 @@
           }
         },
         "summary": "Upsert Application"
+      }
+    },
+    "/api/jobs/{job_id}/application-prompt": {
+      "get": {
+        "operationId": "application_prompt_api_jobs__job_id__application_prompt_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationPromptOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Application Prompt"
       }
     },
     "/api/jobs/{job_id}/authoring-context": {

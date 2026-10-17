@@ -18,10 +18,11 @@ from resume_tailor_harness.api.schemas.admin_users import (
     AdminUserPatch,
     ResetPasswordRequest,
 )
+from resume_tailor_harness.mail.account_notifications import enqueue_account_email
 from resume_tailor_harness.tenancy.context import UserContext
 from resume_tailor_harness.tenancy.limits import weekly_usage
 from resume_tailor_harness.tenancy.payments import BillingError, require_closed_billing
-from resume_tailor_harness.tenancy.system_db import ApiToken, User
+from resume_tailor_harness.tenancy.system_db import AccountEmail, ApiToken, User
 from resume_tailor_harness.tenancy.workspace import workspace_paths
 from resume_tailor_harness.tracking.tables import Job
 
@@ -50,6 +51,20 @@ def _active_jobs(request: Request, user_id: str) -> int:
                 .where(col(Job.archived_at).is_(None))
             ).scalar_one()
         )
+
+
+def _account_settings(user: User) -> dict[str, str]:
+    return {
+        "Role": "Administrator" if user.role == "admin" else "Member",
+        "Account access": "Disabled" if user.disabled_at else "Enabled",
+        "Shared-key access": "Granted" if user.shared_key_access else "Revoked",
+        "Active job limit": (
+            "System default" if user.max_active_jobs is None else str(user.max_active_jobs)
+        ),
+        "Concurrent run limit": (
+            "System default" if user.max_concurrent_runs is None else str(user.max_concurrent_runs)
+        ),
+    }
 
 
 @router.get("")
@@ -97,6 +112,7 @@ def patch_user(
         user = session.get(User, user_id)
         if user is None:
             raise ApiException(404, "NOT_FOUND", "No such user")
+        before = _account_settings(user)
         if body.role is not None and body.role != user.role:
             if body.role == "admin":
                 try:
@@ -115,6 +131,13 @@ def patch_user(
                 setattr(user, field, getattr(body, field))
         if body.shared_key_access is not None:
             user.shared_key_access = body.shared_key_access
+        changes = {
+            label: f"{before[label]} → {value}"
+            for label, value in _account_settings(user).items()
+            if before[label] != value
+        }
+        if changes:
+            enqueue_account_email(session, user, "account_updated", changes)
         session.commit()
     return {"status": "updated"}
 
@@ -131,6 +154,8 @@ def reset_password(
         if user is None:
             raise ApiException(404, "NOT_FOUND", "No such user")
         user.password_hash = auth.hash_password(body.password)
+        user.session_epoch += 1
+        enqueue_account_email(session, user, "password_reset")
         session.commit()
     return {"status": "reset"}
 
@@ -181,6 +206,8 @@ def delete_user(
             }
             for token in tokens
         ]
+        notice = enqueue_account_email(session, user, "account_deleted", ready=False)
+        notice_id = notice.id if notice is not None else None
         try:
             session.execute(delete(ApiToken).where(ApiToken.user_id == user_id))
             session.delete(user)
@@ -196,13 +223,22 @@ def delete_user(
         if tombstone.exists() and not paths.root.exists():
             tombstone.rename(paths.root)
         with Session(request.app.state.system_engine) as recovery:
+            notice = recovery.get(AccountEmail, notice_id) if notice_id else None
+            if notice is not None:
+                recovery.delete(notice)
             if recovery.get(User, user_id) is None:
                 recovery.add(User(**user_values))
                 recovery.add_all(ApiToken(**values) for values in token_values)
-                recovery.commit()
+            recovery.commit()
         raise ApiException(
             500,
             "DELETE_CLEANUP_FAILED",
             "Workspace cleanup failed; the user and workspace were restored",
         ) from error
+    if notice_id:
+        with Session(request.app.state.system_engine) as session:
+            notice = session.get(AccountEmail, notice_id)
+            if notice is not None:
+                notice.ready = True
+                session.commit()
     return {"status": "deleted"}

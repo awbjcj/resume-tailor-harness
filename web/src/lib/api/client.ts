@@ -45,6 +45,7 @@ export const api = createClient<paths>({
 
 api.use({
   onRequest({ request }) {
+    if (typeof document !== "undefined") request.headers.set("Accept-Language", document.documentElement.lang || "en");
     for (const [name, value] of Object.entries(authHeaders())) {
       request.headers.set(name, value);
     }

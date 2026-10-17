@@ -11483,5 +11483,190 @@
     "key": "ui_22299a02dd51",
     "en": "Could not stop the response. Please try again.",
     "zh-CN": "无法停止回复，请重试。"
+  },
+  "Application prompt copied in English": {
+    "key": "ui_10e14f661314",
+    "en": "Application prompt copied in English",
+    "zh-CN": "英文申请提示词已复制"
+  },
+  "Could not load application prompt. Please try again.": {
+    "key": "ui_2c5ddd01ef74",
+    "en": "Could not load application prompt. Please try again.",
+    "zh-CN": "申请提示词加载失败，请重试。"
+  },
+  "Copy application prompt": {
+    "key": "ui_7f98c985ee1a",
+    "en": "Copy application prompt",
+    "zh-CN": "复制申请提示词"
+  },
+  "Clipboard access is unavailable. Select the text below and copy it manually. Paste it into your browser or computer-use assistant.": {
+    "key": "ui_bc1664cf9193",
+    "en": "Clipboard access is unavailable. Select the text below and copy it manually. Paste it into your browser or computer-use assistant.",
+    "zh-CN": "无法使用剪贴板。请选中下方文字并手动复制，再粘贴到支持浏览器操作或电脑操作的 AI 助手中。"
+  },
+  "English application prompt": {
+    "key": "ui_698103364511",
+    "en": "English application prompt",
+    "zh-CN": "英文申请提示词"
+  },
+  "Edit application profile": {
+    "key": "ui_eca7f4158ec5",
+    "en": "Edit application profile",
+    "zh-CN": "编辑申请资料"
+  },
+  "Contact details": {
+    "key": "ui_9681395de456",
+    "en": "Contact details",
+    "zh-CN": "联系方式"
+  },
+  "Full name": {
+    "key": "ui_f13a64ba2fea",
+    "en": "Full name",
+    "zh-CN": "姓名"
+  },
+  "Preferred name": {
+    "key": "ui_be5edee54016",
+    "en": "Preferred name",
+    "zh-CN": "常用姓名"
+  },
+  "Full address": {
+    "key": "ui_a0e82e2a1810",
+    "en": "Full address",
+    "zh-CN": "详细地址"
+  },
+  "LinkedIn URL": {
+    "key": "ui_8f1ce6b75bb1",
+    "en": "LinkedIn URL",
+    "zh-CN": "LinkedIn 链接"
+  },
+  "Portfolio URL": {
+    "key": "ui_ac3cf09f394a",
+    "en": "Portfolio URL",
+    "zh-CN": "作品集链接"
+  },
+  "Application preferences": {
+    "key": "ui_a7599c9c74dd",
+    "en": "Application preferences",
+    "zh-CN": "申请偏好"
+  },
+  "Expected salary": {
+    "key": "ui_da8f6de0897b",
+    "en": "Expected salary",
+    "zh-CN": "期望薪资"
+  },
+  "e.g. USD 120,000–140,000 base per year; negotiable": {
+    "key": "ui_3f7dac42bf21",
+    "en": "e.g. USD 120,000–140,000 base per year; negotiable",
+    "zh-CN": "例如：基本年薪 120,000–140,000 美元，可协商"
+  },
+  "Work authorization": {
+    "key": "ui_4c52237669a7",
+    "en": "Work authorization",
+    "zh-CN": "工作许可"
+  },
+  "Country and current authorization to work": {
+    "key": "ui_c2a00abda1ab",
+    "en": "Country and current authorization to work",
+    "zh-CN": "申请工作的国家及目前的工作许可情况"
+  },
+  "Sponsorship needed": {
+    "key": "ui_c0f6ab8c097b",
+    "en": "Sponsorship needed",
+    "zh-CN": "签证担保需求"
+  },
+  "State whether sponsorship is needed now or in the future": {
+    "key": "ui_1d1bef4d164f",
+    "en": "State whether sponsorship is needed now or in the future",
+    "zh-CN": "请说明现在或将来是否需要雇主提供签证担保"
+  },
+  "Start date / notice period": {
+    "key": "ui_df1992b3737a",
+    "en": "Start date / notice period",
+    "zh-CN": "到岗日期／离职通知期"
+  },
+  "Relocation preference": {
+    "key": "ui_8885bb714fd8",
+    "en": "Relocation preference",
+    "zh-CN": "搬迁意愿"
+  },
+  "Remote / hybrid / on-site preference": {
+    "key": "ui_d6fc9d5f850c",
+    "en": "Remote / hybrid / on-site preference",
+    "zh-CN": "远程／混合／现场办公偏好"
+  },
+  "Voluntary self-identification": {
+    "key": "ui_14d7b3a2f925",
+    "en": "Voluntary self-identification",
+    "zh-CN": "自愿填写的个人信息"
+  },
+  "Pronouns": {
+    "key": "ui_28104b8f1375",
+    "en": "Pronouns",
+    "zh-CN": "人称代词"
+  },
+  "Gender": {
+    "key": "ui_a04630ef8bc3",
+    "en": "Gender",
+    "zh-CN": "性别"
+  },
+  "Race / ethnicity": {
+    "key": "ui_b5d01b51ce2e",
+    "en": "Race / ethnicity",
+    "zh-CN": "种族／族裔"
+  },
+  "Veteran status": {
+    "key": "ui_d91865df6d75",
+    "en": "Veteran status",
+    "zh-CN": "退伍军人身份"
+  },
+  "Disability status": {
+    "key": "ui_75e77acd6cc6",
+    "en": "Disability status",
+    "zh-CN": "残障状况"
+  },
+  "Additional application answers": {
+    "key": "ui_650fb7ef1814",
+    "en": "Additional application answers",
+    "zh-CN": "补充申请信息"
+  },
+  "Education details not in your resume": {
+    "key": "ui_8ba7badbabc8",
+    "en": "Education details not in your resume",
+    "zh-CN": "简历中未列出的教育背景"
+  },
+  "Work experience details not in your resume": {
+    "key": "ui_7600b5c8224d",
+    "en": "Work experience details not in your resume",
+    "zh-CN": "简历中未列出的工作经历"
+  },
+  "Other application answers": {
+    "key": "ui_5eb8eded0c9d",
+    "en": "Other application answers",
+    "zh-CN": "其他申请信息"
+  },
+  "Could not load application profile.": {
+    "key": "ui_1faa1e62a73a",
+    "en": "Could not load application profile.",
+    "zh-CN": "申请资料加载失败。"
+  },
+  "Application profile": {
+    "key": "ui_57af318d79ea",
+    "en": "Application profile",
+    "zh-CN": "申请资料"
+  },
+  "Optional answers for the English application prompt on each job. Saved resume facts supply your education, experience, skills, and contact details; contact answers here take precedence.": {
+    "key": "ui_94e3aa61a0c6",
+    "en": "Optional answers for the English application prompt on each job. Saved resume facts supply your education, experience, skills, and contact details; contact answers here take precedence.",
+    "zh-CN": "这些信息用于生成各职位的英文申请提示词，均为选填。教育背景、工作经历、技能和联系方式会从已保存的简历资料中提取；联系方式以此处填写的为准。"
+  },
+  "Leave unknown answers blank. For voluntary questions, enter your exact answer or “Prefer not to disclose”. Blank answers are never inferred.": {
+    "key": "ui_3e02e86dbe32",
+    "en": "Leave unknown answers blank. For voluntary questions, enter your exact answer or “Prefer not to disclose”. Blank answers are never inferred.",
+    "zh-CN": "不确定的内容可以留空。自愿填写的问题，请如实回答，也可以填写“不愿透露”。留空的项目不会自动补全。"
+  },
+  "These details are included when you copy an application prompt and in settings exports. Only save information you want to share with your application assistant.": {
+    "key": "ui_44a91e42a510",
+    "en": "These details are included when you copy an application prompt and in settings exports. Only save information you want to share with your application assistant.",
+    "zh-CN": "复制申请提示词或导出设置时，也会包含这里填写的内容。请只保存你愿意提供给申请助手的信息。"
   }
 }

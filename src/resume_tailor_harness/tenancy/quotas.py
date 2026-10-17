@@ -10,6 +10,11 @@ from sqlalchemy import func, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
+from resume_tailor_harness.mail.account_notifications import (
+    add_quota_entry,
+    enqueue_account_email,
+    money,
+)
 from resume_tailor_harness.tenancy.system_db import (
     QuotaAccount,
     QuotaLedgerEntry,
@@ -164,7 +169,8 @@ def _new_period(
     session.add(period)
     session.flush()
     account.active_period_id = period.id
-    session.add(
+    add_quota_entry(
+        session,
         QuotaLedgerEntry(
             user_id=account.user_id,
             period_id=period.id,
@@ -218,7 +224,8 @@ def _ensure_in_session(
             period = _new_period(
                 session, account, tier, _aware(subscription.expires_at)
             )
-            session.add(
+            add_quota_entry(
+                session,
                 QuotaLedgerEntry(
                     user_id=user_id,
                     period_id=period.id,
@@ -226,12 +233,22 @@ def _ensure_in_session(
                     amount_micros=0,
                 )
             )
+    renewed = False
     while now >= _aware(period.ends_at):
         period.closed_at = period.ends_at
         next_start = _aware(period.ends_at)
         period = _new_period(session, account, tier, next_start)
+        renewed = True
     if subscription is not None and subscription.status == "ACTIVE":
         period.ends_at = min(_aware(period.ends_at), _aware(subscription.expires_at))
+    if renewed:
+        enqueue_account_email(
+            session, session.get(User, user_id), "quota_renewed", {
+                "Quota tier": tier.name,
+                "Recurring allowance": money(period.allowance_micros),
+                "Period ends (UTC)": period.ends_at.isoformat(),
+            },
+        )
     return account, period, tier
 
 
@@ -388,7 +405,8 @@ def charge_in_session(
     period.credit_spent_micros += credit
     period.overage_micros += overage
     account.credit_balance_micros -= credit
-    session.add(
+    add_quota_entry(
+        session,
         QuotaLedgerEntry(
             user_id=user_id,
             period_id=period.id,
@@ -413,7 +431,8 @@ def grant_credit(
         session.execute(text("BEGIN IMMEDIATE"))
         account, period, tier = _ensure_in_session(session, user_id, moment)
         account.credit_balance_micros += amount_micros
-        session.add(
+        add_quota_entry(
+            session,
             QuotaLedgerEntry(
                 user_id=user_id,
                 period_id=period.id,
@@ -438,7 +457,8 @@ def debit_credit(
         if account.credit_balance_micros < amount_micros:
             raise InsufficientCreditError("insufficient credit balance")
         account.credit_balance_micros -= amount_micros
-        session.add(
+        add_quota_entry(
+            session,
             QuotaLedgerEntry(
                 user_id=user_id,
                 period_id=period.id,
@@ -464,7 +484,8 @@ def reset_current_period(
         period.spent_micros = 0
         period.credit_spent_micros = 0
         period.overage_micros = 0
-        session.add(
+        add_quota_entry(
+            session,
             QuotaLedgerEntry(
                 user_id=user_id,
                 period_id=period.id,
@@ -501,7 +522,8 @@ def change_tier(
         account.tier_id = tier.id
         account.anchor_at = moment
         new_period = _new_period(session, account, tier, moment)
-        session.add(
+        add_quota_entry(
+            session,
             QuotaLedgerEntry(
                 user_id=user_id,
                 period_id=new_period.id,
@@ -686,7 +708,8 @@ def execute_operation(
                 "creditSpentMicros": period.credit_spent_micros,
                 "overageMicros": period.overage_micros,
             }
-            session.add(
+            add_quota_entry(
+                session,
                 QuotaLedgerEntry(
                     user_id=user_id,
                     period_id=period.id,

@@ -34,7 +34,8 @@ def test_sections_lists_every_section(mu_client):
     assert response.status_code == 200
     body = response.json()
     ids = [section["id"] for section in body["sections"]]
-    assert len(ids) == 12
+    assert len(ids) == 13
+    assert "application_profile" in ids
     assert "sources" in ids
     assert all("customized" in section for section in body["sections"])
 

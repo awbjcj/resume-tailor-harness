@@ -24,6 +24,7 @@ class ConfigStore(Protocol):
 
 # domain -> filename; style_guide is plain markdown, everything else YAML.
 _FILES: dict[str, str] = {
+    "application_profile": "application_profile.yaml",
     "search": "search.yaml",
     "review": "review.yaml",
     "review_deep": "review_deep.yaml",

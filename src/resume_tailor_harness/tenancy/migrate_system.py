@@ -5,6 +5,7 @@ from sqlalchemy.engine import Engine
 
 
 _USER_COLUMNS = (
+    ("dashboard_language", "VARCHAR(8) NOT NULL DEFAULT 'en'"),
     ("email", "VARCHAR(320)"),
     ("email_verified_at", "DATETIME"),
     ("google_sub", "VARCHAR(64)"),

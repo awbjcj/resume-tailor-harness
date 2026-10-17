@@ -59,6 +59,7 @@ resume/
 config/render.yaml
 config/connectors.yaml
 config/profile_sources.yaml
+config/application_profile.yaml
 config/review.yaml
 config/search.yaml
 config/style_guide.md

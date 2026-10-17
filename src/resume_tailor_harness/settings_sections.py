@@ -46,6 +46,9 @@ SETTINGS_SECTIONS: tuple[SettingsSection, ...] = (
     ),
     SettingsSection("search", "Search", ("config/search.yaml",)),
     SettingsSection(
+        "application_profile", "Application profile", ("config/application_profile.yaml",)
+    ),
+    SettingsSection(
         "review",
         "Review panel",
         ("config/review.yaml", "config/review_deep.yaml"),

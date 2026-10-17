@@ -195,6 +195,13 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
   raised**, so the call site's own `expect_schema` still owns the error and its
   model/status/token diagnostics. An agent with no `output_schema` is untouched —
   prose must never look like a failed parse.
+  Runs with an explicit non-completed status are excluded from parse retries: Agno returns
+  provider rejection text as `content` with `status=ERROR`, and retrying that
+  as a parsing failure repeats the same invalid request. The original response
+  remains available to `expect_schema` for diagnostics and caller fallback.
+  Provider adapters capture the original exception before Agno reduces it to
+  text, so an errored run still retries known transient failures via
+  `is_transient`; exhaustion returns the original diagnostic response.
 - **A persona model may simply ignore the `---METADATA---` sentinel, and that is
   not a failure.** `sessions/turns.py::persona_output` splits prose from
   formatter input on that marker. Claude emits it; **DeepSeek v4 never does** —

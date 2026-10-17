@@ -16,6 +16,7 @@ from resume_tailor_harness.tenancy.quotas import (
     _new_period,
     _period_end,
 )
+from resume_tailor_harness.mail.account_notifications import add_quota_entry
 from resume_tailor_harness.tenancy.system_db import (
     MemberSubscription,
     QuotaLedgerEntry,
@@ -115,7 +116,8 @@ def apply_subscription(
             "starts_at": _aware(subscription.starts_at).isoformat(),
             "expires_at": _aware(subscription.expires_at).isoformat(),
         }
-        session.add(
+        add_quota_entry(
+            session,
             QuotaLedgerEntry(
                 user_id=user_id,
                 period_id=period.id,

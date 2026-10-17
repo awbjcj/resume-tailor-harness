@@ -7,7 +7,7 @@ serves these values, and the TUI/CLI keep reading the same YAML.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import Field, field_validator, model_validator
 
@@ -249,7 +249,42 @@ class ProfileConfigDoc(CamelModel):
     github_repo_limit: int = Field(default=20, ge=1, le=100)
 
 
+ApplicationAnswer = Annotated[str, Field(max_length=4000)]
+
+
+class ApplicationProfileDoc(CamelModel):
+    """Optional, explicitly supplied answers; blank never means no."""
+
+    full_name: ApplicationAnswer = ""
+    preferred_name: ApplicationAnswer = ""
+    email: ApplicationAnswer = ""
+    phone: ApplicationAnswer = ""
+    address: ApplicationAnswer = ""
+    linkedin_url: ApplicationAnswer = ""
+    portfolio_url: ApplicationAnswer = ""
+    expected_salary: ApplicationAnswer = ""
+    work_authorization: ApplicationAnswer = ""
+    sponsorship_needed: ApplicationAnswer = ""
+    availability: ApplicationAnswer = ""
+    relocation: ApplicationAnswer = ""
+    remote_preference: ApplicationAnswer = ""
+    pronouns: ApplicationAnswer = ""
+    gender: ApplicationAnswer = ""
+    ethnicity: ApplicationAnswer = ""
+    veteran_status: ApplicationAnswer = ""
+    disability_status: ApplicationAnswer = ""
+    education_notes: ApplicationAnswer = ""
+    experience_notes: ApplicationAnswer = ""
+    additional_answers: ApplicationAnswer = ""
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _trim_answers(cls, value: Any) -> Any:
+        return value.strip() if isinstance(value, str) else value
+
+
 DOMAIN_SCHEMAS: dict[str, type[CamelModel]] = {
+    "application_profile": ApplicationProfileDoc,
     "search": SearchConfigDoc,
     "review": ReviewConfigDoc,
     "review_deep": ReviewConfigDoc,

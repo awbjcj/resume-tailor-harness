@@ -91,7 +91,7 @@ from resume_tailor_harness.tenancy.bootstrap import (
 from resume_tailor_harness.tenancy.context import current_context
 from resume_tailor_harness.tenancy.engines import EngineRegistry
 from resume_tailor_harness.tenancy.system_db import init_system_db, make_system_engine
-from resume_tailor_harness.mail.mailer import build_mailer
+from resume_tailor_harness.mail.mailer import build_mailer, mail_configured
 from resume_tailor_harness.tenancy.workspace import workspace_paths
 
 
@@ -204,9 +204,7 @@ def create_app(
             app.state.reminder_task = asyncio.create_task(reminder_loop(app.state))
         if not _is_memory_db(resolved_db):
             from resume_tailor_harness.services.email_notification_scheduler import email_notification_loop
-            from resume_tailor_harness.services.email_notifications import delivery_available
-
-            if delivery_available(resolved_settings):
+            if mail_configured(resolved_settings):
                 app.state.email_notification_task = asyncio.create_task(email_notification_loop(app.state))
         yield
         if app.state.email_notification_task is not None:

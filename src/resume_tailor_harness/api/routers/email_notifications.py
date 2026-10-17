@@ -16,7 +16,11 @@ from resume_tailor_harness.api.schemas.email_notifications import (
     NotificationVerification,
 )
 from resume_tailor_harness.mail.tables import EmailNotificationPreference
+from resume_tailor_harness.mail.localization import normalize_language
+from resume_tailor_harness.mail.templates import render_email
 from resume_tailor_harness.services import email_notifications as service
+from resume_tailor_harness.services.ui_language import current_language
+from resume_tailor_harness.tenancy.context import current_context
 from resume_tailor_harness.tenancy.system_db import User
 from resume_tailor_harness.tenancy.workspace import workspace_paths
 
@@ -97,6 +101,14 @@ def send_verification(request: Request, engine: Engine = Depends(get_engine)):
             request.app.state.mailer,
             request.app.state.settings,
             reserve_send=reserve_send,
+            language=normalize_language(
+                request.headers.get("accept-language")
+                or (
+                    current_language()
+                    if current_context()
+                    else getattr(request.app.state, "dashboard_language", "en")
+                )
+            ),
         )
     )
     return CodeSentResponse()
@@ -130,11 +142,19 @@ def _unsubscribe_engine(request: Request, user_id: str) -> Engine:
     raise ApiException(404, "INVALID_LINK", "This unsubscribe link is invalid.")
 
 
-def _page(content: str) -> HTMLResponse:
+def _page(
+    request: Request, user_id: str, *, unsubscribed: bool = False
+) -> HTMLResponse:
+    language = getattr(request.app.state, "dashboard_language", "en")
+    if request.app.state.system_engine is not None:
+        with Session(request.app.state.system_engine) as session:
+            user = session.get(User, user_id)
+            language = user.dashboard_language if user else "en"
+    _, html = render_email(
+        "unsubscribe", language=normalize_language(language), unsubscribed=unsubscribed
+    )
     return HTMLResponse(
-        '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Email notifications</title></head><body><main>'
-        + content
-        + "</main></body></html>",
+        html,
         headers={
             "Cache-Control": "no-store",
             "Referrer-Policy": "no-referrer",
@@ -150,9 +170,7 @@ def _page(content: str) -> HTMLResponse:
 )
 def unsubscribe_confirmation(user_id: str, token: str, request: Request):
     # GET never mutates consent: email security scanners routinely follow links.
-    return _page(
-        '<h1>Unsubscribe from email notifications?</h1><p>Account security emails will continue.</p><form method="post"><button type="submit">Unsubscribe</button></form>'
-    )
+    return _page(request, user_id)
 
 
 @public_router.post(
@@ -163,6 +181,4 @@ def unsubscribe_confirmation(user_id: str, token: str, request: Request):
 def unsubscribe(user_id: str, token: str, request: Request):
     if not service.unsubscribe(_unsubscribe_engine(request, user_id), token):
         raise ApiException(404, "INVALID_LINK", "This unsubscribe link is invalid.")
-    return _page(
-        "<h1>You are unsubscribed</h1><p>Email notifications are off. You can opt in again in Settings → Email notifications.</p>"
-    )
+    return _page(request, user_id, unsubscribed=True)

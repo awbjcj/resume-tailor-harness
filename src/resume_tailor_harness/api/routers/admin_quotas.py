@@ -45,6 +45,10 @@ from resume_tailor_harness.tenancy.quotas import (
     ensure_quota_account,
     execute_operation,
 )
+from resume_tailor_harness.mail.account_notifications import (
+    add_quota_entry,
+    enqueue_account_email,
+)
 from resume_tailor_harness.tenancy.system_db import (
     LlmRate,
     QuotaAccount,
@@ -191,11 +195,29 @@ def patch_tier(
             raise ApiException(
                 409, "DEFAULT_TIER_REQUIRED", "The FREE tier cannot be archived"
             )
+        before = (
+            tier.name, tier.cycle_unit, tier.cycle_count, tier.archived_at is not None
+        )
         for field in ("name", "cycle_unit", "cycle_count", "allowance_micros"):
             if field in body.model_fields_set:
                 setattr(tier, field, getattr(body, field))
         if body.archived is not None:
             tier.archived_at = datetime.now(timezone.utc) if body.archived else None
+        if before != (
+            tier.name, tier.cycle_unit, tier.cycle_count, tier.archived_at is not None
+        ):
+            users = session.scalars(
+                select(User).join(QuotaAccount, QuotaAccount.user_id == User.id)
+                .where(QuotaAccount.tier_id == tier.id)
+            )
+            for user in users:
+                enqueue_account_email(
+                    session, user, "tier_updated", {
+                        "Quota tier": tier.name,
+                        "Renewal cycle": f"{tier.cycle_count} {tier.cycle_unit.lower()}",
+                        "Available for new assignments": "No" if tier.archived_at else "Yes",
+                    },
+                )
         if "allowance_micros" in body.model_fields_set:
             periods = session.execute(
                 select(QuotaPeriod)
@@ -208,7 +230,8 @@ def patch_tier(
             for period in periods:
                 before_allowance = period.allowance_micros
                 period.allowance_micros = tier.allowance_micros
-                session.add(
+                add_quota_entry(
+                    session,
                     QuotaLedgerEntry(
                         user_id=period.user_id,
                         period_id=period.id,
@@ -451,7 +474,8 @@ def patch_account(
                     if body.allowance_override_micros is not None
                     else tier.allowance_micros
                 )
-                session.add(
+                add_quota_entry(
+                    session,
                     QuotaLedgerEntry(
                         user_id=user_id,
                         period_id=period.id,

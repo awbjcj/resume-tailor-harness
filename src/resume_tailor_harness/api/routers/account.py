@@ -43,6 +43,9 @@ from resume_tailor_harness.api.schemas.auth import MeResponse
 from resume_tailor_harness.api.schemas.auth_email import CodeSentResponse
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.mail import messages
+from resume_tailor_harness.services.ui_language import current_language
+from resume_tailor_harness.mail.localization import normalize_language
+from resume_tailor_harness.mail.account_notifications import enqueue_account_email
 from resume_tailor_harness.mail.mailer import MailDeliveryError
 from resume_tailor_harness.services.backup import (
     InvalidArchiveError,
@@ -110,7 +113,9 @@ def _normalized_artifact_path(value: str, *, workspace_root: Path) -> str:
 def _validate_workspace_stage(stage: Path, *, workspace_root: Path) -> None:
     database = stage / "resume_tailor_harness.db"
     if not database.is_file():
-        raise InvalidArchiveError("workspace archive is missing resume_tailor_harness.db")
+        raise InvalidArchiveError(
+            "workspace archive is missing resume_tailor_harness.db"
+        )
     try:
         with closing(sqlite3.connect(database)) as connection:
             if connection.execute("PRAGMA quick_check").fetchone() != ("ok",):
@@ -155,6 +160,12 @@ def mint_token(body: TokenCreateRequest, request: Request) -> TokenCreated:
     )
     with Session(request.app.state.system_engine) as session:
         session.add(token)
+        enqueue_account_email(
+            session,
+            session.get(User, context.user_id),
+            "token_created",
+            {"Token name": token.name},
+        )
         session.commit()
         session.refresh(token)
         return TokenCreated(id=token.id, name=token.name, token=raw)
@@ -185,7 +196,14 @@ def revoke_token(token_id: str, request: Request) -> Response:
         token = session.get(ApiToken, token_id)
         if token is None or token.user_id != context.user_id:
             raise ApiException(404, "NOT_FOUND", "No such token")
-        token.revoked_at = datetime.now(timezone.utc)
+        if token.revoked_at is None:
+            token.revoked_at = datetime.now(timezone.utc)
+            enqueue_account_email(
+                session,
+                session.get(User, context.user_id),
+                "token_revoked",
+                {"Token name": token.name},
+            )
         session.commit()
     return Response(status_code=204)
 
@@ -212,19 +230,15 @@ def change_password(
         )
         user.password_hash = auth.hash_password(body.new_password)
         user.session_epoch += 1
+        enqueue_account_email(session, user, "password_changed")
         session.commit()
-        epoch, email = user.session_epoch, user.email
+        epoch = user.session_epoch
     token = auth.issue_user_session(
         settings,
         user_id=context.user_id,
         epoch=epoch,
     )
     auth.set_session_cookie(request, response, token)
-    if email:
-        message = messages.password_changed(settings.app_base_url)
-        request.app.state.mailer.notify(
-            to=email, subject=message.subject, body=message.body
-        )
     return {"status": "changed"}
 
 
@@ -260,7 +274,12 @@ def set_email(
             )
         )
         session.commit()
-    message = messages.verification_code(code)
+    message = messages.verification_code(
+        code,
+        normalize_language(
+            request.headers.get("accept-language") or current_language()
+        ),
+    )
     try:
         request.app.state.mailer.send(
             to=body.email, subject=message.subject, body=message.body
@@ -316,8 +335,17 @@ def verify_account_email(
         ).scalar()
         if owner is not None and owner != user.id:
             raise ApiException(409, "EMAIL_TAKEN", "That email is already in use")
+        previous_email = user.email
+        if previous_email != body.email:
+            enqueue_account_email(
+                session, user, "email_changed", {"New registered email": body.email}
+            )
         user.email = body.email
         user.email_verified_at = now
+        if previous_email != body.email:
+            enqueue_account_email(
+                session, user, "email_changed", {"Registered email": body.email}
+            )
         row.consumed_at = now
         try:
             session.commit()
@@ -349,6 +377,7 @@ def revoke_all_sessions(
         if user is None:
             raise ApiException(404, "NOT_FOUND", "Account not found")
         user.session_epoch += 1
+        enqueue_account_email(session, user, "sessions_revoked")
         session.commit()
         token = auth.issue_user_session(
             settings,
@@ -362,7 +391,6 @@ def revoke_all_sessions(
 @router.delete("/google")
 def unlink_google(request: Request) -> MeResponse:
     context = require_context()
-    settings = request.app.state.settings
     with Session(request.app.state.system_engine) as session:
         user = session.get(User, context.user_id)
         if user is None:
@@ -371,18 +399,15 @@ def unlink_google(request: Request) -> MeResponse:
             raise ApiException(
                 409, "PASSWORD_REQUIRED", "Set a password before unlinking Google"
             )
-        user.google_sub = None
+        if user.google_sub is not None:
+            user.google_sub = None
+            enqueue_account_email(session, user, "google_unlinked")
         session.commit()
         email, username, role, verified = (
             user.email,
             user.username,
             user.role,
             user.email_verified_at is not None,
-        )
-    if email:
-        message = messages.google_unlinked(settings.app_base_url)
-        request.app.state.mailer.notify(
-            to=email, subject=message.subject, body=message.body
         )
     return MeResponse(
         username=username,
