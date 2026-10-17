@@ -43,7 +43,7 @@ describe("EmailNotificationsPage", () => {
     await user.click(screen.getByRole("switch", { name: "Send me email notifications" }));
     await user.click(screen.getByRole("radio", { name: "Daily" }));
     await user.click(screen.getByRole("switch", { name: "Job-search statistics" }));
-    await user.click(screen.getByRole("button", { name: "Save preferences" }));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
     await screen.findByText("Verification required before delivery starts.");
     expect(state).toMatchObject({ email: "me@example.com", enabled: true, frequency: "daily", statistics: false });
     expect(sends).toBe(0);
@@ -56,9 +56,42 @@ describe("EmailNotificationsPage", () => {
     // A partially edited invalid address cannot block opting out of saved consent.
     await user.clear(screen.getByLabelText("Notification email address"));
     await user.type(screen.getByLabelText("Notification email address"), "invalid");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(screen.getByLabelText("Notification email address")).toBeInvalid();
+    expect(state).toMatchObject({ email: "me@example.com", enabled: true });
     await user.click(screen.getByRole("button", { name: "Turn off email notifications" }));
     await screen.findByText("Email notifications are off.");
     expect(state).toMatchObject({ email: "me@example.com", enabled: false });
+  });
+
+  it("discards draft preferences and requires a topic when notifications are enabled", async () => {
+    let saves = 0;
+    server.use(
+      http.get("/api/email-notifications", () => HttpResponse.json({
+        ...DEFAULT, email: "me@example.com", enabled: true,
+      })),
+      http.put("/api/email-notifications", () => {
+        saves++;
+        return HttpResponse.json(DEFAULT);
+      }),
+    );
+    const user = userEvent.setup();
+    render(<EmailNotificationsPage />, { wrapper: withQueryClient });
+    const email = await screen.findByLabelText("Notification email address");
+    expect(screen.queryByRole("button", { name: "Discard" })).not.toBeInTheDocument();
+    await user.clear(email);
+    await user.type(email, "draft@example.com");
+    await user.click(screen.getByRole("radio", { name: "Daily" }));
+    for (const name of ["Jobs awaiting review", "Job-search statistics", "Reminders"]) {
+      await user.click(screen.getByRole("switch", { name }));
+    }
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Discard" }));
+    expect(email).toHaveValue("me@example.com");
+    expect(screen.getByRole("radio", { name: "Weekly" })).toBeChecked();
+    expect(screen.getByRole("switch", { name: "Job-search statistics" })).toBeChecked();
+    expect(screen.queryByText("You have unsaved changes")).not.toBeInTheDocument();
+    expect(saves).toBe(0);
   });
 
   it("shows delivery configuration failures and permits opt-out", async () => {
@@ -87,6 +120,8 @@ describe("EmailNotificationsPage", () => {
     await user.type(await screen.findByLabelText("Six-digit verification code"), "111111");
     await user.click(screen.getByRole("button", { name: "Verify email" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The code is invalid or expired.");
+    expect(screen.getByLabelText("Six-digit verification code")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Six-digit verification code")).toHaveAccessibleDescription("The code is invalid or expired.");
     await user.type(screen.getByLabelText("Notification email address"), "x");
     expect(screen.getByRole("button", { name: "Verify email" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Resend verification code" })).toBeDisabled();
