@@ -6,7 +6,7 @@ import logging
 import re
 
 from resume_tailor_harness.config import get_settings
-from resume_tailor_harness.llm_runner import expect_schema, expect_text
+from resume_tailor_harness.llm_runner import AgentRunner, expect_schema, expect_text
 from resume_tailor_harness.sessions.stream import (
     Completed,
     Failed,
@@ -213,20 +213,35 @@ def persona_output(
 
     emitter = ProseEmitter(sink)
     final_response = None
-    for event in stream(prompt):
-        reporter.checkpoint()
-        if isinstance(event, TextDelta):
-            emitter.feed(event.text)
-        elif isinstance(event, Completed):
-            final_response = event.response
-        elif isinstance(event, Failed):
-            raise StreamFailed(event.message, event.code)
-        else:
-            sink.emit(event)
+    reporter.checkpoint()
+    events = (
+        stream(prompt, checkpoint=reporter.checkpoint)
+        if isinstance(agent, AgentRunner)
+        else stream(prompt)
+    )
+    try:
+        for event in events:
+            reporter.checkpoint()
+            if isinstance(event, TextDelta):
+                emitter.feed(event.text)
+            elif isinstance(event, Completed):
+                final_response = event.response
+            elif isinstance(event, Failed):
+                raise StreamFailed(event.message, event.code)
+            else:
+                sink.emit(event)
+    finally:
+        close = getattr(events, "close", None)
+        if close is not None:
+            close()
     if final_response is None:
         raise StreamFailed(
             "The model stream ended without a final response.", "STREAM_ERROR"
         )
+    reporter.checkpoint()
+    # Validate even when deltas were present: partial prose is not proof of a
+    # successful provider response and must never advance the saved session.
+    validated_output = expect_text(final_response, source=source)
     prose, streamed_output = emitter.finish()
     if prose:
         sink.emit(Settled())
@@ -247,7 +262,7 @@ def persona_output(
             DELIMITER,
             len(streamed_output),
         )
-    full_output = streamed_output or expect_text(final_response, source=source)
+    full_output = streamed_output or validated_output
     return prose, full_output
 
 

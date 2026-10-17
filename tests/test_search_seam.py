@@ -16,7 +16,9 @@ from resume_tailor_harness.llm_runner import (
         ("claude-opus-4-8", "native_anthropic"),
         ("gemini:gemini-3.6-flash", "native_gemini"),
         ("openai:gpt-4o", "native_openai"),
-        ("deepseek:deepseek-v4-flash", "native_deepseek"),
+        ("deepseek:deepseek-v4-pro", "native_deepseek"),
+        ("deepseek:deepseek-flash", "tool"),
+        ("deepseek:deepseek-v4-flash", "tool"),
     ],
 )
 def test_plan_auto_selects_provider_strategy(model_id, strategy):
@@ -53,7 +55,9 @@ def test_build_off_mode_disables_advisor():
 
 
 def test_build_search_equipped_anthropic_returns_dynamic_server_tool(monkeypatch):
-    monkeypatch.setattr("resume_tailor_harness.llm_runner.resolve_api_key", lambda _model_id: "")
+    monkeypatch.setattr(
+        "resume_tailor_harness.llm_runner.resolve_api_key", lambda _model_id: ""
+    )
 
     _model, tools = build_search_equipped("claude-opus-4-8", "auto")
 
@@ -62,7 +66,9 @@ def test_build_search_equipped_anthropic_returns_dynamic_server_tool(monkeypatch
 
 
 def test_build_search_equipped_anthropic_haiku_uses_basic_server_tool(monkeypatch):
-    monkeypatch.setattr("resume_tailor_harness.llm_runner.resolve_api_key", lambda _model_id: "")
+    monkeypatch.setattr(
+        "resume_tailor_harness.llm_runner.resolve_api_key", lambda _model_id: ""
+    )
 
     _model, tools = build_search_equipped("claude-haiku-4-5", "auto")
 
@@ -83,12 +89,30 @@ def test_deepseek_server_tool_shape_is_current():
 
 
 def test_build_search_equipped_deepseek_returns_native_server_tool(monkeypatch):
-    monkeypatch.setattr("resume_tailor_harness.llm_runner.resolve_api_key", lambda _model_id: "")
+    monkeypatch.setattr(
+        "resume_tailor_harness.llm_runner.resolve_api_key", lambda _model_id: ""
+    )
 
-    model, tools = build_search_equipped("deepseek:deepseek-v4-flash", "auto")
+    model, tools = build_search_equipped("deepseek:deepseek-v4-pro", "auto")
 
     assert tools == [DEEPSEEK_WEB_SEARCH_TOOL]
     # Native search must not smuggle thinking back on: the search agent is built
     # non-reasoning here, and on Responses `effort` is the toggle.
     assert model.reasoning == {"effort": "none"}
     assert model.provider == "DeepSeek"
+
+
+def test_flash_native_search_rejected_instead_of_silently_ignored():
+    with pytest.raises(ValueError, match="no native web search"):
+        build_search_equipped("deepseek:deepseek-flash", "native")
+
+
+def test_flash_auto_search_uses_the_application_callable():
+    def search(query: str) -> str:
+        return query
+
+    model, tools = build_search_equipped(
+        "deepseek:deepseek-flash", "auto", tool_search=search
+    )
+    assert model.provider == "DeepSeek"
+    assert tools == [search]

@@ -4,6 +4,7 @@ import { createElement, StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useChatStream } from "./useChatStream";
+import { cancelRun } from "@/features/runs/use-launch-run";
 
 class FakeEventSource {
   static last: FakeEventSource | null = null;
@@ -34,13 +35,14 @@ describe("useChatStream", () => {
     FakeEventSource.instances = [];
     resetSseLinkTokenCache();
     localStorage.setItem("resume-tailor-harness-token", "token");
+    vi.mocked(cancelRun).mockReset().mockResolvedValue(true);
   });
 
   it("accumulates valid events and ignores malformed rows without advancing", async () => {
     const { result } = renderHook(() => useChatStream("run-1"));
     await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
     act(() => FakeEventSource.last!.send({ i: "4", t: "text", v: { text: "bad" } }));
-    act(() => FakeEventSource.last!.send({ i: 4, t: "text", v: { text: "gap" } }));
+    act(() => FakeEventSource.last!.send({ i: 0, t: "text", v: { text: 42 } }));
     act(() => FakeEventSource.last!.send({ i: 0, t: "text", v: { text: "hi" } }));
     await waitFor(() => expect(result.current.parts).toHaveLength(1));
     act(() => FakeEventSource.last!.onerror?.());
@@ -60,14 +62,64 @@ describe("useChatStream", () => {
     expect(FakeEventSource.last!.url).toContain("offset=0");
   });
 
-  it("discards partial output when stopped", async () => {
+  it("retains partial output until cancellation is confirmed", async () => {
     const { result } = renderHook(() => useChatStream("run-1"));
     await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
     act(() => FakeEventSource.last!.send({ i: 0, t: "text", v: { text: "partial" } }));
     await waitFor(() => expect(result.current.parts).toHaveLength(1));
-    act(() => result.current.stop());
-    expect(result.current.parts).toEqual([]);
-    expect(result.current.status).toBe("idle");
+    await act(() => result.current.stop());
+    expect(result.current.parts).toEqual([{ kind: "text", text: "partial" }]);
+    expect(result.current.status).toBe("stopping");
+    expect(FakeEventSource.last!.closed).toBe(false);
+    act(() => FakeEventSource.last!.send({ i: 1, t: "failed", v: { message: "Stopped", code: "CANCELLED" } }));
+    expect(result.current.status).toBe("stopped");
+    expect(result.current.error).toBeNull();
+    expect(result.current.parts).toEqual([{ kind: "text", text: "partial" }]);
+    expect(FakeEventSource.last!.closed).toBe(true);
+  });
+
+  it("keeps observing the run when cancellation fails", async () => {
+    vi.mocked(cancelRun).mockResolvedValue(false);
+    const { result } = renderHook(() => useChatStream("run-1"));
+    await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
+    await act(() => result.current.stop());
+    expect(result.current.status).toBe("streaming");
+    expect(result.current.error).toContain("Could not stop");
+    act(() => FakeEventSource.last!.send({ i: 0, t: "completed", v: {} }));
+    expect(result.current.status).toBe("done");
+    expect(result.current.error).toBeNull();
+  });
+
+  it("reconnects from the missing row when a stream has a gap", async () => {
+    const { result } = renderHook(() => useChatStream("run-1"));
+    await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
+    const original = FakeEventSource.last!;
+    act(() => {
+      original.send({ i: 0, t: "text", v: { text: "a" } });
+      original.send({ i: 2, t: "text", v: { text: "c" } });
+    });
+    expect(result.current.reconnecting).toBe(true);
+    expect(original.closed).toBe(true);
+    await waitFor(() => expect(FakeEventSource.last!.url).toContain("offset=1"));
+    act(() => {
+      FakeEventSource.last!.send({ i: 1, t: "text", v: { text: "b" } });
+      FakeEventSource.last!.send({ i: 2, t: "text", v: { text: "c" } });
+    });
+    expect(result.current.reconnecting).toBe(false);
+    expect(result.current.parts).toEqual([{ kind: "text", text: "abc" }]);
+  });
+
+  it("does not let a late Stop rejection overwrite successful completion", async () => {
+    let resolve!: (value: boolean) => void;
+    vi.mocked(cancelRun).mockReturnValue(new Promise((done) => { resolve = done; }));
+    const { result } = renderHook(() => useChatStream("run-1"));
+    await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
+    let stopping!: Promise<void>;
+    act(() => { stopping = result.current.stop(); });
+    act(() => FakeEventSource.last!.send({ i: 0, t: "completed", v: {} }));
+    await act(async () => { resolve(false); await stopping; });
+    expect(result.current.status).toBe("done");
+    expect(result.current.error).toBeNull();
   });
 
   it("marks visible prose settled without closing the stream", async () => {
@@ -75,6 +127,19 @@ describe("useChatStream", () => {
     await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
     act(() => FakeEventSource.last!.send({ i: 0, t: "text", v: { text: "done" } }));
     act(() => FakeEventSource.last!.send({ i: 1, t: "settled", v: {} }));
+    expect(result.current.status).toBe("settled");
+    expect(FakeEventSource.last!.closed).toBe(false);
+  });
+
+  it("preserves settlement received while Stop is pending", async () => {
+    let resolve!: (value: boolean) => void;
+    vi.mocked(cancelRun).mockReturnValue(new Promise((done) => { resolve = done; }));
+    const { result } = renderHook(() => useChatStream("run-1"));
+    await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
+    let stopping!: Promise<void>;
+    act(() => { stopping = result.current.stop(); });
+    act(() => FakeEventSource.last!.send({ i: 0, t: "settled", v: {} }));
+    await act(async () => { resolve(false); await stopping; });
     expect(result.current.status).toBe("settled");
     expect(FakeEventSource.last!.closed).toBe(false);
   });
@@ -100,12 +165,12 @@ describe("useChatStream", () => {
     expect(result.current.status).toBe("done");
   });
 
-  it.each(["stop", "reset"] as const)("%s cancels a scheduled reconnect and ignores late events", async (action) => {
+  it("reset cancels a scheduled reconnect and ignores late events", async () => {
     const { result } = renderHook(() => useChatStream("run-1"));
     await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
     const previous = FakeEventSource.last!;
     act(() => previous.onerror?.());
-    act(() => result.current[action]());
+    act(() => result.current.reset());
     act(() => previous.send({ i: 0, t: "text", v: { text: "late" } }));
     await act(() => new Promise((resolve) => setTimeout(resolve, 550)));
     expect(FakeEventSource.instances).toHaveLength(1);
@@ -126,7 +191,7 @@ describe("useChatStream", () => {
     expect(result.current.parts).toEqual([{ kind: "text", text: "new run" }]);
   });
 
-  it("does not connect if stopped while a link token is loading", async () => {
+  it("continues observing cancellation while a link token is loading", async () => {
     localStorage.removeItem("resume-tailor-harness-token");
     let release!: () => void;
     const ready = new Promise<void>((resolve) => { release = resolve; });
@@ -138,11 +203,11 @@ describe("useChatStream", () => {
     }));
     const { result } = renderHook(() => useChatStream("run-1"));
     await waitFor(() => expect(requested).toBe(true));
-    act(() => result.current.stop());
+    await act(() => result.current.stop());
     release();
     await getSseLinkToken();
-    expect(FakeEventSource.instances).toHaveLength(0);
-    expect(result.current.status).toBe("idle");
+    await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+    expect(result.current.status).toBe("stopping");
   });
 
   it("opens only one stream under Strict Mode and closes it on unmount", async () => {

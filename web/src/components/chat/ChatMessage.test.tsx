@@ -5,6 +5,14 @@ import { describe, expect, it } from "vitest";
 import { ChatMessage } from "./ChatMessage";
 
 describe("ChatMessage", () => {
+  it("renders streamed citations as safe external links", () => {
+    render(<ChatMessage showReasoning message={{ id: "sources", role: "assistant", parts: [{ kind: "sources", items: [{ url: "https://example.com/source", title: "Official source" }] }] }} />);
+    const link = screen.getByRole("link", { name: "Official source" });
+    expect(link).toHaveAttribute("href", "https://example.com/source");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
   it("renders a named assistant and structured tool status", async () => {
     const user = userEvent.setup();
     render(

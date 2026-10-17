@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Bot, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Clock3, MessageCircleQuestion, MessagesSquare, SquareCheckBig } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
@@ -64,8 +64,6 @@ export function InterviewPage() {
   const [runError, setRunError] = useState("");
   const [streamRunId, setStreamRunId] = useState<string | null>(null);
   const [streamBaseline, setStreamBaseline] = useState(0);
-  const [suppressedRunId, setSuppressedRunId] = useState<string | null>(null);
-  const ignoredRuns = useRef(new Set<string>());
   const recoveredRunId = useRunStore((state) => {
     const run = Object.values(state.runs).find(
       (candidate) =>
@@ -86,13 +84,13 @@ export function InterviewPage() {
   });
   const attachedRunId =
     streamRunId ??
-    (recoveredRunId && recoveredRunId !== suppressedRunId ? recoveredRunId : null);
+    recoveredRunId;
   const attachedBaseline = streamRunId ? streamBaseline : recoveredBaseline;
   const stream = useChatStream(attachedRunId);
 
   const active = session.data;
   const sending = send.isPending || Boolean(
-    attachedRunId && stream.status !== "done" && stream.status !== "error",
+    attachedRunId && !["done", "error", "stopped"].includes(stream.status),
   );
   const ending = end.isPending;
 
@@ -101,7 +99,6 @@ export function InterviewPage() {
     setLastMessage(message);
     setRunError("");
     setStreamBaseline(active.turns?.length ?? 0);
-    setSuppressedRunId(null);
     stream.reset();
     setPending({ text: message, baseline: active.turns?.length ?? 0 });
     try {
@@ -109,11 +106,10 @@ export function InterviewPage() {
         sessionId: active.sessionId,
         message,
         onDone: (completed: RunRecord) => {
-          if (ignoredRuns.current.delete(completed.runId)) return;
           setPending(null);
           if (completed.status === "succeeded") {
             setComposer((current) => (current.trim() === message ? "" : current));
-          } else {
+          } else if (completed.status !== "cancelled") {
             setRunError(completed.error ?? "Answer failed");
           }
         },
@@ -126,12 +122,7 @@ export function InterviewPage() {
   };
 
   const stopAnswer = () => {
-    if (attachedRunId) ignoredRuns.current.add(attachedRunId);
-    setSuppressedRunId(attachedRunId);
-    stream.stop();
-    setStreamRunId(null);
-    setRunError("");
-    setPending(null);
+    void stream.stop();
   };
 
   const endInterview = async () => {
@@ -340,7 +331,7 @@ export function InterviewPage() {
 
           {canAnswer ? (
             <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
-              <ChatRunProgress runId={attachedRunId} status={stream.status} />
+              <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />
               <ChatComposer
                 value={composer}
                 onChange={setComposer}

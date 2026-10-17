@@ -178,10 +178,10 @@ describe("CoachPage", () => {
     expect(await screen.findByText("Strong answer.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Stop generating" }));
     expect(cancelRun).toHaveBeenCalledWith("run-stream");
-    expect(screen.queryByText("Strong answer.")).not.toBeInTheDocument();
+    expect(screen.getByText("Strong answer.")).toBeInTheDocument();
   });
 
-  it("stopping the end-session stream suppresses its late completion", async () => {
+  it("stopping the end-session stream still reports a server failure", async () => {
     let capturedOnDone: ((completed: { runId: string; status: string; error?: string }) => void) | undefined;
     endSession.mockImplementation(async ({ onDone }) => {
       capturedOnDone = onDone;
@@ -205,7 +205,7 @@ describe("CoachPage", () => {
     expect(capturedOnDone).toBeDefined();
     act(() => capturedOnDone!({ runId: "run-end", status: "failed", error: "Could not end session" }));
 
-    expect(screen.queryByText("Could not end session")).not.toBeInTheDocument();
+    expect(screen.getByText("Could not end session")).toBeInTheDocument();
   });
 
   it("renders a completed session read-only after it is selected from history", async () => {

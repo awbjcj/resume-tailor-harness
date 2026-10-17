@@ -53,12 +53,12 @@ it("preserves a new composer draft typed while the previous response is saving",
   expect(screen.getByRole("link", { name: "Open full workspace" })).toHaveAttribute("href", "/career-lab?session=s");
 });
 
-it("ignores a late completion after the user stops the run", async () => {
+it("accepts successful completion when it wins the race with Stop", async () => {
   render(view());
   await userEvent.type(screen.getByRole("textbox", { name: "Ask about this job" }), "First question");
   await userEvent.click(screen.getByRole("button", { name: "Send message" }));
   await userEvent.click(await screen.findByRole("button", { name: "Stop generating" }));
   act(() => mocks.start.mock.calls[0][0].onDone(completed));
   expect(mocks.stop).toHaveBeenCalledOnce();
-  expect(screen.queryByRole("link", { name: "Open full workspace" })).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Open full workspace" })).toHaveAttribute("href", "/career-lab?session=s");
 });

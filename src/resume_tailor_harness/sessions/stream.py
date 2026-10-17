@@ -29,6 +29,15 @@ class ReasoningDelta:
 
 
 @dataclass(frozen=True)
+class Sources:
+    items: tuple[tuple[str, str], ...]
+    tag: ClassVar[str] = "sources"
+
+    def payload(self) -> dict[str, object]:
+        return {"items": [{"url": url, "title": title} for url, title in self.items]}
+
+
+@dataclass(frozen=True)
 class ToolStarted:
     call_id: str
     name: str
@@ -103,6 +112,7 @@ class Failed:
 StreamEvent = (
     TextDelta
     | ReasoningDelta
+    | Sources
     | ToolStarted
     | ToolCompleted
     | Notice

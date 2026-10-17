@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { server } from "@/test/server";
 
 import {
   DEFAULT_INVALIDATE,
@@ -22,13 +24,24 @@ vi.mock("sonner", () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError, info: mocks.toastInfo },
 }));
 
-import { useLaunchRun } from "./use-launch-run";
+import { cancelRun, useLaunchRun } from "./use-launch-run";
 
 describe("useLaunchRun", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetInvalidationForTests();
     useRunStore.setState({ runs: {} });
+  });
+
+  it("does not overwrite a completed run when a Stop request fails late", async () => {
+    const run = { runId: "r", kind: "scout-turn", status: "running" as const, percent: 0, phase: "Working", current: 0, total: 0, etaText: null };
+    useRunStore.getState().upsert(run);
+    server.use(http.post("/api/runs/r/cancel", () => {
+      useRunStore.getState().upsert({ ...run, status: "succeeded", percent: 100, phase: "Done" });
+      return HttpResponse.json({ detail: "Already finished" }, { status: 409 });
+    }));
+    expect(await cancelRun("r")).toBe(false);
+    expect(useRunStore.getState().runs.r).toMatchObject({ status: "succeeded", percent: 100 });
   });
 
   it("registers the run's invalidation keys and tracks it without owning completion effects", async () => {

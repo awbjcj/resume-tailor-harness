@@ -61,7 +61,7 @@ def project_event(row: dict, run_id: str, thread_id: str):
         return RunErrorEvent(
             message=value["message"], code=value["code"], raw_event=cursor
         )
-    if tag in {"notice", "settled"}:
+    if tag in {"notice", "settled", "sources"}:
         return CustomEvent(name=f"resume.{tag}", value=value, raw_event=cursor)
     raise ValueError(f"Unsupported conversation event: {tag}")
 

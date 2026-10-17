@@ -63,7 +63,7 @@ export function useLaunchRun() {
 }
 
 /** Request cooperative cancellation of a running operation. */
-export async function cancelRun(runId: string): Promise<void> {
+export async function cancelRun(runId: string): Promise<boolean> {
   const current = useRunStore.getState().runs[runId];
   if (current) {
     useRunStore.getState().upsert({ ...current, status: "cancelling", phase: "Cancelling" });
@@ -72,9 +72,14 @@ export async function cancelRun(runId: string): Promise<void> {
     await unwrap(
       api.POST("/api/runs/{run_id}/cancel", { params: { path: { run_id: runId } } }),
     );
+    return true;
   } catch (e) {
-    if (current) useRunStore.getState().upsert(current);
+    const latest = useRunStore.getState().runs[runId];
+    if (current && latest?.status === "cancelling") {
+      useRunStore.getState().upsert({ ...latest, status: current.status, phase: current.phase });
+    }
     toast.error(`Couldn't cancel run: ${(e as Error).message}`);
+    return false;
   }
 }
 

@@ -127,10 +127,10 @@ def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
     assert sonnet_55["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
 
     deepseek = next(row for row in body if row["provider"] == "deepseek")
-    # DeepSeek gained native web search with the Responses API migration -- it
-    # runs `web_search` server-side, so the picker no longer needs to warn that
-    # this provider falls back to the DuckDuckGo tool.
-    assert deepseek["models"][0]["supportsNativeSearch"] is True
+    # Only Pro runs web_search server-side. Flash accepts but ignores the tool.
+    assert deepseek["models"][0]["supportsNativeSearch"] is False
+    pro = next(m for m in deepseek["models"] if m["id"] == "deepseek:deepseek-v4-pro")
+    assert pro["supportsNativeSearch"] is True
     # `none` is in the vocabulary because on the Responses API `reasoning.effort`
     # is also the thinking toggle.
     assert deepseek["models"][0]["reasoningEfforts"] == ["none", "low", "high", "max"]

@@ -1,4 +1,4 @@
-from agno.models.google.gemini_interactions import GeminiInteractions
+from agno.models.google import Gemini
 
 from resume_tailor_harness.llm_runner import build_search_equipped
 
@@ -24,10 +24,10 @@ def test_native_search_forwards_safe_provider_options():
     gemini, gemini_tools = build_search_equipped(
         "gemini:gemini-3.6-flash", mode="native", reasoning=True
     )
-    assert isinstance(gemini, GeminiInteractions)
+    assert isinstance(gemini, Gemini)
     assert gemini.thinking_level == "high"
     assert gemini.search is True
-    assert gemini.store is False
+    assert gemini.include_thoughts is True
     assert gemini_tools == []
 
 
@@ -43,7 +43,7 @@ def test_native_gemini_search_bounds_thinking_when_not_reasoning():
     gemini, _ = build_search_equipped(
         "gemini:gemini-3.6-flash", mode="native", reasoning=False
     )
-    assert isinstance(gemini, GeminiInteractions)
+    assert isinstance(gemini, Gemini)
     assert gemini.thinking_level == "low"
 
 

@@ -2,6 +2,7 @@
 export const STREAM_EVENT_TAGS = [
   "text",
   "reasoning",
+  "sources",
   "tool_started",
   "tool_completed",
   "notice",
@@ -11,10 +12,12 @@ export const STREAM_EVENT_TAGS = [
 ] as const;
 
 export type StreamEventTag = (typeof STREAM_EVENT_TAGS)[number];
+export type ChatSource = { url: string; title: string };
 
 export type StreamEvent =
   | { i: number; t: "text"; v: { text: string } }
   | { i: number; t: "reasoning"; v: { text: string } }
+  | { i: number; t: "sources"; v: { items: ChatSource[] } }
   | {
       i: number;
       t: "tool_started";
@@ -45,6 +48,7 @@ export type ChatPart =
     }
   | { kind: "hints"; hints: string[] }
   | { kind: "reasoning"; text: string }
+  | { kind: "sources"; items: ChatSource[] }
   | {
       kind: "tool";
       callId: string;
@@ -73,6 +77,15 @@ export function parseStreamEvent(value: unknown): StreamEvent | null {
     case "text":
     case "reasoning":
       break;
+    case "sources":
+      if (Array.isArray(v.items) && v.items.every((item) => {
+        if (!record(item) || !strings(item, "url", "title")) return false;
+        try {
+          const url = new URL(item.url as string);
+          return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password;
+        } catch { return false; }
+      })) return value as StreamEvent;
+      return null;
     case "tool_started":
       if (strings(v, "callId", "name", "argsPreview")) return value as StreamEvent;
       return null;
@@ -98,6 +111,20 @@ export function parseStreamEvent(value: unknown): StreamEvent | null {
 
 export function reduceEvent(parts: ChatPart[], event: StreamEvent): ChatPart[] {
   const last = parts.at(-1);
+  if (event.t === "failed" || event.t === "completed") {
+    return parts.map((part) => part.kind === "tool" && !part.done
+      ? { ...part, done: true, ok: false, resultPreview: event.t === "failed" ? event.v.message : "No result was returned." }
+      : part);
+  }
+  if (event.t === "sources") {
+    const existing = parts.findIndex((part) => part.kind === "sources");
+    const current = existing >= 0 ? parts[existing] : null;
+    const items = current?.kind === "sources" ? current.items : [];
+    const merged = [...new Map([...items, ...event.v.items].map((item) => [item.url, item])).values()];
+    if (current?.kind === "sources" && JSON.stringify(items) === JSON.stringify(merged)) return parts;
+    const sources: ChatPart = { kind: "sources", items: merged };
+    return existing < 0 ? [...parts, sources] : parts.map((part, index) => index === existing ? sources : part);
+  }
   if (event.t === "text" || event.t === "reasoning") {
     const kind = event.t;
     if (last?.kind === kind) {
@@ -106,6 +133,12 @@ export function reduceEvent(parts: ChatPart[], event: StreamEvent): ChatPart[] {
     return [...parts, { kind, text: event.v.text }];
   }
   if (event.t === "tool_started") {
+    const existing = parts.findIndex((part) => part.kind === "tool" && part.callId === event.v.callId);
+    if (existing >= 0) {
+      const tool = parts[existing];
+      if (tool.kind !== "tool" || tool.done || tool.argsPreview === event.v.argsPreview) return parts;
+      return parts.map((part, index) => index === existing ? { ...tool, argsPreview: event.v.argsPreview } : part);
+    }
     return [
       ...parts,
       {
@@ -123,7 +156,10 @@ export function reduceEvent(parts: ChatPart[], event: StreamEvent): ChatPart[] {
     const index = parts.findIndex(
       (part) => part.kind === "tool" && part.callId === event.v.callId && !part.done,
     );
-    if (index < 0) return parts;
+    if (index < 0) {
+      if (parts.some((part) => part.kind === "tool" && part.callId === event.v.callId)) return parts;
+      return [...parts, { kind: "tool", ...event.v, argsPreview: "", done: true }];
+    }
     const next = [...parts];
     const tool = parts[index];
     if (tool.kind !== "tool") return parts;

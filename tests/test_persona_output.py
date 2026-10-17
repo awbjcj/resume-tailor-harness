@@ -47,7 +47,14 @@ class _Agent:
         self.run_calls = 0
 
     def stream(self, prompt):
-        yield from self._events
+        text = "".join(
+            event.text for event in self._events if isinstance(event, TextDelta)
+        )
+        for event in self._events:
+            if isinstance(event, Completed) and not hasattr(event.response, "content"):
+                yield Completed(SimpleNamespace(content=text))
+            else:
+                yield event
 
     def run(self, prompt):
         self.run_calls += 1
@@ -219,4 +226,16 @@ def test_a_silent_stream_falls_back_to_the_terminal_response():
 
     assert prose == ""
     assert full == "from the run output"
+    assert not any(isinstance(event, Settled) for event in sink.events)
+
+
+def test_partial_text_cannot_hide_an_invalid_terminal_response():
+    from resume_tailor_harness.llm_runner import UnparsedAgentOutput
+
+    sink, reporter = _Sink(), _Reporter()
+    agent = _Agent([TextDelta("partial reply"), Completed(SimpleNamespace(content=""))])
+
+    with pytest.raises(UnparsedAgentOutput):
+        persona_output(agent, "p", sink, reporter, source="coach notes")
+
     assert not any(isinstance(event, Settled) for event in sink.events)
