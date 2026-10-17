@@ -1073,6 +1073,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/config/application-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Application Profile */
+        get: operations["get_application_profile_api_config_application_profile_get"];
+        /** Put Application Profile */
+        put: operations["put_application_profile_api_config_application_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config/models": {
         parameters: {
             query?: never;
@@ -1934,6 +1952,23 @@ export interface paths {
         get?: never;
         /** Upsert Application */
         put: operations["upsert_application_api_jobs__job_id__application_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/{job_id}/application-prompt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Application Prompt */
+        get: operations["application_prompt_api_jobs__job_id__application_prompt_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -4458,6 +4493,122 @@ export interface components {
              * Format: date-time
              */
             updatedAt: string;
+        };
+        /**
+         * ApplicationProfileDoc
+         * @description Optional, explicitly supplied answers; blank never means no.
+         */
+        ApplicationProfileDoc: {
+            /**
+             * Additionalanswers
+             * @default
+             */
+            additionalAnswers: string;
+            /**
+             * Address
+             * @default
+             */
+            address: string;
+            /**
+             * Availability
+             * @default
+             */
+            availability: string;
+            /**
+             * Disabilitystatus
+             * @default
+             */
+            disabilityStatus: string;
+            /**
+             * Educationnotes
+             * @default
+             */
+            educationNotes: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Ethnicity
+             * @default
+             */
+            ethnicity: string;
+            /**
+             * Expectedsalary
+             * @default
+             */
+            expectedSalary: string;
+            /**
+             * Experiencenotes
+             * @default
+             */
+            experienceNotes: string;
+            /**
+             * Fullname
+             * @default
+             */
+            fullName: string;
+            /**
+             * Gender
+             * @default
+             */
+            gender: string;
+            /**
+             * Linkedinurl
+             * @default
+             */
+            linkedinUrl: string;
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
+            /**
+             * Portfoliourl
+             * @default
+             */
+            portfolioUrl: string;
+            /**
+             * Preferredname
+             * @default
+             */
+            preferredName: string;
+            /**
+             * Pronouns
+             * @default
+             */
+            pronouns: string;
+            /**
+             * Relocation
+             * @default
+             */
+            relocation: string;
+            /**
+             * Remotepreference
+             * @default
+             */
+            remotePreference: string;
+            /**
+             * Sponsorshipneeded
+             * @default
+             */
+            sponsorshipNeeded: string;
+            /**
+             * Veteranstatus
+             * @default
+             */
+            veteranStatus: string;
+            /**
+             * Workauthorization
+             * @default
+             */
+            workAuthorization: string;
+        };
+        /** ApplicationPromptOut */
+        ApplicationPromptOut: {
+            /** Prompt */
+            prompt: string;
         };
         /** ApplicationUpsert */
         ApplicationUpsert: {
@@ -12919,6 +13070,72 @@ export interface operations {
             };
         };
     };
+    get_application_profile_api_config_application_profile_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationProfileDoc"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_application_profile_api_config_application_profile_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationProfileDoc"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationProfileDoc"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_models_api_config_models_get: {
         parameters: {
             query?: never;
@@ -15061,6 +15278,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    application_prompt_api_jobs__job_id__application_prompt_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationPromptOut"];
                 };
             };
             /** @description Validation Error */

@@ -11,6 +11,7 @@ import { JobAssistant } from "@/features/career-lab/JobAssistant";
 import { InterviewTab } from "@/features/interview/InterviewTab";
 import type { CoverLetterItem } from "@/features/job/CoverLetterRow";
 import { CoverLettersTab } from "@/features/job/CoverLettersTab";
+import { CopyApplicationPromptButton } from "@/features/job/CopyApplicationPromptButton";
 import { EmailDraftDialog } from "@/features/job/EmailDraftDialog";
 import { H1BSponsorshipPanel } from "@/features/job/H1BSponsorshipPanel";
 import { CompanyIntelligencePanel } from "@/features/job/CompanyIntelligencePanel";
@@ -154,6 +155,7 @@ export function JobModal({
                     <span>{locationLabel(job) ?? "location n/a"}</span>
                     <StatusBadge status={job.status} />
                     <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                      <CopyApplicationPromptButton key={`application-prompt-${jobId}`} jobId={jobId} />
                       <JobAssistant key={jobId} jobId={jobId} jobLabel={`${job.company ?? ""} · ${job.title ?? ""}`} versions={job.resumeVersions} />
                       <Button
                         size="sm"

@@ -29,7 +29,7 @@ null`; the domain model rejects that outright, so turning the budget off
   defaults on read, because files written by the old switch exist and a
   settings page that 500s cannot be used to repair itself.
 - **The customizable settings surface is declared once.** `settings_sections.py`
-  holds `SETTINGS_SECTIONS`: twelve rows naming each transferable, resettable
+  holds `SETTINGS_SECTIONS`: rows naming each transferable, resettable
   unit and the canonical relative paths it owns (`config/connectors.yaml`,
   `data/profile/overrides.yaml`). It is an **allowlist** — it spans the
   workspace root alongside `secrets.env`, `gmail_token.json`,
@@ -46,3 +46,11 @@ null`; the domain model rejects that outright, so turning the budget off
   `load_group_corrections` and `load_taxonomy_corrections` return an empty
   ledger on corruption, which is right for reading and catastrophic for
   importing.
+
+- **Application handoffs are deterministic.** `application_prompt.py` combines
+  the tenant's saved resume facts, job, and optional `application_profile` config.
+  Blank application answers mean unknown; search defaults, inferred skills, and
+  employer requirements never become applicant answers. Contact overrides are
+  explicit. Prompts remain English regardless of UI language, contain no source
+  paths, and do not attach files. Application profile settings are included in
+  settings bundles, validated on import, and reset through the section registry.

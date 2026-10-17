@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 
 from resume_tailor_harness.api.schemas.config import (
+    ApplicationProfileDoc,
     NormalizeLocationsRequest,
     NormalizeLocationsResponse,
     ProfileConfigDoc,
@@ -16,7 +17,10 @@ from resume_tailor_harness.api.schemas.config import (
 )
 from resume_tailor_harness.api.deps import get_config_store
 from resume_tailor_harness.api.errors import ApiException
-from resume_tailor_harness.render.templates import TemplateNotFoundError, resolve_template
+from resume_tailor_harness.render.templates import (
+    TemplateNotFoundError,
+    resolve_template,
+)
 from resume_tailor_harness.services.config_store import ConfigStore
 from resume_tailor_harness.taxonomy.location import format_free_location
 
@@ -25,6 +29,20 @@ router = APIRouter()
 
 def _store(request: Request) -> ConfigStore:
     return get_config_store(request)
+
+
+@router.get("/config/application-profile", response_model=ApplicationProfileDoc)
+def get_application_profile(request: Request, response: Response):
+    response.headers["Cache-Control"] = "no-store"
+    return _store(request).get("application_profile")
+
+
+@router.put("/config/application-profile", response_model=ApplicationProfileDoc)
+def put_application_profile(
+    body: ApplicationProfileDoc, request: Request, response: Response
+):
+    response.headers["Cache-Control"] = "no-store"
+    return _store(request).put("application_profile", body)
 
 
 @router.get("/config/search", response_model=SearchConfigDoc)

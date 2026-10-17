@@ -35,6 +35,7 @@ def _context(paths: WorkspacePaths) -> UserContext:
 EXPECTED_IDS = (
     "sources",
     "search",
+    "application_profile",
     "review",
     "agent_guidance",
     "style_guide",
@@ -48,7 +49,7 @@ EXPECTED_IDS = (
 )
 
 
-def test_registry_declares_twelve_sections_in_order():
+def test_registry_declares_sections_in_order():
     assert tuple(section.id for section in SETTINGS_SECTIONS) == EXPECTED_IDS
 
 

@@ -12,6 +12,7 @@ from sqlmodel import Session
 from resume_tailor_harness.api.deps import (
     get_career_lab_dir,
     get_config_store,
+    get_profile_dir,
     get_engine,
     get_interview_dir,
     get_run_manager,
@@ -22,7 +23,12 @@ from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.runs.launch import launch, session_work
 from resume_tailor_harness.api.runs.manager import RunManager
 from resume_tailor_harness.api.schemas.bulk import BulkRequest, BulkResultOut
-from resume_tailor_harness.api.schemas.config import ReviewConfigDoc
+from resume_tailor_harness.api.schemas.config import (
+    ApplicationProfileDoc,
+    ReviewConfigDoc,
+)
+from resume_tailor_harness.api.schemas.application_prompt import ApplicationPromptOut
+from resume_tailor_harness.services.application_prompt import build_application_prompt
 from resume_tailor_harness.api.schemas.jobs import (
     ApplicationOut,
     ApplicationUpsert,
@@ -41,7 +47,9 @@ from resume_tailor_harness.api.schemas.jobs import (
     JobsImportReportOut,
 )
 from resume_tailor_harness.config import Settings
-from resume_tailor_harness.company_intelligence.models import CompanyIntelligenceEvidence
+from resume_tailor_harness.company_intelligence.models import (
+    CompanyIntelligenceEvidence,
+)
 from resume_tailor_harness.h1b.cache import load_company_evidence
 from resume_tailor_harness.h1b.models import (
     H1B_DISABLED_MESSAGE,
@@ -58,13 +66,37 @@ from resume_tailor_harness.services.company_intelligence import (
     load_company_intelligence,
     load_company_intelligence_history,
 )
-from resume_tailor_harness.services.discovery import ActiveJobQuotaError, add_job_from_text
+from resume_tailor_harness.services.discovery import (
+    ActiveJobQuotaError,
+    add_job_from_text,
+)
 from resume_tailor_harness.taxonomy.industries import normalize_company
 from resume_tailor_harness.tenancy.limits import DEFAULT_MAX_ACTIVE_JOBS, active_limit
 from resume_tailor_harness.tracking.repository import get_job
 from resume_tailor_harness.tracking.tables import ApplicationStatus, JobStatus
 
 router = APIRouter()
+
+
+@router.get("/jobs/{job_id}/application-prompt", response_model=ApplicationPromptOut)
+def application_prompt(
+    job_id: int,
+    request: Request,
+    response: Response,
+    session: Session = Depends(get_session),
+) -> ApplicationPromptOut:
+    job = get_job(session, job_id)
+    if job is None:
+        raise ApiException(404, "NOT_FOUND", f"Job #{job_id} not found")
+    answers = cast(
+        ApplicationProfileDoc, get_config_store(request).get("application_profile")
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return ApplicationPromptOut(
+        prompt=build_application_prompt(
+            job, answers, get_profile_dir(request) / "facts.json"
+        )
+    )
 
 
 @router.post("/jobs/import", response_model=JobsImportReportOut)

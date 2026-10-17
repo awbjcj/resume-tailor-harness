@@ -48,6 +48,9 @@ const EmailNotificationsPage = lazy(() => import("@/features/settings/pages/Emai
 const SettingsLayout = lazy(() =>
   import("@/features/settings/SettingsLayout").then((m) => ({ default: m.SettingsLayout })),
 );
+const ApplicationProfilePage = lazy(() =>
+  import("@/features/settings/pages/ApplicationProfilePage").then((m) => ({ default: m.ApplicationProfilePage })),
+);
 const SearchSettingsPage = lazy(() =>
   import("@/features/settings/pages/SearchSettingsPage").then((m) => ({
     default: m.SearchSettingsPage,
@@ -176,6 +179,7 @@ export const router = createBrowserRouter([
           { path: "profile", element: <Navigate to="/profile" replace /> },
           { path: "notifications", element: page(<EmailNotificationsPage />) },
           { path: "search", element: page(<SearchSettingsPage />) },
+          { path: "application-profile", element: page(<ApplicationProfilePage />) },
           { path: "sources", element: page(<SourcesPage />) },
           { path: "keys", element: page(<KeysSettingsPage />) },
           { path: "review", element: page(<ReviewSettingsPage />) },

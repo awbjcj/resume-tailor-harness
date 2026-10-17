@@ -49,6 +49,7 @@ export function getSettingsNavigation() {
     {
       label: "Output",
       items: [
+        { to: "/settings/application-profile", label: "Application profile", icon: FileText },
         { to: "/settings/rendering", label: "Rendering", icon: FileText },
         { to: "/settings/pruning", label: "Pruning", icon: SlidersHorizontal },
       ],
