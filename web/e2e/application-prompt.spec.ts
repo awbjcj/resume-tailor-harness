@@ -32,6 +32,8 @@ for (const width of [1280, 390]) {
     await expect(page.getByRole("heading", { name: "Application profile", exact: true })).toBeVisible();
     await page.getByLabel("Expected salary", { exact: true }).fill("USD 120,000/year");
     await page.getByLabel("Disability status", { exact: true }).fill("Prefer not to disclose");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect(page.getByRole("button", { name: "Discard", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect.poll(() => profile.expectedSalary).toBe("USD 120,000/year");
     await page.reload();
@@ -48,10 +50,38 @@ for (const width of [1280, 390]) {
     await page.getByRole("dialog").getByRole("button", { name: "Copy application prompt", exact: true }).click();
     await expect.poll(() => page.evaluate(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, "\n"))).toBe(prompt);
 
+    await page.goto("/shortlist");
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText: async () => { throw new Error("Clipboard blocked"); } },
+      });
+    });
+    const copyButton = page.getByRole("button", { name: "Copy application prompt", exact: true });
+    await copyButton.click();
+    const fallback = page.getByRole("dialog");
+    const promptText = fallback.getByRole("textbox", { name: "English application prompt" });
+    await expect(promptText).toHaveValue(prompt);
+    await expect(promptText).toBeFocused();
+    expect(await promptText.evaluate((element: HTMLTextAreaElement) => element.selectionEnd - element.selectionStart)).toBe(prompt.length);
+    expect(await fallback.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await expect(fallback).toHaveCSS("opacity", "1");
+    await page.screenshot({ path: `test-results/application-prompt-dialog-${width}.png` });
+    await page.keyboard.press("Escape");
+    await expect(fallback).toHaveCount(0);
+    await expect(copyButton).toBeFocused();
+
     await page.addInitScript(() => localStorage.setItem("resume-tailor-harness-language", "zh-CN"));
     await page.goto("/shortlist");
     await page.getByRole("button", { name: "复制申请提示词", exact: true }).click();
     await expect.poll(() => page.evaluate(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, "\n"))).toBe(prompt);
+    await page.evaluate(() => localStorage.setItem("theme", "dark"));
+    await page.goto("/settings/application-profile");
+    await expect(page.getByLabel("期望薪资", { exact: true })).toHaveValue("USD 120,000/year");
+    await expect(page.getByText("不确定的内容可以留空。自愿填写的问题，请如实回答，也可以填写“不愿透露”。留空的项目不会自动补全。", { exact: true })).toBeVisible();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: `test-results/application-profile-zh-dark-${width}.png`, fullPage: true });
     expect(errors).toEqual([]);
   });
 }

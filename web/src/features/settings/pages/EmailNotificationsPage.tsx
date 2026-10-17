@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Mail,
   ShieldCheck,
   Bell,
   ListChecks,
@@ -9,13 +8,19 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import {
   Field,
   FieldContent,
   FieldDescription,
+  FieldGroup,
   FieldLabel,
+  FieldLegend,
+  FieldSet,
 } from "@/components/ui/field";
 import { useDraft } from "../use-draft";
 import {
@@ -95,31 +100,30 @@ export function EmailNotificationsPage() {
     });
   };
   return (
-    <div className="flex max-w-3xl flex-col gap-7">
-      <header className="border-b pb-6">
-        <h1 className="flex items-center gap-3 text-xl font-semibold tracking-tight">
-          <Mail className="size-5" aria-hidden="true" />
+    <div className="flex flex-col gap-6">
+      <header className="space-y-1">
+        <h1 className="text-lg font-semibold">
           {t("emailNotifications.title")}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {t("emailNotifications.description")}
         </p>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {t("emailNotifications.languageHelp")}
         </p>
       </header>
       {!data.deliveryAvailable && (
-        <p role="status" className="rounded-lg border bg-muted/50 p-4 text-sm">
-          {t("emailNotifications.unavailable")}
-        </p>
+        <Alert role="status">
+          <AlertDescription>{t("emailNotifications.unavailable")}</AlertDescription>
+        </Alert>
       )}
       {data.deliveryFailed && (
-        <p role="status" className="text-sm text-destructive">
-          {t("emailNotifications.deliveryFailed")}
-        </p>
+        <Alert role="status" variant="destructive">
+          <AlertDescription>{t("emailNotifications.deliveryFailed")}</AlertDescription>
+        </Alert>
       )}
       <form
-        className="flex flex-col gap-7"
+        className="flex flex-col gap-6"
         onSubmit={(event) => {
           event.preventDefault();
           savePreferences(draft);
@@ -166,56 +170,56 @@ export function EmailNotificationsPage() {
             </FieldDescription>
           </FieldContent>
         </Field>
-        <fieldset
+        <FieldSet
           disabled={busy}
           aria-describedby="notification-frequency-help"
         >
-          <legend className="mb-3 text-sm font-medium">
+          <FieldLegend variant="label">
             {t("emailNotifications.frequency")}
-          </legend>
-          <div className="grid grid-cols-3 gap-2">
-            {FREQUENCIES.map((frequency) => (
-              <label key={frequency} className="relative cursor-pointer">
-                <input
-                  type="radio"
-                  name="notification-frequency"
-                  value={frequency}
-                  checked={draft.frequency === frequency}
-                  className="peer absolute inset-0 z-10 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
-                  onChange={() => {
-                    resetFeedback();
-                    setDraft({ ...draft, frequency });
-                  }}
-                />
-                <span className="flex min-h-12 items-center justify-center rounded-lg border px-2 py-3 text-center text-sm font-medium peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
-                  {t(`emailNotifications.${frequency}`)}
-                </span>
-              </label>
-            ))}
-          </div>
-          <p
-            id="notification-frequency-help"
-            className="mt-3 text-sm leading-relaxed text-muted-foreground"
+          </FieldLegend>
+          <RadioGroup
+            name="notification-frequency"
+            value={draft.frequency}
+            disabled={busy}
+            aria-label={t("emailNotifications.frequency")}
+            aria-describedby="notification-frequency-help"
+            className="flex flex-wrap gap-x-6 gap-y-2"
+            onValueChange={(frequency) => {
+              const selected = FREQUENCIES.find((option) => option === frequency);
+              if (!selected) return;
+              resetFeedback();
+              setDraft({ ...draft, frequency: selected });
+            }}
           >
+            {FREQUENCIES.map((frequency) => (
+              <Field key={frequency} orientation="horizontal" className="w-auto gap-2 py-1">
+                <RadioGroupItem id={`notification-${frequency}`} value={frequency} />
+                <FieldLabel htmlFor={`notification-${frequency}`}>
+                  {t(`emailNotifications.${frequency}`)}
+                </FieldLabel>
+              </Field>
+            ))}
+          </RadioGroup>
+          <FieldDescription id="notification-frequency-help">
             {t("emailNotifications.frequencyHelp")}
-          </p>
-        </fieldset>
-        <fieldset disabled={busy}>
-          <legend className="mb-3 text-sm font-medium">
+          </FieldDescription>
+        </FieldSet>
+        <FieldSet disabled={busy}>
+          <FieldLegend>
             {t("emailNotifications.topics")}
-          </legend>
-          <div className="divide-y rounded-xl border px-4 sm:px-5">
+          </FieldLegend>
+          <FieldGroup className="gap-0 divide-y">
             {TOPICS.map(({ key: topic, icon: Icon }) => (
               <Field
                 orientation="horizontal"
                 key={topic}
-                className="gap-4 py-5"
+                className="gap-3 py-4 first:pt-0 last:pb-0"
               >
                 <Icon
-                  className="mt-0.5 size-5 shrink-0 text-muted-foreground"
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                   aria-hidden="true"
                 />
-                <FieldContent>
+                <FieldContent className="min-w-0">
                   <FieldLabel htmlFor={`email-${topic}`}>
                     {t(`emailNotifications.${topic}`)}
                   </FieldLabel>
@@ -226,6 +230,7 @@ export function EmailNotificationsPage() {
                 <Switch
                   id={`email-${topic}`}
                   checked={draft[topic]}
+                  disabled={busy}
                   onCheckedChange={(value) => {
                     resetFeedback();
                     setDraft({ ...draft, [topic]: value });
@@ -233,8 +238,8 @@ export function EmailNotificationsPage() {
                 />
               </Field>
             ))}
-          </div>
-        </fieldset>
+          </FieldGroup>
+        </FieldSet>
         <div className="flex flex-wrap items-center gap-3 border-t pt-5">
           <Button
             type="submit"
@@ -247,6 +252,7 @@ export function EmailNotificationsPage() {
                 !draft.reminders)
             }
           >
+            {save.isPending && <Spinner className="motion-reduce:animate-none" data-icon="inline-start" />}
             {t(
               save.isPending
                 ? "emailNotifications.saving"
@@ -275,7 +281,7 @@ export function EmailNotificationsPage() {
         </div>
       </form>
       <section
-        className="space-y-4 rounded-xl border bg-muted/30 p-5 sm:p-6"
+        className="space-y-4 border-t pt-6"
         aria-label={t("emailNotifications.verifyTitle")}
       >
         <p className="flex items-center gap-2 text-sm font-medium">
@@ -314,6 +320,7 @@ export function EmailNotificationsPage() {
                 });
               }}
             >
+              {sendCode.isPending && <Spinner className="motion-reduce:animate-none" data-icon="inline-start" />}
               {t(
                 sendCode.isPending
                   ? "emailNotifications.sending"
@@ -362,6 +369,7 @@ export function EmailNotificationsPage() {
                 type="submit"
                 disabled={busy || dirty || !/^[0-9]{6}$/.test(code)}
               >
+                {verify.isPending && <Spinner className="motion-reduce:animate-none" data-icon="inline-start" />}
                 {t(
                   verify.isPending
                     ? "emailNotifications.verifying"
@@ -387,16 +395,18 @@ export function EmailNotificationsPage() {
         )}
       </section>
       {feedbackKey && (
-        <p role="status" className="text-sm text-primary">
-          {t(`emailNotifications.${feedbackKey}`)}
-        </p>
+        <Alert role="status">
+          <AlertDescription>{t(`emailNotifications.${feedbackKey}`)}</AlertDescription>
+        </Alert>
       )}
       {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {(i18n.resolvedLanguage ?? i18n.language).startsWith("zh")
-            ? t(errorKey ?? "emailNotifications.errors.unexpected")
-            : error.message}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>
+            {(i18n.resolvedLanguage ?? i18n.language).startsWith("zh")
+              ? t(errorKey ?? "emailNotifications.errors.unexpected")
+              : error.message}
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );

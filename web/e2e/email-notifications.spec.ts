@@ -34,7 +34,9 @@ for (const width of [1280, 390]) {
     await expect(page.getByRole("heading", { name: "Email notifications" })).toBeVisible();
     await page.getByLabel("Notification email address", { exact: true }).fill("review@example.com");
     await page.getByRole("switch", { name: "Send me email notifications" }).click();
-    await page.getByRole("radio", { name: "Daily", exact: true }).check();
+    await page.getByRole("radio", { name: "Weekly", exact: true }).focus();
+    await page.keyboard.press("ArrowLeft");
+    await expect(page.getByRole("radio", { name: "Daily", exact: true })).toBeChecked();
     await page.getByRole("button", { name: "Save preferences" }).click();
     await page.getByRole("button", { name: "Send verification code" }).click();
     await expect(page.getByText("Verification code sent. Check your inbox and spam folder.")).toBeVisible();
@@ -42,6 +44,7 @@ for (const width of [1280, 390]) {
     await page.getByRole("button", { name: "Verify email" }).click();
     await expect(page.getByText("Email notifications are on.")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: `test-results/email-notifications-${width}.png`, fullPage: true });
     await page.getByRole("button", { name: "Turn off email notifications" }).click();
     await expect(page.getByText("Email notifications are off.")).toBeVisible();
