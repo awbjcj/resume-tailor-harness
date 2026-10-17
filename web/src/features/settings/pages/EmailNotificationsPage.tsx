@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -23,6 +25,7 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { useDraft } from "../use-draft";
+import { SaveBar } from "../SaveBar";
 import {
   useEmailNotifications,
   EmailNotificationError,
@@ -47,7 +50,7 @@ export function EmailNotificationsPage() {
   const { t, i18n } = useTranslation();
   const { query, save, sendCode, verify } = useEmailNotifications();
   const data = query.data;
-  const { draft, setDraft, dirty } = useDraft<EmailUpdate>(
+  const { draft, setDraft, dirty, reset } = useDraft<EmailUpdate>(
     data
       ? {
           email: data.email,
@@ -59,6 +62,7 @@ export function EmailNotificationsPage() {
         }
       : undefined,
   );
+  const preferencesForm = useRef<HTMLFormElement>(null);
   const codeInput = useRef<HTMLInputElement>(null);
   const [code, setCode] = useState("");
   const [feedbackKey, setFeedbackKey] = useState<
@@ -78,17 +82,24 @@ export function EmailNotificationsPage() {
 
   if (query.isError)
     return (
-      <div role="alert">
-        <p>{t("emailNotifications.loadError")}</p>
-        <Button variant="outline" onClick={() => void query.refetch()}>
-          {t("emailNotifications.retry")}
-        </Button>
-      </div>
+      <Alert variant="destructive">
+        <AlertDescription>
+          <p>{t("emailNotifications.loadError")}</p>
+          <Button variant="outline" onClick={() => void query.refetch()}>
+            {t("emailNotifications.retry")}
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
   if (!draft || !data)
-    return <p role="status">{t("emailNotifications.loading")}</p>;
+    return (
+      <div role="status" aria-label={t("emailNotifications.loading")}>
+        <Skeleton className="h-64 w-full motion-reduce:animate-none" />
+      </div>
+    );
 
   const needsVerification = data.enabled && !data.verifiedAt;
+  const canSave = !draft.enabled || draft.pendingReviews || draft.statistics || draft.reminders;
   const savePreferences = (values: EmailUpdate) => {
     resetFeedback();
     save.mutate(values, {
@@ -123,10 +134,12 @@ export function EmailNotificationsPage() {
         </Alert>
       )}
       <form
+        ref={preferencesForm}
         className="flex flex-col gap-6"
+        aria-busy={save.isPending}
         onSubmit={(event) => {
           event.preventDefault();
-          savePreferences(draft);
+          if (dirty && !busy && canSave) savePreferences(draft);
         }}
       >
         <Field>
@@ -152,23 +165,24 @@ export function EmailNotificationsPage() {
           </FieldDescription>
         </Field>
         <Field orientation="horizontal">
+          <FieldContent className="min-w-0">
+            <FieldLabel htmlFor="notification-enabled">
+              {t("emailNotifications.optIn")}
+            </FieldLabel>
+            <FieldDescription id="notification-enabled-help">
+              {t("emailNotifications.optInHelp")}
+            </FieldDescription>
+          </FieldContent>
           <Switch
             id="notification-enabled"
             checked={draft.enabled}
             disabled={busy}
+            aria-describedby="notification-enabled-help"
             onCheckedChange={(enabled) => {
               resetFeedback();
               setDraft({ ...draft, enabled });
             }}
           />
-          <FieldContent>
-            <FieldLabel htmlFor="notification-enabled">
-              {t("emailNotifications.optIn")}
-            </FieldLabel>
-            <FieldDescription>
-              {t("emailNotifications.optInHelp")}
-            </FieldDescription>
-          </FieldContent>
         </Field>
         <FieldSet
           disabled={busy}
@@ -223,7 +237,7 @@ export function EmailNotificationsPage() {
                   <FieldLabel htmlFor={`email-${topic}`}>
                     {t(`emailNotifications.${topic}`)}
                   </FieldLabel>
-                  <FieldDescription>
+                  <FieldDescription id={`email-${topic}-help`}>
                     {t(`emailNotifications.${topic}Help`)}
                   </FieldDescription>
                 </FieldContent>
@@ -231,6 +245,7 @@ export function EmailNotificationsPage() {
                   id={`email-${topic}`}
                   checked={draft[topic]}
                   disabled={busy}
+                  aria-describedby={`email-${topic}-help`}
                   onCheckedChange={(value) => {
                     resetFeedback();
                     setDraft({ ...draft, [topic]: value });
@@ -240,50 +255,35 @@ export function EmailNotificationsPage() {
             ))}
           </FieldGroup>
         </FieldSet>
-        <div className="flex flex-wrap items-center gap-3 border-t pt-5">
-          <Button
-            type="submit"
-            disabled={
-              !dirty ||
-              busy ||
-              (draft.enabled &&
-                !draft.pendingReviews &&
-                !draft.statistics &&
-                !draft.reminders)
-            }
-          >
-            {save.isPending && <Spinner className="motion-reduce:animate-none" data-icon="inline-start" />}
-            {t(
-              save.isPending
-                ? "emailNotifications.saving"
-                : "emailNotifications.save",
-            )}
-          </Button>
+      </form>
+      <Separator />
+      <section
+        className="flex min-w-0 flex-col gap-4"
+        aria-labelledby="notification-delivery-title"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="notification-delivery-title" className="text-sm font-medium">
+            {t(needsVerification ? "emailNotifications.verifyTitle" : "emailNotifications.deliveryStatus")}
+          </h2>
           {data.enabled && (
             <Button
               type="button"
               variant="outline"
+              size="sm"
               disabled={busy}
-              onClick={() =>
-                savePreferences({
-                  email: data.email,
-                  enabled: false,
-                  frequency: data.frequency,
-                  pendingReviews: data.pendingReviews,
-                  statistics: data.statistics,
-                  reminders: data.reminders,
-                })
-              }
+              onClick={() => savePreferences({
+                email: data.email,
+                enabled: false,
+                frequency: data.frequency,
+                pendingReviews: data.pendingReviews,
+                statistics: data.statistics,
+                reminders: data.reminders,
+              })}
             >
               {t("emailNotifications.optOut")}
             </Button>
           )}
         </div>
-      </form>
-      <section
-        className="space-y-4 border-t pt-6"
-        aria-label={t("emailNotifications.verifyTitle")}
-      >
         <p className="flex items-center gap-2 text-sm font-medium">
           {data.verifiedAt && (
             <ShieldCheck
@@ -309,6 +309,8 @@ export function EmailNotificationsPage() {
             )}
             <Button
               variant="outline"
+              className="w-fit max-w-full"
+              aria-busy={sendCode.isPending}
               disabled={busy || dirty || !data.deliveryAvailable}
               onClick={() => {
                 resetFeedback();
@@ -320,7 +322,7 @@ export function EmailNotificationsPage() {
                 });
               }}
             >
-              {sendCode.isPending && <Spinner className="motion-reduce:animate-none" data-icon="inline-start" />}
+              {sendCode.isPending && <Spinner aria-hidden="true" className="motion-reduce:animate-none" data-icon="inline-start" />}
               {t(
                 sendCode.isPending
                   ? "emailNotifications.sending"
@@ -331,6 +333,7 @@ export function EmailNotificationsPage() {
             </Button>
             <form
               className="flex flex-wrap items-end gap-3"
+              aria-busy={verify.isPending}
               onSubmit={(event) => {
                 event.preventDefault();
                 resetFeedback();
@@ -359,6 +362,8 @@ export function EmailNotificationsPage() {
                   maxLength={6}
                   value={code}
                   disabled={busy || dirty}
+                  aria-invalid={verify.error instanceof EmailNotificationError && verify.error.code === "INVALID_CODE"}
+                  aria-describedby={verify.error ? "notification-error" : undefined}
                   onChange={(event) => {
                     resetFeedback();
                     setCode(event.target.value);
@@ -367,9 +372,10 @@ export function EmailNotificationsPage() {
               </Field>
               <Button
                 type="submit"
+                aria-busy={verify.isPending}
                 disabled={busy || dirty || !/^[0-9]{6}$/.test(code)}
               >
-                {verify.isPending && <Spinner className="motion-reduce:animate-none" data-icon="inline-start" />}
+                {verify.isPending && <Spinner aria-hidden="true" className="motion-reduce:animate-none" data-icon="inline-start" />}
                 {t(
                   verify.isPending
                     ? "emailNotifications.verifying"
@@ -400,7 +406,7 @@ export function EmailNotificationsPage() {
         </Alert>
       )}
       {error && (
-        <Alert variant="destructive">
+        <Alert id="notification-error" variant="destructive">
           <AlertDescription>
             {(i18n.resolvedLanguage ?? i18n.language).startsWith("zh")
               ? t(errorKey ?? "emailNotifications.errors.unexpected")
@@ -408,6 +414,17 @@ export function EmailNotificationsPage() {
           </AlertDescription>
         </Alert>
       )}
+      <SaveBar
+        dirty={dirty}
+        saving={busy}
+        canSave={canSave}
+        onSave={() => preferencesForm.current?.requestSubmit()}
+        onDiscard={() => {
+          reset();
+          setCode("");
+          resetFeedback();
+        }}
+      />
     </div>
   );
 }
