@@ -11,7 +11,7 @@ from contextvars import ContextVar
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from resume_tailor_harness.sessions.stream import Failed, ToolCompleted, ToolStarted
@@ -97,6 +97,9 @@ def capture_errors():
 class StreamLifecycle:
     """Detect a clean HTTP EOF that lacks the provider's completion marker."""
 
+    # This cooperative mixin precedes an Agno Model in every adapter's MRO.
+    # Cast the super proxy so static analysis can see that provider contract.
+
     async def arun_function_call(self, function_call):
         from inspect import isasyncgenfunction, iscoroutine, iscoroutinefunction
 
@@ -115,7 +118,9 @@ class StreamLifecycle:
             or iscoroutine(entrypoint)
             or any(iscoroutinefunction(hook) for hook in function.tool_hooks or [])
         ):
-            return await super().arun_function_call(function_call)
+            from agno.models.base import Model
+
+            return await cast(Model, super()).arun_function_call(function_call)
 
         # Conversation tools close over run-thread Sessions and mutable budgets.
         # Agno normally uses to_thread + gather here, which violates that custody.
@@ -132,11 +137,14 @@ class StreamLifecycle:
         return success, timer, function_call, result
 
     def invoke_stream(self, *args, **kwargs):
+        from collections.abc import Generator
+
+        from agno.models.base import Model
         from agno.models.response import ModelResponse
 
         state = RequestState()
         token = _request.set(state)
-        stream = super().invoke_stream(*args, **kwargs)
+        stream = cast(Generator, cast(Model, super()).invoke_stream(*args, **kwargs))
         try:
             for chunk in stream:
                 capture = _errors.get()
@@ -163,11 +171,16 @@ class StreamLifecycle:
                 _request.reset(token)
 
     async def ainvoke_stream(self, *args, **kwargs):
+        from collections.abc import AsyncGenerator
+
+        from agno.models.base import Model
         from agno.models.response import ModelResponse
 
         state = RequestState()
         token = _request.set(state)
-        stream = super().ainvoke_stream(*args, **kwargs)
+        stream = cast(
+            AsyncGenerator, cast(Model, super()).ainvoke_stream(*args, **kwargs)
+        )
         try:
             async for chunk in stream:
                 capture = _errors.get()

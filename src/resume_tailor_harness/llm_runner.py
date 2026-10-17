@@ -546,7 +546,7 @@ class AgentRunner:
             # google-genai owns its async transport under the same Client.
             shared_client = getattr(model, "client", None)
             aio = getattr(shared_client, "aio", None)
-            if aio is not None:
+            if shared_client is not None and aio is not None:
                 try:
                     await aio.aclose()
                     shared_client.close()
@@ -1790,13 +1790,15 @@ def _compatible_gemini_class():
                     raise ValueError(
                         "This Gemini model cannot combine native search with function tools; select tool search mode."
                     )
-                config.tools = [
-                    *(config.tools or []),
-                    format_function_definitions(tools),
-                ]
+                function_tool = format_function_definitions(tools)
+                config.tools = [*(config.tools or [])]
+                if function_tool is not None:
+                    config.tools.append(function_tool)
                 config.tool_config = config.tool_config or ToolConfig()
                 config.tool_config.include_server_side_tool_invocations = True
-            if structured:
+            if isinstance(response_format, type) and issubclass(
+                response_format, BaseModel
+            ):
                 config.response_mime_type = "application/json"
                 config.response_schema = None
                 config.response_json_schema = _without_ref_siblings(
@@ -1812,9 +1814,12 @@ def _compatible_claude_class():
     from agno.models.anthropic import Claude
 
     class CompatibleClaude(StreamLifecycle, Claude):
-        def _parse_provider_response_delta(self, response, **kwargs):
+        def _parse_provider_response_delta(self, response, response_format=None, **kwargs):
             return anthropic_delta(
-                response, super()._parse_provider_response_delta(response, **kwargs)
+                response,
+                super()._parse_provider_response_delta(
+                    response, response_format=response_format, **kwargs
+                ),
             )
 
     return CompatibleClaude
