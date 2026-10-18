@@ -27,6 +27,7 @@ from resume_tailor_harness.tracking.prune_config import PruneConfig
 from resume_tailor_harness.tracking.tables import (
     Application,
     ApplicationEvent,
+    ApplicationQuestion,
     ApplicationStatus,
     CoverLetter,
     EmailDraft,
@@ -542,7 +543,7 @@ def delete_job_row(session: Session, job: Job, *, commit: bool = True) -> None:
 
     Unguarded: callers must have already applied the has_progress gate.
     """
-    for model in (CoverLetter, Application, ResumeVersion, EmailDraft):
+    for model in (ApplicationQuestion, CoverLetter, Application, ResumeVersion, EmailDraft):
         for child in session.exec(select(model).where(model.job_id == job.id)).all():
             session.delete(child)
     session.delete(job)

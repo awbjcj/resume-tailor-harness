@@ -34,3 +34,25 @@ bring-your-own-key analytics. They stop controlling access when
 Administrators use `/admin/quotas` for tier, account, bulk operation, rate-card,
 and audit views. Bulk operations require a frozen preview, reason, and
 idempotency key. All-member scope includes disabled non-admin accounts.
+
+## DeepSeek Search and Fetch
+
+Verified 2026-10-18 against the [official pricing](https://api-docs.deepseek.com/quick_start/pricing/)
+and [Search/Fetch billing rules](https://api-docs.deepseek.com/guides/search/).
+Standalone Search and Fetch each cost $0.75 per 1,000 successful requests
+(750 USD micros per request), independent of model and peak/off-peak token rates.
+Only HTTP 200 responses with nonempty search results or fetched page content
+record a billable tool unit. Empty results and failures cost zero; requesting
+more results does not change the unit price.
+
+The rate card uses separate `deepseek-search` and `deepseek-fetch` identities,
+effective from this integration's 2026-10-18 refresh. Each request checks
+SpendGate and settles through the existing usage ledger; shared funding consumes
+the applicable quotas and BYOK retains analytics with zero quota deduction.
+LLM tokens consumed while reading results remain on the selected model's token
+rate, avoiding double counting. Existing model-token rates are unchanged.
+
+DeepSeek separately documents a grace period for **server-side** Search/Fetch
+tools used through DeepSeek Harness, Claude Code, and Codex: per-request billing
+starts at 2026-11-01 00:00 Beijing time (2026-10-31 16:00 UTC). This app calls the
+standalone endpoints and applies their published rate immediately.

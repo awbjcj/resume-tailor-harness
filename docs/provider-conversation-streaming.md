@@ -12,8 +12,7 @@ the key and endpoint together; streaming does not bypass routing or quotas.
 | Anthropic | `/v1/messages` | Native Messages web search |
 | OpenAI | `/v1/responses` | Native Responses web search |
 | Gemini | `/v1beta/models/{model}:streamGenerateContent` | Native Google Search |
-| DeepSeek Pro | `/v1/responses` | Native Responses web search |
-| DeepSeek Flash | `/v1/responses` | Application search function |
+| DeepSeek Pro / Flash | `/v1/responses` | DeepSeek Search/Fetch function tools, or an explicit application search function |
 
 Direct routes use the respective provider SDK defaults (DeepSeek's Responses
 base is `https://api.deepseek.com`). The current sibling Sub2API router supports
@@ -23,10 +22,22 @@ thought signatures, and function IDs on replay. Combining native search and
 application functions requires Gemini 3 or later; older custom model IDs receive
 an actionable error to select tool search mode.
 
-DeepSeek Flash silently ignores `web_search`. The capability gate follows
-[DeepSeek's Responses documentation](https://api-docs.deepseek.com/guides/responses_api/):
-only `deepseek-v4-pro` selects native search. Explicit `native` on Flash fails;
-`auto` uses the application's existing callable search and its existing budget.
+DeepSeek uses its [standalone Search and Fetch APIs](https://api-docs.deepseek.com/guides/search/)
+through ordinary function calls, for both Flash and Pro. `web_search(query, count)`
+posts to `/v1/tools/search`; `fetch_web(url)` posts to `/v1/tools/fetch` and returns
+Markdown. Source URLs and summaries stay in function results, so native citation
+annotations remain unsupported. In `auto`, a caller-supplied search function
+(including Scout's bounded search) takes precedence; `tool` retains the existing
+application/DuckDuckGo path, and `off` disables search.
+
+Every standalone request resolves the credential and endpoint together through
+SpendGate. Subscription routes send these requests to the selected gateway's
+`/v1/tools/...` endpoints; the gateway must implement them. Unsupported gateways
+fail visibly without falling back to a direct paid API. A request retries only
+transport failures, HTTP 408, 429, and 5xx, up to three attempts. Permanent 4xx
+errors do not retry. Search accepts 1–128 character queries and 1–50 results;
+Fetch accepts HTTP(S) URLs without credentials up to 8192 characters. Fetch sends
+the destination as data to DeepSeek; the app does not connect to that URL itself.
 
 ## Lifecycle
 

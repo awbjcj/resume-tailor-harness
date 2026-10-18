@@ -28,8 +28,7 @@ def test_known_model_capabilities_are_model_gated():
     assert provider_capabilities("openai:gpt-4o").supports_reasoning is False
     assert provider_capabilities("gemini:gemini-3.5-flash").supports_reasoning is True
     assert provider_capabilities("gemini:gemini-3.8-flash").supports_reasoning is True
-    # Citations stay False even though DeepSeek now has native web search: it
-    # runs the search server-side but returns no `url_citation` annotations.
+    # Search function results carry source URLs, not native citation annotations.
     assert provider_capabilities("deepseek:deepseek-v4-pro") == ProviderCapabilities(
         supports_reasoning=True,
         supports_native_citations=False,

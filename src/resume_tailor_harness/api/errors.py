@@ -88,12 +88,16 @@ def install_error_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content=_envelope(exc.code, exc.message, exc.details),
+            headers={"Cache-Control": "no-store"},
         )
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
         return JSONResponse(
             status_code=422,
+            # Validation details can contain submitted personal answers. The
+            # route's Response headers do not survive exception handling.
+            headers={"Cache-Control": "no-store"},
             content=_envelope(
                 "VALIDATION_ERROR",
                 "Request validation failed",
@@ -110,5 +114,7 @@ def install_error_handlers(app: FastAPI) -> None:
             409: "CONFLICT",
         }.get(exc.status_code, "HTTP_ERROR")
         return JSONResponse(
-            status_code=exc.status_code, content=_envelope(code, str(exc.detail))
+            status_code=exc.status_code,
+            content=_envelope(code, str(exc.detail)),
+            headers={"Cache-Control": "no-store"},
         )

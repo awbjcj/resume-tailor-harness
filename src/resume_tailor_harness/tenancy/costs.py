@@ -945,6 +945,23 @@ def seed_llm_rates(engine: Engine) -> None:
                 rate_period=period,
             )
 
+        # Standalone Search/Fetch are model-independent and billed per nonempty
+        # successful request, independent of token peak/off-peak pricing. Use
+        # separate identities so model-token costs and tool requests cannot be
+        # charged twice. The Nov 1 grace period is for server-side tools only.
+        for operation in ("search", "fetch"):
+            upsert_rate(
+                provider="deepseek",
+                model=f"deepseek-{operation}",
+                effective_from=datetime(2026, 10, 18, tzinfo=timezone.utc),
+                input_rate=0,
+                cache_read=None,
+                cache_write=None,
+                output_rate=0,
+                tool=750,
+                source="https://api-docs.deepseek.com/guides/search/",
+            )
+
         # The retired vision alias kept its prior price until V4.1 Flash launched.
         for period, input_rate, cache_read, output_rate in (
             (RATE_PERIOD_OFF_PEAK, 0.22, 0.007, 0.66),

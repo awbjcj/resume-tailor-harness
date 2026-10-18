@@ -127,8 +127,8 @@ def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
     assert sonnet_55["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
 
     deepseek = next(row for row in body if row["provider"] == "deepseek")
-    # Only Pro runs web_search server-side. Flash accepts but ignores the tool.
-    assert deepseek["models"][0]["supportsNativeSearch"] is False
+    # Standalone Search works with both models through function tools.
+    assert deepseek["models"][0]["supportsNativeSearch"] is True
     pro = next(m for m in deepseek["models"] if m["id"] == "deepseek:deepseek-v4-pro")
     assert pro["supportsNativeSearch"] is True
     # `none` is in the vocabulary because on the Responses API `reasoning.effort`

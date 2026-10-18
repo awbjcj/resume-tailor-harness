@@ -4,12 +4,31 @@ import math
 import os
 import time
 from collections.abc import Iterator
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar, cast
 from urllib.parse import quote, urlsplit
 
 import httpx
+from pydantic import TypeAdapter, ValidationError
+
+from . import applications
 
 JSON = dict[str, Any]
+T = TypeVar("T")
+
+
+class ResponseValidationError(RuntimeError):
+    """The server response does not match the SDK's application contract."""
+
+
+def _validated(response: httpx.Response, adapter: TypeAdapter[T]) -> T:
+    try:
+        payload = response.json()
+        adapter.validate_python(payload, strict=True)
+    except (ValueError, ValidationError):
+        # Do not include personal data or an untrusted response in diagnostics.
+        raise ResponseValidationError("Invalid application API response") from None
+    # Retain additive fields for forward compatibility after checking known ones.
+    return cast(T, payload)
 
 
 class APIError(RuntimeError):
@@ -92,7 +111,7 @@ class ResumeHarness:
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Accept": "application/json",
-                "User-Agent": "resume-harness-sdk/0.1.0",
+                "User-Agent": "resume-harness-sdk/0.2.0",
             },
             follow_redirects=False,
         )
@@ -171,8 +190,162 @@ class ResumeHarness:
     def get_job(self, job_id: int) -> JSON:
         return self._request("GET", f"jobs/{_id(job_id)}").json()
 
+    def list_application_jobs(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> applications.Page[applications.ApplicationJob]:
+        return _validated(
+            self._request(
+                "GET",
+                "application-jobs",
+                params={"page": page, "pageSize": page_size},
+            ),
+            applications.JOBS,
+        )
+
+    def iter_application_jobs(
+        self,
+        *,
+        page_size: int = 50,
+    ) -> Iterator[applications.ApplicationJob]:
+        page = 1
+        while True:
+            result = self.list_application_jobs(page=page, page_size=page_size)
+            yield from result["data"]
+            if not result["data"] or page >= result["pagination"]["totalPages"]:
+                return
+            page += 1
+
+    def application_context(self, job_id: int) -> applications.ApplicationContext:
+        return _validated(
+            self._request(
+                "GET",
+                f"jobs/{_id(job_id)}/application-context",
+            ),
+            applications.CONTEXT,
+        )
+
+    def application_prompt(self, job_id: int) -> str:
+        """Complete readable prompt including the JD, personal facts, and questions."""
+        return self.application_context(job_id)["prompt"]
+
+    def get_application_profile(self) -> applications.ApplicationProfileSnapshot:
+        return _validated(
+            self._request("GET", "application-profile"), applications.PROFILE
+        )
+
+    def update_application_profile(
+        self,
+        changes: applications.ApplicationProfile,
+        *,
+        revision: str,
+        user_confirmed: bool,
+    ) -> applications.ApplicationProfileSnapshot:
+        return _validated(
+            self._request(
+                "PATCH",
+                "application-profile",
+                json={
+                    "profile": changes,
+                    "revision": revision,
+                    "userConfirmed": user_confirmed,
+                },
+            ),
+            applications.PROFILE,
+        )
+
+    def list_application_questions(
+        self,
+        *,
+        job_id: int | None = None,
+        status: Literal["unanswered", "answered"] | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> applications.Page[applications.ApplicationQuestion]:
+        params: JSON = {"page": page, "pageSize": page_size}
+        if job_id is not None:
+            params["jobId"] = _id(job_id)
+        if status is not None:
+            params["status"] = status
+        return _validated(
+            self._request("GET", "application-questions", params=params),
+            applications.QUESTIONS,
+        )
+
+    def iter_application_questions(
+        self,
+        *,
+        job_id: int | None = None,
+        status: Literal["unanswered", "answered"] | None = None,
+        page_size: int = 50,
+    ) -> Iterator[applications.ApplicationQuestion]:
+        page = 1
+        while True:
+            result = self.list_application_questions(
+                job_id=job_id, status=status, page=page, page_size=page_size
+            )
+            yield from result["data"]
+            if not result["data"] or page >= result["pagination"]["totalPages"]:
+                return
+            page += 1
+
+    def record_application_question(
+        self,
+        question: str,
+        *,
+        job_id: int | None = None,
+        scope: Literal["job", "profile"] = "job",
+        context: str = "",
+    ) -> applications.ApplicationQuestion:
+        if job_id is not None:
+            _id(job_id)
+        return _validated(
+            self._request(
+                "POST",
+                "application-questions",
+                json={
+                    "question": question,
+                    "context": context,
+                    "scope": scope,
+                    "jobId": job_id,
+                },
+            ),
+            applications.QUESTION,
+        )
+
+    def answer_application_question(
+        self,
+        question_id: int,
+        answer: str | None,
+        *,
+        revision: int,
+        user_confirmed: bool,
+    ) -> applications.ApplicationQuestion:
+        return _validated(
+            self._request(
+                "PATCH",
+                f"application-questions/{_id(question_id)}",
+                json={
+                    "answer": answer,
+                    "revision": revision,
+                    "userConfirmed": user_confirmed,
+                },
+            ),
+            applications.QUESTION,
+        )
+
     def list_sources(self) -> Any:
         return self._request("GET", "sources").json()
+
+    def get_application_question(
+        self, question_id: int
+    ) -> applications.ApplicationQuestion:
+        return _validated(
+            self._request("GET", f"application-questions/{_id(question_id)}"),
+            applications.QUESTION,
+        )
 
     def pull_jobs(
         self,
@@ -276,3 +449,6 @@ class ResumeHarness:
 
     def download_resume(self, version_id: int) -> bytes:
         return self._request("GET", f"resume-versions/{_id(version_id)}/pdf").content
+
+    def download_cover_letter(self, cover_letter_id: int) -> bytes:
+        return self._request("GET", f"cover-letters/{_id(cover_letter_id)}/pdf").content

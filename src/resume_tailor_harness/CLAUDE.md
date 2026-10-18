@@ -154,12 +154,13 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
     `response.reasoning_text.delta` (measured: 177 deltas on one `effort="max"`
     turn); agno has a branch only for `response.reasoning_summary_text.delta`.
     `_parse_provider_response_delta` is overridden to map it.
-  - **Native `web_search` requires `deepseek-v4-pro`** (`DEEPSEEK_WEB_SEARCH_TOOL`,
-    strategy `native_deepseek`). Flash accepts but ignores the tool. `auto`
-    therefore selects the application search tool for Flash; explicit `native`
-    fails with an actionable error. Pro executes search server-side and uses
-    automatic context caching. It returns **no
-    `url_citation` annotations**, so `provider_capabilities` keeps
+  - **Search uses standalone provider APIs** (`deepseek_search.py`, strategy
+    `native_deepseek`) through `web_search` and `fetch_web` function tools on
+    both Flash and Pro. Each call rechecks SpendGate and records nonempty HTTP
+    200 responses as a `deepseek-search` or `deepseek-fetch` tool unit. Explicit
+    application search tools retain their budgets in `auto` mode. Source URLs
+    are function results rather than native citation annotations. The model uses
+    automatic context caching; `provider_capabilities` keeps
     `supports_native_citations=False`.
 - **DeepSeek's `json_schema` validator is not OpenAI's, and `json_object` was the
   root cause of `UnparsedAgentOutput` on DeepSeek.** On Chat Completions the

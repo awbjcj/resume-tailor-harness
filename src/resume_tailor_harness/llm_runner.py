@@ -1066,14 +1066,6 @@ def catalog_entry(model_id: str) -> ModelCatalogEntry | None:
 
 OPENAI_WEB_SEARCH_TOOL = {"type": "web_search"}
 
-#: DeepSeek executes `web_search` server-side on the Responses API, and its tool
-#: definition is byte-identical to OpenAI's. It is kept as a separate name rather
-#: than aliased because the two are only incidentally equal -- DeepSeek ignores
-#: `search_context_size`/`user_location`, and returns **no** `url_citation`
-#: annotations, which is why `provider_capabilities` still reports
-#: `supports_native_citations=False` for it.
-DEEPSEEK_WEB_SEARCH_TOOL = {"type": "web_search"}
-
 # Claude ids name their family before the version (``claude-opus-4-8``,
 # ``claude-sonnet-5``, ``claude-haiku-4-5-20251001``). Pre-4 ids used the
 # opposite order (``claude-3-5-haiku-20241022``) and deliberately do not match,
@@ -1216,9 +1208,8 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
             folded.startswith(("gemini-3", "gemini-2.5")), True, True
         )
     if provider == "deepseek" and folded.startswith("deepseek-"):
-        # Citations stay False: DeepSeek's native web_search runs server-side but
-        # returns no `url_citation` annotations (verified live on both tool-type
-        # strings), so there is nothing for a citation renderer to read.
+        # Standalone Search returns source URLs as function results rather than
+        # Responses `url_citation` annotations.
         return ProviderCapabilities(
             folded == "deepseek-flash" or folded.startswith("deepseek-v4"), False, True
         )
@@ -1226,10 +1217,12 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
 
 
 def supports_native_search(model_id: str) -> bool:
-    """Whether this model implements native search rather than ignoring it."""
-    provider, model = split_provider(model_id)
-    if provider == "deepseek" and model != "deepseek-v4-pro":
-        return False
+    """Whether the provider has an integrated search API for this model.
+
+    DeepSeek uses its standalone Search API with ordinary function calling,
+    so Flash and Pro share the same search support.
+    """
+    provider, _model = split_provider(model_id)
     return bool(_NATIVE_SEARCH_STRATEGIES.get(provider))
 
 
@@ -2278,7 +2271,8 @@ def build_search_equipped(
 ) -> tuple[Any, list[Any]]:
     """Build a model and its search tools for advisor research."""
     resolved_settings = settings or get_settings()
-    plan = plan_search(model_id, mode or resolved_settings.search_mode)
+    search_mode = mode or resolved_settings.search_mode
+    plan = plan_search(model_id, search_mode)
     if plan.strategy == "none":
         raise ValueError("advisor web search is disabled by search_mode=off")
     route = resolve_route(model_id, settings=resolved_settings)
@@ -2294,11 +2288,17 @@ def build_search_equipped(
             [OPENAI_WEB_SEARCH_TOOL],
         )
     if plan.strategy == "native_deepseek":
+        from resume_tailor_harness.deepseek_search import DeepSeekSearchTools
+
+        search = DeepSeekSearchTools(settings=resolved_settings)
         return (
             _build_deepseek_responses(
                 model_id, api_key=api_key, reasoning=reasoning, base_url=base_url
             ),
-            [DEEPSEEK_WEB_SEARCH_TOOL],
+            # Preserve caller-owned search budgets/backends in auto mode.
+            [tool_search]
+            if tool_search is not None and search_mode != "native"
+            else [search.web_search, search.fetch_web],
         )
     if plan.strategy == "native_gemini":
         # Sub2API implements GenerateContent, not /interactions. Reuse the

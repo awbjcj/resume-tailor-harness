@@ -42,6 +42,38 @@ from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 NOW = datetime(2026, 7, 30, 12, 0, tzinfo=UTC)
 
 
+@pytest.mark.parametrize("operation", ["search", "fetch"])
+@pytest.mark.parametrize(
+    "moment",
+    [datetime(2026, 10, 18, 2, tzinfo=UTC), datetime(2026, 11, 2, 7, tzinfo=UTC)],
+)
+def test_deepseek_standalone_tool_rates_are_per_successful_request(
+    tmp_path, operation, moment
+):
+    engine = _engine(tmp_path)
+    rate = find_rate(engine, "deepseek", f"deepseek-{operation}", now=moment)
+    assert rate is not None
+    original_id = rate.id
+    assert rate.rate_period is None
+    assert rate.tool_micros_per_unit == 750
+    assert rate.input_micros_per_million == rate.output_micros_per_million == 0
+    usage = MeteredUsage(
+        provider="deepseek", model=f"deepseek-{operation}", tool_units=2
+    )
+    priced = calculate_cost(engine, usage, now=moment)
+    assert priced.total_micros == priced.tool_micros == 1_500
+    empty = calculate_cost(
+        engine,
+        MeteredUsage(provider="deepseek", model=f"deepseek-{operation}"),
+        now=moment,
+    )
+    assert empty.total_micros == 0
+    seed_llm_rates(engine)
+    refreshed = find_rate(engine, "deepseek", f"deepseek-{operation}", now=moment)
+    assert refreshed is not None
+    assert refreshed.id == original_id
+
+
 def _engine(tmp_path):
     engine = make_system_engine(tmp_path)
     init_system_db(engine)

@@ -40,6 +40,7 @@ from resume_tailor_harness.api.routers import auth_password as auth_password_rou
 from resume_tailor_harness.api.routers import auth_register as auth_register_router
 from resume_tailor_harness.api.routers import boards, health, resumes
 from resume_tailor_harness.api.routers import external_tailoring
+from resume_tailor_harness.api.routers import agent_applications
 from resume_tailor_harness.api.routers import board_views as board_views_router
 from resume_tailor_harness.api.routers import coach as coach_router
 from resume_tailor_harness.api.routers import career_lab as career_lab_router
@@ -443,6 +444,7 @@ def create_app(
     )
     app.include_router(resumes.router, prefix="/api", dependencies=guarded)
     app.include_router(external_tailoring.router, prefix="/api", dependencies=guarded)
+    app.include_router(agent_applications.router, prefix="/api", dependencies=guarded)
     app.include_router(cover_letters_router.router, prefix="/api", dependencies=guarded)
     app.include_router(prune_router.router, prefix="/api", dependencies=guarded)
     app.include_router(
