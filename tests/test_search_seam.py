@@ -2,7 +2,6 @@ import pytest
 
 import resume_tailor_harness.llm_runner as llm_runner
 from resume_tailor_harness.llm_runner import (
-    DEEPSEEK_WEB_SEARCH_TOOL,
     OPENAI_WEB_SEARCH_TOOL,
     anthropic_web_search_tool,
     build_search_equipped,
@@ -17,8 +16,8 @@ from resume_tailor_harness.llm_runner import (
         ("gemini:gemini-3.6-flash", "native_gemini"),
         ("openai:gpt-4o", "native_openai"),
         ("deepseek:deepseek-v4-pro", "native_deepseek"),
-        ("deepseek:deepseek-flash", "tool"),
-        ("deepseek:deepseek-v4-flash", "tool"),
+        ("deepseek:deepseek-flash", "native_deepseek"),
+        ("deepseek:deepseek-v4-flash", "native_deepseek"),
     ],
 )
 def test_plan_auto_selects_provider_strategy(model_id, strategy):
@@ -79,32 +78,24 @@ def test_openai_server_tool_shape_is_current():
     assert OPENAI_WEB_SEARCH_TOOL == {"type": "web_search"}
 
 
-def test_deepseek_server_tool_shape_is_current():
-    # DeepSeek runs `web_search` server-side on the Responses API and accepts the
-    # same tool definition OpenAI does (verified live on both `web_search` and
-    # `web_search_2025_08_26`). It is a separate constant because the two are
-    # only incidentally equal: DeepSeek ignores search_context_size/user_location
-    # and returns no url_citation annotations.
-    assert DEEPSEEK_WEB_SEARCH_TOOL == {"type": "web_search"}
-
-
-def test_build_search_equipped_deepseek_returns_native_server_tool(monkeypatch):
+@pytest.mark.parametrize(
+    "model_id", ["deepseek:deepseek-flash", "deepseek:deepseek-v4-pro"]
+)
+@pytest.mark.parametrize("mode", ["auto", "native"])
+def test_build_search_equipped_deepseek_returns_provider_function_tools(
+    monkeypatch, model_id, mode
+):
     monkeypatch.setattr(
         "resume_tailor_harness.llm_runner.resolve_api_key", lambda _model_id: ""
     )
 
-    model, tools = build_search_equipped("deepseek:deepseek-v4-pro", "auto")
+    model, tools = build_search_equipped(model_id, mode)
 
-    assert tools == [DEEPSEEK_WEB_SEARCH_TOOL]
+    assert [tool.__name__ for tool in tools] == ["web_search", "fetch_web"]
     # Native search must not smuggle thinking back on: the search agent is built
     # non-reasoning here, and on Responses `effort` is the toggle.
     assert model.reasoning == {"effort": "none"}
     assert model.provider == "DeepSeek"
-
-
-def test_flash_native_search_rejected_instead_of_silently_ignored():
-    with pytest.raises(ValueError, match="no native web search"):
-        build_search_equipped("deepseek:deepseek-flash", "native")
 
 
 def test_flash_auto_search_uses_the_application_callable():

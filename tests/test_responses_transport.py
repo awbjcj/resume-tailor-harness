@@ -8,6 +8,7 @@ import json
 from typing import Any
 
 from agno.models.message import Message
+from agno.tools.function import Function
 import httpx
 from openai import AsyncOpenAI
 import pytest
@@ -55,14 +56,6 @@ async def test_supported_providers_send_responses_with_tools_and_resume_schema(
         model = build_model(model_id, reasoning=reasoning, settings=settings)
         native_tools = []
     else:
-        if (
-            search_mode == "native"
-            and model_id.startswith("deepseek:")
-            and model_id != "deepseek:deepseek-v4-pro"
-        ):
-            with pytest.raises(ValueError, match="no native web search"):
-                build_search_equipped(model_id, mode=search_mode, settings=settings)
-            return
         model, tools = build_search_equipped(
             model_id,
             mode=search_mode,
@@ -70,7 +63,16 @@ async def test_supported_providers_send_responses_with_tools_and_resume_schema(
             settings=settings,
             tool_search=object(),
         )
-        native_tools = tools if search_mode == "native" else []
+        native_tools = (
+            [
+                {"type": "function", "function": Function.from_callable(tool).to_dict()}
+                if callable(tool)
+                else tool
+                for tool in tools
+            ]
+            if search_mode == "native"
+            else []
+        )
 
     requests = []
     output = ResumeContent.model_validate({"contact": {"name": "Test User"}})
@@ -154,7 +156,14 @@ async def test_supported_providers_send_responses_with_tools_and_resume_schema(
     if model_id == "openai:gpt-6.1-sol":
         assert body["reasoning"]["effort"] in ("low", "medium", "high", "xhigh", "max")
     if search_mode == "native":
-        assert {"type": "web_search"} in body["tools"]
+        if provider == "deepseek":
+            assert {tool.get("name") for tool in body["tools"]} >= {
+                "web_search",
+                "fetch_web",
+            }
+            assert all(tool["type"] == "function" for tool in body["tools"])
+        else:
+            assert {"type": "web_search"} in body["tools"]
 
 
 @pytest.mark.parametrize("provider", ["anthropic", "gemini"])
