@@ -35,6 +35,17 @@ retrieved from a secret manager and an optional HTTPX transport for offline test
 | `get_resume(version_id)` | Native structured resume JSON |
 | `render_resume(version_id)` | Renders PDF and returns version metadata |
 | `download_resume(version_id)` | PDF bytes; caller chooses file destination |
+| `list_application_jobs(page=1, page_size=50)` / `iter_application_jobs(page_size=50)` | Approved/tailored/rendered, unarchived jobs without submission history |
+| `application_context(job_id)` | Full job, readable prompt, personal `profile`, `profileRevision`, questions, attachments and `submissionPolicy` |
+| `application_prompt(job_id)` | Full Markdown prompt including job description and personal information |
+| `get_application_profile()` | `profile` and current `revision` |
+| `update_application_profile(changes, revision=..., user_confirmed=True)` | Partial update of confirmed personal fields; camelCase keys, empty string clears |
+| `list_application_questions(job_id=None, status=None, page=1, page_size=50)` | Paginated questions; job filter also includes reusable profile questions |
+| `iter_application_questions(job_id=None, status=None, page_size=50)` | Iterates matching questions across pages |
+| `record_application_question(question, job_id=None, scope="job", context="")` | Idempotently records an unanswered question; job scope requires job ID |
+| `answer_application_question(id, answer, revision=..., user_confirmed=True)` | Saves confirmed answer; `None` clears it |
+| `get_application_question(id)` | Question and its current revision for conflict reconciliation |
+| `download_cover_letter(id)` | PDF bytes through the authenticated fixed API route |
 
 Filters use API names (`q`, `minFit`, `sortBy`, `status`, `source`), with CSV values
 for multiselects. Use positive job/version IDs. A run's ID is `runId`; a job
@@ -47,3 +58,11 @@ and `verdict.critiques`. API errors have status/code/details; failed runs expose
 Save with `Path(...).open("xb")` when preserving an existing output matters.
 Do not use server-returned filesystem paths as local paths or follow arbitrary
 download URLs with the bearer token. `download_resume` uses a fixed API route.
+
+Application response types live in `resume_harness_sdk.applications`. These
+responses are validated at the HTTP boundary and keep additive fields. Invalid
+responses raise `ResponseValidationError` without echoing personal data.
+`PROFILE_STALE` / `QUESTION_STALE` are 409 conflicts: read and reconcile before
+retrying. Questions are private workspace data and do not become resume evidence.
+Only set `user_confirmed=True` after the user supplies or confirms the answer.
+`APPLICATION_NOT_READY` means the context is no longer eligible; refresh the queue.

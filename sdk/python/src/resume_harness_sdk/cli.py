@@ -10,7 +10,15 @@ from pathlib import Path
 
 import httpx
 
-from .client import APIError, ResumeHarness, RunFailed, RunTimeout
+from . import applications
+from .client import (
+    APIError,
+    ResponseValidationError,
+    ResumeHarness,
+    RunFailed,
+    RunTimeout,
+    _validated,
+)
 
 
 def main() -> int:
@@ -19,6 +27,28 @@ def main() -> int:
     commands.add_parser("me")
     commands.add_parser("sources")
     commands.add_parser("runs")
+    commands.add_parser("application-profile")
+    application_question = commands.add_parser("application-question")
+    application_question.add_argument("question_id", type=int)
+    application_jobs = commands.add_parser("application-jobs")
+    application_jobs.add_argument("--page", type=int, default=1)
+    application_jobs.add_argument("--page-size", type=int, default=50)
+    questions = commands.add_parser("application-questions")
+    questions.add_argument("--job-id", type=int)
+    questions.add_argument("--status", choices=["answered", "unanswered"])
+    questions.add_argument("--page", type=int, default=1)
+    questions.add_argument("--page-size", type=int, default=50)
+    for name in (
+        "update-application-profile",
+        "record-application-question",
+        "answer-application-question",
+    ):
+        sub = commands.add_parser(name)
+        sub.add_argument(
+            "--input", type=Path, required=True, help="UTF-8 JSON request body"
+        )
+        if name == "answer-application-question":
+            sub.add_argument("question_id", type=int)
     jobs = commands.add_parser("jobs")
     jobs.add_argument(
         "--board", choices=["triage", "shortlist", "pipeline"], default="triage"
@@ -29,7 +59,13 @@ def main() -> int:
     pull.add_argument("--source-id", action="append")
     pull.add_argument("--limit", type=int)
     commands.add_parser("discover")
-    for name in ("job", "context", "tailor"):
+    for name in (
+        "job",
+        "context",
+        "tailor",
+        "application-context",
+        "application-prompt",
+    ):
         sub = commands.add_parser(name)
         sub.add_argument("job_id", type=int)
     for name in ("validate", "submit"):
@@ -44,10 +80,10 @@ def main() -> int:
         sub.add_argument("run_id")
         if name == "wait":
             sub.add_argument("--timeout", type=float, default=600)
-    for name in ("render", "download"):
+    for name in ("render", "download", "download-cover-letter"):
         sub = commands.add_parser(name)
         sub.add_argument("version_id", type=int)
-        if name == "download":
+        if name in {"download", "download-cover-letter"}:
             sub.add_argument("--output", type=Path, required=True)
     install = commands.add_parser("install-skills")
     install.add_argument(
@@ -75,6 +111,57 @@ def main() -> int:
                     result = client.list_sources()
                 elif command == "runs":
                     result = client.list_runs()
+                elif command == "application-jobs":
+                    result = client.list_application_jobs(
+                        page=args.page, page_size=args.page_size
+                    )
+                elif command == "application-context":
+                    result = client.application_context(args.job_id)
+                elif command == "application-prompt":
+                    print(client.application_prompt(args.job_id), end="")
+                    return 0
+                elif command == "application-profile":
+                    result = client.get_application_profile()
+                elif command == "application-question":
+                    result = client.get_application_question(args.question_id)
+                elif command == "application-questions":
+                    result = client.list_application_questions(
+                        job_id=args.job_id,
+                        status=args.status,
+                        page=args.page,
+                        page_size=args.page_size,
+                    )
+                elif command in {
+                    "update-application-profile",
+                    "record-application-question",
+                    "answer-application-question",
+                }:
+                    body = json.loads(args.input.read_text(encoding="utf-8-sig"))
+                    if not isinstance(body, dict):
+                        raise ValueError("Input must be a JSON object")
+                    # Pass the full body through the public validation boundary;
+                    # unknown fields must not be silently dropped by the CLI.
+                    if command == "update-application-profile":
+                        result = _validated(
+                            client._request("PATCH", "application-profile", json=body),
+                            applications.PROFILE,
+                        )
+                    elif command == "record-application-question":
+                        result = _validated(
+                            client._request("POST", "application-questions", json=body),
+                            applications.QUESTION,
+                        )
+                    else:
+                        if args.question_id < 1:
+                            raise ValueError("ID must be a positive integer")
+                        result = _validated(
+                            client._request(
+                                "PATCH",
+                                f"application-questions/{args.question_id}",
+                                json=body,
+                            ),
+                            applications.QUESTION,
+                        )
                 elif command == "jobs":
                     result = client.list_jobs(
                         board=args.board, page=args.page, q=args.query or ""
@@ -113,13 +200,25 @@ def main() -> int:
                 elif command == "render":
                     result = client.render_resume(args.version_id)
                 else:
-                    data = client.download_resume(args.version_id)
+                    data = (
+                        client.download_cover_letter(args.version_id)
+                        if command == "download-cover-letter"
+                        else client.download_resume(args.version_id)
+                    )
                     with args.output.open("xb") as output:
                         output.write(data)
                     result = {"path": str(args.output), "bytes": len(data)}
         print(json.dumps(result, ensure_ascii=False))
         return 0
-    except (APIError, RunFailed, RunTimeout, ValueError, OSError, KeyError) as exc:
+    except (
+        APIError,
+        ResponseValidationError,
+        RunFailed,
+        RunTimeout,
+        ValueError,
+        OSError,
+        KeyError,
+    ) as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         return 1
     except httpx.HTTPError:
