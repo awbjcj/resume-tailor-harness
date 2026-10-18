@@ -1,3 +1,4 @@
+import pytest
 from pypdf import PdfReader
 
 from resume_tailor_harness.models.profile import Contact, Education
@@ -60,6 +61,49 @@ def test_render_pdf_writes_a_pdf(tmp_path):
     assert result == out
     assert out.exists()
     assert out.read_bytes().startswith(b"%PDF")
+
+
+@pytest.mark.parametrize("highlight_terms", [None, [], ["Python", "Python 3", "C++"]])
+def test_skills_use_bold_labels_and_regular_names(tmp_path, highlight_terms):
+    content = _full_content()
+    content.skills = {
+        "Languages": [
+            TailoredSkill(name="Python 3", provenance="s1"),
+            TailoredSkill(name="C++", provenance="s2"),
+        ],
+        "Tools": [TailoredSkill(name="Docker", provenance="s3")],
+    }
+    content.experience[0].bullets[0].text = "Built Python services; cut latency 40%."
+    out = tmp_path / "skills.pdf"
+    render_pdf(
+        content,
+        out,
+        fit_pages=None,
+        highlight_terms=highlight_terms,
+    )
+
+    spans = []
+
+    def collect(text, cm, tm, font, size):
+        if text.strip():
+            spans.append((text, str(font.get("/BaseFont", "")) if font else ""))
+
+    page = PdfReader(str(out)).pages[0]
+    text = page.extract_text(visitor_text=collect)
+    assert "Languages: Python 3, C++" in text
+    assert "Tools: Docker" in text
+
+    skills_start = next(i for i, (text, _) in enumerate(spans) if text == "SKILLS")
+    skills_spans = spans[skills_start + 1 :]
+    for label in ("Languages:", "Tools:"):
+        assert any(label in text and "Bold" in font for text, font in skills_spans)
+    for name in ("Python 3", "C++", "Docker"):
+        matching = [(text, font) for text, font in skills_spans if name in text]
+        assert matching, f"Missing skill: {name}"
+        assert all("Regular" in font for _, font in matching)
+
+    # Skills styling must not disable the existing emphasis in experience bullets.
+    assert any("40%" in text and "Bold" in font for text, font in spans[:skills_start])
 
 
 def test_project_description_keeps_full_width_with_long_tech_stack(tmp_path):

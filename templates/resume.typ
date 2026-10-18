@@ -213,7 +213,8 @@
     [
       #section-title("Skills")
       #for (category, items) in skills [
-        *#category:* #items.map(s => highlight(s.name, highlight-keywords)).join(", ") \
+        // Keep emphasis on the category; skill names read as ordinary body text.
+        *#category:* #items.map(s => s.name).join(", ") \
       ]
     ]
   }
