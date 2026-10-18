@@ -82,6 +82,19 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   a substitute for the factual review. New SDK code is included in root pytest
   import paths and lint targets; it must remain installable without the server.
 
+- **External application preparation uses `agent_applications.py`.** The queue
+  includes approved/tailored/rendered jobs and excludes archives and submission
+  history, including a submitted timeline event after a manual status reset.
+  Context reads recheck eligibility and expose complete prompts with fact-checked,
+  tenant-confined attachment routes. Profile PATCH merges only supplied fields
+  under the config store lock and requires the current revision. Questions are
+  workspace DB records with immutable scope/wording, repeat-safe creation, and
+  SQL compare-and-swap answer updates. Caller confirmation is required for saved
+  answers; it is an assertion, not independently verified human approval. These
+  writes never change resume evidence. Browser use runs in the external harness;
+  reading context never submits or creates an Application. See
+  `docs/agent-applications.md` and the bundled `resume-harness-apply` skill.
+
 ---
 
 ## Auth, runs, and job-scoped surfaces

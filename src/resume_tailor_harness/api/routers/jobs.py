@@ -30,6 +30,7 @@ from resume_tailor_harness.api.schemas.config import (
 )
 from resume_tailor_harness.api.schemas.application_prompt import ApplicationPromptOut
 from resume_tailor_harness.services.application_prompt import build_application_prompt
+from resume_tailor_harness.services.agent_applications import applicable_questions, question_prompt
 from resume_tailor_harness.api.schemas.jobs import (
     ApplicationOut,
     ApplicationUpsert,
@@ -97,6 +98,7 @@ def application_prompt(
         prompt=build_application_prompt(
             job, answers, get_profile_dir(request) / "facts.json", search=search
         )
+        + question_prompt(applicable_questions(session, job_id))
     )
 
 

@@ -677,6 +677,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/application-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Application Jobs */
+        get: operations["list_application_jobs_api_application_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/application-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile */
+        get: operations["get_profile_api_application_profile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Profile */
+        patch: operations["update_profile_api_application_profile_patch"];
+        trace?: never;
+    };
+    "/api/application-questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Questions */
+        get: operations["list_questions_api_application_questions_get"];
+        put?: never;
+        /** Create Question */
+        post: operations["create_question_api_application_questions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/application-questions/{question_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Question */
+        get: operations["get_question_api_application_questions__question_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Question */
+        patch: operations["update_question_api_application_questions__question_id__patch"];
+        trace?: never;
+    };
     "/api/applications": {
         parameters: {
             query?: never;
@@ -1970,6 +2041,23 @@ export interface paths {
         get?: never;
         /** Upsert Application */
         put: operations["upsert_application_api_jobs__job_id__application_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/jobs/{job_id}/application-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Application Context */
+        get: operations["application_context_api_jobs__job_id__application_context_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -4335,6 +4423,39 @@ export interface components {
             /** Url */
             url: string;
         };
+        /** ApplicationAttachmentOut */
+        ApplicationAttachmentOut: {
+            /** Downloadpath */
+            downloadPath: string | null;
+            /** Id */
+            id: number;
+            /** Isselected */
+            isSelected: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "resume" | "cover_letter";
+        };
+        /** ApplicationContextOut */
+        ApplicationContextOut: {
+            /** Attachments */
+            attachments: components["schemas"]["ApplicationAttachmentOut"][];
+            job: components["schemas"]["ApplicationJobContext"];
+            profile: components["schemas"]["ApplicationProfileDoc"];
+            /** Profilerevision */
+            profileRevision: string;
+            /** Prompt */
+            prompt: string;
+            /** Questions */
+            questions: components["schemas"]["ApplicationQuestionOut"][];
+            /**
+             * Submissionpolicy
+             * @default stop_before_submit
+             * @constant
+             */
+            submissionPolicy: "stop_before_submit";
+        };
         /** ApplicationEventCreate */
         ApplicationEventCreate: {
             /**
@@ -4489,6 +4610,38 @@ export interface components {
             sequence?: number | null;
             /** Timezone */
             timezone?: string | null;
+        };
+        /** ApplicationJobContext */
+        ApplicationJobContext: {
+            /** Company */
+            company: string | null;
+            /** Jdtext */
+            jdText: string;
+            /** Jobid */
+            jobId: number;
+            /** Location */
+            location: string | null;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string | null;
+        };
+        /** ApplicationJobOut */
+        ApplicationJobOut: {
+            /** Company */
+            company: string | null;
+            /** Jobid */
+            jobId: number;
+            /** Location */
+            location: string | null;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string | null;
+            /** Url */
+            url: string | null;
         };
         /** ApplicationOut */
         ApplicationOut: {
@@ -4683,10 +4836,252 @@ export interface components {
              */
             workAuthorizationVerification: string;
         };
+        /** ApplicationProfileOut */
+        ApplicationProfileOut: {
+            profile: components["schemas"]["ApplicationProfileDoc"];
+            /** Revision */
+            revision: string;
+        };
+        /**
+         * ApplicationProfilePatch
+         * @description Use only explicitly supplied fields; empty strings clear an answer.
+         */
+        ApplicationProfilePatch: {
+            /**
+             * Additionalanswers
+             * @default
+             */
+            additionalAnswers: string;
+            /**
+             * Address
+             * @default
+             */
+            address: string;
+            /**
+             * Atleast18
+             * @default
+             */
+            atLeast18: string;
+            /**
+             * Availability
+             * @default
+             */
+            availability: string;
+            /**
+             * Currentboardmembership
+             * @default
+             */
+            currentBoardMembership: string;
+            /**
+             * Disabilitystatus
+             * @default
+             */
+            disabilityStatus: string;
+            /**
+             * Educationnotes
+             * @default
+             */
+            educationNotes: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Employerrelationships
+             * @default
+             */
+            employerRelationships: string;
+            /**
+             * Ethnicity
+             * @default
+             */
+            ethnicity: string;
+            /**
+             * Expectedsalary
+             * @default
+             */
+            expectedSalary: string;
+            /**
+             * Experiencenotes
+             * @default
+             */
+            experienceNotes: string;
+            /**
+             * Exportcontrolcitizenship
+             * @default
+             */
+            exportControlCitizenship: string;
+            /**
+             * Fullname
+             * @default
+             */
+            fullName: string;
+            /**
+             * Gender
+             * @default
+             */
+            gender: string;
+            /**
+             * Governmentemployment
+             * @default
+             */
+            governmentEmployment: string;
+            /**
+             * Linkedinurl
+             * @default
+             */
+            linkedinUrl: string;
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
+            /**
+             * Plannedboardmembership
+             * @default
+             */
+            plannedBoardMembership: string;
+            /**
+             * Portfoliourl
+             * @default
+             */
+            portfolioUrl: string;
+            /**
+             * Preferredname
+             * @default
+             */
+            preferredName: string;
+            /**
+             * Previousapplications
+             * @default
+             */
+            previousApplications: string;
+            /**
+             * Previousemployment
+             * @default
+             */
+            previousEmployment: string;
+            /**
+             * Pronouns
+             * @default
+             */
+            pronouns: string;
+            /**
+             * Referralsources
+             * @default
+             */
+            referralSources: string;
+            /**
+             * Relocation
+             * @default
+             */
+            relocation: string;
+            /**
+             * Remotepreference
+             * @default
+             */
+            remotePreference: string;
+            /**
+             * Sponsorshipneeded
+             * @default
+             */
+            sponsorshipNeeded: string;
+            /**
+             * Terminationhistory
+             * @default
+             */
+            terminationHistory: string;
+            /**
+             * Usworkercategory
+             * @default
+             */
+            usWorkerCategory: string;
+            /**
+             * Veteranstatus
+             * @default
+             */
+            veteranStatus: string;
+            /**
+             * Workauthorization
+             * @default
+             */
+            workAuthorization: string;
+            /**
+             * Workauthorizationverification
+             * @default
+             */
+            workAuthorizationVerification: string;
+        };
+        /** ApplicationProfileUpdate */
+        ApplicationProfileUpdate: {
+            profile: components["schemas"]["ApplicationProfilePatch"];
+            /** Revision */
+            revision: string;
+            /** Userconfirmed */
+            userConfirmed: boolean;
+        };
         /** ApplicationPromptOut */
         ApplicationPromptOut: {
             /** Prompt */
             prompt: string;
+        };
+        /** ApplicationQuestionCreate */
+        ApplicationQuestionCreate: {
+            /**
+             * Context
+             * @default
+             */
+            context: string;
+            /** Jobid */
+            jobId?: number | null;
+            /** Question */
+            question: string;
+            /**
+             * Scope
+             * @default job
+             * @enum {string}
+             */
+            scope: "job" | "profile";
+        };
+        /** ApplicationQuestionOut */
+        ApplicationQuestionOut: {
+            /** Answer */
+            answer: string | null;
+            /** Context */
+            context: string;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Id */
+            id: number;
+            /** Jobid */
+            jobId: number | null;
+            /** Question */
+            question: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "job" | "profile";
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+        };
+        /** ApplicationQuestionUpdate */
+        ApplicationQuestionUpdate: {
+            /** Answer */
+            answer: string | null;
+            /** Revision */
+            revision: number;
+            /** Userconfirmed */
+            userConfirmed: boolean;
         };
         /** ApplicationUpsert */
         ApplicationUpsert: {
@@ -6253,6 +6648,15 @@ export interface components {
              */
             statistics: boolean;
         };
+        /** ErrorBody */
+        ErrorBody: {
+            /** Code */
+            code: string;
+            /** Details */
+            details?: unknown | null;
+            /** Message */
+            message: string;
+        };
         /** ErrorRecordOut */
         ErrorRecordOut: {
             /**
@@ -6297,6 +6701,10 @@ export interface components {
             pagination?: components["schemas"]["Pagination"] | null;
             /** Records */
             records?: components["schemas"]["ErrorRecordOut"][];
+        };
+        /** ErrorResponse */
+        ErrorResponse: {
+            error: components["schemas"]["ErrorBody"];
         };
         /** Evidence */
         Evidence: {
@@ -7754,6 +8162,18 @@ export interface components {
         OverrideRevisionOut: {
             /** Revision */
             revision: number;
+        };
+        /** Page[ApplicationJobOut] */
+        Page_ApplicationJobOut_: {
+            /** Data */
+            data: components["schemas"]["ApplicationJobOut"][];
+            pagination: components["schemas"]["Pagination"];
+        };
+        /** Page[ApplicationQuestionOut] */
+        Page_ApplicationQuestionOut_: {
+            /** Data */
+            data: components["schemas"]["ApplicationQuestionOut"][];
+            pagination: components["schemas"]["Pagination"];
         };
         /** Page[RunOut] */
         Page_RunOut_: {
@@ -12260,6 +12680,436 @@ export interface operations {
             };
         };
     };
+    list_application_jobs_api_application_jobs_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ApplicationJobOut_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_profile_api_application_profile_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationProfileOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_profile_api_application_profile_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationProfileOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_questions_api_application_questions_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                jobId?: number | null;
+                status?: ("unanswered" | "answered") | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ApplicationQuestionOut_"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_question_api_application_questions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationQuestionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationQuestionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_question_api_application_questions__question_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationQuestionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_question_api_application_questions__question_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationQuestionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationQuestionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     get_applications_api_applications_get: {
         parameters: {
             query?: never;
@@ -15440,6 +16290,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    application_context_api_jobs__job_id__application_context_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationContextOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

@@ -181,6 +181,23 @@ class ApplicationEvent(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=utcnow)
 
 
+class ApplicationQuestion(SQLModel, table=True):
+    """User-confirmed form answers; never resume evidence or employer instructions."""
+
+    __tablename__ = cast(Any, "application_questions")
+
+    id: int | None = Field(default=None, primary_key=True)
+    identity: str = Field(unique=True, index=True)
+    question: str
+    context: str = ""
+    scope: str = "job"
+    job_id: int | None = Field(default=None, foreign_key="jobs.id", index=True)
+    answer: str | None = None
+    revision: int = 1
+    created_at: datetime = Field(default_factory=utcnow)
+    updated_at: datetime = Field(default_factory=utcnow)
+
+
 class CoverLetter(SQLModel, table=True):
     __tablename__ = cast(Any, "cover_letters")
 

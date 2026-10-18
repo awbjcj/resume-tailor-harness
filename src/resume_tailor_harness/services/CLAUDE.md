@@ -68,3 +68,9 @@ null`; the domain model rejects that outright, so turning the budget off
   and friends/relatives answers must name the employer; citizenship country lists
   and government-employment lookback periods must match the live question.
   Saved answers never authorize terms, attestations, or final submission.
+  External harnesses use `agent_applications.py` for the full JD/context and
+  scoped question ledger. The concise copy prompt also includes matching saved
+  questions. `YamlConfigStore.update` serializes read/modify/write with a file
+  lock shared by ordinary PUT; profile revision checks happen inside that lock.
+  Application questions live in the workspace database, separate from the
+  settings bundle. They do not become resume evidence.

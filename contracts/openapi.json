@@ -599,6 +599,93 @@
         "title": "AnalyzeIn",
         "type": "object"
       },
+      "ApplicationAttachmentOut": {
+        "properties": {
+          "downloadPath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downloadpath"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "isSelected": {
+            "title": "Isselected",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "resume",
+              "cover_letter"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "isSelected",
+          "downloadPath"
+        ],
+        "title": "ApplicationAttachmentOut",
+        "type": "object"
+      },
+      "ApplicationContextOut": {
+        "properties": {
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationAttachmentOut"
+            },
+            "title": "Attachments",
+            "type": "array"
+          },
+          "job": {
+            "$ref": "#/components/schemas/ApplicationJobContext"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ApplicationProfileDoc"
+          },
+          "profileRevision": {
+            "title": "Profilerevision",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationQuestionOut"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "submissionPolicy": {
+            "const": "stop_before_submit",
+            "default": "stop_before_submit",
+            "title": "Submissionpolicy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job",
+          "prompt",
+          "profile",
+          "profileRevision",
+          "questions",
+          "attachments"
+        ],
+        "title": "ApplicationContextOut",
+        "type": "object"
+      },
       "ApplicationEventCreate": {
         "properties": {
           "allDay": {
@@ -1295,6 +1382,143 @@
         "title": "ApplicationEventUpdate",
         "type": "object"
       },
+      "ApplicationJobContext": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "jdText": {
+            "title": "Jdtext",
+            "type": "string"
+          },
+          "jobId": {
+            "title": "Jobid",
+            "type": "integer"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "jobId",
+          "title",
+          "company",
+          "location",
+          "url",
+          "status",
+          "jdText"
+        ],
+        "title": "ApplicationJobContext",
+        "type": "object"
+      },
+      "ApplicationJobOut": {
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "jobId": {
+            "title": "Jobid",
+            "type": "integer"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "jobId",
+          "title",
+          "company",
+          "location",
+          "url",
+          "status"
+        ],
+        "title": "ApplicationJobOut",
+        "type": "object"
+      },
       "ApplicationOut": {
         "properties": {
           "coverLetterId": {
@@ -1576,6 +1800,253 @@
         "title": "ApplicationProfileDoc",
         "type": "object"
       },
+      "ApplicationProfileOut": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/ApplicationProfileDoc"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile",
+          "revision"
+        ],
+        "title": "ApplicationProfileOut",
+        "type": "object"
+      },
+      "ApplicationProfilePatch": {
+        "additionalProperties": false,
+        "description": "Use only explicitly supplied fields; empty strings clear an answer.",
+        "properties": {
+          "additionalAnswers": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Additionalanswers",
+            "type": "string"
+          },
+          "address": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Address",
+            "type": "string"
+          },
+          "atLeast18": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Atleast18",
+            "type": "string"
+          },
+          "availability": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Availability",
+            "type": "string"
+          },
+          "currentBoardMembership": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Currentboardmembership",
+            "type": "string"
+          },
+          "disabilityStatus": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Disabilitystatus",
+            "type": "string"
+          },
+          "educationNotes": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Educationnotes",
+            "type": "string"
+          },
+          "email": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Email",
+            "type": "string"
+          },
+          "employerRelationships": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Employerrelationships",
+            "type": "string"
+          },
+          "ethnicity": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Ethnicity",
+            "type": "string"
+          },
+          "expectedSalary": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Expectedsalary",
+            "type": "string"
+          },
+          "experienceNotes": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Experiencenotes",
+            "type": "string"
+          },
+          "exportControlCitizenship": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Exportcontrolcitizenship",
+            "type": "string"
+          },
+          "fullName": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Fullname",
+            "type": "string"
+          },
+          "gender": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Gender",
+            "type": "string"
+          },
+          "governmentEmployment": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Governmentemployment",
+            "type": "string"
+          },
+          "linkedinUrl": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Linkedinurl",
+            "type": "string"
+          },
+          "phone": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Phone",
+            "type": "string"
+          },
+          "plannedBoardMembership": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Plannedboardmembership",
+            "type": "string"
+          },
+          "portfolioUrl": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Portfoliourl",
+            "type": "string"
+          },
+          "preferredName": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Preferredname",
+            "type": "string"
+          },
+          "previousApplications": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Previousapplications",
+            "type": "string"
+          },
+          "previousEmployment": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Previousemployment",
+            "type": "string"
+          },
+          "pronouns": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Pronouns",
+            "type": "string"
+          },
+          "referralSources": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Referralsources",
+            "type": "string"
+          },
+          "relocation": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Relocation",
+            "type": "string"
+          },
+          "remotePreference": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Remotepreference",
+            "type": "string"
+          },
+          "sponsorshipNeeded": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Sponsorshipneeded",
+            "type": "string"
+          },
+          "terminationHistory": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Terminationhistory",
+            "type": "string"
+          },
+          "usWorkerCategory": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Usworkercategory",
+            "type": "string"
+          },
+          "veteranStatus": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Veteranstatus",
+            "type": "string"
+          },
+          "workAuthorization": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Workauthorization",
+            "type": "string"
+          },
+          "workAuthorizationVerification": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Workauthorizationverification",
+            "type": "string"
+          }
+        },
+        "title": "ApplicationProfilePatch",
+        "type": "object"
+      },
+      "ApplicationProfileUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/ApplicationProfilePatch"
+          },
+          "revision": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Revision",
+            "type": "string"
+          },
+          "userConfirmed": {
+            "title": "Userconfirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "userConfirmed",
+          "revision",
+          "profile"
+        ],
+        "title": "ApplicationProfileUpdate",
+        "type": "object"
+      },
       "ApplicationPromptOut": {
         "properties": {
           "prompt": {
@@ -1587,6 +2058,156 @@
           "prompt"
         ],
         "title": "ApplicationPromptOut",
+        "type": "object"
+      },
+      "ApplicationQuestionCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Context",
+            "type": "string"
+          },
+          "jobId": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jobid"
+          },
+          "question": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "scope": {
+            "default": "job",
+            "enum": [
+              "job",
+              "profile"
+            ],
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "ApplicationQuestionCreate",
+        "type": "object"
+      },
+      "ApplicationQuestionOut": {
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "context": {
+            "title": "Context",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "jobId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jobid"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "scope": {
+            "enum": [
+              "job",
+              "profile"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "context",
+          "scope",
+          "jobId",
+          "answer",
+          "revision",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ApplicationQuestionOut",
+        "type": "object"
+      },
+      "ApplicationQuestionUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "userConfirmed": {
+            "title": "Userconfirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "userConfirmed",
+          "revision",
+          "answer"
+        ],
+        "title": "ApplicationQuestionUpdate",
         "type": "object"
       },
       "ApplicationUpsert": {
@@ -5695,6 +6316,33 @@
         "title": "EmailNotificationUpdate",
         "type": "object"
       },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
       "ErrorRecordOut": {
         "properties": {
           "count": {
@@ -5793,6 +6441,18 @@
           }
         },
         "title": "ErrorRecordsOut",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
         "type": "object"
       },
       "Evidence": {
@@ -9869,6 +10529,46 @@
           "revision"
         ],
         "title": "OverrideRevisionOut",
+        "type": "object"
+      },
+      "Page_ApplicationJobOut_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationJobOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "title": "Page[ApplicationJobOut]",
+        "type": "object"
+      },
+      "Page_ApplicationQuestionOut_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationQuestionOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
+        ],
+        "title": "Page[ApplicationQuestionOut]",
         "type": "object"
       },
       "Page_RunOut_": {
@@ -20778,6 +21478,684 @@
         "summary": "Get Timeline Analytics"
       }
     },
+    "/api/application-jobs": {
+      "get": {
+        "operationId": "list_application_jobs_api_application_jobs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ApplicationJobOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "List Application Jobs",
+        "tags": [
+          "Agent applications"
+        ]
+      }
+    },
+    "/api/application-profile": {
+      "get": {
+        "operationId": "get_profile_api_application_profile_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Get Profile",
+        "tags": [
+          "Agent applications"
+        ]
+      },
+      "patch": {
+        "operationId": "update_profile_api_application_profile_patch",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationProfileOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Update Profile",
+        "tags": [
+          "Agent applications"
+        ]
+      }
+    },
+    "/api/application-questions": {
+      "get": {
+        "operationId": "list_questions_api_application_questions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "jobId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Jobid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "unanswered",
+                    "answered"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ApplicationQuestionOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "List Questions",
+        "tags": [
+          "Agent applications"
+        ]
+      },
+      "post": {
+        "operationId": "create_question_api_application_questions_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationQuestionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationQuestionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Create Question",
+        "tags": [
+          "Agent applications"
+        ]
+      }
+    },
+    "/api/application-questions/{question_id}": {
+      "get": {
+        "operationId": "get_question_api_application_questions__question_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationQuestionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Get Question",
+        "tags": [
+          "Agent applications"
+        ]
+      },
+      "patch": {
+        "operationId": "update_question_api_application_questions__question_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "question_id",
+            "required": true,
+            "schema": {
+              "title": "Question Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationQuestionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationQuestionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Update Question",
+        "tags": [
+          "Agent applications"
+        ]
+      }
+    },
     "/api/applications": {
       "get": {
         "operationId": "get_applications_api_applications_get",
@@ -25846,6 +27224,94 @@
           }
         },
         "summary": "Upsert Application"
+      }
+    },
+    "/api/jobs/{job_id}/application-context": {
+      "get": {
+        "operationId": "application_context_api_jobs__job_id__application_context_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationContextOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        },
+        "summary": "Application Context",
+        "tags": [
+          "Agent applications"
+        ]
       }
     },
     "/api/jobs/{job_id}/application-prompt": {

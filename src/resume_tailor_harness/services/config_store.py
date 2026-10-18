@@ -8,10 +8,12 @@ only on get/put, so the HTTP contract never learns about storage.
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from pathlib import Path
 from typing import Protocol
 
 import yaml
+from filelock import FileLock
 
 from resume_tailor_harness.api.schemas.base import CamelModel
 from resume_tailor_harness.api.schemas.config import DOMAIN_SCHEMAS, StyleGuideDoc
@@ -20,6 +22,12 @@ from resume_tailor_harness.api.schemas.config import DOMAIN_SCHEMAS, StyleGuideD
 class ConfigStore(Protocol):
     def get(self, domain: str) -> CamelModel: ...
     def put(self, domain: str, model: CamelModel) -> CamelModel: ...
+
+
+class MutableConfigStore(ConfigStore, Protocol):
+    def update(
+        self, domain: str, transform: Callable[[CamelModel], CamelModel]
+    ) -> CamelModel: ...
 
 
 # domain -> filename; style_guide is plain markdown, everything else YAML.
@@ -75,6 +83,23 @@ class YamlConfigStore:
         return schema.model_validate(data)
 
     def put(self, domain: str, model: CamelModel) -> CamelModel:
+        # A full replacement must still be able to repair an invalid typed doc.
+        with self._lock(domain):
+            return self._put(domain, model)
+
+    def _lock(self, domain: str) -> FileLock:
+        path = self._path(domain).resolve()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return FileLock(path.with_suffix(path.suffix + ".lock"))
+
+    def update(
+        self, domain: str, transform: Callable[[CamelModel], CamelModel]
+    ) -> CamelModel:
+        """Serialize read/modify/write across requests and server processes."""
+        with self._lock(domain):
+            return self._put(domain, transform(self.get(domain)))
+
+    def _put(self, domain: str, model: CamelModel) -> CamelModel:
         schema = DOMAIN_SCHEMAS[domain]
         doc = schema.model_validate(model.model_dump())
         path = self._path(domain)
