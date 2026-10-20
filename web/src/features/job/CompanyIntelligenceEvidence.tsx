@@ -74,7 +74,7 @@ function InsightCard({ insight, sources }: { insight: Insight; sources: readonly
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-[border-color,color,transform] duration-150 ease-out-strong hover:border-primary/40 hover:text-primary active:scale-[0.98] motion-reduce:transform-none"
+            className="inline-flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground transition-[border-color,color,scale] duration-150 ease-out-strong hover:border-primary/40 hover:text-primary motion-safe:active:scale-[0.98]"
           >
             {citationLabel(url, sources)}
             <ExternalLink className="size-3" aria-hidden="true" />
@@ -112,7 +112,7 @@ function SourceList({ sources }: { sources: readonly Source[] }) {
               href={source.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 self-start rounded-lg px-2 text-sm font-semibold text-primary underline-offset-4 transition-[background-color,transform] duration-150 ease-out-strong hover:bg-primary/5 hover:underline active:scale-[0.98] motion-reduce:transform-none sm:self-auto"
+              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 self-start rounded-lg px-2 text-sm font-semibold text-primary underline-offset-4 transition-[background-color,scale] duration-150 ease-out-strong hover:bg-primary/5 hover:underline motion-safe:active:scale-[0.98] sm:self-auto"
             >
               Open source <ExternalLink className="size-3.5" aria-hidden="true" />
             </a>

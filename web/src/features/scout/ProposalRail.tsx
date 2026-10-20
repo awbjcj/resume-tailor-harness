@@ -28,7 +28,7 @@ function Section({ title, icon, rows, defaultOpen, children }: { title: string; 
           <Badge variant="secondary" className="px-1.5 py-0 text-[10px] leading-4 tabular-nums">{rows}</Badge>
         </CollapsibleTrigger>
       </h3>
-      <CollapsibleContent keepMounted className="translate-y-0 overflow-hidden opacity-100 transition-[opacity,transform] duration-[160ms] ease-out-strong data-starting-style:-translate-y-1 data-starting-style:opacity-0 data-ending-style:-translate-y-1 data-ending-style:opacity-0 motion-reduce:translate-y-0 motion-reduce:transition-opacity"><ul>{children}</ul></CollapsibleContent>
+      <CollapsibleContent keepMounted className="agent-disclosure overflow-hidden"><ul>{children}</ul></CollapsibleContent>
     </Collapsible>
   );
 }

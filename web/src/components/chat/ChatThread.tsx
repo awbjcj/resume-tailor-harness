@@ -35,6 +35,7 @@ export function ChatThread({
   assistantIcon?: ReactNode;
 }) {
   const viewport = useRef<HTMLDivElement | null>(null);
+  const content = useRef<HTMLDivElement | null>(null);
   const [stuck, setStuck] = useState(true);
   const onScroll = useCallback(() => {
     const node = viewport.current;
@@ -55,6 +56,26 @@ export function ChatThread({
     return () => cancelAnimationFrame(frame);
   }, [messages, streaming, stuck]);
 
+  // Markdown images, expanded activity, and viewport resizing can change the
+  // thread height without a new stream delta. Follow only while bottom-pinned.
+  useEffect(() => {
+    if (!stuck || !viewport.current || !content.current || typeof ResizeObserver === "undefined") return;
+    let frame: number | null = null;
+    const observer = new ResizeObserver(() => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        if (viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
+      });
+    });
+    observer.observe(viewport.current);
+    observer.observe(content.current);
+    return () => {
+      observer.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [stuck]);
+
   return (
     <div className={cn("relative min-h-0 flex-1", className)}>
       <div
@@ -63,7 +84,7 @@ export function ChatThread({
         onScroll={onScroll}
         className="chat-scroll-fade h-full overflow-y-auto overscroll-contain px-1"
       >
-        <div className="w-full space-y-6 py-4 sm:px-2 sm:py-5">
+        <div ref={content} className="w-full space-y-6 py-4 sm:px-2 sm:py-5">
           {messages.map((message) => (
             <div key={message.id}>
               <ChatMessage
@@ -76,7 +97,7 @@ export function ChatThread({
             </div>
           ))}
           {streaming?.length ? (
-            <div role="status" aria-label="Assistant response streaming">
+            <div aria-busy={streamingActive} data-testid="chat-streaming-response">
               <ChatMessage
                 message={{ id: "streaming", role: "assistant", parts: streaming }}
                 showReasoning={showReasoning}

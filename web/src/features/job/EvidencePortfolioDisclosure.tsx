@@ -111,7 +111,7 @@ export function EvidencePortfolioDisclosure({
       <Button
         size="sm"
         variant="outline"
-        className="h-auto w-full justify-between rounded-lg px-3 py-2.5 text-left active:scale-[0.99]"
+        className="h-auto w-full justify-between rounded-lg px-3 py-2.5 text-left motion-safe:active:scale-[0.99]"
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => {
