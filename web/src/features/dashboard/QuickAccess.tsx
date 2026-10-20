@@ -85,7 +85,7 @@ export function QuickAccess() {
               detail: t(shortcut.detailKey),
             })}
             className={cn(
-              "group flex min-h-18 items-center gap-3 px-4 py-3 outline-none transition-[background-color,color,transform] duration-150 ease-out-strong hover:bg-accent/55 active:scale-[0.99] focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50 motion-reduce:transform-none",
+              "group flex min-h-18 items-center gap-3 px-4 py-3 outline-none transition-[background-color,color] duration-150 ease-out-strong hover:bg-accent/55 focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/50",
               "border-b sm:[&:nth-child(odd)]:border-r lg:[&:nth-child(odd)]:border-r-0 lg:[&:not(:nth-child(3n))]:border-r",
               "2xl:border-b-0 2xl:border-r 2xl:[&:nth-child(3n)]:border-r 2xl:last:border-r-0",
             )}

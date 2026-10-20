@@ -63,6 +63,7 @@
        first frames, which is exactly when the user is watching. */
     --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
     /* One card elevation, themed. Every dashboard surface reads as the same
        material instead of three copy-pasted shadow literals. */
@@ -415,6 +416,91 @@
     transform 180ms var(--ease-out-strong);
 }
 
+/* Full transform strings keep the animated property aligned with the state.
+   Tailwind 4's translate utilities use the independent `translate` property. */
+.agent-disclosure {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 160ms var(--ease-out-strong), transform 160ms var(--ease-out-strong);
+}
+.agent-disclosure:is([data-starting-style], [data-ending-style]) {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* Fade only the discrete status shell/icon; streamed prose stays stationary. */
+.agent-status-enter {
+  opacity: 1;
+  transition: opacity 160ms var(--ease-out-strong);
+}
+@starting-style {
+  .agent-status-enter { opacity: 0; }
+}
+
+.sheet-panel {
+  opacity: 1;
+  transform: translate(0);
+  transition: opacity 200ms var(--ease-out-strong), transform 240ms var(--ease-drawer);
+}
+.sheet-panel:is([data-starting-style], [data-ending-style]) { opacity: 0; }
+.sheet-panel[data-side="right"]:is([data-starting-style], [data-ending-style]) { transform: translateX(100%); }
+.sheet-panel[data-side="left"]:is([data-starting-style], [data-ending-style]) { transform: translateX(-100%); }
+.sheet-panel[data-side="bottom"]:is([data-starting-style], [data-ending-style]) { transform: translateY(100%); }
+.sheet-panel[data-side="top"]:is([data-starting-style], [data-ending-style]) { transform: translateY(-100%); }
+
+/* The client has no typography plugin: prose-* utilities previously left
+   headings, lists and tables at Tailwind's reset. Keep content readable as it
+   streams, with local keyboard-accessible overflow for wide code and tables. */
+.chat-markdown { min-width: 0; overflow-wrap: anywhere; }
+.chat-markdown :where(p, ul, ol, blockquote, pre, .chat-markdown-scroll, hr) { margin-block: 0.85em; }
+.chat-markdown > :first-child { margin-top: 0; }
+.chat-markdown > :last-child { margin-bottom: 0; }
+.chat-markdown :where(h1, h2, h3, h4, h5, h6) {
+  margin-block: 1.25em 0.5em;
+  font-weight: 650;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+.chat-markdown h1 { font-size: 1.375rem; }
+.chat-markdown h2 { font-size: 1.125rem; }
+.chat-markdown :where(h3, h4, h5, h6) { font-size: 1rem; }
+.chat-markdown ul { list-style: disc; padding-inline-start: 1.5em; }
+.chat-markdown ol { list-style: decimal; padding-inline-start: 1.5em; }
+.chat-markdown li { margin-block: 0.25em; }
+.chat-markdown li > p { margin-block: 0.3em; }
+.chat-markdown strong { font-weight: 650; }
+.chat-markdown a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.chat-markdown blockquote {
+  border-inline-start: 2px solid var(--border);
+  padding-inline-start: 1em;
+  color: var(--muted-foreground);
+}
+.chat-markdown code {
+  border-radius: 0.25rem;
+  background: var(--muted);
+  padding: 0.15em 0.3em;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+.chat-markdown pre {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--muted);
+  padding: 0.875rem 1rem;
+  line-height: 1.6;
+  tab-size: 2;
+}
+.chat-markdown pre code { background: transparent; padding: 0; }
+.chat-markdown-scroll { max-width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 0.5rem; }
+.chat-markdown table { width: 100%; border-collapse: collapse; font-size: 0.875rem; line-height: 1.6; }
+.chat-markdown :where(th, td) { min-width: 8rem; border-bottom: 1px solid var(--border); padding: 0.5rem 0.75rem; vertical-align: top; }
+.chat-markdown th { background: var(--muted); font-weight: 600; }
+.chat-markdown tr:last-child td { border-bottom: 0; }
+.chat-markdown img { max-width: 100%; height: auto; border-radius: 0.5rem; }
+.chat-markdown :where(pre, .chat-markdown-scroll, a):focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
 /* Conversations use a soft scroll edge so the thread reads beneath the
    workspace chrome without a hard rule slicing through the last message. */
 .chat-scroll-fade {
@@ -440,6 +526,13 @@
   .scout-proposal-card { transition-property: border-color, background-color, opacity; }
   .scout-proposal-card[data-pending="true"]:hover { transform: none; }
   .agent-artifact-enter {
+    transform: none;
+    transition: opacity 160ms var(--ease-out-strong);
+  }
+  .agent-disclosure,
+  .agent-disclosure:is([data-starting-style], [data-ending-style]),
+  .sheet-panel,
+  .sheet-panel[data-side]:is([data-starting-style], [data-ending-style]) {
     transform: none;
     transition: opacity 160ms var(--ease-out-strong);
   }

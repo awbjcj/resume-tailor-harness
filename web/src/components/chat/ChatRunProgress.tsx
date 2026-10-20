@@ -10,8 +10,8 @@ export function ChatRunProgress({ runId, status, reconnecting = false }: { runId
   if (status === "stopped") return <p role="status" className="text-sm text-muted-foreground">Response stopped. You can retry your message.</p>;
   const settled = status === "settled";
   return (
-    <div role="status" aria-live="polite" className="flex items-center gap-3 rounded-xl border bg-muted/25 px-3 py-2 text-sm">
-      {settled ? <Check className="size-4 shrink-0 text-success" aria-hidden="true" /> : <Loader2 className="size-4 shrink-0 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+    <div role="status" aria-live="polite" className="agent-status-enter flex items-center gap-3 rounded-xl border bg-muted/25 px-3 py-2 text-sm">
+      {settled ? <Check className="agent-status-enter size-4 shrink-0 text-success" aria-hidden="true" /> : <Loader2 className="size-4 shrink-0 motion-safe:animate-spin" aria-hidden="true" />}
       <div className="min-w-0 flex-1">
         <p className="font-medium">{reconnecting ? "Reconnecting to your response" : status === "stopping" ? "Stopping the response" : settled ? "Saving the response" : run?.phase || "Preparing your response"}</p>
         {settled ? <p className="text-xs text-muted-foreground">The reply is ready. Final checks are still running.</p> : null}

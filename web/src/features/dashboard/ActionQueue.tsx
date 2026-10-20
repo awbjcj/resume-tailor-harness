@@ -51,17 +51,17 @@ export function ActionQueue({ summary }: { summary: DashboardSummary }) {
           >
             <Card
               className={cn(
-                // Only box-shadow and transform animate — never `all`, which
+                // Only box-shadow and scale animate — never `all`, which
                 // would also transition colour and layout properties. Tailwind
                 // draws `ring-1` as a box-shadow layer, so this one property
                 // covers both the elevation lift and the ring colour change.
-                "h-full gap-1 p-4 transition-[box-shadow,transform] duration-200 ease-out-strong",
+                "h-full gap-1 p-4 transition-[box-shadow,scale] duration-150 ease-out-strong",
                 // The hover affordance has to ride the ring: Card draws its
                 // edge with `ring-1`, so a border-colour change renders nothing.
                 "group-hover:shadow-card-raised group-hover:ring-primary/40",
                 // Press feedback: instant, subtle, and on the whole tile so the
                 // card reads as the thing being pushed.
-                "group-active:scale-[0.985] group-active:duration-100",
+                "motion-safe:group-active:scale-[0.985] group-active:duration-100",
               )}
             >
               <div

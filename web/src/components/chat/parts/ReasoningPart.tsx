@@ -20,7 +20,7 @@ export function ReasoningPart({ text }: { text: string }) {
         </span>
         <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-[180ms] ease-out-strong group-data-panel-open/activity:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
       </CollapsibleTrigger>
-      <CollapsibleContent keepMounted className="translate-y-0 overflow-hidden opacity-100 transition-[opacity,transform] duration-[180ms] ease-out-strong will-change-[opacity,transform] data-starting-style:-translate-y-1 data-starting-style:opacity-0 data-ending-style:-translate-y-1 data-ending-style:opacity-0 motion-reduce:translate-y-0 motion-reduce:transition-opacity">
+      <CollapsibleContent keepMounted className="agent-disclosure overflow-hidden">
         <div className="ml-10 mt-1 whitespace-pre-wrap border-l-2 border-primary/20 py-1 pl-3 text-sm leading-6 text-muted-foreground">
           {text}
         </div>

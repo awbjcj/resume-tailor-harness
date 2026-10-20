@@ -1,4 +1,14 @@
 {
+  "Table": {
+    "key": "ui_16d1c9050a0b",
+    "en": "Table",
+    "zh-CN": "表格"
+  },
+  "Code block": {
+    "key": "ui_7545380a2996",
+    "en": "Code block",
+    "zh-CN": "代码块"
+  },
   "Could not check Gmail. Try again; your connection may still be active.": {
     "key": "ui_8aed65d58c66",
     "en": "Could not check Gmail. Try again; your connection may still be active.",
@@ -1413,11 +1423,6 @@
     "key": "ui_e3a4b632068f",
     "en": "Assign tier",
     "zh-CN": "分配档位"
-  },
-  "Assistant response streaming": {
-    "key": "ui_cfa4cf794a83",
-    "en": "Assistant response streaming",
-    "zh-CN": "助手正在回复"
   },
   "Async": {
     "key": "ui_88f22a6c2154",
