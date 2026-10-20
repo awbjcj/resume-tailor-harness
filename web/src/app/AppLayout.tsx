@@ -140,7 +140,7 @@ function NavMenuItem({ item, badge }: { item: NavItem; badge?: number }) {
     <SidebarMenuItem>
       <SidebarMenuButton
         className={cn(
-          "h-10 rounded-lg px-3 text-[0.95rem] transition-[background-color,color,box-shadow,transform] duration-150 ease-out-strong active:scale-[0.98] motion-reduce:transform-none",
+          "h-10 rounded-lg px-3 text-[0.95rem] transition-[background-color,color,box-shadow] duration-150 ease-out-strong",
           badged && "pr-9",
         )}
         render={
@@ -187,7 +187,7 @@ export function AppLayout() {
     <SidebarProvider className="command-shell">
       <a
         href="#main-content"
-        className="fixed left-4 top-3 z-50 -translate-y-20 rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background shadow-lg transition-transform focus:translate-y-0 motion-reduce:transition-none"
+        className="fixed left-4 top-3 z-50 -translate-y-20 rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background shadow-lg focus:translate-y-0"
       >
         {t("shell.skipToMain")}
       </a>

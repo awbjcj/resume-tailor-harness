@@ -25,9 +25,9 @@ export function HintsPart({ hints }: { hints: string[] }) {
             {hints.length} ideas to help you shape your response
           </span>
         </span>
-        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-panel-open/hints:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-[160ms] ease-out-strong group-data-panel-open/hints:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
       </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden data-starting-style:h-0 data-ending-style:h-0">
+      <CollapsibleContent className="agent-disclosure overflow-hidden">
         <ul className="space-y-2 border-t border-[color-mix(in_oklab,var(--tone),transparent_82%)] px-4 py-3 text-sm leading-6 text-muted-foreground">
           {hints.map((hint, index) => (
             <li key={`${index}-${hint}`} className="flex gap-2.5">

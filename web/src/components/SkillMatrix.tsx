@@ -1,7 +1,7 @@
 // Full skill set, grouped Must-have / Nice-to-have. Two independent channels:
 //   required  -> which group (must vs nice)
 //   covered   -> chip fill (solid = you have it, dashed outline = gap)
-// Staggered rise-in on open. Used by the job detail modal rail.
+// Keep the full skill set readable immediately in the job detail modal rail.
 
 import type { SkillTag } from "@/lib/filters/types";
 import { AddSkillPopover } from "@/features/profile-skills/AddSkillPopover";
@@ -9,18 +9,15 @@ import { AddSkillPopover } from "@/features/profile-skills/AddSkillPopover";
 function Chip({
   tag,
   active,
-  index,
 }: {
   tag: SkillTag;
   active: boolean;
-  index: number;
 }) {
   return (
     <span
-      className="skill-chip rise-in"
+      className="skill-chip"
       data-covered={tag.covered}
       data-active={active}
-      style={{ "--rise-i": index } as React.CSSProperties}
       title={
         tag.covered ? "Covered by your profile" : "Profile gap: not yet in your profile"
       }
@@ -42,12 +39,10 @@ function Group({
   label,
   tags,
   activeSkills,
-  baseIndex,
 }: {
   label: string;
   tags: SkillTag[];
   activeSkills: Set<string>;
-  baseIndex: number;
 }) {
   if (tags.length === 0) return null;
   return (
@@ -61,12 +56,11 @@ function Group({
         </span>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {tags.map((t, i) => (
+        {tags.map((t) => (
           <Chip
             key={t.name}
             tag={t}
             active={activeSkills.has(t.name.toLowerCase())}
-            index={baseIndex + i}
           />
         ))}
       </div>
@@ -93,12 +87,11 @@ export function SkillMatrix({
 
   return (
     <div className="space-y-4">
-      <Group label="Must-have" tags={must} activeSkills={activeSkills} baseIndex={0} />
+      <Group label="Must-have" tags={must} activeSkills={activeSkills} />
       <Group
         label="Nice-to-have"
         tags={best}
         activeSkills={activeSkills}
-        baseIndex={must.length}
       />
       <div className="flex items-center gap-4 border-t pt-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">

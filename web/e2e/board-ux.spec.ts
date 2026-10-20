@@ -109,7 +109,9 @@ test("job assistant sends explicit context and displays an AG-UI response", asyn
   await panel.getByRole("button", { name: "Send message" }).click();
   await expect(panel.getByText("Focus on the platform requirements.")).toBeVisible();
   expect(context).toEqual({ jobId: 7, resumeVersionId: 3, profileSnapshot: "current", offerApplicationIds: [] });
-  await expect(panel.getByText("Saving the response", { exact: true })).toBeVisible();
+  // This finite SSE fixture closes before final persistence, so the transport
+  // headline may already say Reconnecting. The settled-state copy is stable.
+  await expect(panel.getByText("The reply is ready. Final checks are still running.", { exact: true })).toBeVisible();
   await page.screenshot({ path: "e2e/__screenshots__/agui-job-assistant.png" });
 });
 
