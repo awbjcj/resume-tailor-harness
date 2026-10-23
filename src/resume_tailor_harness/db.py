@@ -3,6 +3,7 @@ from pathlib import Path
 
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+from sqlalchemy.pool import QueuePool
 from sqlmodel import Session, SQLModel, create_engine
 
 from resume_tailor_harness.config import get_settings
@@ -66,10 +67,13 @@ def make_engine(url: str | None = None) -> Engine:
     resolved = url or get_settings().db_url
     _ensure_sqlite_dir(resolved)
     if _is_memory_sqlite(resolved):
-        # SQLite's shared-cache URI mode gives every thread (FastAPI's request
-        # threadpool, RunManager workers, the lifespan that ran init_db) its own
-        # DBAPI connection with an independent transaction state, while all of
-        # them still see the same in-memory schema/data. A plain StaticPool
+        # SQLite's shared-cache URI mode gives concurrent sessions independent
+        # DBAPI connections/transactions over the same in-memory schema/data.
+        # QueuePool keeps checked-out connections alive and allows sequential
+        # reuse across request/worker threads with check_same_thread=False.
+        # SingletonThreadPool instead evicts arbitrary connections, even ones
+        # still in use, once more than five threads visit the database.
+        # A plain StaticPool
         # (one physical connection reused by every thread) makes concurrent
         # sessions share one transaction state, so interleaved BEGIN/COMMIT
         # calls from two threads intermittently raised "Could not refresh
@@ -82,6 +86,8 @@ def make_engine(url: str | None = None) -> Engine:
         return create_engine(
             f"sqlite:///file:{name}?mode=memory&cache=shared&uri=true",
             echo=False,
+            poolclass=QueuePool,
+            connect_args={"check_same_thread": False},
         )
     engine = create_engine(resolved, echo=False)
     if resolved.startswith("sqlite"):

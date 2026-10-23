@@ -224,7 +224,7 @@ def test_scoped_refresh_processes_only_visible_unassigned_keys(monkeypatch, tmp_
         record = _wait_for_terminal(client, response.json()["runId"])
         graph = client.get("/api/match-gap").json()
 
-    assert record["state"] == "done"
+    assert record["state"] == "done", record
     assert record["result"]["processedSkillKeys"] == ["k8s"]
     assert record["result"]["skippedAlreadyAssigned"] == ["react"]
     assert record["result"]["skippedUnknown"] == ["missing"]
@@ -260,8 +260,10 @@ def test_different_scoped_refresh_sets_are_not_coalesced(monkeypatch, tmp_path):
             "/api/match-gap/refresh-clusters", json={"skillKeys": ["react"]}
         ).json()["runId"]
         release.set()
-        assert _wait_for_terminal(client, first)["state"] == "done"
-        assert _wait_for_terminal(client, second)["state"] == "done"
+        first_record = _wait_for_terminal(client, first)
+        second_record = _wait_for_terminal(client, second)
+        assert first_record["state"] == "done", first_record
+        assert second_record["state"] == "done", second_record
 
     assert first != second
 
