@@ -56,3 +56,35 @@ DeepSeek separately documents a grace period for **server-side** Search/Fetch
 tools used through DeepSeek Harness, Claude Code, and Codex: per-request billing
 starts at 2026-11-01 00:00 Beijing time (2026-10-31 16:00 UTC). This app calls the
 standalone endpoints and applies their published rate immediately.
+
+## Standard model rate refresh (2026-10-23)
+
+The built-in catalog includes updates from [OpenAI pricing](https://developers.openai.com/api/docs/pricing),
+[Claude pricing](https://platform.claude.com/docs/en/about-claude/pricing), and
+[Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing):
+
+- Sonnet 5.5 cache reads cost $0.10 per million tokens from October 7,
+  down from $0.20. Input, cache writes, and output retain their prior prices.
+- GPT-5.6 Sol/Terra/Luna and GPT-5.5/Pro have separate prompt bands at
+  272,000 and 272,001 tokens. The long band charges twice the input/cache
+  price and 1.5 times output. These corrections apply from October 23;
+  historical catalog rows and recorded usage remain intact.
+- Gemini 4 Argon is priced from its October 13 GA release at $2 input,
+  $0.10 cached input, and $10 output per million tokens. From December 1,
+  these become $4, $0.20, and $20. Explicit cache writes remain unpriced
+  because Argon supports implicit caching only.
+- The Gemini 3.5 Flash alias uses 3.6 Flash promotional rates from this
+  refresh: $0.75 input, $0.075 cached input, $3.75 output per million.
+  January 1, 2027 rates are $1.50/$0.15/$7.50. Existing 3.6/3.7/3.8 Flash
+  promotional expiry rows remain in effect.
+
+Rates are seeded idempotently during system-database initialization, so existing
+installations receive the update on application restart. Recorded usage receipts
+are not recalculated. This updates the rate catalog, not model selection defaults.
+
+The catalog's single cache-write bucket represents the application's default
+cache lifetime (OpenAI 30 minutes; Claude five minutes). It does not distinguish
+OpenAI 12-hour writes or Claude one-hour writes. Those lifetimes, other service
+tiers, regional premiums, and Gemini cache storage need separate metering before
+using this catalog as an invoice estimate for such requests. Search rates exclude
+account-level free allowances and are conservative estimates when those apply.

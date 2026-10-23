@@ -756,7 +756,7 @@ def seed_llm_rates(engine: Engine) -> None:
             current_rate.cache_read_micros_per_million = _micros_per_million(cache_read)
             current_rate.cache_write_micros_per_million = None
             current_rate.output_micros_per_million = _micros_per_million(output_rate)
-            # Google Search is $14 / 1,000 paid grounded prompts. The provider's
+            # Google Search is $14 / 1,000 executed search queries. The provider's
             # monthly included allowance is account-level state we cannot infer
             # from one request, so shared-key metering records the billed unit.
             current_rate.tool_micros_per_unit = 14_000
@@ -1023,5 +1023,99 @@ def seed_llm_rates(engine: Engine) -> None:
             cancelled_sonnet_rate.output_micros_per_million = _micros_per_million(10)
             cancelled_sonnet_rate.tool_micros_per_unit = 10_000
             cancelled_sonnet_rate.source_url = anthropic
+        # October 23 public Standard-rate refresh. Preserve earlier rows and
+        # stored usage receipts; rerunning the seed repairs these exact rows.
+        refresh = datetime(2026, 10, 23, tzinfo=timezone.utc)
+
+        def close_prior_rates(provider: str, model: str, cutover: datetime) -> None:
+            for prior in session.execute(
+                select(LlmRate).where(
+                    LlmRate.provider == provider,
+                    LlmRate.model == model,
+                    LlmRate.effective_from < cutover,
+                    or_(LlmRate.effective_to.is_(None), LlmRate.effective_to > cutover),
+                )
+            ).scalars():
+                prior.effective_to = cutover
+
+        # Anthropic halved only Sonnet 5.5 cache reads on October 7.
+        close_prior_rates("anthropic", "claude-sonnet-5-5", haiku_55_release)
+        upsert_rate(
+            provider="anthropic",
+            model="claude-sonnet-5-5",
+            effective_from=haiku_55_release,
+            input_rate=2,
+            cache_read=0.1,
+            cache_write=2.5,
+            output_rate=10,
+            tool=10_000,
+            source=anthropic,
+        )
+
+        # These models also charge the full long-context rate above 272K.
+        # The application uses Standard processing and default cache lifetimes.
+        for model, short, long in (
+            ("gpt-5.6-sol", (4, 0.4, 5, 20), (8, 0.8, 10, 30)),
+            ("gpt-5.6-terra", (2, 0.2, 2.5, 12), (4, 0.4, 5, 18)),
+            ("gpt-5.6-luna", (0.2, 0.02, 0.25, 1.2), (0.4, 0.04, 0.5, 1.8)),
+            ("gpt-5.5", (5, 0.5, None, 30), (10, 1, None, 45)),
+            ("gpt-5.5-pro", (30, None, None, 180), (60, None, None, 270)),
+        ):
+            close_prior_rates("openai", model, refresh)
+            for minimum, maximum, rates in (
+                (0, 272_000, short),
+                (272_001, None, long),
+            ):
+                upsert_rate(
+                    provider="openai",
+                    model=model,
+                    effective_from=refresh,
+                    input_rate=rates[0],
+                    cache_read=rates[1],
+                    cache_write=rates[2],
+                    output_rate=rates[3],
+                    tool=10_000,
+                    source=openai,
+                    minimum=minimum,
+                    maximum=maximum,
+                )
+
+        # Argon GA uses implicit caching only, with a separate introductory
+        # expiry from Flash. The 3.5 alias now routes to 3.6; apply its verified
+        # destination price from this refresh, keeping the prior quote intact.
+        for model, release, expiry, promo, regular in (
+            (
+                "gemini-4-argon",
+                datetime(2026, 10, 13, tzinfo=timezone.utc),
+                datetime(2026, 12, 1, tzinfo=timezone.utc),
+                (2, 0.1, 10),
+                (4, 0.2, 20),
+            ),
+            (
+                "gemini-3.5-flash",
+                refresh,
+                gemini_promo_end,
+                (0.75, 0.075, 3.75),
+                (1.5, 0.15, 7.5),
+            ),
+        ):
+            close_prior_rates("gemini", model, release)
+            for begins, ends, rates in (
+                (release, expiry, promo),
+                (expiry, None, regular),
+            ):
+                rate = upsert_rate(
+                    provider="gemini",
+                    model=model,
+                    effective_from=begins,
+                    input_rate=rates[0],
+                    cache_read=rates[1],
+                    cache_write=None,
+                    output_rate=rates[2],
+                    tool=14_000,
+                    source=gemini,
+                )
+                rate.effective_to = ends
+
         session.commit()
     invalidate_rate_cache(engine)
