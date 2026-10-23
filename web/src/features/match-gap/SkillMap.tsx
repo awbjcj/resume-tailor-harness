@@ -1,3 +1,4 @@
+import { isProvisionalSkill } from "./aggregate";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { select } from "d3-selection";
 import { zoom, zoomIdentity, type ZoomTransform } from "d3-zoom";
@@ -268,9 +269,12 @@ export function SkillMap({
                     }
                     title={
                       node.kind === "skill" &&
-                      node.skill?.domainId === null &&
-                      node.skill.groupingStatus
-                        ? `Grouping ${node.skill.groupingStatus.state}: ${node.skill.groupingStatus.reason}`
+                      node.skill
+                        ? isProvisionalSkill(node.skill)
+                          ? "Provisional category placement; the specific domain still needs confirmation."
+                          : node.skill.groupingStatus
+                            ? `Grouping ${node.skill.groupingStatus.state}: ${node.skill.groupingStatus.reason}`
+                            : undefined
                         : undefined
                     }
                     onClick={() => {

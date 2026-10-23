@@ -4314,11 +4314,6 @@
     "en": "Greenhouse",
     "zh-CN": "Greenhouse"
   },
-  "Grouping": {
-    "key": "ui_b3c6e63fa967",
-    "en": "Grouping",
-    "zh-CN": "分组"
-  },
   "Grouping {{v0}}: {{v1}}": {
     "key": "ui_15e221e640ef",
     "en": "Grouping {{v0}}: {{v1}}",
@@ -11783,5 +11778,20 @@
     "key": "ui_a289d30b9c14",
     "en": "Sponsorship and work-policy answers reuse your saved Search settings when left blank here. Add application-specific details only when needed.",
     "zh-CN": "此处留空时，签证担保需求和办公方式偏好会沿用已保存的搜索设置。仅在需要时填写本次申请的具体说明。"
+  },
+  "Refine skill groups ({{v0}})": {
+    "key": "ui_7fb1daf74ab5",
+    "en": "Refine skill groups ({{v0}})",
+    "zh-CN": "细化技能分组（{{v0}}）"
+  },
+  "Provisional category placement; the specific domain still needs confirmation.": {
+    "key": "ui_5e2b422ce990",
+    "en": "Provisional category placement; the specific domain still needs confirmation.",
+    "zh-CN": "已暂时归入此分类，具体技能领域仍待确认。"
+  },
+  "Provisional skills": {
+    "key": "ui_3e960105a24e",
+    "en": "Provisional skills",
+    "zh-CN": "待确认的技能"
   }
 }

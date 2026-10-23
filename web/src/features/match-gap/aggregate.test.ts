@@ -9,6 +9,7 @@ import {
   targetId,
   UNASSIGNED_ID,
   visibleUnassignedSkillKeys,
+  visibleRecoverySkillKeys,
   type Filters,
   type SkillRow,
 } from "./aggregate";
@@ -344,4 +345,24 @@ it("scopes visible unassigned skills for company, seniority, stage, search, and 
   expect(keys({ ...base, q: "graph" })).toEqual(["graphql"]);
   expect(keys({ ...base, gapsOnly: true })).toEqual(["graphql"]);
   expect(keys({ ...base, weighting: "popular" })).toEqual(["graphql", "redis"]);
+});
+
+
+it("includes provisional skills in scoped recovery without counting them as unassigned", () => {
+  const view = deriveView(payload, base);
+  const provisional = { ...view.skills[0], domainId: "general-cloud-infrastructure", provisional: true };
+  const unassigned = { ...view.skills[1], domainId: null };
+  const skills = [provisional, unassigned];
+  expect(visibleRecoverySkillKeys({ skills })).toEqual(skills.map((s) => s.key).sort());
+  expect(visibleUnassignedSkillKeys({ skills })).toEqual([unassigned.key]);
+});
+
+it("recognizes only category fallback IDs as provisional", () => {
+  const skills = payload.skills.map((skill, index) => ({
+    ...skill,
+    domainId: index === 0 ? "general-cloud-infrastructure" : "general-relativity",
+  }));
+  const view = deriveView({ ...payload, skills }, base);
+  expect(view.skills.find((skill) => skill.domainId === "general-cloud-infrastructure")?.provisional).toBe(true);
+  expect(view.skills.find((skill) => skill.domainId === "general-relativity")?.provisional).toBe(false);
 });

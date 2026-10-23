@@ -48,6 +48,7 @@ export interface SkillRow {
   key: string;
   skill: string;
   domainId: string | null;
+  provisional?: boolean;
   covered: boolean;
   coverage: "covered" | "adjacent" | "gap";
   score: number;
@@ -82,6 +83,17 @@ export function hasActiveScopeFilters(filters: Filters): boolean {
 export function visibleUnassignedSkillKeys(view: Pick<DerivedView, "skills">): string[] {
   return view.skills
     .filter((skill) => skill.domainId === null)
+    .map((skill) => skill.key)
+    .sort();
+}
+
+export function isProvisionalSkill(skill: Pick<SkillRow, "provisional">): boolean {
+  return skill.provisional === true;
+}
+
+export function visibleRecoverySkillKeys(view: Pick<DerivedView, "skills">): string[] {
+  return view.skills
+    .filter((skill) => skill.domainId === null || isProvisionalSkill(skill))
     .map((skill) => skill.key)
     .sort();
 }
@@ -191,6 +203,7 @@ export function deriveView(payload: Payload, filters: Filters): DerivedView {
   }
 
   const q = filters.q.trim().toLowerCase();
+  const generalDomains = new Set(payload.categories.map((category) => `general-${category.slug}`));
   const skills = payload.skills
     .flatMap((node): SkillRow[] => {
       const observedCounts = countsBySkill.get(node.key);
@@ -209,6 +222,7 @@ export function deriveView(payload: Payload, filters: Filters): DerivedView {
           key: node.key,
           skill: node.skill,
           domainId: node.domainId ?? null,
+          provisional: generalDomains.has(node.domainId ?? ""),
           covered: node.covered,
           coverage,
           score:

@@ -41,3 +41,16 @@ describe("RefreshClustersButton", () => {
     expect(screen.getByRole("button", { name: "Reorganize domains" })).toBeEnabled();
   });
 });
+
+
+it("allows refinement when only provisional skills remain", async () => {
+  let calls = 0;
+  render(<RefreshClustersButton unassignedCount={0} provisionalCount={4}
+    onRegroup={async () => { calls++; return true; }}
+    onMaintain={async () => true} canUndo={false} onUndo={async () => true}
+    maintenanceDue={false} />);
+  const button = screen.getByRole("button", { name: "Refine skill groups (4)" });
+  expect(button).toBeEnabled();
+  await userEvent.click(button);
+  expect(calls).toBe(1);
+});
