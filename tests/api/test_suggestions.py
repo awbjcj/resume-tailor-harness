@@ -1,4 +1,5 @@
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
 
@@ -200,20 +201,28 @@ def test_theme_cache_becomes_stale_when_demanding_jobs_change(monkeypatch, tmp_p
         lambda: _Agent(SuggestionDraft(bridge="Theme bridge")),
     )
 
-    app = create_app(db_url="sqlite://", runs_root=tmp_path)
-    with TestClient(app) as client:
-        _seed_job(app.state.engine)
-        launched = client.post(
-            "/api/suggestions/generate",
-            json={"kind": "domain", "key": "infra"},
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        app = create_app(
+            db_url="sqlite://", runs_root=tmp_path, run_executor=executor
         )
-        assert _wait_for_run(client, launched.json()["runId"])["state"] == "done"
+        with TestClient(app) as client:
+            _seed_job(app.state.engine)
+            launched = client.post(
+                "/api/suggestions/generate",
+                json={"kind": "domain", "key": "infra"},
+            )
+            assert launched.status_code == 202, launched.json()
+            assert _wait_for_run(client, launched.json()["runId"])["state"] == "done"
+            # Terminal status precedes completion-ledger bookkeeping. Drain
+            # that worker before another fixture write: shared-cache SQLite
+            # rejects simultaneous writers immediately with SQLITE_LOCKED.
+            executor.submit(lambda: None).result(timeout=5)
 
-        _seed_job(app.state.engine, company="D", skills=["Terraform"])
-        cached = client.get(
-            "/api/suggestions",
-            params={"kind": "domain", "key": "infra"},
-        )
+            _seed_job(app.state.engine, company="D", skills=["Terraform"])
+            cached = client.get(
+                "/api/suggestions",
+                params={"kind": "domain", "key": "infra"},
+            )
 
     assert cached.json()["suggestion"]["key"] == "infra"
     assert cached.json()["stale"] is True
