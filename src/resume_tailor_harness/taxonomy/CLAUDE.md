@@ -109,50 +109,31 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   discounted member-overlap term; and `enforce_candidates` gates the veto on
   `mode == "embedding"`. Cosine and lexical scores are never ranked against each
   other — an embedded query competes only among embedded candidates.
-- **A regroup is two passes, and the second one differs.** `refresh_clusters`
-  sends only tokens with no recorded *domain-phase* `grouping_status` to the
-  first pass; anything that failed to be **grouped** before skips straight to
-  escalation, because a replay of the same batch, prompt and gates is exactly
-  why clicking Regroup twice used to change nothing. A **canonicalize**-phase
-  failure is different and is *not* an escalation candidate: escalation only
-  re-runs domain assignment, so a token that never got a canonical form has
-  nothing to escalate. `GroupingStatus.phase` carries that distinction and
-  sends those tokens back through pass one. `phase` is **nullable, and `None`
-  means "recorded before the distinction existed"** — it cannot be recovered
-  from `reason`, because both phases emit `"invalid or incomplete model
-  output"`. An unknown phase is therefore routed like a canonicalize failure:
-  one standard-path re-attempt, after which the record carries a real phase and
-  routes correctly forever. The alternative (defaulting to `"domain"`) left
-  legacy canonicalize failures sitting on the bounded escalation budget doing
-  work the cheap pass does — not stuck, since escalation re-canonicalizes too,
-  just paid for at the premium tier. Every status this code writes sets `phase`
-  explicitly, including the `"no high-confidence existing or coherent new
-  domain"` fallback, which is `"domain"` because canonicalization did settle. Escalation uses the premium themer
-  (`build_escalation_themer_agent`), quarter-size batches, the whole taxonomy
-  (`candidate_context=None`, so no allowlist), and `min_new_domain_members=1` —
-  the first pass still requires 2, so a genuinely novel lone skill is placed by
-  escalation rather than being permanently unassignable. It is bounded by
-  `Settings.taxonomy_escalation_max_skills` (300); the remainder escalates next
-  run, so progress is monotonic. `failedCanonicalTokens`/`failedDomainTokens`
-  count **distinct tokens** across both passes, never token-attempts.
-  A canonicalize-phase failure is no longer permanent backlog. The pass now
-  repairs its own residue in geometrically shrinking rounds (`batch_size` →
-  `batch_size // 4` → `1`, the singleton round bounded by
-  `Settings.taxonomy_canonical_repair_max_singletons`), because re-asking the
-  same tokens at the same size reproduces the same omission — `_shard` sorts
-  alphabetically, so the retry was byte-identical to the attempt that failed.
-  At one token per call a cross-cluster duplicate and a multi-existing-member
-  violation are both structurally impossible, so only an outright non-answer
-  survives. Whatever does survive is filed as **its own canonical** and
-  recorded `retryable=False`, exactly as reconcile already does for unmerged
-  heads. That flag is the whole integration: `_retryable_canonical_tokens`
-  stops matching, so `_apply_placement_floor` may file it, and
-  `refresh_clusters` needed no change. The cost is a possible unmerged synonym,
-  which is visible and fixable through Merge skill; the previous behaviour was
-  an invisible skill, which was not. Only `kind="output"` failures are repaired
-  or backstopped — an outage carries no judgment to honour, and an
-  identity-aliased token still passes through reconcile, which gets one more
-  free chance to merge it correctly.
+- **Regroup uses an incremental pass followed by bounded recovery rounds.**
+  Previously recorded domain failures and generated General placements go
+  directly to recovery. Canonicalize failures and legacy records without a
+  phase use the standard path first. `taxonomy_recovery_rounds` defaults to 3;
+  `taxonomy_escalation_max_skills` admits up to 300 skills per round. Durable
+  `GroupingStatus.escalation_attempts` increments only on actual attempts.
+  Least-attempted work runs first, with age/key tie breakers; deferral preserves
+  history. Repeated attempts shrink batches (15, 3, 1 by default). A whole
+  round of provider errors stops recovery until the next run. Error envelopes
+  are call failures, not uncertain model judgments.
+- **Recovery sees every domain, with bounded member examples.** Each domain
+  includes total `skill_count` and up to eight evenly spaced members. The
+  context is indexed once per classification pass and filtered per retrieval
+  batch. Recovery receives the full domain directory. This reduces repeated
+  context without making domains unreachable; it does not establish semantic
+  accuracy without a labeled/live evaluation.
+- **Canonicalization repairs omissions and isolates refinement failures.**
+  Shrinking rounds retain valid partitions. Singleton repair is bounded by
+  `taxonomy_canonical_repair_max_singletons`; surviving output omissions keep
+  their own canonical instead of inventing a synonym. Initial provider errors
+  remain retryable. Cross-batch reconciliation already has valid canonical
+  heads: an incomplete answer or call failure retains those heads and records
+  a non-retryable refinement gap, so successful siblings can be saved.
+  `canonicalCalls` includes repairs/reconciliation; `canonicalBatches` retains
+  the legacy initial-batch meaning.
 - **The canonicalizer runs on the mid tier, not premium.** It used to run on
   `premium_model` while the harder domain judgment ran on `mid_model` —
   inverted, and premium was not buying completeness: every one of the 446
@@ -181,29 +162,17 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   Batches API's separate and much higher throughput ceiling becomes the actual
   reason to adopt it. Full evaluation:
   `docs/superpowers/specs/2026-08-27-taxonomy-canonicalize-repair-design.md`.
-- **Every demanded skill ends a refresh with a home, except after an outage.**
-  `_apply_placement_floor` files whatever survives both passes into
-  `general-<category>` (`Settings.taxonomy_placement_floor`), preferring the
-  category the model stated in a group it declined to certify — `_project_domains`
-  keeps that intent in `fallback_categories` precisely so the floor honours a
-  real judgment instead of guessing `other`. The floor's `excluded` argument
-  withholds a token on **two** axes, because filing a token places it and a
-  placed token is never re-attempted — so anything still owed a verdict must
-  stay out. First, a token whose model **call** failed: there is no judgment to
-  honour, only an outage, and filing a skill because a request timed out would
-  make a transient error permanent. `ClassificationFailure.kind` (`"call"` /
-  `"output"`) carries that distinction, because the message is the raised
-  exception's own text and the old `"model call failed" in message` check
-  therefore never matched a real outage. Second, a token that failed
-  **canonicalization** and is still `retryable` — since a token with no settled
-  canonical form has nothing to file. Two canonicalize failures are
-  `retryable=False` and therefore *do* reach the floor, both for the same
-  reason — the token already has a valid canonical, so the gap is a refinement
-  miss rather than backlog: the reconcile omission (each omitted head is
-  already a canonical from its own batch) and the repair backstop (the token
-  was filed as its own canonical after every shrinking round declined it). A
-  retryable canonicalize failure now means only one thing: an outage
-  (`kind="call"`).
+- **Fallback placement is provisional, visible and refinable.** After
+  recovery, uncertain answers may enter `general-<category>` when
+  `taxonomy_placement_floor` is enabled. Only a model category judgment or
+  previous provisional category supplies the category; retrieval rank alone
+  cannot. Missing judgments use `general-other`. Deferred skills and unresolved
+  provider/canonicalization failures are not newly filed. Existing provisional
+  placements survive outages and are eligible for later regrouping; user
+  corrections remain protected. General buckets never establish same-domain
+  adjacency in match-gap or tailoring. Category membership is not evidence of
+  transferability. Results distinguish confirmed, provisional, refined,
+  failed, deferred, retired and unassigned skills.
 - **`not_skills` is a terminal disposition, and it is reversible.** The domain
   classifier may return tokens that name no skill (`8+ years of machine learning
 experience`); they land in `TaxonomyState.retired_skills`, are subtracted from
@@ -216,3 +185,14 @@ experience`); they land in `TaxonomyState.retired_skills`, are subtracted from
   splits, renames and reparents _domains_, and gates on not increasing the
   unassigned count; nothing in it lowers that count. The button is named for
   what it does so it is not mistaken for a second Regroup.
+
+- **Use source evidence for the ambiguous tail.** With an active database
+  session, regroup supplies up to two bounded excerpts per skill from active
+  target jobs. Evidence follows aliases and is included only for the current
+  batch. Treat job text as data. Existing domain examples can contain historical
+  mistakes; a member match must not override the meaning of its label/category.
+  Refresh also clears stale failure records for already confirmed or retired
+  skills, while preserving unresolved and provisional retry history.
+
+See `docs/skill-taxonomy-recovery.md` for settings, compatibility, the
+16,000-skill convergence regression and exported-workspace validation.
