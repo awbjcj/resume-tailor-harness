@@ -316,6 +316,8 @@ def application_context(
             .order_by(col(model.id).desc())
         ).all()
         for row in rows:
+            if isinstance(row, ResumeVersion) and not row.fact_lock_passed:
+                continue
             assert row.id is not None
             attachments.append(
                 ApplicationAttachmentOut(

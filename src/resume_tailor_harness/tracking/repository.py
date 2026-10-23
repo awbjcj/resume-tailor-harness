@@ -434,7 +434,7 @@ def pick_best(versions: list[ResumeVersion]) -> BestResume:
     """Pick the highest-scoring clean round, falling back visibly when none is clean."""
     best, no_clean_round, regressed = select_surfaced(
         versions,
-        is_clean=lambda version: version.fact_check_passed,
+        is_clean=lambda version: version.fact_lock_passed,
         score_key=_score_key,
         latest_key=_latest_key,
     )
@@ -543,7 +543,13 @@ def delete_job_row(session: Session, job: Job, *, commit: bool = True) -> None:
 
     Unguarded: callers must have already applied the has_progress gate.
     """
-    for model in (ApplicationQuestion, CoverLetter, Application, ResumeVersion, EmailDraft):
+    for model in (
+        ApplicationQuestion,
+        CoverLetter,
+        Application,
+        ResumeVersion,
+        EmailDraft,
+    ):
         for child in session.exec(select(model).where(model.job_id == job.id)).all():
             session.delete(child)
     session.delete(job)

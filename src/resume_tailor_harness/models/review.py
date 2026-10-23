@@ -1,8 +1,22 @@
+from collections.abc import Mapping, Sequence
 from enum import Enum
 
 from pydantic import Field
 
 from resume_tailor_harness.models.base import ExtensibleModel
+
+FACT_CHECK_REVIEWER = "fact-check"
+
+
+def has_failed_fact_check(
+    critiques: Sequence[Mapping[str, object]] | None,
+) -> bool:
+    """Do not trust a legacy passing flag that contradicts its fact review."""
+    return any(
+        critique.get("reviewer") == FACT_CHECK_REVIEWER
+        and critique.get("passed") is not True
+        for critique in critiques or ()
+    )
 
 
 class Severity(str, Enum):

@@ -16,7 +16,12 @@ from resume_tailor_harness.tracking.repository import (
     get_job,
     resume_versions_for_job,
 )
-from resume_tailor_harness.tracking.tables import Application, CoverLetter, Job, ResumeVersion
+from resume_tailor_harness.tracking.tables import (
+    Application,
+    CoverLetter,
+    Job,
+    ResumeVersion,
+)
 
 
 def job_slug(job: Job) -> str:
@@ -78,7 +83,7 @@ def _version_entry(version: ResumeVersion) -> dict[str, Any]:
         "origin": version.origin,
         "instruction": version.instruction,
         "parentVersionId": version.parent_version_id,
-        "factCheckPassed": version.fact_check_passed,
+        "factCheckPassed": version.fact_lock_passed,
         "reviewScore": version.review_score,
         "createdAt": version.created_at.isoformat() if version.created_at else None,
         "file": resume_pdf_name(version),

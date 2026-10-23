@@ -18,7 +18,7 @@ from resume_tailor_harness.company_intelligence.models import (
     CompanyVerificationState,
 )
 from resume_tailor_harness.h1b.models import H1BSponsorshipEvidence
-from resume_tailor_harness.models.review import ReviewCritique
+from resume_tailor_harness.models.review import FACT_CHECK_REVIEWER, ReviewCritique
 from resume_tailor_harness.tailor.verdict import failing_gate_names
 
 
@@ -162,6 +162,8 @@ class ResumeVersionOut(CamelModel):
             [ReviewCritique.model_validate(c) for c in self.critique_json or []],
             self.gate_reviewers_json,
         )
+        if FACT_CHECK_REVIEWER in self.failed_gates:
+            self.fact_check_passed = False
         self.has_evidence_portfolio = self.evidence_portfolio_status is not None
         self.revision_unknown = self.taxonomy_revision is None
         return self

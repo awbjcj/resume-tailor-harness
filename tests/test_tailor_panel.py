@@ -168,6 +168,40 @@ def test_run_panel_routes_gate_to_evidence_and_others_to_lean():
     )
 
 
+@pytest.mark.parametrize("merged", [False, True])
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_legacy_advisory_fact_check_receives_supporting_facts(merged, asynchronous):
+    import asyncio
+
+    from resume_tailor_harness.tailor.panel import arun_panel
+
+    config = ReviewConfig.model_validate(
+        {
+            "merged_advisory": merged,
+            "reviewers": [{"name": "fact-check", "gate": False, "weight": 2}],
+        }
+    )
+    checker = _Agent(ReviewCritique(reviewer="fact-check", score=100, passed=True))
+    agents = {"fact-check": checker}
+    if asynchronous:
+        asyncio.run(
+            arun_panel(
+                _content(),
+                _facts(),
+                "Backend role",
+                config,
+                agents,
+                sem=asyncio.Semaphore(2),
+            )
+        )
+    else:
+        run_panel(_content(), _facts(), "Backend role", config, agents)
+
+    assert "SUPPORTING FACTS" in checker.received
+    assert '"b1"' in checker.received
+    assert "SecretRust" not in checker.received
+
+
 def test_run_panel_rejects_non_merged_reviewer_identity_mismatch():
     config = ReviewConfig(reviewers=[ReviewerSpec(name="ats-keyword", weight=1)])
     agents = {

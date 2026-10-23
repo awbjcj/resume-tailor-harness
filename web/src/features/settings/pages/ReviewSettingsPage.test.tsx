@@ -165,12 +165,23 @@ describe("ReviewSettingsPage reviewer roster", () => {
     expect(screen.getByLabelText("ats-keyword weight")).not.toBeDisabled();
   });
 
-  it("re-enables weight when the gate is turned off, preserving its value", async () => {
+  it("keeps fact-check mandatory instead of allowing advisory verification", async () => {
     render(<ReviewSettingsPage />, { wrapper: withQueryClient });
-    await userEvent.click(screen.getByRole("switch", { name: "fact-check gate" }));
-    const weight = screen.getByLabelText("fact-check weight");
-    expect(weight).not.toBeDisabled();
-    expect(weight).toHaveValue(0);
+    const gate = screen.getByRole("switch", { name: "fact-check gate" });
+    expect(gate).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(gate);
+    expect(gate).toBeChecked();
+    expect(screen.getByLabelText("fact-check weight")).toBeDisabled();
+  });
+
+  it("preserves configurable gates and weights for advisory reviewers", async () => {
+    render(<ReviewSettingsPage />, { wrapper: withQueryClient });
+    const gate = screen.getByRole("switch", { name: "ats-keyword gate" });
+    await userEvent.click(gate);
+    expect(screen.getByLabelText("ats-keyword weight")).toBeDisabled();
+    await userEvent.click(gate);
+    expect(screen.getByLabelText("ats-keyword weight")).not.toBeDisabled();
+    expect(screen.getByLabelText("ats-keyword weight")).toHaveValue(1);
   });
 
   it("edits score bands, which round-tripped but was never editable", async () => {
