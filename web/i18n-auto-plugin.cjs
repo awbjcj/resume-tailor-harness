@@ -31,6 +31,18 @@ module.exports = function autoI18nPlugin({ types: t }) {
     && callee.object.name === "Intl"
     && callee.property.type === "Identifier"
     && (callee.property.name === "NumberFormat" || callee.property.name === "DateTimeFormat");
+  const replaceDisplayExpression = (pathRef, expression) => {
+    const property = pathRef.parentPath;
+    // Shared option/label maps load before i18n is ready and survive locale
+    // changes. Read their labels lazily instead of freezing the initial locale.
+    if (property?.isObjectProperty() && property.get("value").node === pathRef.node
+      && !property.findParent((parent) => parent.isFunction())) {
+      property.replaceWith(t.objectMethod("get", property.node.key, [],
+        t.blockStatement([t.returnStatement(expression)]), property.node.computed));
+      return;
+    }
+    pathRef.replaceWith(expression);
+  };
 
   return {
     name: "resume-tailor-harness-auto-i18n",
@@ -62,21 +74,25 @@ module.exports = function autoI18nPlugin({ types: t }) {
         if (!isLocalizableStringPath(pathRef)) return;
         replace(pathRef, state, pathRef.node.value, false);
       },
-      TemplateLiteral(pathRef, state) {
-        if (!isLocalizableStringPath(pathRef)) return;
-        const source = templateSource(pathRef.node);
-        const entry = catalog[source];
-        if (!entry) return;
-        state.autoI18n.imported = true;
-        const values = pathRef.node.expressions.map((expression, index) =>
-          t.objectProperty(t.identifier(`v${index}`), expression),
-        );
-        pathRef.replaceWith(
-          t.callExpression(
-            t.memberExpression(state.autoI18n.identifier, t.identifier("t")),
-            [t.stringLiteral(`auto.${entry.key}`), t.objectExpression(values)],
-          ),
-        );
+      TemplateLiteral: {
+        // Translate display values within interpolations before replacing the
+        // template, while their original display context is still available.
+        exit(pathRef, state) {
+          if (!isLocalizableStringPath(pathRef)) return;
+          const source = templateSource(pathRef.node);
+          const entry = catalog[source];
+          if (!entry) return;
+          state.autoI18n.imported = true;
+          const values = pathRef.node.expressions.map((expression, index) =>
+            t.objectProperty(t.identifier(`v${index}`), expression),
+          );
+          replaceDisplayExpression(pathRef,
+            t.callExpression(
+              t.memberExpression(state.autoI18n.identifier, t.identifier("t")),
+              [t.stringLiteral(`auto.${entry.key}`), t.objectExpression(values)],
+            ),
+          );
+        },
       },
       CallExpression(pathRef, state) {
         const callee = pathRef.node.callee;
@@ -111,7 +127,7 @@ module.exports = function autoI18nPlugin({ types: t }) {
       if (pathRef.parentPath?.isJSXAttribute()) {
         pathRef.replaceWith(t.jsxExpressionContainer(call));
       } else {
-        pathRef.replaceWith(call);
+        replaceDisplayExpression(pathRef, call);
       }
       return;
     }

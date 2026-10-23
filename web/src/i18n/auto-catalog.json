@@ -11793,5 +11793,45 @@
     "key": "ui_3e960105a24e",
     "en": "Provisional skills",
     "zh-CN": "待确认的技能"
+  },
+  "Added {{v0}}": {
+    "key": "ui_4f4a9fe41f8c",
+    "en": "Added {{v0}}",
+    "zh-CN": "新增：{{v0}}"
+  },
+  "Assistant": {
+    "key": "ui_391e40515277",
+    "en": "Assistant",
+    "zh-CN": "助手"
+  },
+  "Collapse": {
+    "key": "ui_be6eb1fc3b05",
+    "en": "Collapse",
+    "zh-CN": "收起"
+  },
+  "Complete": {
+    "key": "ui_143b270a3260",
+    "en": "Complete",
+    "zh-CN": "已完成"
+  },
+  "Denied filings": {
+    "key": "ui_c48e27b855a2",
+    "en": "Denied filings",
+    "zh-CN": "未获认证的申报数"
+  },
+  "Expand": {
+    "key": "ui_07548c2c6511",
+    "en": "Expand",
+    "zh-CN": "展开"
+  },
+  "Removed {{v0}}": {
+    "key": "ui_5fc81c23e85c",
+    "en": "Removed {{v0}}",
+    "zh-CN": "移除：{{v0}}"
+  },
+  "Updated {{v0}}": {
+    "key": "ui_c3a9751bf80a",
+    "en": "Updated {{v0}}",
+    "zh-CN": "更新：{{v0}}"
   }
 }
