@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, cast
 from sqlmodel import Session, select
 
 from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.taxonomy.vocabulary import is_general_domain
 from resume_tailor_harness.tracking.tables import Job, JobStatus
 
 if TYPE_CHECKING:
@@ -201,6 +202,53 @@ def collect_target_skill_tokens(session: Session) -> set[str]:
     return tokens
 
 
+def collect_target_skill_context(
+    session: Session,
+    tokens: set[str],
+    aliases: Mapping[str, str] | None = None,
+) -> dict[str, list[str]]:
+    """Bounded source evidence for ambiguous skills, from active target jobs only."""
+    if not tokens:
+        return {}
+    aliases = aliases or {}
+    wanted = {aliases.get(token, token) for token in tokens}
+    context: dict[str, list[str]] = {}
+    for job in _target_jobs(session):
+        skills = sorted({
+            normalize_skill(skill)
+            for key, _source in _SKILL_SOURCES
+            for skill in _criteria_skill_values(job, key)
+            if normalize_skill(skill)
+        })
+        matched = [
+            skill for skill in skills
+            if aliases.get(skill, skill) in wanted
+            and len(context.get(aliases.get(skill, skill), [])) < 2
+        ]
+        if not matched:
+            continue
+        description = normalize_skill(job.jd_text or "")
+        title = " ".join((job.title or "").split())[:120]
+        for skill in matched:
+            canonical = aliases.get(skill, skill)
+            examples = context.setdefault(canonical, [])
+            if len(examples) >= 2:
+                continue
+            # Match complete phrases, so "go" cannot quote "ongoing".
+            offset = (" " + description + " ").find(" " + skill + " ")
+            excerpt = (
+                description[max(0, offset - 140):offset + len(skill) + 180][:420]
+                if offset >= 0 else ""
+            )
+            peers = ", ".join(s for s in skills if s != skill)[:180]
+            evidence = f"Role: {title}. Source phrase: {skill[:120]}. "
+            evidence += f"Excerpt: {excerpt}" if excerpt else f"Other extracted skills: {peers}"
+            evidence = evidence[:700]
+            if evidence not in examples:
+                examples.append(evidence)
+    return context
+
+
 def build_demand_graph(
     session: Session,
     facts: ProfileFacts,
@@ -250,7 +298,9 @@ def build_demand_graph(
     removed = removed_canonical_tokens(corrections, aliases)
     profile_canonical = {aliases.get(token, token) for token in profile_tokens}
     covered_themes = {
-        domain_of[token] for token in profile_canonical if token in domain_of
+        domain_of[token]
+        for token in profile_canonical
+        if token in domain_of and not is_general_domain(domain_of[token])
     }
     jobs: list[JobLite] = []
     accumulators: dict[str, _SkillAccumulator] = {}
@@ -330,6 +380,7 @@ def build_demand_graph(
                 grouping_status=(
                     grouping_status_for(canonical)
                     if domain_of.get(canonical) is None
+                    or is_general_domain(domain_of.get(canonical))
                     else None
                 ),
             )
@@ -432,6 +483,7 @@ def match_gap(
             cluster_map.domain_of[token]
             for token in profile_canonical
             if token in cluster_map.domain_of
+            and not is_general_domain(cluster_map.domain_of[token])
         }
         if cluster_map is not None
         else set()

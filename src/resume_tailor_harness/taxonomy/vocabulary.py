@@ -53,3 +53,12 @@ LEGACY_GROUP_REMAP: dict[str, str] = {
 def category_kind(slug: str) -> Literal["hard", "soft"]:
     """Return the display kind for a validated category slug."""
     return "soft" if slug in SOFT_CATEGORY_SLUGS else "hard"
+
+
+def is_general_domain(domain_id: str | None) -> bool:
+    """A category-only fallback is not evidence of skill transferability."""
+    return bool(
+        domain_id
+        and domain_id.removeprefix("general-") in SKILL_GROUPS
+        and domain_id.startswith("general-")
+    )

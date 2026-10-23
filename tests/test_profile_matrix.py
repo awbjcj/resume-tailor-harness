@@ -265,6 +265,20 @@ def test_explicit_bullet_and_owner_evidence_count_as_one_signal():
     assert matrix.rows[0].strength == 1.0
 
 
+def test_category_fallback_does_not_claim_transferability():
+    matrix = SkillMatrix(rows=[MatrixRow(key="python", display="Python", strength=4)])
+    cmap = ClusterMap(
+        domain_of={"python": "general-languages", "rust": "general-languages"}
+    )
+    context = build_skill_match_context(
+        JobCriteria(must_have_skills=["Python", "Rust"]),
+        matrix,
+        cmap,
+    )
+    assert [match.coverage for match in context.matches] == ["covered", "gap"]
+    assert context.matches[1].row is None
+
+
 def test_build_skill_match_context_covers_alias_adjacent_gap_and_compounds():
     matrix = SkillMatrix(
         rows=[

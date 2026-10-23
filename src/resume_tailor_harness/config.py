@@ -131,9 +131,12 @@ class Settings(BaseSettings):
     taxonomy_maintenance_max_churn: float = Field(default=0.20, ge=0.01, le=1.0)
     # Skills a first classification pass could not place are retried against the
     # whole taxonomy with the premium model.  That is deliberately the expensive
-    # path, so it is bounded per run; anything past the bound keeps its recorded
-    # status and escalates on the next run, which still converges.
+    # path, so admissions are bounded per recovery round; deferred work keeps
+    # its attempt history and has priority over repeated failures next round.
     taxonomy_escalation_max_skills: int = Field(default=300, ge=0, le=5000)
+    # Each round admits this many skills, least-attempted first. Three bounded
+    # rounds recover a large tail without requiring one click per 300 skills.
+    taxonomy_recovery_rounds: int = Field(default=3, ge=1, le=5)
     # Bounds the terminal singleton repair round.  In the normal case it is
     # never reached -- that round only ever sees the residue of a residue.  It
     # exists for the systematic-failure case (a bad prompt edit, a schema
@@ -141,8 +144,8 @@ class Settings(BaseSettings):
     # dispatch one call per token.  Overflow goes to the identity backstop,
     # which is safe by construction.
     taxonomy_canonical_repair_max_singletons: int = Field(default=500, ge=0, le=5000)
-    # Every demanded skill ends a refresh with a home.  Disable only to restore
-    # the historical behaviour where an uncertain skill stays unassigned.
+    # Answered but uncertain skills stay visible in provisional General buckets
+    # and remain eligible for refinement. Outages/deferred work are not filed.
     taxonomy_placement_floor: bool = True
     search_mode: Literal["auto", "native", "tool", "off"] = "auto"
     advisor_model: str = ""

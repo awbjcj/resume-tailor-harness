@@ -14,6 +14,7 @@ from resume_tailor_harness.llm_runner import Runner, run_with_cleanup
 from resume_tailor_harness.progress import ProgressReporter
 from resume_tailor_harness.taxonomy.classification import (
     ClassificationFailure,
+    ClassificationMetrics,
     ClassificationOutcome,
     classify_incrementally,
 )
@@ -32,7 +33,10 @@ from resume_tailor_harness.taxonomy.embeddings import (
     EmbeddingProvider,
     build_candidate_context,
 )
-from resume_tailor_harness.taxonomy.maintenance import maintain_taxonomy as evaluate_maintenance
+from resume_tailor_harness.taxonomy.maintenance import (
+    maintain_taxonomy as evaluate_maintenance,
+)
+from resume_tailor_harness.taxonomy.maintenance import pinned_domains_and_skills
 from resume_tailor_harness.taxonomy.state import (
     ALGORITHM_VERSION,
     GroupingStatus,
@@ -43,9 +47,12 @@ from resume_tailor_harness.taxonomy.state import (
     snapshot_before_maintenance,
     undo_last_maintenance,
 )
-from resume_tailor_harness.taxonomy.vocabulary import SKILL_GROUPS
+from resume_tailor_harness.taxonomy.vocabulary import SKILL_GROUPS, is_general_domain
 from resume_tailor_harness.tracking.match_gap import normalize_skill
-from resume_tailor_harness.tracking.match_gap import collect_target_skill_tokens
+from resume_tailor_harness.tracking.match_gap import (
+    collect_target_skill_context,
+    collect_target_skill_tokens,
+)
 from resume_tailor_harness.tracking.canonicalize import build_classification_agents
 
 # Domains that exist only to guarantee every demanded skill has a home.  The
@@ -117,14 +124,43 @@ def _unassigned(cmap: ClusterMap, tokens: set[str]) -> set[str]:
     }
 
 
+def _combine_recovery(
+    outcomes: list[ClassificationOutcome],
+) -> ClassificationOutcome | None:
+    if not outcomes:
+        return None
+    additions = ClusterMap()
+    for outcome in outcomes:
+        additions = merge_cluster_map(additions, outcome.additions)
+    return ClassificationOutcome(
+        additions=additions,
+        failures=tuple(failure for outcome in outcomes for failure in outcome.failures),
+        not_skills=frozenset(
+            token for outcome in outcomes for token in outcome.not_skills
+        ),
+        fallback_categories={
+            token: category
+            for outcome in outcomes
+            for token, category in outcome.fallback_categories.items()
+        },
+        metrics=ClassificationMetrics(
+            canonical_batches=sum(o.metrics.canonical_batches for o in outcomes),
+            domain_batches=sum(o.metrics.domain_batches for o in outcomes),
+            prompt_bytes=sum(o.metrics.prompt_bytes for o in outcomes),
+            elapsed_ms=sum(o.metrics.elapsed_ms for o in outcomes),
+            max_in_flight=max(o.metrics.max_in_flight for o in outcomes),
+            canonical_calls=sum(o.metrics.canonical_calls for o in outcomes),
+        ),
+    )
+
+
 def _retryable_canonical_tokens(
     failures: Sequence[ClassificationFailure],
 ) -> set[str]:
     """Tokens canonicalization still owes a verdict on, so nothing may file them.
 
-    Filing one into a general domain would place it, and a placed token is
-    never re-attempted -- which is precisely how a retryable failure would
-    become permanent.
+    A provider outage has supplied no canonical judgment. Keep the original
+    token pending instead of filing it under an invented interpretation.
     """
 
     return {
@@ -143,13 +179,11 @@ def _apply_placement_floor(
     not_skills: set[str],
     excluded: set[str],
     hints: dict[str, str],
-    candidate_context: CandidateContext | None,
-    existing: ClusterMap,
     enabled: bool,
 ) -> tuple[ClusterMap, list[str]]:
     """Give every still-unplaced skill a home in its category's general domain.
 
-    Two passes have now declined to commit, so the choice is between a skill
+    Bounded recovery has declined to commit, so the choice is between a skill
     nobody can see and a skill filed one level too coarsely.  The second is
     strictly more useful and is visibly provisional, and maintenance can split
     a general domain into real ones later.  The category is the model's own
@@ -168,14 +202,11 @@ def _apply_placement_floor(
     remaining = sorted(_unassigned(merged, target_raw) - not_skills - excluded)
     if not enabled or not remaining:
         return merged, []
-    retrieved: dict[str, str] = {}
-    if candidate_context is not None:
-        for token, domains in candidate_context.domain_candidates.items():
-            if domains:
-                retrieved[token] = existing.category_of.get(domains[0], "other")
     additions = ClusterMap()
     for canonical in remaining:
-        category = hints.get(canonical) or retrieved.get(canonical) or "other"
+        # Candidate retrieval is not a category judgment. In particular, the
+        # top lexical match must not silently become a durable classification.
+        category = hints.get(canonical) or "other"
         if category not in SKILL_GROUPS:
             category = "other"
         domain_id, label = floor_domain(category)
@@ -248,9 +279,10 @@ def refresh_clusters(
     embedding_provider: EmbeddingProvider | None = None,
     demanded_tokens: set[str] | frozenset[str] | None = None,
     category_hints: dict[str, str] | None = None,
+    skill_context: dict[str, list[str]] | None = None,
     escalation_themer: Runner | None = None,
 ) -> dict[str, object]:
-    """Classify a complete or explicitly scoped Unassigned backlog and save once."""
+    """Recover pending/provisional skills in a complete or explicit scope."""
     started = time.monotonic()
     settings = get_settings()
     size = settings.cluster_batch_size if batch_size is None else batch_size
@@ -306,8 +338,32 @@ def refresh_clusters(
         demanded -= set(corrections.removed_skills)
         # A retired token names no skill.  Dropping it here is what stops the
         # backlog from re-buying the same LLM verdict on every single run.
-        demanded -= set(taxonomy_state.retired_skills)
         existing = snapshot.effective
+        demanded = {
+            normalize_skill(token) for token in demanded if normalize_skill(token)
+        }
+        demanded = {
+            token
+            for token in demanded
+            if existing.aliases.get(token, token) not in taxonomy_state.retired_skills
+        }
+        _, pinned_skills = pinned_domains_and_skills(existing, corrections)
+        # Moving one skill pins that skill, not every other generated member
+        # of its category bucket. Domain edits do pin the whole domain.
+        pinned_domains = (
+            set(corrections.domain_renames)
+            | set(corrections.domain_category)
+            | set(corrections.domain_merges)
+            | set(corrections.domain_merges.values())
+        )
+        provisional = {
+            token
+            for token, domain in existing.domain_of.items()
+            if is_general_domain(domain)
+            and domain not in pinned_domains
+            and token not in pinned_skills
+        }
+        demanded_canonicals = {existing.aliases.get(token, token) for token in demanded}
         normalized_requested = {
             token for raw in (skill_keys or set()) if (token := normalize_skill(raw))
         }
@@ -319,15 +375,17 @@ def refresh_clusters(
                 token
                 for token in demanded
                 if existing.domain_of.get(existing.aliases.get(token, token)) is None
+                or existing.aliases.get(token, token) in provisional
             }
         else:
             for token in normalized_requested:
                 canonical = existing.aliases.get(token, token)
-                if token not in demanded and canonical not in {
-                    existing.aliases.get(item, item) for item in demanded
-                }:
+                if token not in demanded and canonical not in demanded_canonicals:
                     skipped_unknown.add(token)
-                elif existing.domain_of.get(canonical) is not None:
+                elif (
+                    existing.domain_of.get(canonical) is not None
+                    and canonical not in provisional
+                ):
                     skipped_assigned.add(token)
                 else:
                     target_raw.add(token)
@@ -343,8 +401,15 @@ def refresh_clusters(
         first_pass = {
             token
             for token in target_raw
-            if existing.aliases.get(token, token) not in attempted
+            if existing.aliases.get(token, token) not in attempted | provisional
         }
+        source_context = (
+            skill_context
+            if skill_context is not None
+            else collect_target_skill_context(session, target_raw, existing.aliases)
+            if session is not None
+            else {}
+        )
 
         candidate_context: CandidateContext | None = None
         if first_pass:
@@ -374,12 +439,17 @@ def refresh_clusters(
         )
         escalation_cap = settings.taxonomy_escalation_max_skills
 
+        recovery_attempts = {
+            token: status.escalation_attempts
+            for token, status in taxonomy_state.grouping_status.items()
+        }
+        attempted_this_run: set[str] = set()
+        recovery_rounds = 0
+
         async def classify_both() -> tuple[
-            ClassificationOutcome,
-            ClassificationOutcome | None,
-            ClusterMap,
-            set[str],
+            ClassificationOutcome, ClassificationOutcome | None, ClusterMap, set[str]
         ]:
+            nonlocal recovery_rounds
             first = await classify_incrementally(
                 demanded_tokens=first_pass,
                 existing=existing,
@@ -394,58 +464,87 @@ def refresh_clusters(
                 allow_category_growth=True,
                 min_new_domain_members=2,
                 category_hints=category_hints,
+                skill_context=source_context,
                 enforce_candidates=enforce_candidates,
                 repair_max_singletons=(
                     settings.taxonomy_canonical_repair_max_singletons
                 ),
             )
             after_first = merge_cluster_map(existing, first.additions)
+            # Temporarily remove only generated provisional placements from the
+            # classifier's input. The saved last-good map remains intact, and
+            # anything we cannot improve is restored before committing.
+            targeted = {after_first.aliases.get(token, token) for token in target_raw}
+            for token in provisional & targeted:
+                after_first.domain_of.pop(token, None)
             canonical_failed = _retryable_canonical_tokens(first.failures)
-            pending = sorted(
-                _unassigned(after_first, target_raw)
-                - set(first.not_skills)
-                - canonical_failed
+            retired = set(first.not_skills)
+            recovery: list[ClassificationOutcome] = []
+            for _round in range(settings.taxonomy_recovery_rounds):
+                pending = (
+                    _unassigned(after_first, target_raw) - retired - canonical_failed
+                )
+                ordered = sorted(
+                    pending,
+                    key=lambda token: (
+                        recovery_attempts.get(token, 0),
+                        token in provisional,
+                        taxonomy_state.grouping_status[token].last_attempted_at
+                        if token in taxonomy_state.grouping_status
+                        else "",
+                        token,
+                    ),
+                )
+                leftovers = ordered[:escalation_cap]
+                if not leftovers:
+                    break
+                recovery_rounds += 1
+                # Retry history changes the batch shape across runs as well as
+                # within this run: 15 -> 3 -> 1 at the default batch size.
+                tiers: dict[int, set[str]] = {}
+                for token in leftovers:
+                    tries = recovery_attempts.get(token, 0)
+                    repair_size = max(1, size // (4 ** min(tries + 1, 4)))
+                    tiers.setdefault(repair_size, set()).add(token)
+                    recovery_attempts[token] = tries + 1
+                    attempted_this_run.add(token)
+                    after_first.aliases.setdefault(token, token)
+                for repair_size, tokens in sorted(tiers.items(), reverse=True):
+                    second = await classify_incrementally(
+                        demanded_tokens=tokens,
+                        existing=after_first,
+                        canonicalizer=canonicalizer,
+                        themer=escalation_themer or themer,
+                        batch_size=repair_size,
+                        concurrency=width,
+                        category_cap=settings.domains_per_category_target,
+                        reconcile_batch_size=reconcile_size,
+                        reporter=phase_reporter,
+                        candidate_context=None,
+                        allow_category_growth=True,
+                        min_new_domain_members=1,
+                        category_hints=category_hints,
+                        skill_context=source_context,
+                    )
+                    recovery.append(second)
+                    retired.update(second.not_skills)
+                    after_first = merge_cluster_map(after_first, second.additions)
+                # A whole round of transport errors is an outage, not a reason
+                # to spend the remaining budget replaying the same requests.
+                round_results = recovery[-len(tiers) :]
+                if all(
+                    o.failures
+                    and all(f.kind == "call" for f in o.failures)
+                    and not o.additions.domain_of
+                    and not o.not_skills
+                    for o in round_results
+                ):
+                    break
+            remaining = (
+                _unassigned(after_first, target_raw) - retired - canonical_failed
             )
-            # Escalation is the expensive path, so it is bounded per run.  What
-            # the bound defers is not "unplaceable" -- it simply has not been
-            # tried yet, so it must not be swept up by the placement floor.  It
-            # keeps its status and escalates first on the next run.
-            leftovers, deferred = (
-                pending[:escalation_cap],
-                set(pending[escalation_cap:]),
-            )
-            if not leftovers:
-                return first, None, after_first, deferred
-            # These are canonical already; pinning identity aliases keeps the
-            # escalation pass out of synonym reconciliation entirely.
-            for canonical in leftovers:
-                after_first.aliases.setdefault(canonical, canonical)
-            second = await classify_incrementally(
-                demanded_tokens=set(leftovers),
-                existing=after_first,
-                canonicalizer=canonicalizer,
-                themer=escalation_themer or themer,
-                # Smaller batches and the whole taxonomy: the residue is the
-                # ambiguous tail, so it gets more attention per token, not less.
-                batch_size=max(1, size // 4),
-                concurrency=width,
-                category_cap=settings.domains_per_category_target,
-                reconcile_batch_size=reconcile_size,
-                reporter=phase_reporter,
-                candidate_context=None,
-                allow_category_growth=True,
-                min_new_domain_members=1,
-                category_hints=category_hints,
-                repair_max_singletons=(
-                    settings.taxonomy_canonical_repair_max_singletons
-                ),
-            )
-            return (
-                first,
-                second,
-                merge_cluster_map(after_first, second.additions),
-                deferred,
-            )
+            deferred = remaining - attempted_this_run
+            return first, _combine_recovery(recovery), after_first, deferred
 
         outcome, escalated, merged, deferred = asyncio.run(
             run_with_cleanup(
@@ -466,12 +565,16 @@ def refresh_clusters(
         all_failures = tuple(outcome.failures) + tuple(
             escalated.failures if escalated else ()
         )
-        call_failed = {
-            normalized
+        last_domain_failure = {
+            normalize_skill(token): failure
             for failure in all_failures
-            if failure.kind == "call"
+            if failure.phase == "domain"
             for token in failure.tokens
-            if (normalized := normalize_skill(token))
+        }
+        call_failed = {
+            token
+            for token, failure in last_domain_failure.items()
+            if failure.kind == "call"
         }
         canonical_failed = _retryable_canonical_tokens(all_failures)
         merged, floor_placed = _apply_placement_floor(
@@ -480,13 +583,19 @@ def refresh_clusters(
             not_skills=not_skills,
             excluded=call_failed | canonical_failed | deferred,
             hints={
+                **{
+                    token: existing.category_of[existing.domain_of[token]]
+                    for token in provisional
+                    if existing.domain_of[token] in existing.category_of
+                },
                 **outcome.fallback_categories,
                 **(escalated.fallback_categories if escalated else {}),
             },
-            candidate_context=candidate_context,
-            existing=existing,
             enabled=settings.taxonomy_placement_floor,
         )
+        for token in provisional:
+            if token not in merged.domain_of and token not in not_skills:
+                merged.domain_of[token] = existing.domain_of[token]
         # This is a growing canonical taxonomy rather than a view cache.  Even
         # an unscoped refresh may only add or clarify its current unassigned
         # backlog; it must never prune established domains or aliases that are
@@ -522,6 +631,11 @@ def refresh_clusters(
             final.aliases.get(token, token) for token in not_skills
         } & requested_canonicals
         assigned = {token for token in requested_canonicals if token in final.domain_of}
+        provisional_now = {
+            token
+            for token in requested_canonicals
+            if is_general_domain(final.domain_of.get(token))
+        }
         statuses: dict[str, GroupingStatus] = {}
         for failure in all_failures:
             failure_state = "failed" if failure.kind == "call" else "uncertain"
@@ -529,7 +643,7 @@ def refresh_clusters(
                 canonical = final.aliases.get(
                     normalize_skill(token), normalize_skill(token)
                 )
-                if canonical not in final.domain_of:
+                if canonical not in final.domain_of and canonical not in retired_canonicals:
                     statuses[canonical] = GroupingStatus(
                         state=failure_state,
                         reason=failure.message,
@@ -546,11 +660,41 @@ def refresh_clusters(
                 ),
             )
 
+        for token in provisional_now:
+            statuses[token] = GroupingStatus(
+                state="uncertain",
+                phase="domain",
+                reason="Provisional category placement; a specific domain still needs confirmation",
+            )
+        for token, status in statuses.items():
+            previous = taxonomy_state.grouping_status.get(token)
+            if token in deferred and previous is not None:
+                statuses[token] = previous
+            else:
+                status.escalation_attempts = recovery_attempts.get(token, 0)
+        # Older refreshes retained failures for skills already placed. Clear
+        # those obsolete records even outside this run's requested scope,
+        # while preserving unresolved history and provisional retry counts.
+        resolved_keys = {
+            token
+            for token in target_raw | taxonomy_state.grouping_status.keys()
+            if (
+                final.aliases.get(token, token)
+                in taxonomy_state.retired_skills.keys() | retired_canonicals
+                or (
+                    final.aliases.get(token, token) in final.domain_of
+                    and not is_general_domain(
+                        final.domain_of[final.aliases.get(token, token)]
+                    )
+                )
+            )
+        }
+
         def commit_refresh(_current: TaxonomySnapshot) -> object:
             save_cluster_map(final, path)
             return set_grouping_statuses(
                 path,
-                assigned=assigned,
+                assigned=assigned | resolved_keys,
                 statuses=statuses,
                 retired={token: "not a skill" for token in retired_canonicals},
             )
@@ -599,6 +743,8 @@ def refresh_clusters(
         "failedDomainTokens": domain_failures,
         "canonicalBatches": outcome.metrics.canonical_batches
         + (escalated.metrics.canonical_batches if escalated else 0),
+        "canonicalCalls": outcome.metrics.canonical_calls
+        + (escalated.metrics.canonical_calls if escalated else 0),
         "domainBatches": outcome.metrics.domain_batches
         + (escalated.metrics.domain_batches if escalated else 0),
         "promptBytes": outcome.metrics.prompt_bytes
@@ -640,6 +786,11 @@ def refresh_clusters(
         and candidate_context.degraded,
         "embeddingReason": candidate_context.reason if candidate_context else "",
         "escalatedSkills": escalated_count,
+        "recoveryRounds": recovery_rounds,
+        "recoveryAttemptedSkills": len(attempted_this_run),
+        "provisionalSkills": len(provisional_now),
+        "refinedSkills": len((provisional & assigned) - provisional_now),
+        "confirmedSkills": len(assigned - provisional_now),
         "placedByFallback": len(floor_placed),
         "retiredSkills": sorted(retired_canonicals),
         "algorithmVersion": ALGORITHM_VERSION,
@@ -664,7 +815,9 @@ def refresh_clusters(
         "failureReasons": failure_reasons,
         "domainsCreated": domains_created,
         "aliasesMerged": aliases_merged,
-        "remainingUnassigned": len(requested_canonicals - assigned),
+        "remainingUnassigned": len(
+            requested_canonicals - assigned - retired_canonicals
+        ),
         "skippedAlreadyAssigned": sorted(skipped_assigned),
         "skippedUnknown": sorted(skipped_unknown),
         "skippedStaleSkills": len(skipped_assigned) + len(skipped_unknown),
