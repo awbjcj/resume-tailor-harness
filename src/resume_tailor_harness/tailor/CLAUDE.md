@@ -9,6 +9,13 @@ Every bullet on a tailored resume must trace back to a fact in
 **hard gate** (not scored) — any unsupported claim fails the round. Agents
 rewrite and reframe; they never invent.
 
+A configured `fact-check` reviewer is always a blocking gate. Domain and API
+config validation repair legacy `gate: false` values so the reviewer receives
+supporting facts instead of the lean advisory input. A failed fact-check can
+never be outweighed by advisory scores. Legacy passing flags contradicted by a
+failed fact-check are rejected when surfacing resumes, projecting API/export
+metadata, and listing verified application attachments; stored history is retained.
+
 Inferred skills (`Skill.inferred=true`) are evidence pointers: each carries
 `evidence_fact_ids` resolving to literal facts. They may appear as
 skills-section tokens (hard skills) and guide match-plan emphasis, but never

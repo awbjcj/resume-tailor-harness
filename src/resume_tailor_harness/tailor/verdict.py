@@ -3,10 +3,13 @@ from collections.abc import Iterable
 from pydantic import Field
 
 from resume_tailor_harness.models.base import ExtensibleModel
-from resume_tailor_harness.models.review import ReviewCritique
+from resume_tailor_harness.models.review import FACT_CHECK_REVIEWER, ReviewCritique
 from resume_tailor_harness.tailor.coverage import CoverageCritique
 from resume_tailor_harness.tailor.depth import DepthCritique
-from resume_tailor_harness.tailor.review_config import RESERVED_REVIEWER_NAMES, ReviewConfig
+from resume_tailor_harness.tailor.review_config import (
+    RESERVED_REVIEWER_NAMES,
+    ReviewConfig,
+)
 
 # Gates decided in-process, not by a configured reviewer agent. They ride in the
 # critiques list like any gate, so aggregate stays the only verdict constructor.
@@ -19,7 +22,7 @@ _ADVISORY_MEASUREMENTS = (CoverageCritique, DepthCritique)
 # mark ANY reviewer as a gate - callers that know which reviewers are actually
 # configured as gates for this round must pass `gate_names` instead of relying
 # on this default.
-DEFAULT_GATE_REVIEWERS = DETERMINISTIC_GATES | frozenset({"fact-check"})
+DEFAULT_GATE_REVIEWERS = DETERMINISTIC_GATES | frozenset({FACT_CHECK_REVIEWER})
 
 
 def failing_gate_names(
@@ -36,8 +39,12 @@ def failing_gate_names(
     defaults to `DEFAULT_GATE_REVIEWERS` only when the caller has no config to
     consult. Deterministic gates are always gates, not configured reviewers.
     """
-    gates = DETERMINISTIC_GATES | (
-        frozenset(gate_names) if gate_names is not None else DEFAULT_GATE_REVIEWERS
+    # Fact verification is mandatory even when an old round recorded it as
+    # advisory. Other configured gate names retain their historical meaning.
+    gates = (
+        DETERMINISTIC_GATES
+        | {FACT_CHECK_REVIEWER}
+        | (frozenset(gate_names) if gate_names is not None else DEFAULT_GATE_REVIEWERS)
     )
     return [
         critique.reviewer
@@ -72,7 +79,7 @@ def aggregate(critiques: list[ReviewCritique], config: ReviewConfig) -> PanelVer
     ]
     by_name = {c.reviewer: c for c in decision_critiques}
 
-    config_gates = {r.name for r in config.reviewers if r.gate}
+    config_gates = {r.name for r in config.reviewers if r.gate} | {FACT_CHECK_REVIEWER}
     gate_passed = all(
         c.passed
         for c in decision_critiques
@@ -82,7 +89,10 @@ def aggregate(critiques: list[ReviewCritique], config: ReviewConfig) -> PanelVer
     weighted = [
         (r.weight, by_name[r.name].score)
         for r in config.reviewers
-        if not r.gate and r.weight > 0 and r.name in by_name
+        if not r.gate
+        and r.name != FACT_CHECK_REVIEWER
+        and r.weight > 0
+        and r.name in by_name
     ]
     total_weight = sum(weight for weight, _ in weighted)
     # No weighted critique means the advisory panel never produced a score. That

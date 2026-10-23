@@ -5,6 +5,8 @@ from typing import Any, cast
 from sqlalchemy import JSON, Column, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
+from resume_tailor_harness.models.review import has_failed_fact_check
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -110,6 +112,10 @@ class ResumeVersion(SQLModel, table=True):
     )
     schema_version: int = 1
     created_at: datetime = Field(default_factory=utcnow)
+
+    @property
+    def fact_lock_passed(self) -> bool:
+        return self.fact_check_passed and not has_failed_fact_check(self.critique_json)
 
 
 class Application(SQLModel, table=True):

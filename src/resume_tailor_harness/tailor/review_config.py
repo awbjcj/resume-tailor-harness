@@ -5,6 +5,7 @@ from pydantic import Field, model_validator
 
 from resume_tailor_harness.config import load_yaml
 from resume_tailor_harness.models.base import ExtensibleModel
+from resume_tailor_harness.models.review import FACT_CHECK_REVIEWER
 from resume_tailor_harness.tailor.numeric_evidence import NUMERIC_EVIDENCE_REVIEWER
 from resume_tailor_harness.tailor.provenance import PROVENANCE_REVIEWER
 from resume_tailor_harness.tailor.skill_naming import SKILL_NAMING_REVIEWER
@@ -38,6 +39,14 @@ class ReviewerSpec(ExtensibleModel):
     weight: int = 1
     model_tier: str = "mid"  # cheap | mid | premium
     score_bands: bool = False
+
+    @model_validator(mode="after")
+    def _require_fact_check_gate(self) -> "ReviewerSpec":
+        # Heal old YAML instead of making the workspace unloadable. Fact-check
+        # must receive evidence and cannot become a weighted advisory review.
+        if self.name == FACT_CHECK_REVIEWER:
+            self.gate = True
+        return self
 
 
 class LengthBudget(ExtensibleModel):
