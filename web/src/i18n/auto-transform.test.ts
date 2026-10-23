@@ -4,6 +4,7 @@ import { transformAsync, type NodePath, type PluginItem } from "@babel/core";
 import type { StringLiteral } from "@babel/types";
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
+import i18n, { changeLanguage } from "./index";
 
 const require = createRequire(import.meta.url);
 const autoI18nPlugin = require("../../i18n-auto-plugin.cjs") as PluginItem;
@@ -12,6 +13,43 @@ const { isLocalizableStringPath } = require("../../i18n-classifier.cjs") as {
 };
 
 describe("automatic i18n build transform", () => {
+  it("reads module-level labels in the current language without translating option values", async () => {
+    const result = await transformAsync(`
+      const LABELS = { ready: "Ready" };
+      const options = [{ value: "ready", label: "Ready" }];
+    `, { babelrc: false, configFile: false, plugins: [autoI18nPlugin] });
+    const code = result?.code ?? "";
+    const importLine = /import (\w+) from "@\/i18n";/;
+    const identifier = code.match(importLine)?.[1];
+    expect(identifier).toBeTruthy();
+    const evaluate = new Function(identifier!, `${code.replace(importLine, "")}\nreturn { LABELS, options };`);
+    const display = evaluate(i18n) as { LABELS: { ready: string }; options: { value: string; label: string }[] };
+
+    await changeLanguage("en");
+    expect(display.LABELS.ready).toBe("Ready");
+    await changeLanguage("zh-CN");
+    expect(display.LABELS.ready).toBe("就绪");
+    expect(display.options[0]).toEqual({ value: "ready", label: "就绪" });
+    await changeLanguage("en");
+    expect(display.options[0].label).toBe("Ready");
+  });
+
+  it("translates display branches inside templates and rendered map callbacks", async () => {
+    const result = await transformAsync(`
+      function View({ row, rows }) {
+        return <div title={\`\${row.status === "ready" ? "Active" : "Complete"}\`}>
+          {rows.map((item) => \`Added \${item.title}\`)}
+        </div>;
+      }
+    `, { babelrc: false, configFile: false, parserOpts: { plugins: ["jsx"] }, plugins: [autoI18nPlugin] });
+
+    expect(result?.code).toContain('row.status === "ready"');
+    expect(result?.code).not.toContain('"Active"');
+    expect(result?.code).not.toContain('"Complete"');
+    expect(result?.code).not.toContain("`Added");
+    expect(result?.code?.match(/\.t\("auto\./g)).toHaveLength(4);
+  });
+
   it("uses the selected language for implicit and fixed English locale formatting", async () => {
     const result = await transformAsync(
       `

@@ -72,9 +72,15 @@ const uiCollectionValue = (pathRef) => {
   if (!declaration || declaration.node.id.type !== "Identifier" || !UI_COLLECTION.test(declaration.node.id.name)) return false;
   const init = variableInit(declaration);
   if (!init.isArrayExpression() && !init.isObjectExpression()) return false;
+  if (init.isArrayExpression()) {
+    let value = pathRef;
+    while (value.parentPath && isRenderedBranch(value, value.parentPath)) value = value.parentPath;
+    if (value.parentPath?.node === init.node && value.listKey === "elements") return true;
+  }
   let current = pathRef;
   while (current.parentPath && current.parentPath.node !== init.node && !current.parentPath.isFunction()) {
-    if (current.parentPath.isArrayExpression() && current.parentPath.parentPath?.node === init.node) {
+    if (current.parentPath.isArrayExpression()
+      && (current.parentPath.parentPath?.node === init.node || current.parentPath.parentPath?.isTSAsExpression())) {
       return current.listKey === "elements"
         && (Number(current.key) > 0 || /\s|^[A-Z][a-z]/.test(pathRef.isStringLiteral() ? pathRef.node.value : templateSource(pathRef.node)));
     }
@@ -112,7 +118,8 @@ const uiObjectProperty = (pathRef) => {
 };
 const uiDefaultParameter = (pathRef) => {
   const assignment = pathRef.findParent((candidate) => candidate.isAssignmentPattern() || candidate.isFunction());
-  return Boolean(assignment?.isAssignmentPattern() && assignment.node.left.type === "Identifier" && UI_VARIABLE.test(assignment.node.left.name));
+  return Boolean(assignment?.isAssignmentPattern() && assignment.node.left.type === "Identifier"
+    && (UI_VARIABLE.test(assignment.node.left.name) || UI_PROPS.has(assignment.node.left.name)));
 };
 const uiSetterCall = (pathRef) => {
   const call = pathRef.findParent((candidate) => candidate.isCallExpression() || candidate.isFunction());
@@ -148,7 +155,13 @@ const uiAttributeFunctionValue = (pathRef) => {
 };
 const uiRenderedCallbackValue = (pathRef) => {
   const fn = pathRef.findParent((candidate) => candidate.isArrowFunctionExpression() || candidate.isFunctionExpression());
-  if (!fn || !outputPosition(fn)) return false;
+  if (!fn) return false;
+  const call = fn.parentPath;
+  const callee = call?.isCallExpression() ? call.node.callee : null;
+  const renderedMap = callee?.type === "MemberExpression"
+    && callee.property.type === "Identifier" && ["map", "flatMap"].includes(callee.property.name)
+    && fn.listKey === "arguments" && Number(fn.key) === 0 && outputPosition(call);
+  if (!outputPosition(fn) && !renderedMap) return false;
   let current = pathRef;
   while (current.parentPath && current.parentPath !== fn) {
     const parent = current.parentPath;
@@ -268,6 +281,19 @@ const isTemplateFragment = (pathRef) => {
   const template = pathRef.findParent((candidate) => candidate.isTemplateLiteral() || candidate.isFunction());
   return Boolean(template?.isTemplateLiteral() && isLocalizableStringPath(template));
 };
+// Only display branches inside interpolations are translated. Conditions,
+// lookup keys, and function arguments can still contain protocol values.
+const renderedTemplateValue = (pathRef) => {
+  if (pathRef.isStringLiteral() && ["s", "y", "ies", "is", "s are"].includes(clean(pathRef.node.value))) return false;
+  let current = pathRef;
+  while (current.parentPath) {
+    const parent = current.parentPath;
+    if (parent.isTemplateLiteral()) return current.listKey === "expressions" && isLocalizableStringPath(parent);
+    if (!isRenderedBranch(current, parent)) return false;
+    current = parent;
+  }
+  return false;
+};
 const isLocalizableStringPath = (pathRef) => {
   if (pathRef.isJSXText()) return isHumanText(pathRef.node.value);
   if (!pathRef.isStringLiteral() && !pathRef.isTemplateLiteral()) return false;
@@ -277,7 +303,7 @@ const isLocalizableStringPath = (pathRef) => {
   if (!isHumanText(value)) return false;
   if (pathRef.parentPath?.isMemberExpression() && pathRef.key === "property") return false;
   if (isTranslationKey(pathRef)) return false;
-  if (!pathRef.isTemplateLiteral() && isTemplateFragment(pathRef)) return false;
+  if (!pathRef.isTemplateLiteral() && isTemplateFragment(pathRef)) return renderedTemplateValue(pathRef);
   const parent = pathRef.parentPath;
   const attribute = jsxAttribute(pathRef);
   if (attribute) {
