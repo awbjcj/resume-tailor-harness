@@ -29,6 +29,8 @@ jobs:
         run: uv sync --frozen
       - name: Lint (ruff)
         run: uv run ruff check src tests evals sdk/python/src
+      - name: Type check (Pyright / Pylance)
+        run: uv run pyright
       - name: Test (pytest, offline)
         run: uv run pytest tests
 
@@ -59,7 +61,6 @@ jobs:
     name: security-audit
     if: inputs.full
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
@@ -67,13 +68,18 @@ jobs:
         with:
           enable-cache: true
           python-version: "3.13"
+      - name: Export locked Python dependencies
+        run: uv export --frozen --no-emit-project --format requirements-txt --output-file requirements-audit.txt > /dev/null
       - name: Python dependency audit
-        run: uvx pip-audit || true
+        run: uvx pip-audit --requirement requirements-audit.txt --require-hashes --disable-pip --strict
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci --ignore-scripts
       - name: Web dependency audit
         working-directory: web
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
