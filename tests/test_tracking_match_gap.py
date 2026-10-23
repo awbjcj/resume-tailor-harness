@@ -109,7 +109,9 @@ def test_fallback_category_is_visible_but_never_adjacency_evidence():
         nodes = {node.key: node for node in graph.skills}
         assert nodes["python"].coverage == "covered"
         assert nodes["rust"].coverage == "gap"
-        assert nodes["rust"].grouping_status["reason"] == "Provisional"
+        status = nodes["rust"].grouping_status
+        assert status is not None
+        assert status["reason"] == "Provisional"
         assert not match_gap(session, facts, cluster_map=cmap).gaps[0].adjacent
 
 
