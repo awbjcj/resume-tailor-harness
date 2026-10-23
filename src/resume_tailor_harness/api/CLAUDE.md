@@ -62,9 +62,11 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   one default workspace and bypasses account auth; the CLI confines that mode
   to loopback. `app_mode="hosted"` enables session/PAT authentication and
   per-request tenant context. `Settings.cors_origins` remains the CORS allowlist.
-- **In-memory sqlite tests** need a shared connection: `make_engine` gives
-  `sqlite://` a `StaticPool` + `check_same_thread=False` so the request threadpool
-  sees the schema the lifespan thread created.
+- **In-memory sqlite tests** need a shared database with independent connections:
+  `make_engine` uses a named shared-cache URI and QueuePool. Checked-out connections
+  must survive more than five request/worker threads, and one session's rollback
+  must never discard another's transaction. `check_same_thread=False` permits
+  sequential pooled reuse across threads; sessions still belong to one caller.
 - **Board filters are declared once.** `tracking/board_query.py` owns the shared
   shortlist/pipeline/triage selection, sorting, paging, and facet expressions;
   `board_filter_query(default_sort)` only maps the shared HTTP query surface
