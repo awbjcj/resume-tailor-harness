@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Bot, Clock3, FileCheck2, MessageCircleQuestion, SearchCheck, Sparkles, SquareCheckBig } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
@@ -73,6 +74,7 @@ function RunError({ message, onRetry }: { message: string; onRetry: () => void }
 }
 
 export function CoachPage() {
+  useTranslation();
   const [showArchived, setShowArchived] = useState(false);
   const sessions = useCoachSessions(showArchived);
   const activeSummary = sessions.data?.sessions?.find((session) => session.status === "active");

@@ -52,7 +52,7 @@ describe("ApplicationEditor", () => {
     render(<ApplicationEditor jobId={42} application={application} />);
 
     expect(screen.getByText("面试中")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /覆盖/ }));
+    await user.click(screen.getByRole("button", { name: "手动更改" }));
     const status = screen.getByRole("combobox");
     expect(screen.getByRole("option", { name: "已拒绝" })).toHaveValue("rejected");
     await user.selectOptions(status, "rejected");

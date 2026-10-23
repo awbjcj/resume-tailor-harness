@@ -29,9 +29,9 @@ export function verificationLabel(
 export function companyIntelligenceLabel(row: ScoutProposal): string | null {
   if (row.kind !== "source" || row.source?.companyIntelligenceStatus == null) return null;
   const version = row.source.companyIntelligenceVersion;
-  const saved = version == null ? "Research saved" : `Research v${version}`;
-  if (row.source.companyIntelligenceStatus === "ready") return saved;
-  if (row.source.companyIntelligenceStatus === "stale") return `${saved} · stale`;
+  const researchLabel = version == null ? "Research saved" : `Research v${version}`;
+  if (row.source.companyIntelligenceStatus === "ready") return researchLabel;
+  if (row.source.companyIntelligenceStatus === "stale") return `${researchLabel} · stale`;
   return "No saved research";
 }
 
@@ -67,7 +67,16 @@ export function proposalLabel(row: ScoutProposal): string {
 
 /** Secondary line: the ATS for a company, the term kind for a search condition. */
 export function proposalDetail(row: ScoutProposal): string {
-  return row.source?.ats ?? row.term?.termKind.replaceAll("_", " ") ?? "";
+  const termLabels: Record<string, string> = {
+    keyword: "Keyword",
+    title: "Job title",
+    role_anchor: "Role keyword",
+    exclude_term: "Excluded keyword",
+    location: "Location",
+    seniority: "Seniority",
+    adjacent_role: "Related role",
+  };
+  return row.source?.ats ?? (row.term ? termLabels[row.term.termKind] ?? row.term.termKind.replaceAll("_", " ") : "");
 }
 
 export type ProposalGroups = {

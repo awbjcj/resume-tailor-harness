@@ -36,8 +36,8 @@ function numberField(value: unknown, ...keys: string[]): number | null {
   return null;
 }
 
-function pluralLabel(count: number, singular: string, pluralForm = `${singular}s`): string {
-  return `${count} ${count === 1 ? singular : pluralForm}`;
+function completedCount(count: number, kind: "job" | "resumeVersion" | "coverLetter" | "stage"): string {
+  return i18n.t(`runHistory.counts.${kind}`, { count });
 }
 
 function announceOne(run: RunRecord): void {
@@ -64,10 +64,10 @@ function announceOne(run: RunRecord): void {
       (total, count) => total + (count ?? 0),
       0,
     );
-    const jobSummary = pluralLabel(jobs.length, "job");
+    const jobSummary = completedCount(jobs.length, "job");
     toast.success(
       hasCompleteVersionCounts
-        ? `Tailoring complete: ${jobSummary} tailored, ${pluralLabel(versions, "resume version")} created. Open a job's Versions tab to render PDF.`
+        ? `Tailoring complete: ${jobSummary} tailored, ${completedCount(versions, "resumeVersion")} created. Open a job's Versions tab to render PDF.`
         : `Tailoring complete: ${jobSummary} tailored. Open a job's Versions tab to render PDF.`,
     );
     return;
@@ -76,7 +76,7 @@ function announceOne(run: RunRecord): void {
     const coverLetters = resultRecord(run)?.coverLetters;
     toast.success(
       Array.isArray(coverLetters)
-        ? `Cover-letter generation complete: ${pluralLabel(coverLetters.length, "cover letter")} created.`
+        ? `Cover-letter generation complete: ${completedCount(coverLetters.length, "coverLetter")} created.`
         : "Cover-letter generation complete.",
     );
     return;
@@ -85,7 +85,7 @@ function announceOne(run: RunRecord): void {
     const outcomes = resultRecord(run)?.outcomes;
     toast.success(
       Array.isArray(outcomes)
-        ? `Pipeline redo complete: ${pluralLabel(outcomes.length, "stage")} processed.`
+        ? `Pipeline redo complete: ${completedCount(outcomes.length, "stage")} processed.`
         : "Pipeline redo complete.",
     );
     return;

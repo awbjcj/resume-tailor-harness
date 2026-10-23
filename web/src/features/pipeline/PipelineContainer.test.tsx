@@ -64,7 +64,7 @@ describe("PipelineContainer", () => {
 
     await act(() => changeLanguage("zh-CN"));
 
-    const labels = ["已定制", "已生成", "已批准", "已加入候选", "原始", "已拒绝"];
+    const labels = ["已定制", "已生成", "已批准", "已加入候选", "新获取", "已拒绝"];
     expect(screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent)).toEqual(labels);
     await userEvent.click(screen.getByRole("button", { name: "状态" }));
     for (const label of labels) {

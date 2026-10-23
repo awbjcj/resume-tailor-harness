@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { evidencePortfolioWarningLabel } from "@/i18n/profile-build-diagnostics";
+import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 import type { components } from "@/lib/api/schema";
 import { useEvidencePortfolio } from "./use-evidence-portfolio";
 
@@ -63,7 +64,7 @@ export function EvidencePortfolioDisclosure({
   versionId: number;
   available: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [showAllDetails, setShowAllDetails] = useState(false);
   const panelId = useId();
@@ -226,7 +227,7 @@ export function EvidencePortfolioDisclosure({
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="inline-flex items-center gap-1.5 font-semibold capitalize">
                                 <EvidenceKindIcon kind={selection.ownerKind} />
-                                {selection.ownerKind} {selection.rank}
+                                {localizeDisplayValue(selection.ownerKind, i18n.resolvedLanguage)} {selection.rank}
                               </span>
                               <Badge variant="outline">
                                 {`Up to ${selection.bulletBudget} bullet${selection.bulletBudget === 1 ? "" : "s"}`}
@@ -326,7 +327,7 @@ export function EvidencePortfolioDisclosure({
                       <ul className="mt-2 space-y-2">
                         {visibleOmissions.map((omission) => (
                           <li key={omission.ownerId} className="rounded-md border border-dashed bg-background/60 p-2.5 text-xs leading-5 text-muted-foreground">
-                            <span className="font-medium capitalize text-foreground">Other {omission.ownerKind}: </span>
+                            <span className="font-medium capitalize text-foreground">Other {localizeDisplayValue(omission.ownerKind, i18n.resolvedLanguage)}: </span>
                             {omission.rationale}
                           </li>
                         ))}

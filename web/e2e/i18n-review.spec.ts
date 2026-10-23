@@ -88,3 +88,41 @@ test("switches settings navigation language while preserving unsaved form input"
   await expect(page.locator("#maxRounds")).toHaveValue("4");
   await expect(page.getByRole("button", { name: "保存更改", exact: true })).toBeVisible();
 });
+
+test("localizes interview style values and keeps the answer when switching languages", async ({ page }, testInfo) => {
+  const summary = {
+    sessionId: "translation-session", jobId: 7, resumeVersionId: 3,
+    company: "Acme", title: "Engineer", status: "active",
+    startedAt: "2026-10-23T12:00:00Z", endedAt: null, archivedAt: null,
+    askedCount: 1, questionCount: 4,
+  };
+  await page.route("**/api/interview/sessions*", (route) => route.fulfill({ json: { sessions: [summary] } }));
+  await page.route("**/api/interview/sessions/translation-session", (route) => route.fulfill({ json: {
+    ...summary, concluded: false,
+    style: { stage: "technical", demeanor: "neutral", difficulty: "standard", questionCount: 4, extra: "", responseMode: "text" },
+    progress: { asked: 1, total: 4 }, plan: null, debrief: null,
+    turns: [{ role: "interviewer", text: "请介绍一个你主导的项目。", questionId: "q1", isFollowup: false, at: summary.startedAt }],
+  } }));
+  await page.goto("/interview?session=translation-session");
+  await expect(page.getByText("技术面试", { exact: true })).toBeVisible();
+  await expect(page.getByText("中性", { exact: true })).toBeVisible();
+  await expect(page.getByText("标准", { exact: true })).toBeVisible();
+  await expect(page.getByText("第 1 题，共 4 题", { exact: true })).toBeVisible();
+  const answer = page.locator("textarea").last();
+  await answer.fill("保留这段尚未提交的回答");
+  await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
+  await expect(page.getByText("technical", { exact: true })).toBeVisible();
+  await expect(page.getByText("Question 1 of 4", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Question 1 of 4 ·/)).toBeVisible();
+  await expect(answer).toHaveValue("保留这段尚未提交的回答");
+  await page.getByRole("combobox", { name: "Language", exact: true }).selectOption("zh-CN");
+  await expect(page.getByText("技术面试", { exact: true })).toBeVisible();
+  await expect(page.getByText("第 1 题，共 4 题", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^第 1 题，共 4 题 ·/)).toBeVisible();
+  await expect(answer).toHaveValue("保留这段尚未提交的回答");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByText("技术面试", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: testInfo.outputPath("chinese-interview.png"), fullPage: true });
+});

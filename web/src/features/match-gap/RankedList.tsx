@@ -61,7 +61,7 @@ function StatLine({
   adjacentCount: number;
 }) {
   const parts = [
-    `${skillCount} ${skillCount === 1 ? "skill" : "skills"}`,
+    `${skillCount} skill${skillCount === 1 ? "" : "s"}`,
     score > 0 ? `score ${score}` : null,
     gapCount > 0 ? `${gapCount} gaps` : null,
     adjacentCount > 0 ? `${adjacentCount} adjacent` : null,

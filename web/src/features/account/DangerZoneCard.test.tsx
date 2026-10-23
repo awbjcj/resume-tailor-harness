@@ -16,7 +16,7 @@ async function openConfirmedDialog(user: ReturnType<typeof userEvent.setup>) {
 describe("DangerZoneCard", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it.each([/^Profile/, /^Everything/])(
+  it.each([/^个人资料/, /^全部/])(
     "identifies retained overrides in Chinese reset scope %s",
     async (scopeName) => {
       await changeLanguage("zh-CN");

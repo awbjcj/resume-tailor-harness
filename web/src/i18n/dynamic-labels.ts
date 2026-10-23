@@ -10,6 +10,15 @@ function isChinese(language: string | null | undefined): boolean {
   return language?.toLowerCase().startsWith("zh") ?? false;
 }
 
+/** Display known API enums without translating values used in requests. */
+export function localizeDisplayValue(value: string, language: string | null | undefined): string {
+  if (isChinese(language)) {
+    const key = value.toLowerCase() as keyof typeof zhCN.displayValues;
+    if (zhCN.displayValues[key]) return zhCN.displayValues[key];
+  }
+  return value.replaceAll("_", " ");
+}
+
 function translateTemplate(table: Record<string, string>, value: string): string | null {
   if (table[value]) return table[value];
 

@@ -1,4 +1,6 @@
 import { isProvisionalSkill } from "./aggregate";
+import { useTranslation } from "react-i18next";
+import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 import { BriefcaseBusinessIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -22,10 +24,10 @@ type Job = {
   seniority?: string | null;
 };
 
-function stateLabel(state: SuggestionState): string {
+function stateLabel(state: SuggestionState, language: string | undefined): string {
   if (state === "none") return "Not generated";
   if (state === "not_found") return "Unavailable";
-  return state[0].toUpperCase() + state.slice(1);
+  return localizeDisplayValue(state[0].toUpperCase() + state.slice(1), language);
 }
 
 export function SkillModal({
@@ -41,6 +43,7 @@ export function SkillModal({
   jobs: Job[];
   onClose: () => void;
 }) {
+  const { i18n } = useTranslation();
   const open = skill !== null;
   const { data: envelope, isLoading, isError, refetch } = useSuggestion(
     "skill",
@@ -79,7 +82,7 @@ export function SkillModal({
                       ? "Adjacent"
                       : "Gap"}
                 </Badge>
-                <Badge variant="outline">{stateLabel(state)}</Badge>
+                <Badge variant="outline">{stateLabel(state, i18n.resolvedLanguage)}</Badge>
               </div>
               <DialogTitle className="text-2xl font-semibold sm:text-3xl">
                 {skill.skill}

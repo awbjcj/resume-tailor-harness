@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { MessageCircle, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatRunProgress } from "@/components/chat/ChatRunProgress";
@@ -31,6 +32,7 @@ export function JobAssistant(props: Props) {
 }
 
 export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
+  const { t } = useTranslation();
   const sessions = useCareerLabSessions({ jobId });
   const activeSummary = (sessions.data?.activeSessions ?? sessions.data?.sessions ?? []).find((row) => row.status === "active" && row.jobId === jobId);
   const [openedId, setOpenedId] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
     try {
       const run = sessionId
         ? await send.mutateAsync({ sessionId, message: text, context, onDone: (run) => onDone(run, text) })
-        : await start.mutateAsync({ message: text, goal: `Discuss ${jobLabel}`, context, onDone: (run) => onDone(run, text) });
+        : await start.mutateAsync({ message: text, goal: t("chat.discussJob", { job: jobLabel }), context, onDone: (run) => onDone(run, text) });
       if (!finished.current.delete(run.runId)) setLocalRunId(run.runId);
     } catch (caught) { setPending(null); setError(caught instanceof Error ? caught.message : "Unable to start the response."); }
   };

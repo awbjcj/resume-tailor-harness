@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { api, unwrap } from "@/lib/api/client";
@@ -22,6 +24,7 @@ function DraftEditor({
   onApproved: (result: ApprovalResult) => void;
   onValidate: (id: string, revision: number) => void;
 }) {
+  const { i18n } = useTranslation();
   const cache = useQueryClient();
   const [revision, setRevision] = useState(draft.revision ?? 0);
   const [plan, setPlan] = useState(draft.plan);
@@ -87,7 +90,7 @@ function DraftEditor({
       {draft.navigation && (
         <div className="rounded-lg border bg-muted/25 p-3 text-sm" role="status">
           <p className="font-medium">
-            Navigation outcome: {draft.navigation.terminalReason.replaceAll("_", " ")}
+            Navigation outcome: {localizeDisplayValue(draft.navigation.terminalReason, i18n.resolvedLanguage)}
           </p>
           <p className="text-muted-foreground">
             {draft.navigation.discovered ?? 0} discovered ·{" "}

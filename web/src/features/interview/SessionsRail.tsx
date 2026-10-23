@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { ChatSessionHistory, type ChatSessionHistoryItem } from "@/components/chat/ChatSessionHistory";
@@ -14,6 +15,7 @@ import {
 } from "./use-interview";
 
 export function SessionsRail({ selectedId }: { selectedId: string | null }) {
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const [showArchived, setShowArchived] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
@@ -31,11 +33,11 @@ export function SessionsRail({ selectedId }: { selectedId: string | null }) {
     return {
       id: row.sessionId,
       title,
-      detail: `${row.sessionTitle ? `${fallbackTitle} · ` : ""}${progress} · ${formatUserDate(row.startedAt)}`,
+      detail: `${row.sessionTitle ? `${fallbackTitle} · ` : ""}${progress} · ${formatUserDate(row.startedAt, i18n.resolvedLanguage)}`,
       status: row.status === "active" ? "active" : "ended",
       archived: Boolean(row.archivedAt),
     };
-  }), [sessions.data?.sessions]);
+  }), [sessions.data?.sessions, i18n.resolvedLanguage]);
 
   return (
     <>

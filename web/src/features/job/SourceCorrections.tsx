@@ -15,7 +15,7 @@ function factKey(field: string): keyof JobFacts {
   ) as keyof JobFacts;
 }
 
-function displayFact(value: unknown): string {
+function displayFactLabel(value: unknown): string {
   if (value === null || value === undefined || value === "") return "Not stated";
   return typeof value === "string" ? value : JSON.stringify(value);
 }
@@ -33,12 +33,12 @@ function ObservationIssues({ observation }: { observation: Observation }) {
               <dl className="mt-2 grid gap-1">
                 <div>
                   <dt className="inline font-medium">Latest source: </dt>
-                  <dd className="inline">{displayFact(observation.facts[key])}</dd>
+                  <dd className="inline">{displayFactLabel(observation.facts[key])}</dd>
                 </div>
                 <div>
                   <dt className="inline font-medium">Saved correction: </dt>
                   <dd className="inline">
-                    {displayFact(observation.effectiveFacts?.[key])}
+                    {displayFactLabel(observation.effectiveFacts?.[key])}
                   </dd>
                 </div>
               </dl>

@@ -105,7 +105,7 @@ describe("BillingCard", () => {
   it("translates the purchase flow into Simplified Chinese", async () => {
     await changeLanguage("zh-CN");
     mount();
-    expect(await screen.findByRole("button", { name: /^充值并支付/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /^充值 / })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^订阅 / })).toBeInTheDocument();
     expect(screen.getByText("每 1 个月")).toBeInTheDocument();
   });

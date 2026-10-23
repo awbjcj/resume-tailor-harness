@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { ScoutProposal } from "./use-scout";
-import { canAddProposal, canManuallyConfirm, companyIntelligenceLabel, verificationLabel } from "./proposals";
+import { canAddProposal, canManuallyConfirm, companyIntelligenceLabel, proposalDetail, verificationLabel } from "./proposals";
+import { changeLanguage } from "@/i18n";
 
 const source = (
   check: ScoutProposal["check"],
@@ -54,6 +55,15 @@ const term = (): ScoutProposal => ({
 });
 
 describe("Scout proposal verification policy", () => {
+  it("localizes saved research and search-term labels without changing their stored values", async () => {
+    await changeLanguage("zh-CN");
+    expect(companyIntelligenceLabel(source("validated", { companyIntelligenceStatus: "stale", companyIntelligenceVersion: 2 }))).toBe("调研版本 2 · 已过期");
+    const keyword = term();
+    expect(proposalDetail(keyword)).toBe("关键词");
+    expect(keyword.term?.termKind).toBe("keyword");
+    await changeLanguage("en");
+    expect(proposalDetail(keyword)).toBe("Keyword");
+  });
   it("allows normal add only for verified sources and eligible terms", () => {
     expect(canAddProposal(source("validated"))).toBe(true);
     expect(canAddProposal(source("unverified"))).toBe(false);

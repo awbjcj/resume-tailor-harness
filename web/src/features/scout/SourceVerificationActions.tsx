@@ -1,4 +1,6 @@
 import { useId, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 import { ExternalLink, RotateCw, ShieldAlert } from "lucide-react";
 
 import {
@@ -35,8 +37,8 @@ function isPublicHttpUrl(value: string): boolean {
   }
 }
 
-function readableReason(reason: string): string {
-  return reason ? reason.replaceAll("_", " ").toLowerCase() : "ownership is not proven";
+function readableReason(reason: string, language: string | undefined): string {
+  return reason ? localizeDisplayValue(reason, language).toLowerCase() : "ownership is not proven";
 }
 
 /** Compact recovery and override controls for a non-verified Scout source. */
@@ -48,6 +50,7 @@ export function SourceVerificationActions({
   onResolve,
   onConfirm,
 }: Props) {
+  const { i18n } = useTranslation();
   const source = proposal.source;
   const inputId = useId();
   const affirmationId = useId();
@@ -99,7 +102,7 @@ export function SourceVerificationActions({
   return (
     <div className="space-y-2 border-t border-border/60 pt-2">
       {label ? <p className="font-medium text-foreground">{label}</p> : null}
-      <p className="text-muted-foreground">Resolution: {readableReason(source.resolutionReason)}</p>
+      <p className="text-muted-foreground">Resolution: {readableReason(source.resolutionReason, i18n.resolvedLanguage)}</p>
       <div className="flex flex-wrap items-center gap-2">
         {isPublicHttpUrl(initialUrl) ? (
           <a
@@ -151,7 +154,7 @@ export function SourceVerificationActions({
                 <div className="grid grid-cols-[auto_1fr] gap-x-2"><dt className="text-muted-foreground">Company</dt><dd className="truncate font-medium">{source.company}</dd></div>
                 <div className="grid grid-cols-[auto_1fr] gap-x-2"><dt className="text-muted-foreground">Board</dt><dd className="truncate font-medium">{initialUrl || "Unknown"}</dd></div>
                 <div className="grid grid-cols-[auto_1fr] gap-x-2"><dt className="text-muted-foreground">ATS</dt><dd>{source.ats ?? "Unknown"}</dd></div>
-                <div className="grid grid-cols-[auto_1fr] gap-x-2"><dt className="text-muted-foreground">Reason</dt><dd>{readableReason(source.resolutionReason)}</dd></div>
+                <div className="grid grid-cols-[auto_1fr] gap-x-2"><dt className="text-muted-foreground">Reason</dt><dd>{readableReason(source.resolutionReason, i18n.resolvedLanguage)}</dd></div>
               </dl>
               <label className="flex cursor-pointer items-start gap-2 text-sm" htmlFor={affirmationId}>
                 <Checkbox id={affirmationId} checked={affirmed} onCheckedChange={(checked) => setAffirmed(checked === true)} />

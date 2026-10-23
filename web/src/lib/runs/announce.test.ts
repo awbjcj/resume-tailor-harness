@@ -11,6 +11,7 @@ vi.mock("sonner", () => ({ toast }));
 
 import { announceCompletions } from "./announce";
 import { CHAT_RUN_KINDS } from "./visibility";
+import { changeLanguage } from "@/i18n";
 
 function run(overrides: Partial<RunRecord> = {}): RunRecord {
   return {
@@ -66,6 +67,24 @@ it("announces a tailor completion with its successful job and version counts", (
   expect(toast.success).toHaveBeenCalledOnce();
   expect(toast.success.mock.calls[0][0]).toContain("1 job tailored");
   expect(toast.success.mock.calls[0][0]).toContain("2 resume versions");
+});
+
+it.each([0, 1, 2])("localizes %i completed jobs and versions without English nouns or duplicate units", async (count) => {
+  await changeLanguage("zh-CN");
+  announceCompletions([run({ result: { jobs: Array.from({ length: count }, () => ({ versionCount: 1 })) } })]);
+  expect(toast.success).toHaveBeenCalledWith(
+    `定制完成：已处理 ${count} 个职位，生成 ${count} 个简历版本。进入职位的“版本”页即可生成 PDF。`,
+  );
+});
+
+it("uses Chinese counts for cover letters and redo stages after a language change", async () => {
+  await changeLanguage("zh-CN");
+  announceCompletions([
+    run({ kind: "coverLetter", result: { coverLetters: [{}, {}] } }),
+    run({ kind: "redo", result: { outcomes: [{}] } }),
+  ]);
+  expect(toast.success).toHaveBeenNthCalledWith(1, "求职信生成完成：已创建 2 封求职信。");
+  expect(toast.success).toHaveBeenNthCalledWith(2, "流程重做完成：已处理 1 个阶段。");
 });
 
 it("counts tailored jobs from the jobs array even when nested version counts are absent", () => {

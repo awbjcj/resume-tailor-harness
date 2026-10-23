@@ -6,11 +6,20 @@ import {
   localizeRunEta,
   localizeRunLogMessage,
   localizeRunPhase,
+  localizeDisplayValue,
   localizeSourceFragmentStatus,
   localizeSourceMode,
 } from "./dynamic-labels";
 
 describe("dynamic Chinese labels", () => {
+  it("translates API display values while preserving English and unknown diagnostic values", () => {
+    for (const [value, translated] of Object.entries(zhCN.displayValues)) {
+      expect(localizeDisplayValue(value, "zh-CN")).toBe(translated);
+      expect(localizeDisplayValue(value, "en")).toBe(value.replaceAll("_", " "));
+    }
+    expect(localizeDisplayValue("OWNERSHIP_NOT_PROVEN", "zh-CN")).toBe("尚未核实招聘页面归属");
+    expect(localizeDisplayValue("future_status", "zh-CN")).toBe("future status");
+  });
   it("translates every backend progress label covered by the catalog", () => {
     for (const [source, translation] of Object.entries(zhCN.runPhases)) {
       const runtimeSource = source.replaceAll("{{value}}", "示例");
