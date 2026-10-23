@@ -18,7 +18,7 @@ from resume_tailor_harness.taxonomy.clusters import (
     slugify_domain,
 )
 from resume_tailor_harness.taxonomy.embeddings import CandidateContext
-from resume_tailor_harness.taxonomy.vocabulary import SKILL_GROUPS
+from resume_tailor_harness.taxonomy.vocabulary import SKILL_GROUPS, is_general_domain
 from resume_tailor_harness.tracking.canonicalize import (
     IncrementalDomainGroup,
     IncrementalSkillDomains,
@@ -35,9 +35,9 @@ class ClassificationFailure:
     tokens: tuple[str, ...]
     message: str
     # Whether the provider call itself failed, or it answered and the answer
-    # was unusable.  These need opposite handling -- an outage must be retried,
-    # a refusal must not be -- and the message text cannot carry the difference
-    # because it is the raised exception's own text whenever one was raised.
+    # was unusable. Outages must not become invented placements; incomplete
+    # answers can be repaired or provisionally filed. Message text cannot tell
+    # the difference because exceptions carry provider-specific messages.
     kind: Literal["call", "output"] = "output"
     # Initial canonical failures remain backlog work. Reconcile omissions are
     # observable refinement gaps, but each omitted head is already a valid
@@ -61,6 +61,7 @@ class ClassificationMetrics:
     canonical_repair_rounds: int = 0
     canonical_repaired: int = 0
     canonical_identity_filed: int = 0
+    canonical_calls: int = 0
 
 
 @dataclass(frozen=True)
@@ -70,10 +71,6 @@ class ClassificationOutcome:
     metrics: ClassificationMetrics
     not_skills: frozenset[str] = frozenset()
     fallback_categories: dict[str, str] = field(default_factory=dict)
-
-
-class ReconcileError(RuntimeError):
-    """Global canonical reconciliation failed; additions must not be saved."""
 
 
 @dataclass(frozen=True)
@@ -179,6 +176,12 @@ def _project_domains(
     not_skills = {
         token for raw in content.not_skills if (token := normalize_skill(raw)) in batch
     }
+    # Contradictory dispositions must be retried, never silently retired.
+    conflicting = not_skills & {
+        normalize_skill(raw) for group in content.domains for raw in group.skills
+    }
+    not_skills -= conflicting
+    rejected.update(conflicting)
 
     for group in content.domains:
         if not isinstance(group, IncrementalDomainGroup):
@@ -190,7 +193,7 @@ def _project_domains(
         reason = group.reason.strip()
         valid_mode = (existing_id is None) != (new_label is None)
         if existing_id is not None:
-            if existing_id not in existing_domain_ids:
+            if existing_id not in existing_domain_ids or is_general_domain(existing_id):
                 valid_mode = False
             # Retrieval narrows what the model is shown; it may only *forbid*
             # what it did not surface when it is trustworthy.  Under a degraded
@@ -262,11 +265,21 @@ def _category_context(
     visible_domain_ids = present_domain_ids if domain_ids is None else domain_ids
     for domain_id in sorted(visible_domain_ids):
         slug = cmap.category_of.get(domain_id, "other")
+        ordered = sorted(members.get(domain_id, []))
+        # Keep the whole domain directory reachable, but do not repeat 16,000
+        # members in every prompt. Evenly spaced examples avoid an alphabetical
+        # prefix bias and are stable across batching/concurrent calls.
+        examples = (
+            [ordered[index * (len(ordered) - 1) // 7] for index in range(8)]
+            if len(ordered) > 8
+            else ordered
+        )
         domains_by_category.setdefault(slug, []).append(
             {
                 "id": domain_id,
                 "label": cmap.domain_label.get(domain_id, domain_id),
-                "skills": sorted(members.get(domain_id, [])),
+                "skills": examples,
+                "skill_count": len(ordered),
             }
         )
     return [
@@ -377,6 +390,7 @@ async def classify_incrementally(
     allow_category_growth: bool = False,
     min_new_domain_members: int = 1,
     category_hints: Mapping[str, str] | None = None,
+    skill_context: Mapping[str, list[str]] | None = None,
     enforce_candidates: bool = True,
     repair_max_singletons: int = 500,
 ) -> ClassificationOutcome:
@@ -395,6 +409,7 @@ async def classify_incrementally(
     semaphore = asyncio.Semaphore(concurrency)
     meter = _FlightMeter()
     prompt_bytes = 0
+    canonical_calls = 0
     failures: list[ClassificationFailure] = []
     alias_delta = demanded_tokens - existing.aliases.keys()
     alias_batches = _shard(alias_delta, batch_size)
@@ -406,7 +421,7 @@ async def classify_incrementally(
     async def canonicalize(
         batch: list[str], existing_canonicals: list[str], *, use_candidates: bool
     ):
-        nonlocal prompt_bytes
+        nonlocal prompt_bytes, canonical_calls
         available = set(existing_canonicals)
         candidate_canonicals = (
             sorted(
@@ -428,6 +443,7 @@ async def classify_incrementally(
             separators=(",", ":"),
         )
         prompt_bytes += len(prompt.encode("utf-8"))
+        canonical_calls += 1
         response = await acall(
             canonicalizer,
             prompt,
@@ -562,8 +578,8 @@ async def classify_incrementally(
         #     canonical stable across runs is already in. A backlog of hundreds
         #     of noisy tokens (many not real skills) will always leave some
         #     heads unmerged, so aborting the whole run on that is wrong; we
-        #     keep them and record the gap for observability. Only a failed
-        #     model CALL aborts (transactional: the last-good file is kept).
+        #     keep them and record the gap for observability. A failed model
+        #     call likewise keeps already valid heads, without inventing merges.
         #   * Chunked, not one call. Sending hundreds of heads in a single
         #     structured-output call is what degrades coverage in the first
         #     place. When candidate retrieval is available, each chunk gets
@@ -582,7 +598,19 @@ async def classify_incrementally(
                     use_candidates=candidate_context is not None,
                 )
             except Exception as exc:
-                raise ReconcileError(f"reconcile failed: {exc}") from exc
+                # These heads already passed canonicalization. A refinement
+                # outage must not discard the successful partitions of an
+                # entire corpus; keep these heads and continue other shards.
+                reconciled = _AliasBatchResult({}, frozenset())
+                failures.append(
+                    ClassificationFailure(
+                        "canonicalize",
+                        tuple(shard),
+                        f"reconcile failed; kept as-is: {exc}",
+                        kind="call",
+                        retryable=False,
+                    )
+                )
             reconciled_aliases.update(reconciled.aliases)
             # Every head in this shard is now a canonical the next chunk may
             # reuse — whether the model merged it or it stayed itself.
@@ -610,6 +638,15 @@ async def classify_incrementally(
     # Translate them once at the canonical boundary; they are still advisory
     # prompt context, never an assignment source.
     resolved_category_hints: dict[str, str] = {}
+    resolved_skill_context: dict[str, list[str]] = {}
+    for raw_token, examples in sorted((skill_context or {}).items()):
+        token = normalize_skill(raw_token)
+        canonical = merged_aliases.get(token, token)
+        entries = resolved_skill_context.setdefault(canonical, [])
+        for example in examples:
+            bounded = example[:700]
+            if bounded not in entries and len(entries) < 2:
+                entries.append(bounded)
     if category_hints is not None:
         for raw_token, raw_category in sorted(category_hints.items()):
             token = normalize_skill(raw_token)
@@ -663,18 +700,18 @@ async def classify_incrementally(
                 for token in batch
                 for domain_id in candidate_context.domain_candidates.get(token, ())
             }
-            prompt_context = _category_context(
-                existing, category_cap, allowed_domain_ids
-            )
-            if allow_category_growth:
-                prompt_context = [
-                    {
-                        **entry,
-                        "full": False,
-                        "at_soft_target": soft_target_by_slug[entry["slug"]],
-                    }
-                    for entry in prompt_context
-                ]
+            # Membership is indexed once per pass, not scanned once per batch.
+            prompt_context = [
+                {
+                    **entry,
+                    "domains": [
+                        domain
+                        for domain in entry["domains"]
+                        if domain["id"] in allowed_domain_ids
+                    ],
+                }
+                for entry in category_context
+            ]
         prompt = json.dumps(
             {
                 "new": batch,
@@ -687,6 +724,11 @@ async def classify_incrementally(
                     token: resolved_category_hints[token]
                     for token in batch
                     if token in resolved_category_hints
+                },
+                "source_context": {
+                    token: resolved_skill_context[token]
+                    for token in batch
+                    if token in resolved_skill_context
                 },
                 "neighbouring_unresolved": {
                     token: list(candidate_context.peer_candidates.get(token, ()))
@@ -704,6 +746,11 @@ async def classify_incrementally(
             on_acquire=meter.acquire,
             on_release=meter.release,
         )
+        status = getattr(response, "status", None)
+        if str(getattr(status, "value", status) or "").casefold() == "error":
+            raise RuntimeError(
+                str(getattr(response, "content", "") or "model call failed")
+            )
         return _project_domains(
             response.content,
             batch=set(batch),
@@ -803,6 +850,7 @@ async def classify_incrementally(
         canonical_repair_rounds=canonical_repair_rounds,
         canonical_repaired=canonical_repaired,
         canonical_identity_filed=canonical_identity_filed,
+        canonical_calls=canonical_calls,
     )
     return ClassificationOutcome(
         additions=ClusterMap(

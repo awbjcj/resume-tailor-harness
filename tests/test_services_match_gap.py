@@ -7,8 +7,6 @@ from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 from typing import cast
 
-import pytest
-
 import resume_tailor_harness.services.match_gap as match_gap_module
 from resume_tailor_harness.db import get_session, init_db, make_engine
 from resume_tailor_harness.progress import ProgressReporter
@@ -74,6 +72,7 @@ class _AsyncThemer:
         self.respond = respond or (
             lambda new, existing: [
                 IncrementalDomainGroup(
+                    confidence="high",
                     new_label="Languages",
                     new_category="languages",
                     skills=list(new),
@@ -103,6 +102,302 @@ class _AsyncThemer:
 def test_slugify_domain_uses_lowercase_hyphenated_alphanumeric_runs():
     assert slugify_domain("  Cloud / Data & AI  ") == "cloud-data-ai"
     assert slugify_domain("C++ / .NET") == "c-net"
+
+
+def _seed_domain_backlog(path, tokens, *, attempts=0):
+    from resume_tailor_harness.taxonomy.state import (
+        GroupingStatus,
+        TaxonomyState,
+        save_taxonomy_state,
+    )
+
+    save_cluster_map(ClusterMap(aliases={t: t for t in tokens}), path)
+    save_taxonomy_state(
+        TaxonomyState(
+            grouping_status={
+                t: GroupingStatus(
+                    reason="incomplete", phase="domain", escalation_attempts=attempts
+                )
+                for t in tokens
+            }
+        ),
+        path,
+    )
+
+
+def test_recovery_is_fair_across_runs_despite_a_persistent_early_outage(
+    tmp_path, monkeypatch
+):
+    from resume_tailor_harness.config import env_settings
+
+    monkeypatch.setenv("TAXONOMY_ESCALATION_MAX_SKILLS", "1")
+    monkeypatch.setenv("TAXONOMY_RECOVERY_ROUNDS", "1")
+    env_settings.cache_clear()
+    path = tmp_path / "cluster_map.json"
+    tokens = {"alpha", "beta", "zeta"}
+    _seed_domain_backlog(path, tokens)
+    seen = []
+
+    def respond(new, categories):
+        seen.extend(new)
+        if "alpha" in new:
+            return RuntimeError("provider timeout")
+        return _languages(new, categories)
+
+    try:
+        for _ in range(3):
+            refresh_clusters(
+                None,
+                path=path,
+                demanded_tokens=tokens,
+                canonicalizer=_AsyncCanonicalizer(),
+                themer=_AsyncThemer(),
+                escalation_themer=_AsyncThemer(respond),
+            )
+    finally:
+        env_settings.cache_clear()
+    assert seen == ["alpha", "beta", "zeta"]
+    assert set(load_cluster_map(path).domain_of) == {"beta", "zeta"}
+    assert load_taxonomy_state(path).grouping_status["alpha"].escalation_attempts == 1
+
+
+def test_recovery_shrinks_batches_until_incomplete_outputs_are_resolved(tmp_path):
+    path = tmp_path / "cluster_map.json"
+    tokens = {f"skill {i}" for i in range(8)}
+    _seed_domain_backlog(path, tokens)
+    sizes = []
+
+    def respond(new, categories):
+        sizes.append(len(new))
+        return _languages(new, categories) if len(new) == 1 else []
+
+    result = refresh_clusters(
+        None,
+        path=path,
+        demanded_tokens=tokens,
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=_AsyncThemer(),
+        escalation_themer=_AsyncThemer(respond),
+    )
+    assert result["recoveryRounds"] == 3
+    assert result["confirmedSkills"] == len(tokens)
+    assert result["placedByFallback"] == 0
+    assert sizes == [8, 3, 3, 2, *([1] * 8)]
+
+
+def test_16000_skill_map_recovers_1600_backlog_in_two_regroups(tmp_path):
+    from resume_tailor_harness.taxonomy.state import (
+        GroupingStatus,
+        TaxonomyState,
+        save_taxonomy_state,
+    )
+
+    path = tmp_path / "cluster_map.json"
+    tokens = {f"skill {i:05d}" for i in range(16000)}
+    placed = {f"skill {i:05d}": f"domain-{i % 160}" for i in range(14400)}
+    pending = tokens - placed.keys()
+    save_cluster_map(
+        ClusterMap(
+            aliases={token: token for token in tokens},
+            domain_of=placed,
+            domain_label={f"domain-{i}": f"Domain {i}" for i in range(160)},
+            category_of={f"domain-{i}": "languages" for i in range(160)},
+        ),
+        path,
+    )
+    save_taxonomy_state(
+        TaxonomyState(
+            grouping_status={
+                token: GroupingStatus(reason="incomplete", phase="domain")
+                for token in pending
+            }
+        ),
+        path,
+    )
+    canonicalizer = _AsyncCanonicalizer()
+    prompt_member_counts = []
+
+    def respond(new, categories):
+        prompt_member_counts.append(
+            sum(len(d["skills"]) for c in categories for d in c["domains"])
+        )
+        return [
+            IncrementalDomainGroup(
+                confidence="high",
+                existing_domain_id=f"domain-{i}",
+                skills=[t for t in new if int(t.split()[-1]) % 160 == i],
+            )
+            for i in range(160)
+        ]
+
+    results = [
+        refresh_clusters(
+            None,
+            path=path,
+            demanded_tokens=tokens,
+            canonicalizer=canonicalizer,
+            themer=_AsyncThemer(),
+            escalation_themer=_AsyncThemer(respond),
+        )
+        for _ in range(2)
+    ]
+    assert [r["confirmedSkills"] for r in results] == [900, 700]
+    assert [r["deferredSkills"] for r in results] == [700, 0]
+    assert results[-1]["remainingUnassigned"] == 0
+    assert canonicalizer.calls == 0
+    assert max(prompt_member_counts) == 1280
+    assert len(load_cluster_map(path).domain_of) == 16000
+    assert not load_taxonomy_state(path).grouping_status
+
+
+def test_provisional_placement_is_refined_without_losing_user_corrections(tmp_path):
+    from resume_tailor_harness.taxonomy.corrections import (
+        TaxonomyCorrections,
+        save_taxonomy_corrections,
+    )
+
+    path = tmp_path / "cluster_map.json"
+    correction_path = tmp_path / "corrections.json"
+    # A manual move pins one skill, not all generated skills in that bucket.
+    save_cluster_map(
+        ClusterMap(
+            aliases={"rust": "rust", "python": "python"},
+            domain_of={
+                "rust": "general-languages",
+                "python": "general-languages",
+            },
+            domain_label={
+                "general-languages": "Languages: General",
+            },
+            category_of={
+                "general-languages": "languages",
+            },
+        ),
+        path,
+    )
+    save_taxonomy_corrections(
+        TaxonomyCorrections(skill_domain={"python": "general-languages"}),
+        correction_path,
+    )
+    result = refresh_clusters(
+        None,
+        path=path,
+        corrections_path=correction_path,
+        demanded_tokens={"rust", "python"},
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=_AsyncThemer(),
+    )
+    saved = load_cluster_map(path)
+    assert saved.domain_of["rust"] == "languages"
+    assert saved.domain_of["python"] == "general-languages"
+    assert result["refinedSkills"] == 1
+    assert result["processedSkillKeys"] == ["rust"]
+
+
+def test_provisional_placement_survives_outage_and_remains_retryable(tmp_path):
+    path = tmp_path / "cluster_map.json"
+    save_cluster_map(
+        ClusterMap(
+            aliases={"rust": "rust"},
+            domain_of={"rust": "general-languages"},
+            domain_label={"general-languages": "Languages: General"},
+            category_of={"general-languages": "languages"},
+        ),
+        path,
+    )
+    result = refresh_clusters(
+        None,
+        path=path,
+        demanded_tokens={"rust"},
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=_AsyncThemer(lambda *_: RuntimeError("provider down")),
+    )
+    assert load_cluster_map(path).domain_of["rust"] == "general-languages"
+    assert result["recoveryRounds"] == 1
+    assert result["provisionalSkills"] == 1
+    assert load_taxonomy_state(path).grouping_status["rust"].escalation_attempts == 1
+
+
+def test_refresh_cleans_stale_resolved_history_outside_requested_scope(tmp_path):
+    from resume_tailor_harness.taxonomy.state import (
+        GroupingStatus,
+        RetiredSkill,
+        TaxonomyState,
+        save_taxonomy_state,
+    )
+
+    path = tmp_path / "cluster_map.json"
+    save_cluster_map(
+        ClusterMap(
+            aliases={"py": "python", "old phrase": "fragment"},
+            domain_of={"python": "languages", "rust": "general-languages"},
+            domain_label={"languages": "Languages", "general-languages": "General"},
+            category_of={"languages": "languages", "general-languages": "languages"},
+        ), path,
+    )
+    save_taxonomy_state(
+        TaxonomyState(
+            grouping_status={
+                token: GroupingStatus(reason="old failure", escalation_attempts=4)
+                for token in ("python", "py", "old phrase", "rust", "inactive")
+            },
+            retired_skills={"fragment": RetiredSkill(reason="not a skill")},
+        ), path,
+    )
+    themer = _AsyncThemer()
+    refresh_clusters(
+        None, path=path, demanded_tokens={"python"}, skill_keys={"python"},
+        canonicalizer=_AsyncCanonicalizer(), themer=themer,
+    )
+    statuses = load_taxonomy_state(path).grouping_status
+    assert set(statuses) == {"rust", "inactive"}
+    assert statuses["rust"].escalation_attempts == 4
+    assert themer.calls == 0
+
+
+def test_recovery_receives_source_context_from_active_jobs(tmp_path):
+    engine = _engine_with_target_skills("Rust")
+    path = tmp_path / "cluster_map.json"
+    _seed_domain_backlog(path, {"rust"})
+
+    class ContextThemer(_AsyncThemer):
+        async def arun(self, prompt):
+            context = json.loads(prompt)["source_context"]
+            assert "rust" in context
+            assert "rust" in context["rust"][0]
+            return await super().arun(prompt)
+
+    with get_session(engine) as session:
+        result = refresh_clusters(
+            session, path=path, canonicalizer=_AsyncCanonicalizer(),
+            themer=ContextThemer(),
+        )
+    assert result["confirmedSkills"] == 1
+
+
+def test_retired_alias_does_not_reenter_recovery_or_count_as_unassigned(tmp_path):
+    path = tmp_path / "cluster_map.json"
+    save_cluster_map(
+        ClusterMap(aliases={"eight years": "8 years", "8 years": "8 years"}), path
+    )
+    themer = _AsyncThemer(lambda new, _: IncrementalSkillDomains(not_skills=new))
+    first = refresh_clusters(
+        None,
+        path=path,
+        demanded_tokens={"eight years"},
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=themer,
+    )
+    second = refresh_clusters(
+        None,
+        path=path,
+        demanded_tokens={"eight years"},
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=themer,
+    )
+    assert first["remainingUnassigned"] == 0
+    assert second["processedSkillKeys"] == []
+    assert themer.calls == 1
 
 
 def test_incremental_refresh_persists_success_and_returns_metrics(tmp_path):
@@ -194,7 +489,7 @@ def test_existing_alias_and_theme_choices_win(tmp_path):
     )
 
 
-def test_reconcile_failure_preserves_last_good_cluster_file(tmp_path):
+def test_reconcile_outage_preserves_existing_map_and_saves_valid_additions(tmp_path):
     engine = _engine_with_target_skills("Python", "Rust")
     path = tmp_path / "clusters.json"
     existing = ClusterMap(
@@ -203,22 +498,22 @@ def test_reconcile_failure_preserves_last_good_cluster_file(tmp_path):
         domain_label={"languages": "Languages"},
     )
     save_cluster_map(existing, path)
-    before = path.read_text(encoding="utf-8")
 
     def respond(new, current):
         return RuntimeError("reconcile down") if len(new) > 1 else [[new[0]]]
 
     with get_session(engine) as session:
-        with pytest.raises(Exception, match="reconcile"):
-            refresh_clusters(
-                session,
-                canonicalizer=_AsyncCanonicalizer(respond),
-                themer=_AsyncThemer(),
-                path=path,
-                batch_size=1,
-            )
-
-    assert path.read_text(encoding="utf-8") == before
+        refresh_clusters(
+            session,
+            canonicalizer=_AsyncCanonicalizer(respond),
+            themer=_AsyncThemer(),
+            path=path,
+            batch_size=1,
+        )
+    saved = load_cluster_map(path)
+    assert saved.domain_of["go"] == "languages"
+    assert {"python", "rust"} <= saved.domain_of.keys()
+    assert saved.aliases["go"] == "go"
 
 
 def test_model_call_failure_is_never_placed_by_the_floor(tmp_path):
@@ -433,6 +728,7 @@ def test_scoped_refresh_changes_only_requested_unassigned_skills(tmp_path):
             themer=_AsyncThemer(
                 lambda new, _categories: [
                     IncrementalDomainGroup(
+                        confidence="high",
                         new_label="Scoped domain",
                         new_category="languages",
                         skills=list(new),
@@ -470,6 +766,7 @@ def test_soft_target_allows_a_thirteenth_coherent_domain(tmp_path):
             themer=_AsyncThemer(
                 lambda new, _categories: [
                     IncrementalDomainGroup(
+                        confidence="high",
                         new_label="Computer Vision",
                         new_category="ai-ml",
                         skills=list(new),
@@ -525,6 +822,7 @@ def test_fifty_requested_skills_all_receive_an_outcome(tmp_path):
             themer=_AsyncThemer(
                 lambda new, _categories: [
                     IncrementalDomainGroup(
+                        confidence="high",
                         new_label="Fixture skills",
                         new_category="tools-platforms",
                         skills=list(new),
@@ -545,6 +843,7 @@ def test_fifty_requested_skills_all_receive_an_outcome(tmp_path):
 def _languages(new, _categories):
     return [
         IncrementalDomainGroup(
+            confidence="high",
             new_label="Languages", new_category="languages", skills=list(new)
         )
     ]
@@ -684,6 +983,7 @@ def test_the_deferred_backlog_is_reported_separately_from_uncertainty(
     from resume_tailor_harness.config import env_settings
 
     monkeypatch.setenv("TAXONOMY_ESCALATION_MAX_SKILLS", "1")
+    monkeypatch.setenv("TAXONOMY_RECOVERY_ROUNDS", "1")
     env_settings.cache_clear()
 
     engine = _engine_with_target_skills("Alpha Skill", "Beta Skill")
@@ -719,6 +1019,7 @@ def test_the_escalation_cap_defers_instead_of_flooring(tmp_path, monkeypatch):
     from resume_tailor_harness.config import env_settings
 
     monkeypatch.setenv("TAXONOMY_ESCALATION_MAX_SKILLS", "1")
+    monkeypatch.setenv("TAXONOMY_RECOVERY_ROUNDS", "1")
     env_settings.cache_clear()
 
     engine = _engine_with_target_skills("Alpha Skill", "Beta Skill")

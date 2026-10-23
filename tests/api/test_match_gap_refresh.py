@@ -54,6 +54,7 @@ class _AsyncThemer:
             content=IncrementalSkillDomains(
                 domains=[
                     IncrementalDomainGroup(
+                        confidence="high",
                         new_label="Cloud / Infrastructure",
                         new_category="cloud-infra",
                         skills=list(payload["new"]),

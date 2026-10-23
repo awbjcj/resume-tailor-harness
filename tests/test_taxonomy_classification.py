@@ -8,7 +8,6 @@ from resume_tailor_harness.taxonomy.classification import (
     ClassificationFailure,
     ClassificationMetrics,
     ClassificationOutcome,
-    ReconcileError,
     _category_context,
     _project_domains,
     classify_incrementally,
@@ -44,6 +43,97 @@ def test_classification_contracts_hold_additions_failures_and_metrics():
     assert outcome.metrics.prompt_bytes == 42
 
 
+def test_conflicting_retirement_and_assignment_stays_retryable():
+    result = _project_domains(
+        IncrementalSkillDomains(
+            domains=[
+                IncrementalDomainGroup(confidence="high", existing_domain_id="languages", skills=["rust"])
+            ],
+            not_skills=["rust"],
+        ),
+        batch={"rust"},
+        existing_domain_ids={"languages"},
+        full_categories=set(),
+    )
+    assert not result.not_skills
+    assert not result.assignments
+    assert result.failed_tokens == {"rust"}
+
+
+@pytest.mark.parametrize("confidence", [None, "unspecified", "?", 1, [], {}])
+def test_invalid_confidence_salvages_other_valid_items_without_confirming_guess(confidence):
+    response = IncrementalSkillDomains.model_validate({
+        "domains": [
+            {"existing_domain_id": "languages", "skills": ["rust"], "confidence": confidence},
+            {"existing_domain_id": "languages", "skills": ["python"], "confidence": "high"},
+        ],
+    })
+    result = _project_domains(
+        response, batch={"rust", "python"}, existing_domain_ids={"languages"},
+        full_categories=set(), category_of={"languages": "languages"},
+    )
+    assert set(result.assignments) == {"python"}
+    assert result.failed_tokens == {"rust"}
+    assert result.fallback_categories["rust"] == "languages"
+
+
+def test_missing_confidence_is_never_implicitly_high():
+    result = _project_domains(
+        IncrementalSkillDomains(domains=[
+            IncrementalDomainGroup(existing_domain_id="languages", skills=["rust"]),
+        ]),
+        batch={"rust"}, existing_domain_ids={"languages"}, full_categories=set(),
+    )
+    assert not result.assignments
+    assert result.failed_tokens == {"rust"}
+
+
+def test_general_domain_is_only_a_category_hint_not_a_confident_assignment():
+    result = _project_domains(
+        IncrementalSkillDomains(
+            domains=[
+                IncrementalDomainGroup(
+                    confidence="high",
+                    existing_domain_id="general-ai-ml",
+                    skills=["transformers"],
+                )
+            ]
+        ),
+        batch={"transformers"},
+        existing_domain_ids={"general-ai-ml"},
+        full_categories=set(),
+        category_of={"general-ai-ml": "ai-ml"},
+    )
+    assert not result.assignments
+    assert result.fallback_categories == {"transformers": "ai-ml"}
+
+
+def test_domain_error_response_remains_a_call_failure():
+    class ErrorThemer(_Themer):
+        async def arun(self, prompt):
+            return SimpleNamespace(status="ERROR", content="provider unavailable")
+
+    outcome = _classify(demanded={"rust"}, themer=ErrorThemer())
+    assert not outcome.additions.domain_of
+    assert outcome.failures[-1].phase == "domain"
+    assert outcome.failures[-1].kind == "call"
+
+
+def test_domain_prompt_membership_is_bounded_at_16000_skills():
+    cmap = ClusterMap(
+        domain_of={f"skill {i:05d}": f"domain-{i % 160}" for i in range(16000)},
+        domain_label={f"domain-{i}": f"Domain {i}" for i in range(160)},
+        category_of={f"domain-{i}": "languages" for i in range(160)},
+    )
+    context = _category_context(cmap, 12)
+    domains = [d for category in context for d in category["domains"]]
+    assert len(domains) == 160
+    assert sum(d["skill_count"] for d in domains) == 16000
+    assert all(len(d["skills"]) == 8 for d in domains)
+    assert len(json.dumps(context)) < 60000
+    assert _category_context(cmap, 12) == context
+
+
 class _Canonicalizer:
     def __init__(self, respond=None):
         self.respond = respond or (lambda new, existing: [[token] for token in new])
@@ -68,6 +158,7 @@ class _Themer:
         self.respond = respond or (
             lambda new, existing: [
                 IncrementalDomainGroup(
+                    confidence="high",
                     new_label="Languages",
                     new_category="languages",
                     skills=list(new),
@@ -147,6 +238,7 @@ def test_repair_rounds_recover_tokens_the_first_partition_omitted():
     # The rounds shrink: 8, then 2, then 1.
     assert canonicalizer.batch_sizes[0] == 8
     assert min(canonicalizer.batch_sizes) == 1
+    assert outcome.metrics.canonical_calls == len(canonicalizer.batch_sizes)
     # No retryable canonicalize failure survives for a recovered token.
     recovered = {
         token
@@ -376,20 +468,22 @@ def test_ambiguous_existing_canonicals_reject_the_new_token():
     assert outcome.metrics.canonical_identity_filed == 1
 
 
-def test_reconcile_call_failure_is_fatal():
-    # A genuine model CALL failure is transactional: abort so the caller keeps
-    # the last-good file rather than saving a half-reconciled map.
+def test_reconcile_call_failure_keeps_valid_canonicals_and_continues():
     def respond(new, existing):
         if len(new) > 1:
             return RuntimeError("reconcile down")
         return [[new[0]]]
 
-    with pytest.raises(ReconcileError, match="reconcile"):
-        _classify(
-            demanded={"python", "rust"},
-            canonicalizer=_Canonicalizer(respond),
-            batch_size=1,
-        )
+    outcome = _classify(
+        demanded={"python", "rust"},
+        canonicalizer=_Canonicalizer(respond),
+        batch_size=1,
+    )
+    assert outcome.additions.aliases == {"python": "python", "rust": "rust"}
+    assert set(outcome.additions.domain_of) == {"python", "rust"}
+    assert len(outcome.failures) == 1
+    assert outcome.failures[0].kind == "call"
+    assert outcome.failures[0].retryable is False
 
 
 def test_reconcile_partial_coverage_keeps_heads_and_is_not_fatal():
@@ -489,6 +583,18 @@ def test_legacy_category_hint_follows_an_alias_to_its_canonical():
     assert themer.calls[0]["category_hints"] == {"kubernetes": "cloud-infra"}
 
 
+def test_source_evidence_follows_aliases_and_stays_bounded_to_the_batch():
+    themer = _Themer()
+    _classify(
+        demanded={"k8s"},
+        existing=ClusterMap(aliases={"kubernetes": "kubernetes"}),
+        canonicalizer=_Canonicalizer(lambda _new, _existing: [["kubernetes", "k8s"]]),
+        themer=themer,
+        skill_context={"k8s": ["a" * 900, "b", "c"], "unrelated": ["private"]},
+    )
+    assert themer.calls[0]["source_context"] == {"kubernetes": ["a" * 700, "b"]}
+
+
 def test_failed_domain_batch_keeps_alias_but_not_domain():
     outcome = _classify(
         demanded={"python"},
@@ -510,7 +616,7 @@ def test_existing_theme_id_is_reused():
     )
     themer = _Themer(
         lambda new, themes: [
-            IncrementalDomainGroup(existing_domain_id="cloud", skills=list(new))
+            IncrementalDomainGroup(confidence="high", existing_domain_id="cloud", skills=list(new))
         ]
     )
 
@@ -529,7 +635,7 @@ def test_existing_theme_id_without_a_display_label_is_still_reused():
     )
     themer = _Themer(
         lambda new, themes: [
-            IncrementalDomainGroup(existing_domain_id="cloud", skills=list(new))
+            IncrementalDomainGroup(confidence="high", existing_domain_id="cloud", skills=list(new))
         ]
     )
 
@@ -632,6 +738,7 @@ def test_project_domains_rejects_new_domain_in_full_category():
         IncrementalSkillDomains(
             domains=[
                 IncrementalDomainGroup(
+                    confidence="high",
                     new_label="Fresh Langs",
                     new_category="languages",
                     skills=["zig"],
@@ -652,6 +759,7 @@ def test_project_domains_accepts_reuse_in_full_category():
         IncrementalSkillDomains(
             domains=[
                 IncrementalDomainGroup(
+                    confidence="high",
                     existing_domain_id="lang-domain-0", skills=["zig"]
                 )
             ]
@@ -702,6 +810,7 @@ def test_concurrent_batches_cannot_overshoot_category_cap():
         token = new[0]
         return [
             IncrementalDomainGroup(
+                confidence="high",
                 new_label=f"Domain {token}",
                 new_category="languages",
                 skills=[token],
@@ -729,6 +838,7 @@ def test_equal_new_labels_in_different_categories_get_distinct_ids():
         category = "languages" if token == "alpha" else "cloud-infra"
         return [
             IncrementalDomainGroup(
+                confidence="high",
                 new_label="Platform", new_category=category, skills=[token]
             )
         ]

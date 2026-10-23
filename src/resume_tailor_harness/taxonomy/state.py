@@ -58,7 +58,7 @@ def taxonomy_generation_dir(cluster_path: str | Path) -> Path:
 
 
 class GroupingStatus(ExtensibleModel):
-    """Last durable grouping outcome for an unassigned canonical skill."""
+    """Recovery history for an unassigned or provisionally placed canonical."""
 
     state: Literal["uncertain", "failed"] = "uncertain"
     reason: str
@@ -69,6 +69,10 @@ class GroupingStatus(ExtensibleModel):
     # record with an explicit phase, rather than a permanent seat on the
     # bounded escalation budget.
     phase: Literal["canonicalize", "domain"] | None = None
+    # Only actual premium attempts increment this counter; deferral is not an
+    # attempt. Persisting it prevents an alphabetically early failure from
+    # monopolizing the bounded recovery queue across refreshes.
+    escalation_attempts: int = Field(default=0, ge=0)
     last_attempted_at: str = Field(default_factory=_utcnow)
 
 

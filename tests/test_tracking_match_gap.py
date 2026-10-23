@@ -42,6 +42,77 @@ def test_normalize_lowercases_and_collapses_whitespace():
     assert normalize_skill("Amazon  Web   Services") == "amazon web services"
 
 
+def test_skill_context_is_scoped_bounded_and_resolves_aliases():
+    from resume_tailor_harness.tracking.match_gap import collect_target_skill_context
+    from resume_tailor_harness.tracking.tables import utcnow
+
+    with _session() as session:
+        for index in range(4):
+            session.add(Job(
+                source="manual", title=f"Platform engineer {index}",
+                status=JobStatus.shortlisted.value,
+                jd_text="prefix " * 100 + "Build K8s operators for clusters. " + "suffix " * 100,
+                criteria_json={"must_have_skills": ["K8s", "Python"]},
+            ))
+        session.add(Job(
+            source="manual", title="Archived secret context",
+            status=JobStatus.shortlisted.value, archived_at=utcnow(),
+            criteria_json={"must_have_skills": ["Unseen"]},
+        ))
+        session.add(Job(
+            source="manual", title="Rejected context", status=JobStatus.rejected.value,
+            criteria_json={"must_have_skills": ["Unseen"]},
+        ))
+        session.commit()
+        context = collect_target_skill_context(
+            session, {"kubernetes", "unseen"}, {"k8s": "kubernetes"},
+        )
+    assert set(context) == {"kubernetes"}
+    assert len(context["kubernetes"]) == 2
+    assert all(len(item) <= 700 for item in context["kubernetes"])
+    assert all("k8s operators" in item for item in context["kubernetes"])
+    assert all("secret" not in item for item in context["kubernetes"])
+
+
+def test_skill_context_does_not_match_substrings_inside_other_words():
+    from resume_tailor_harness.tracking.match_gap import collect_target_skill_context
+
+    with _session() as session:
+        session.add(Job(
+            source="manual", title="Developer", status=JobStatus.shortlisted.value,
+            jd_text="Ongoing work on an unrelated project.",
+            criteria_json={"tech_stack": ["Go", "Kubernetes"]},
+        ))
+        session.commit()
+        context = collect_target_skill_context(session, {"go"})
+    assert "Excerpt:" not in context["go"][0]
+    assert "Other extracted skills: kubernetes" in context["go"][0]
+
+
+def test_fallback_category_is_visible_but_never_adjacency_evidence():
+    from resume_tailor_harness.taxonomy.state import GroupingStatus
+
+    cmap = ClusterMap(
+        domain_of={"python": "general-languages", "rust": "general-languages"},
+        domain_label={"general-languages": "Languages: General"},
+        category_of={"general-languages": "languages"},
+    )
+    facts = _facts({"hard": [Skill(name="Python")]})
+    with _session() as session:
+        _job(session, JobStatus.shortlisted.value, ["Python", "Rust"])
+        graph = build_demand_graph(
+            session,
+            facts,
+            cluster_map=cmap,
+            grouping_statuses={"rust": GroupingStatus(reason="Provisional")},
+        )
+        nodes = {node.key: node for node in graph.skills}
+        assert nodes["python"].coverage == "covered"
+        assert nodes["rust"].coverage == "gap"
+        assert nodes["rust"].grouping_status["reason"] == "Provisional"
+        assert not match_gap(session, facts, cluster_map=cmap).gaps[0].adjacent
+
+
 def test_normalize_keeps_plus_hash_dot_drops_other_punct():
     assert normalize_skill("C++") == "c++"
     assert normalize_skill("C#") == "c#"

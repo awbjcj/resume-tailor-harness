@@ -31,6 +31,7 @@ from resume_tailor_harness.taxonomy.groups import (
 )
 from resume_tailor_harness.taxonomy.snapshot import EffectiveTaxonomy
 from resume_tailor_harness.taxonomy.skills import split_skills
+from resume_tailor_harness.taxonomy.vocabulary import is_general_domain
 from resume_tailor_harness.tracking.match_gap import normalize_skill
 
 DEFAULT_MATRIX_PATH = "data/profile/matrix.json"
@@ -229,6 +230,7 @@ def build_skill_match_context(
                     candidate
                     for candidate in matrix.rows
                     if theme is not None
+                    and not is_general_domain(theme)
                     and cluster_map.domain_of.get(candidate.key) == theme
                 ]
                 if candidates:
