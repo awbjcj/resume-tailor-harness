@@ -6397,7 +6397,7 @@
   "Office attendance": {
     "key": "ui_1720dc40fd5e",
     "en": "Office attendance",
-    "zh-CN": "到岗要求"
+    "zh-CN": "到岗办公安排"
   },
   "Official pricing source": {
     "key": "ui_dd80cd931ddf",
@@ -11903,5 +11903,60 @@
     "key": "ui_7711faa74a10",
     "en": "Web search",
     "zh-CN": "网页搜索"
+  },
+  "Coding time preference": {
+    "key": "ui_d29920ba78de",
+    "en": "Coding time preference",
+    "zh-CN": "偏好的编程时间比例"
+  },
+  "Country, office location, and days per week": {
+    "key": "ui_0bec22191831",
+    "en": "Country, office location, and days per week",
+    "zh-CN": "国家、办公地点及每周到岗天数"
+  },
+  "e.g. 3 years, confirmed 2026-10-23": {
+    "key": "ui_d436e8456c3f",
+    "en": "e.g. 3 years, confirmed 2026-10-23",
+    "zh-CN": "例如：3 年，确认于 2026-10-23"
+  },
+  "e.g. Full Stack — preferred and strongest domain": {
+    "key": "ui_62c6304e5400",
+    "en": "e.g. Full Stack — preferred and strongest domain",
+    "zh-CN": "例如：全栈——最偏好且最擅长的领域"
+  },
+  "e.g. I generally enjoy spending 80% of my time coding": {
+    "key": "ui_4b9ca7981c9a",
+    "en": "e.g. I generally enjoy spending 80% of my time coding",
+    "zh-CN": "例如：通常希望将 80% 的工作时间用于编程"
+  },
+  "Employer, role/requisition, exact answer, and confirmation date; include rolling application windows or role-specific start dates": {
+    "key": "ui_d396866c2529",
+    "en": "Employer, role/requisition, exact answer, and confirmation date; include rolling application windows or role-specific start dates",
+    "zh-CN": "注明雇主、职位／招聘编号、确切答案和确认日期；包括滚动申请周期或该职位的入职日期"
+  },
+  "Other employer-specific screening answers": {
+    "key": "ui_25e1fc8aeb93",
+    "en": "Other employer-specific screening answers",
+    "zh-CN": "其他雇主专属筛选问答"
+  },
+  "Preferred technical domain": {
+    "key": "ui_de7a5966f301",
+    "en": "Preferred technical domain",
+    "zh-CN": "偏好的技术领域"
+  },
+  "Professional screening": {
+    "key": "ui_a7b794491a3f",
+    "en": "Professional screening",
+    "zh-CN": "专业背景问答"
+  },
+  "Save your own answers, not estimates from your resume. Date experience totals and specify the location and days per week for office attendance.": {
+    "key": "ui_113df2d55d23",
+    "en": "Save your own answers, not estimates from your resume. Date experience totals and specify the location and days per week for office attendance.",
+    "zh-CN": "请填写本人确认的答案，不要按简历推算。工作年限请注明确认日期，到岗安排请注明地点及每周天数。"
+  },
+  "Years of industry experience": {
+    "key": "ui_a73367c62805",
+    "en": "Years of industry experience",
+    "zh-CN": "行业工作年限"
   }
 }

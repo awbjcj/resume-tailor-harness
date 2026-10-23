@@ -125,7 +125,14 @@ def test_profile_patch_preserves_fields_and_rejects_stale_or_unconfirmed_updates
     snapshot = client.get("/api/application-profile").json()
     body = {
         "revision": snapshot["revision"],
-        "profile": {"email": "  updated@example.com  "},
+        "profile": {
+            "email": "  updated@example.com  ",
+            "industryExperience": " 3 years, confirmed 2026-10-23 ",
+            "codingPreference": "80%",
+            "technicalDomain": "Full Stack",
+            "officeAttendance": "U.S., Example City, 3 days per week: Yes",
+            "employerScreeningAnswers": "Acme / REQ-1: start 2026-11-23",
+        },
         "userConfirmed": True,
     }
     response = client.patch("/api/application-profile", json=body)
@@ -134,6 +141,16 @@ def test_profile_patch_preserves_fields_and_rejects_stale_or_unconfirmed_updates
     )
     assert response.json()["profile"]["fullName"] == "Existing"
     assert response.json()["profile"]["email"] == "updated@example.com"
+    assert response.json()["profile"]["industryExperience"] == (
+        "3 years, confirmed 2026-10-23"
+    )
+    for key in (
+        "codingPreference",
+        "technicalDomain",
+        "officeAttendance",
+        "employerScreeningAnswers",
+    ):
+        assert response.json()["profile"][key] == body["profile"][key]
     stale = client.patch("/api/application-profile", json=body)
     assert stale.status_code == 409 and stale.json()["error"]["code"] == "PROFILE_STALE"
     body["revision"] = response.json()["revision"]

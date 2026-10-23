@@ -1622,6 +1622,12 @@
             "title": "Availability",
             "type": "string"
           },
+          "codingPreference": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Codingpreference",
+            "type": "string"
+          },
           "currentBoardMembership": {
             "default": "",
             "maxLength": 4000,
@@ -1650,6 +1656,12 @@
             "default": "",
             "maxLength": 4000,
             "title": "Employerrelationships",
+            "type": "string"
+          },
+          "employerScreeningAnswers": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Employerscreeninganswers",
             "type": "string"
           },
           "ethnicity": {
@@ -1694,10 +1706,22 @@
             "title": "Governmentemployment",
             "type": "string"
           },
+          "industryExperience": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Industryexperience",
+            "type": "string"
+          },
           "linkedinUrl": {
             "default": "",
             "maxLength": 4000,
             "title": "Linkedinurl",
+            "type": "string"
+          },
+          "officeAttendance": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Officeattendance",
             "type": "string"
           },
           "phone": {
@@ -1764,6 +1788,12 @@
             "default": "",
             "maxLength": 4000,
             "title": "Sponsorshipneeded",
+            "type": "string"
+          },
+          "technicalDomain": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Technicaldomain",
             "type": "string"
           },
           "terminationHistory": {
@@ -1845,6 +1875,12 @@
             "title": "Availability",
             "type": "string"
           },
+          "codingPreference": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Codingpreference",
+            "type": "string"
+          },
           "currentBoardMembership": {
             "default": "",
             "maxLength": 4000,
@@ -1873,6 +1909,12 @@
             "default": "",
             "maxLength": 4000,
             "title": "Employerrelationships",
+            "type": "string"
+          },
+          "employerScreeningAnswers": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Employerscreeninganswers",
             "type": "string"
           },
           "ethnicity": {
@@ -1917,10 +1959,22 @@
             "title": "Governmentemployment",
             "type": "string"
           },
+          "industryExperience": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Industryexperience",
+            "type": "string"
+          },
           "linkedinUrl": {
             "default": "",
             "maxLength": 4000,
             "title": "Linkedinurl",
+            "type": "string"
+          },
+          "officeAttendance": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Officeattendance",
             "type": "string"
           },
           "phone": {
@@ -1987,6 +2041,12 @@
             "default": "",
             "maxLength": 4000,
             "title": "Sponsorshipneeded",
+            "type": "string"
+          },
+          "technicalDomain": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Technicaldomain",
             "type": "string"
           },
           "terminationHistory": {
