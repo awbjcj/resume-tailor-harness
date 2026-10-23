@@ -199,6 +199,11 @@ def test_common_screening_answers_roundtrip_into_prompt_and_can_be_cleared(app_c
     client, job_id, _ = app_client
     route = "/api/config/application-profile"
     answers = {
+        "industryExperience": "3 years, confirmed 2026-10-23",
+        "codingPreference": "80% of my time coding",
+        "technicalDomain": "Full Stack",
+        "officeAttendance": "U.S., Example City office, 3 days per week: Yes",
+        "employerScreeningAnswers": "Acme / REQ-1: start 2026-11-23; confirmed 2026-10-23",
         "atLeast18": "Yes",
         "usWorkerCategory": "No",
         "workAuthorizationVerification": "U.S.: Yes",
@@ -222,6 +227,9 @@ def test_common_screening_answers_roundtrip_into_prompt_and_can_be_cleared(app_c
         assert client.get(route).json()[key] == value
     prompt = prompt_from(client.get(f"/api/jobs/{job_id}/application-prompt"))
     assert "## Common screening answers" in prompt
+    assert "## Professional screening" in prompt
+    assert "- Coding time preference: 80% of my time coding" in prompt
+    assert "Acme / REQ-1: start 2026-11-23; confirmed 2026-10-23" in prompt
     assert "## Employer-specific answers" in prompt
     assert "- Previous employment with the employer: Acme: No" in prompt
     assert "- Can provide verification of legal right to work: U.S.: Yes" in prompt
@@ -238,6 +246,7 @@ def test_common_screening_answers_roundtrip_into_prompt_and_can_be_cleared(app_c
     assert all(client.get(route).json()[key] == "" for key in answers)
     cleared = prompt_from(client.get(f"/api/jobs/{job_id}/application-prompt"))
     assert "## Common screening answers" not in cleared
+    assert "## Professional screening" not in cleared
     assert "## Employer-specific answers" not in cleared
 
 

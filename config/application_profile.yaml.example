@@ -15,6 +15,12 @@ work_authorization_verification: ""
 availability: ""
 relocation: ""
 remote_preference: ""
+# Self-reported professional answers; include the confirmation date for experience.
+industry_experience: ""
+coding_preference: ""
+technical_domain: ""
+# Include the country, location, and required days per week.
+office_attendance: ""
 at_least_18: ""
 termination_history: ""
 # Include the exact countries covered by the answer.
@@ -28,6 +34,8 @@ referral_sources: ""
 previous_employment: ""
 previous_applications: ""
 employer_relationships: ""
+# Include employer, role/requisition, and confirmation date for scoped answers.
+employer_screening_answers: ""
 pronouns: ""
 gender: ""
 ethnicity: ""

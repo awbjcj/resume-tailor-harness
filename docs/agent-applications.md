@@ -53,6 +53,15 @@ available. New question records live in the workspace database and travel with
 workspace backups; application settings retain their existing bundle/reset
 behavior. Questions do not modify resume evidence or bypass fact checking.
 
+The application profile includes optional professional screening answers for
+self-reported industry experience, preferred coding time, technical domain, and
+office attendance. Keep experience totals dated and attendance tied to the
+country, office, and days per week. Other employer-specific screening answers
+retain the employer, role/requisition, and confirmation date. A role-specific
+calendar start date is not a reusable notice period, and rolling application
+counts must be checked again before another application. Saved history and
+answers never provide reusable consent to agreements or submission.
+
 This queue is discovery, not a claim/lease system. Coordinate parallel agents so
 only one works on a job at a time. Pagination is not a snapshot; re-fetch the
 context before starting. No browser actions or external submissions are executed

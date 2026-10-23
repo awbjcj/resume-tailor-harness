@@ -257,6 +257,20 @@ def build_application_prompt(
             ("Remote / hybrid / on-site preference", remote_preference),
         ]
     )
+    professional_answers = _fields(
+        [
+            (
+                "Industry experience (self-reported, as of stated date)",
+                answers.industry_experience,
+            ),
+            ("Coding time preference", answers.coding_preference),
+            ("Preferred technical domain", answers.technical_domain),
+            (
+                "Office attendance (location and days per week)",
+                answers.office_attendance,
+            ),
+        ]
+    )
     screening_answers = _fields(
         [
             ("At least 18 years old", answers.at_least_18),
@@ -290,6 +304,10 @@ def build_application_prompt(
             (
                 "Friends / relatives employed by the employer",
                 answers.employer_relationships,
+            ),
+            (
+                "Other employer-specific screening answers",
+                answers.employer_screening_answers,
             ),
         ]
     )
@@ -359,6 +377,10 @@ def build_application_prompt(
         "export-control citizenship answers to the exact country list. Ask if the "
         "scope differs or is missing. Never infer age, citizenship, termination "
         "history, or board membership from resume facts.\n"
+        "- Check previous applications before applying to the same role again. "
+        "Keep application counts tied to their employer, date, and rolling window; "
+        "recheck them before reuse. Use self-reported experience as dated, and ask "
+        "for a calendar start date when only a relative notice period is saved.\n"
         "- Ask me to handle login, verification codes, CAPTCHA, or missing upload files "
         "when needed. This prompt does not attach a resume or cover letter. "
         "Check each page for validation errors and verify saved entries.\n"
@@ -379,6 +401,7 @@ def build_application_prompt(
         ),
         _section("Applicant", applicant),
         _section("Application answers", application_answers),
+        _section("Professional screening", professional_answers),
         _section("Common screening answers", screening_answers),
         _section("Employer-specific answers", employer_answers),
         _section("Voluntary self-identification", disclosures),
