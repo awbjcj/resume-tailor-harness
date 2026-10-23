@@ -39,7 +39,10 @@ CI runs only for `main`: `.github/workflows/_reusable-ci.yml` holds the actual
 jobs (`python-quality`, `web-quality`, `security-audit`) behind a `full` input;
 `.github/workflows/ci-main.yml` calls it with `full: true` (including the web
 production build and the pip-audit/npm-audit dependency scan) on pushes/PRs to
-`main`. `.github/workflows/public-browser.yml` also runs only for matching PRs
+`main`. Python quality includes Ruff, Pyright (the Pylance type-checking engine),
+and offline pytest. Dependency audits read the committed lockfiles and fail CI
+on Python vulnerabilities or high/critical npm vulnerabilities.
+`.github/workflows/public-browser.yml` also runs only for matching PRs
 to `main`. CodeQL uses GitHub's default code scanning setup, which creates its
 own workflow and scans the default and protected branches plus relevant PRs.
 The repository is public, so its standard hosted runners do not consume the
