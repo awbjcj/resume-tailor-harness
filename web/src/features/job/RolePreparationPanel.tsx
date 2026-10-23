@@ -5,6 +5,8 @@ import {
   LoaderCircle,
   RefreshCw,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,7 @@ function formatDate(value: string): string {
 }
 
 export function RolePreparationPanel({ jobId }: { jobId: number }) {
+  const { i18n } = useTranslation();
   const query = useRolePreparation(jobId);
   const refresh = useRefreshRolePreparation(jobId);
   const run = latestArtifactRun(
@@ -150,7 +153,7 @@ export function RolePreparationPanel({ jobId }: { jobId: number }) {
               {(brief.likelyQuestions ?? []).map((item, index) => (
                 <li key={`${item.question}-${index}`} className="border-t pt-4 first:border-0 first:pt-0">
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">{item.questionType.replaceAll("_", " ")}</Badge>
+                    <Badge variant="outline">{localizeDisplayValue(item.questionType, i18n.resolvedLanguage)}</Badge>
                     {item.competency && <Badge variant="secondary">{item.competency}</Badge>}
                   </div>
                   <p className="mt-2 font-semibold leading-6">{item.question}</p>

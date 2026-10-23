@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FileText } from "lucide-react";
 import { TextPart } from "@/components/chat/parts/TextPart";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ export function CareerLabArtifactWorkspace({ turns, selectedId, onSelect, onRevi
   busy: boolean;
   liveText?: string;
 }) {
+  const { t } = useTranslation();
   const id = useId();
   const drafts = turns.filter((turn) => turn.artifact);
   const selected = drafts.find((turn) => turn.turnId === selectedId) ?? drafts.at(-1);
@@ -42,7 +44,7 @@ export function CareerLabArtifactWorkspace({ turns, selectedId, onSelect, onRevi
     <CardContent className="space-y-4 pt-4">
       <div className="max-h-[50vh] overflow-y-auto overscroll-contain" tabIndex={0} aria-label="Draft content"><TextPart text={selected?.text ?? liveText} /></div>
       {liveText && selected ? <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Response in progress</summary><div className="mt-3 max-h-64 overflow-y-auto"><TextPart text={liveText} caret /></div></details> : null}
-      {selected ? <form className="space-y-3 border-t pt-4" onSubmit={(event) => { event.preventDefault(); if (!feedback.trim() || busy) return; onRevise(selected.turnId, `Revise ${section ? `the section "${section}" in` : ""} the selected draft.\n\n${feedback.trim()}`); setFeedback(""); }}>
+      {selected ? <form className="space-y-3 border-t pt-4" onSubmit={(event) => { event.preventDefault(); if (!feedback.trim() || busy) return; onRevise(selected.turnId, section ? t("chat.reviseSection", { section, feedback: feedback.trim() }) : t("chat.reviseDraft", { feedback: feedback.trim() })); setFeedback(""); }}>
         <Label htmlFor={`${id}-section`}>Revision scope</Label>
         <select id={`${id}-section`} value={section} onChange={(event) => setSection(event.target.value)} className="w-full rounded-lg border bg-background p-2 text-sm"><option value="">Whole draft</option>{[...new Set(headings)].map((heading) => <option key={heading}>{heading}</option>)}</select>
         <Label htmlFor={`${id}-feedback`}>Feedback</Label>

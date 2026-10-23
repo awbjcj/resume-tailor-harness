@@ -18,7 +18,7 @@ describe("StatusBadge", () => {
   });
 
   it.each([
-    ["raw", "原始"],
+    ["raw", "新获取"],
     ["extracted", "已提取"],
     ["filtered", "已筛除"],
     ["rejected", "已拒绝"],

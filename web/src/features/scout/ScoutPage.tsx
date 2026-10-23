@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Bot, Building2, CheckCircle2, Clock3, Compass, MessageCircleQuestion, Search } from "lucide-react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
@@ -29,6 +30,7 @@ import {
 } from "./use-scout";
 
 export function ScoutPage() {
+  useTranslation();
   const [newOpen, setNewOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const sessions = useScoutSessions(showArchived);

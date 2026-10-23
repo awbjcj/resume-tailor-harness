@@ -115,7 +115,7 @@ describe("ApplicationsPage", () => {
     expect((await axe(container)).violations).toEqual([]);
 
     await changeLanguage("zh-CN");
-    expect(await screen.findByText("深入 · 4 个来源 · 多来源印证 · 当前有效")).toBeInTheDocument();
+    expect(await screen.findByText("深度 · 4 个来源 · 多来源印证 · 当前有效")).toBeInTheDocument();
     expect(screen.getByText("找到历史申报记录")).toBeInTheDocument();
   });
 

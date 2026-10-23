@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 import { Bot, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Clock3, MessageCircleQuestion, MessagesSquare, SquareCheckBig } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
@@ -43,6 +45,7 @@ import {
 } from "./use-interview";
 
 export function InterviewPage() {
+  const { i18n } = useTranslation();
   const [params] = useSearchParams();
   const sessionParam = params.get("session");
   const sessions = useInterviewSessions();
@@ -257,12 +260,12 @@ export function InterviewPage() {
         description="Answer as you would in an interview. The questions adapt to your responses, and the completed rehearsal includes coaching."
         meta={<>
           <Badge variant={ended ? "outline" : "secondary"}>{ended ? "Rehearsal complete" : "Interview live"}</Badge>
-          <Badge variant="outline" className="capitalize">{active.style.stage.replace("_", " ")}</Badge>
-          <Badge variant="outline" className="capitalize">{active.style.demeanor}</Badge>
-          <Badge variant="outline" className="capitalize">{active.style.difficulty}</Badge>
+          <Badge variant="outline" className="capitalize">{localizeDisplayValue(active.style.stage, i18n.resolvedLanguage)}</Badge>
+          <Badge variant="outline" className="capitalize">{localizeDisplayValue(active.style.demeanor, i18n.resolvedLanguage)}</Badge>
+          <Badge variant="outline" className="capitalize">{localizeDisplayValue(active.style.difficulty, i18n.resolvedLanguage)}</Badge>
           <Progress className="mt-2 w-full basis-full gap-2" value={active.progress.total ? Math.round((active.progress.asked / active.progress.total) * 100) : 0}>
             <ProgressLabel>Interview progress</ProgressLabel>
-            <span className="ml-auto text-sm tabular-nums text-muted-foreground">Question {active.progress.asked} of {active.progress.total}</span>
+            <span className="ml-auto text-sm tabular-nums text-muted-foreground">{`Question ${active.progress.asked} of ${active.progress.total}`}</span>
           </Progress>
         </>}
         actions={active.status === "active" ? (

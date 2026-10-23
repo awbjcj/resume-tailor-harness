@@ -13,6 +13,11 @@ export async function loadAutoTranslations(
 }
 
 const en = {
+  chat: {
+    reviseDraft: "Revise the selected draft.\n\n{{feedback}}",
+    reviseSection: 'Revise the section "{{section}}" in the selected draft.\n\n{{feedback}}',
+    discussJob: "Discuss {{job}}",
+  },
   billing: billingEn,
   emailNotifications: emailNotificationsEn,
   subscription: {
@@ -712,6 +717,12 @@ const en = {
     },
   },
   runHistory: {
+    counts: {
+      job_one: "{{count}} job", job_other: "{{count}} jobs",
+      resumeVersion_one: "{{count}} resume version", resumeVersion_other: "{{count}} resume versions",
+      coverLetter_one: "{{count}} cover letter", coverLetter_other: "{{count}} cover letters",
+      stage_one: "{{count}} stage", stage_other: "{{count}} stages",
+    },
     operations: "Recent completed operations",
     historyHint: "Latest 50 operations. Logs retain up to 200 progress messages per operation.",
     clearOperations: "Clear operation history",
@@ -812,6 +823,11 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  chat: {
+    reviseDraft: "请修改所选草稿。\n\n{{feedback}}",
+    reviseSection: "请修改所选草稿中的“{{section}}”部分。\n\n{{feedback}}",
+    discussJob: "讨论职位：{{job}}",
+  },
   subscription: {
     overrideHelp: "下方的高级档位分配会取消订阅的期限限制，改为持续发放周期额度。付费延长订阅，请使用上方的“续订”。",
     ledger: { allowanceGrant: "周期额度已发放", activated: "订阅已开通", renewed: "订阅已续订", expired: "订阅已到期", revoked: "订阅已撤销" },
@@ -968,12 +984,12 @@ const zhCN = {
     profileCoach: "个人资料助手",
     mockInterviews: "模拟面试",
     careerLab: "职业实验室",
-    findAndTailor: "发现与定制",
+    findAndTailor: "找职位与定制简历",
     discoveryScout: "职位探索助手",
     triage: "初筛",
     shortlist: "候选清单",
     pipeline: "求职看板",
-    insight: "洞察",
+    insight: "分析",
     matchGap: "匹配差距",
     applications: "申请记录",
     analytics: "数据分析",
@@ -1207,7 +1223,7 @@ const zhCN = {
       unknownDepth: "深度未知",
       evidenceSummary:
         "{{depth}} · {{count}} 个来源 · {{verification}} · {{freshness}}",
-      depth: { quick: "快速", standard: "标准", deep: "深入" },
+      depth: { quick: "快速", standard: "标准", deep: "深度" },
       verification: {
         inferred: "推断",
         single_source: "单一来源",
@@ -1360,7 +1376,7 @@ const zhCN = {
   },
   job: {
     stages: {
-      raw: "原始",
+      raw: "新获取",
       extracted: "已提取",
       filtered: "已筛除",
       shortlisted: "已加入候选",
@@ -1405,7 +1421,7 @@ const zhCN = {
     },
     pipelineStages: "求职流程阶段",
     stages: {
-      raw: "原始",
+      raw: "新获取",
       triage: "初筛",
       shortlist: "候选",
       approved: "已批准",
@@ -1483,6 +1499,12 @@ const zhCN = {
     },
   },
   runHistory: {
+    counts: {
+      job_one: "{{count}} 个职位", job_other: "{{count}} 个职位",
+      resumeVersion_one: "{{count}} 个简历版本", resumeVersion_other: "{{count}} 个简历版本",
+      coverLetter_one: "{{count}} 封求职信", coverLetter_other: "{{count}} 封求职信",
+      stage_one: "{{count}} 个阶段", stage_other: "{{count}} 个阶段",
+    },
     operations: "最近完成的操作",
     historyHint: "显示最近 50 次操作，每次操作最多保留 200 条进度日志。",
     clearOperations: "清空操作历史",
@@ -1520,7 +1542,7 @@ const zhCN = {
       h1bSponsorshipCheck: "H-1B 担保核查",
       linkedinImport: "LinkedIn 导入",
       taxonomyMaintenance: "技能分类维护",
-      profileBuild: "个人资料构建",
+      profileBuild: "个人资料生成",
       jobPull: "职位获取",
       pipelineRedo: "流程重做",
       skillRegrouping: "技能重新分组",

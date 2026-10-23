@@ -1,4 +1,6 @@
 import { AlertTriangle, CircleAlert, ExternalLink } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -134,6 +136,7 @@ export function CompanyIntelligenceEvidence({
   history: readonly Evidence[];
   historyLoading: boolean;
 }) {
+  const { i18n } = useTranslation();
   const sources = evidence.sources ?? [];
   const insights = evidence.insights ?? [];
 
@@ -142,7 +145,7 @@ export function CompanyIntelligenceEvidence({
       <Card className="gap-0 p-5">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">{sources.length} sources</Badge>
-          <Badge variant="outline">{evidence.researchDepth} research</Badge>
+          <Badge variant="outline">{localizeDisplayValue(evidence.researchDepth, i18n.resolvedLanguage)} research</Badge>
           <Badge variant="outline">Version {evidence.versionNumber}</Badge>
           {isStale && <Badge variant="outline">May be outdated</Badge>}
           <span className="text-xs text-muted-foreground">
@@ -204,7 +207,7 @@ export function CompanyIntelligenceEvidence({
           <ol className="mt-3 divide-y">
             {history.map((item) => (
               <li key={item.versionId ?? `${item.versionNumber}-${item.retrievedAt}`} className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
-                <span className="font-medium">Version {item.versionNumber} · {item.researchDepth}</span>
+                <span className="font-medium">Version {item.versionNumber} · {localizeDisplayValue(item.researchDepth, i18n.resolvedLanguage)}</span>
                 <span className="text-xs text-muted-foreground">{formatDate(item.retrievedAt)}</span>
               </li>
             ))}

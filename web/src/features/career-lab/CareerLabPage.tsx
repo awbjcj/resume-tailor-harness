@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import { FileText, ListChecks, MessageCircleMore, Sparkles, SquareCheckBig } from "lucide-react";
 
@@ -59,6 +60,7 @@ import {
 const CAREER_LAB_ICON = <Sparkles className="size-4" aria-hidden="true" />;
 
 export function CareerLabPage() {
+  const { i18n } = useTranslation();
   const [newOpen, setNewOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [searchParams] = useSearchParams();
@@ -238,12 +240,12 @@ export function CareerLabPage() {
       [row.jobCompany, row.jobTitle].filter(Boolean).join(" · "),
       row.status === "active" ? "Drafting now" : "Completed",
       `${row.turnCount} turns`,
-      formatUserDate(row.startedAt),
+      formatUserDate(row.startedAt, i18n.resolvedLanguage),
     ].filter(Boolean).join(" · "),
     title: row.title || row.goal || "Untitled Career Lab",
     status: row.status,
     archived: Boolean(row.archivedAt),
-  })), [sessions.data?.sessions]);
+  })), [sessions.data?.sessions, i18n.resolvedLanguage]);
 
   return (
     <div className={cn("space-y-6", CHAT_PAGE_WIDTH)}>

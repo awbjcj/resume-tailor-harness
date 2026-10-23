@@ -3,8 +3,21 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { ChatMessage } from "./ChatMessage";
+import { changeLanguage } from "@/i18n";
 
 describe("ChatMessage", () => {
+  it("renders known tool names, statuses, and empty results in Chinese", async () => {
+    await changeLanguage("zh-CN");
+    render(<ChatMessage showReasoning message={{ id: "zh-tool", role: "assistant", parts: [{
+      kind: "tool", callId: "tool-zh", name: "web_search", argsPreview: "Acme",
+      resultPreview: "No result was returned.", ok: false, done: true,
+    }] }} />);
+    expect(screen.getByText("助手")).toBeInTheDocument();
+    expect(screen.getByText("网页搜索")).toBeInTheDocument();
+    expect(screen.getByText("失败")).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: /网页搜索/ }));
+    expect(screen.getByText("未返回结果。")).toBeVisible();
+  });
   it("renders streamed citations as safe external links", () => {
     render(<ChatMessage showReasoning message={{ id: "sources", role: "assistant", parts: [{ kind: "sources", items: [{ url: "https://example.com/source", title: "Official source" }] }] }} />);
     const link = screen.getByRole("link", { name: "Official source" });
