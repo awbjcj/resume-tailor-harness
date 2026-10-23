@@ -68,6 +68,11 @@ null`; the domain model rejects that outright, so turning the budget off
   and friends/relatives answers must name the employer; citizenship country lists
   and government-employment lookback periods must match the live question.
   Saved answers never authorize terms, attestations, or final submission.
+  Professional screening answers are explicit strings, not values derived from
+  resume dates. Keep experience totals dated, office attendance location-specific,
+  and employer screening answers scoped to their role and confirmation date.
+  Rolling application counts and calendar start dates need fresh confirmation
+  when their scope changes; a relative notice period cannot supply a calendar date.
   External harnesses use `agent_applications.py` for the full JD/context and
   scoped question ledger. The concise copy prompt also includes matching saved
   questions. `YamlConfigStore.update` serializes read/modify/write with a file

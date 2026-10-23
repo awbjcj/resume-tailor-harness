@@ -129,6 +129,7 @@ def test_formats_saved_json_as_readable_qualifications_without_internal_metadata
         assert text in prompt
     assert "### Engineer — Acme\n- Dates: 2020 – Present" in prompt
     assert "- Built a reliable service" in prompt
+    assert "## Professional screening" not in prompt
     assert "- Programming: Python (Used at Acme)" in prompt
     for text in [
         "Useful project",

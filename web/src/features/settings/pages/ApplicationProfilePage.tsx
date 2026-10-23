@@ -57,6 +57,16 @@ function getGroups(): { title: string; description?: string; fields: AnswerField
       ],
     },
     {
+      title: "Professional screening",
+      description: "Save your own answers, not estimates from your resume. Date experience totals and specify the location and days per week for office attendance.",
+      fields: [
+        { key: "industryExperience", label: "Years of industry experience", placeholder: "e.g. 3 years, confirmed 2026-10-23" },
+        { key: "codingPreference", label: "Coding time preference", placeholder: "e.g. I generally enjoy spending 80% of my time coding" },
+        { key: "technicalDomain", label: "Preferred technical domain", placeholder: "e.g. Full Stack — preferred and strongest domain" },
+        { key: "officeAttendance", label: "Office attendance", placeholder: "Country, office location, and days per week" },
+      ],
+    },
+    {
       title: "Common screening answers",
       description: "Use explicit answers only. Include the exact country list for citizenship questions and the country and lookback period for government employment. Leave unknown answers blank.",
       fields: [
@@ -75,6 +85,7 @@ function getGroups(): { title: string; description?: string; fields: AnswerField
         { key: "referralSources", label: "How you heard about each employer", multiline: true },
         { key: "previousEmployment", label: "Previous employment with each employer", multiline: true },
         { key: "previousApplications", label: "Previous applications to each employer", multiline: true },
+        { key: "employerScreeningAnswers", label: "Other employer-specific screening answers", placeholder: "Employer, role/requisition, exact answer, and confirmation date; include rolling application windows or role-specific start dates", multiline: true },
         { key: "employerRelationships", label: "Friends / relatives employed by each employer", multiline: true },
       ],
     },
@@ -145,8 +156,10 @@ export function ApplicationProfilePage() {
                     value: draft[field.key] ?? "",
                     maxLength: 4000,
                     placeholder: field.placeholder,
-                    onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                      setDraft({ ...draft, [field.key]: event.target.value }),
+                    onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                      const value = event.target.value;
+                      setDraft((current) => current ? { ...current, [field.key]: value } : current);
+                    },
                   };
                   return (
                     <Field key={field.key} className={field.multiline ? "min-w-0 sm:col-span-2" : "min-w-0"}>

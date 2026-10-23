@@ -29,6 +29,18 @@ const {
 // translation. They are deliberately authored and checked against the catalog;
 // the catalog is never generated from a translation service.
 const BASE_ZH_CN_TRANSLATIONS = {
+  "Professional screening": "专业背景问答",
+  "Save your own answers, not estimates from your resume. Date experience totals and specify the location and days per week for office attendance.": "请填写本人确认的答案，不要按简历推算。工作年限请注明确认日期，到岗安排请注明地点及每周天数。",
+  "Years of industry experience": "行业工作年限",
+  "e.g. 3 years, confirmed 2026-10-23": "例如：3 年，确认于 2026-10-23",
+  "Coding time preference": "偏好的编程时间比例",
+  "e.g. I generally enjoy spending 80% of my time coding": "例如：通常希望将 80% 的工作时间用于编程",
+  "Preferred technical domain": "偏好的技术领域",
+  "e.g. Full Stack — preferred and strongest domain": "例如：全栈——最偏好且最擅长的领域",
+  "Office attendance": "到岗办公安排",
+  "Country, office location, and days per week": "国家、办公地点及每周到岗天数",
+  "Other employer-specific screening answers": "其他雇主专属筛选问答",
+  "Employer, role/requisition, exact answer, and confirmation date; include rolling application windows or role-specific start dates": "注明雇主、职位／招聘编号、确切答案和确认日期；包括滚动申请周期或该职位的入职日期",
   "100% · {{v0}}": "{{v0}}（100%）",
   "100% · done": "100% · 已完成",
   "A gated reviewer blocks the round outright, so it is never scored — its weight and score bands are disabled rather than silently ignored.": "启用硬性门槛的评审会直接阻断本轮，因此不参与评分；其权重和评分区间会被禁用，而非悄然忽略。",

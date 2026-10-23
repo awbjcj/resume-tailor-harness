@@ -22,6 +22,10 @@ class ApplicationProfile(TypedDict, total=False):
     availability: str
     relocation: str
     remotePreference: str
+    industryExperience: str
+    codingPreference: str
+    technicalDomain: str
+    officeAttendance: str
     atLeast18: str
     terminationHistory: str
     exportControlCitizenship: str
@@ -32,6 +36,7 @@ class ApplicationProfile(TypedDict, total=False):
     previousEmployment: str
     previousApplications: str
     employerRelationships: str
+    employerScreeningAnswers: str
     pronouns: str
     gender: str
     ethnicity: str

@@ -4691,6 +4691,11 @@ export interface components {
              */
             availability: string;
             /**
+             * Codingpreference
+             * @default
+             */
+            codingPreference: string;
+            /**
              * Currentboardmembership
              * @default
              */
@@ -4715,6 +4720,11 @@ export interface components {
              * @default
              */
             employerRelationships: string;
+            /**
+             * Employerscreeninganswers
+             * @default
+             */
+            employerScreeningAnswers: string;
             /**
              * Ethnicity
              * @default
@@ -4751,10 +4761,20 @@ export interface components {
              */
             governmentEmployment: string;
             /**
+             * Industryexperience
+             * @default
+             */
+            industryExperience: string;
+            /**
              * Linkedinurl
              * @default
              */
             linkedinUrl: string;
+            /**
+             * Officeattendance
+             * @default
+             */
+            officeAttendance: string;
             /**
              * Phone
              * @default
@@ -4810,6 +4830,11 @@ export interface components {
              * @default
              */
             sponsorshipNeeded: string;
+            /**
+             * Technicaldomain
+             * @default
+             */
+            technicalDomain: string;
             /**
              * Terminationhistory
              * @default
@@ -4868,6 +4893,11 @@ export interface components {
              */
             availability: string;
             /**
+             * Codingpreference
+             * @default
+             */
+            codingPreference: string;
+            /**
              * Currentboardmembership
              * @default
              */
@@ -4892,6 +4922,11 @@ export interface components {
              * @default
              */
             employerRelationships: string;
+            /**
+             * Employerscreeninganswers
+             * @default
+             */
+            employerScreeningAnswers: string;
             /**
              * Ethnicity
              * @default
@@ -4928,10 +4963,20 @@ export interface components {
              */
             governmentEmployment: string;
             /**
+             * Industryexperience
+             * @default
+             */
+            industryExperience: string;
+            /**
              * Linkedinurl
              * @default
              */
             linkedinUrl: string;
+            /**
+             * Officeattendance
+             * @default
+             */
+            officeAttendance: string;
             /**
              * Phone
              * @default
@@ -4987,6 +5032,11 @@ export interface components {
              * @default
              */
             sponsorshipNeeded: string;
+            /**
+             * Technicaldomain
+             * @default
+             */
+            technicalDomain: string;
             /**
              * Terminationhistory
              * @default
