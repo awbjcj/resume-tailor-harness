@@ -21,6 +21,20 @@ def test_get_search_defaults(client):
     assert body["sponsorshipRequired"] is False  # camelCase wire
 
 
+@pytest.mark.parametrize("document", ["review", "review-deep"])
+def test_review_fact_check_cannot_be_saved_as_advisory(client, document):
+    route = f"/api/config/{document}"
+    body = client.get(route).json()
+    body["reviewers"][0].update(gate=False, weight=2)
+
+    saved = client.put(route, json=body)
+
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["reviewers"][0]["gate"] is True
+    assert saved.json()["reviewers"][0]["weight"] == 2
+    assert client.get(route).json()["reviewers"][0]["gate"] is True
+
+
 def test_put_search_round_trip(client):
     resp = client.put(
         "/api/config/search",

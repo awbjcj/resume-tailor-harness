@@ -342,6 +342,28 @@ def test_context_is_complete_read_only_and_lists_only_safe_attachments(
         assert job is not None and job.status == "approved"
 
 
+def test_context_rejects_a_passing_flag_with_a_failed_fact_review(app_client):
+    app, client = app_client
+    job_id = seed_job(app, status="tailored")
+    with Session(app.state.engine) as session:
+        version = ResumeVersion(
+            job_id=job_id,
+            fact_check_passed=True,
+            gate_reviewers_json=[],
+            critique_json=[{"reviewer": "fact-check", "score": 0, "passed": False}],
+        )
+        session.add(version)
+        session.commit()
+
+    context = client.get(f"/api/jobs/{job_id}/application-context")
+    assert context.status_code == 200, context.text
+    assert context.json()["attachments"] == []
+    detail = client.get(f"/api/jobs/{job_id}").json()
+    assert detail["resumeVersions"][0]["factCheckPassed"] is False
+    assert detail["resumeVersions"][0]["failedGates"] == ["fact-check"]
+    assert detail["needsAttention"] is True
+
+
 def test_sdk_pat_workflow_and_tenant_isolation(mu_app, mu_client):
     for path in (
         "/api/application-jobs",

@@ -33,6 +33,23 @@ def test_load_from_yaml(tmp_path):
     assert cfg.reviewers[1].gate is False  # default
 
 
+def test_legacy_advisory_fact_check_is_repaired_on_load(tmp_path):
+    path = tmp_path / "review.yaml"
+    path.write_text(
+        "merged_advisory: true\nreviewers:\n"
+        "  - name: fact-check\n    gate: false\n    weight: 2\n"
+        "  - name: recruiter\n    gate: false\n    weight: 4\n",
+        encoding="utf-8",
+    )
+
+    config = load_review_config(path)
+
+    assert config.reviewers[0].gate is True
+    assert config.reviewers[0].weight == 2
+    assert config.reviewers[1].gate is False
+    assert config.reviewers[1].weight == 4
+
+
 def test_style_guide_path_from_yaml(tmp_path):
     f = tmp_path / "review.yaml"
     f.write_text("style_guide_path: config/custom_style.md\n", encoding="utf-8")

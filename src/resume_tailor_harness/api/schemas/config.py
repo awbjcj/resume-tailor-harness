@@ -12,6 +12,7 @@ from typing import Annotated, Any, Literal
 from pydantic import Field, field_validator, model_validator
 
 from resume_tailor_harness.api.schemas.base import CamelModel
+from resume_tailor_harness.models.review import FACT_CHECK_REVIEWER
 from resume_tailor_harness.tailor.review_config import (
     LengthBudget as DomainLengthBudget,
 )
@@ -63,6 +64,13 @@ class ReviewerEntry(CamelModel):
     weight: int = 1
     model_tier: str = "mid"
     score_bands: bool = False
+
+    @model_validator(mode="after")
+    def _require_fact_check_gate(self) -> ReviewerEntry:
+        # Apply the same repair on settings reads, writes, and bundle imports.
+        if self.name == FACT_CHECK_REVIEWER:
+            self.gate = True
+        return self
 
 
 def _domain_default(model: type[Any], field: str) -> Any:

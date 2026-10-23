@@ -30,6 +30,27 @@ def test_gate_failure_fails_round_even_with_high_scores():
     assert verdict.aggregate_score == 100  # weighted score still computed
 
 
+def test_legacy_advisory_fact_check_failure_cannot_be_outweighed():
+    # Copies and historical rosters may predate config normalization.
+    legacy_spec = ReviewerSpec(name="fact-check").model_copy(
+        update={"gate": False, "weight": 2}
+    )
+    config = ReviewConfig(
+        reviewers=[legacy_spec, ReviewerSpec(name="recruiter", weight=4)]
+    )
+    critiques = [
+        ReviewCritique(reviewer="fact-check", score=0, passed=False),
+        ReviewCritique(reviewer="recruiter", score=100, passed=True),
+    ]
+
+    verdict = aggregate(critiques, config)
+
+    assert verdict.gate_passed is False
+    assert verdict.passed is False
+    assert verdict.aggregate_score == 100
+    assert failing_gate_names(critiques, []) == ["fact-check"]
+
+
 def test_gate_pass_but_below_threshold_fails():
     critiques = [
         ReviewCritique(reviewer="fact-check", score=100, passed=True),
