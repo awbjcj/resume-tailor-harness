@@ -17,8 +17,10 @@ import {
   defaultTargetStatuses,
   deriveView,
   hasActiveScopeFilters,
+  isProvisionalSkill,
   targetId,
   visibleUnassignedSkillKeys,
+  visibleRecoverySkillKeys,
   type Filters as FilterValue,
   type SkillRow,
   type SuggestionTarget,
@@ -62,9 +64,11 @@ export function MatchGapContainer() {
     [view],
   );
   const scopedRegroup = hasActiveScopeFilters(filters);
+  const recoveryKeys = useMemo(() => view ? visibleRecoverySkillKeys(view) : [], [view]);
+  const provisionalCount = view?.skills.filter(isProvisionalSkill).length ?? 0;
   const regroup = useCallback(
-    () => refresh(scopedRegroup ? visibleUnassignedKeys : undefined),
-    [refresh, scopedRegroup, visibleUnassignedKeys],
+    () => refresh(scopedRegroup ? recoveryKeys : undefined),
+    [refresh, scopedRegroup, recoveryKeys],
   );
   // Taxonomy edits target the whole constellation, so their pickers must not be
   // narrowed by the active filters that shape the *displayed* map/outline.
@@ -144,6 +148,7 @@ export function MatchGapContainer() {
             />
             <RefreshClustersButton
               unassignedCount={visibleUnassignedKeys.length}
+              provisionalCount={provisionalCount}
               onRegroup={regroup}
               onMaintain={maintain}
               canUndo={data.taxonomyUndoAvailable}
@@ -157,6 +162,7 @@ export function MatchGapContainer() {
             items={[
               ["Filtered jobs", String(view.filteredJobCount)],
               ["Distinct skills", String(view.skills.length)],
+              ["Provisional skills", String(provisionalCount)],
               ["Open gaps", String(view.skills.filter((skill) => skill.coverage === "gap").length)],
               ["Adjacent", String(view.skills.filter((skill) => skill.coverage === "adjacent").length)],
             ]}

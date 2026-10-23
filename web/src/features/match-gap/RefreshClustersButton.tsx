@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 export function RefreshClustersButton({
   unassignedCount,
+  provisionalCount = 0,
   onRegroup,
   onMaintain,
   canUndo,
@@ -14,6 +15,7 @@ export function RefreshClustersButton({
   trailing,
 }: {
   unassignedCount: number;
+  provisionalCount?: number;
   onRegroup: () => Promise<boolean>;
   onMaintain: () => Promise<boolean>;
   canUndo: boolean;
@@ -44,16 +46,18 @@ export function RefreshClustersButton({
       className="shell-action-rail relative flex w-full min-w-0 items-center gap-2 pb-0.5 lg:w-auto lg:justify-end"
     >
       <Button
-        variant={unassignedCount > 0 ? "default" : "outline"}
+        variant={unassignedCount + provisionalCount > 0 ? "default" : "outline"}
         size="sm"
-        disabled={busy !== null || unassignedCount === 0}
+        disabled={busy !== null || unassignedCount + provisionalCount === 0}
         onClick={() => void start("regroup", onRegroup)}
       >
         <RefreshCw
           data-icon="inline-start"
           className={busy === "regroup" ? "animate-spin motion-reduce:animate-none" : ""}
         />
-        {busy === "regroup" ? "Regrouping…" : `Regroup unassigned (${unassignedCount})`}
+        {busy === "regroup" ? "Regrouping…" : provisionalCount > 0
+          ? `Refine skill groups (${unassignedCount + provisionalCount})`
+          : `Regroup unassigned (${unassignedCount})`}
       </Button>
 
       {/* Named for what it does. This action merges, splits, renames and

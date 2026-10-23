@@ -1,3 +1,4 @@
+import { isProvisionalSkill } from "./aggregate";
 import { BriefcaseBusinessIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -86,9 +87,11 @@ export function SkillModal({
               <DialogDescription>
                 {skill.jobCount} target {skill.jobCount === 1 ? "job" : "jobs"} · demand score {skill.score}
               </DialogDescription>
-              {skill.domainId === null && skill.groupingStatus && (
+              {(isProvisionalSkill(skill) || skill.groupingStatus) && (
                 <p role="status" className="mt-2 text-sm text-muted-foreground">
-                  Grouping {skill.groupingStatus.state}: {skill.groupingStatus.reason}
+                  {isProvisionalSkill(skill)
+                    ? "Provisional category placement; the specific domain still needs confirmation."
+                    : `Grouping ${skill.groupingStatus?.state}: ${skill.groupingStatus?.reason}`}
                 </p>
               )}
             </DialogHeader>
