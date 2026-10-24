@@ -4004,11 +4004,6 @@
     "en": "from cover letter #",
     "zh-CN": "来自求职信 #"
   },
-  "from the constellation. You can re-add it anytime.": {
-    "key": "ui_390ea0f0921c",
-    "en": "from the constellation. You can re-add it anytime.",
-    "zh-CN": "从技能图谱中隐藏，之后可以重新添加。"
-  },
   "from version #": {
     "key": "ui_947b6f1f6b95",
     "en": "from version #",
@@ -4373,11 +4368,6 @@
     "key": "ui_99695fe7fb3a",
     "en": "Hide text",
     "zh-CN": "隐藏文字"
-  },
-  "Hides": {
-    "key": "ui_7296a62d993c",
-    "en": "Hides",
-    "zh-CN": "将"
   },
   "Hiring contacts": {
     "key": "ui_a58c18fcc0c1",
@@ -8109,16 +8099,6 @@
     "en": "Resumes",
     "zh-CN": "简历"
   },
-  "retired as non-skills": {
-    "key": "ui_e8259f984844",
-    "en": "retired as non-skills",
-    "zh-CN": "因不属于技能而停用"
-  },
-  "Retired as non-skills": {
-    "key": "ui_5111f008dfb2",
-    "en": "Retired as non-skills",
-    "zh-CN": "因不属于技能而停用"
-  },
   "Retrieved": {
     "key": "ui_4790277aa10c",
     "en": "Retrieved",
@@ -10169,11 +10149,6 @@
     "en": "These are the strongest profile-backed examples for this job.",
     "zh-CN": "这些经历最能说明你符合此职位的要求，均有个人资料作为依据。"
   },
-  "These entries did not name a skill, so they no longer use a classification call. Restore any valid entries.": {
-    "key": "ui_21b365ac05cc",
-    "en": "These entries did not name a skill, so they no longer use a classification call. Restore any valid entries.",
-    "zh-CN": "这些条目没有明确的技能名称，因此不会再调用模型分类。有效的条目可以手动恢复。"
-  },
   "These stay removed across profile rebuilds until you restore them.": {
     "key": "ui_3ead37341fbd",
     "en": "These stay removed across profile rebuilds until you restore them.",
@@ -11958,5 +11933,110 @@
     "key": "ui_a73367c62805",
     "en": "Years of industry experience",
     "zh-CN": "行业工作年限"
+  },
+  "{{v0}} discarded non-skills": {
+    "key": "ui_382289930ede",
+    "en": "{{v0}} discarded non-skills",
+    "zh-CN": "{{v0}} 个已丢弃的非技能条目"
+  },
+  "{{v0}} entries · {{v1}} selected (up to 500)": {
+    "key": "ui_f90c19117c4e",
+    "en": "{{v0}} entries · {{v1}} selected (up to 500)",
+    "zh-CN": "共 {{v0}} 个条目 · 已选 {{v1}} 个（最多 500 个）"
+  },
+  "All skill entries": {
+    "key": "ui_02ae8a695410",
+    "en": "All skill entries",
+    "zh-CN": "全部技能条目"
+  },
+  "Clean up skills": {
+    "key": "ui_f29b2f214284",
+    "en": "Clean up skills",
+    "zh-CN": "清理技能"
+  },
+  "Clear selection": {
+    "key": "ui_cea4d2e010b8",
+    "en": "Clear selection",
+    "zh-CN": "清除选择"
+  },
+  "Discard {{v0}}": {
+    "key": "ui_3f33abd96855",
+    "en": "Discard {{v0}}",
+    "zh-CN": "丢弃 {{v0}}"
+  },
+  "Discard selected ({{v0}})": {
+    "key": "ui_bc7c8a9dae4b",
+    "en": "Discard selected ({{v0}})",
+    "zh-CN": "丢弃已选条目（{{v0}}）"
+  },
+  "Discarded non-skills": {
+    "key": "ui_54ba420121a0",
+    "en": "Discarded non-skills",
+    "zh-CN": "已丢弃的非技能条目"
+  },
+  "Discards this entry from skill demand and future regrouping. You can restore it from discarded non-skills. Original job descriptions stay intact.": {
+    "key": "ui_ed631ab54200",
+    "en": "Discards this entry from skill demand and future regrouping. You can restore it from discarded non-skills. Original job descriptions stay intact.",
+    "zh-CN": "将此条目从技能需求和后续分组中排除。您可以从已丢弃的非技能条目中恢复它。原始职位描述保持不变。"
+  },
+  "Next": {
+    "key": "ui_1ff57a29d7c9",
+    "en": "Next",
+    "zh-CN": "下一页"
+  },
+  "No matching entries. Use All skill entries to review other unwanted items.": {
+    "key": "ui_21d1cfa353a3",
+    "en": "No matching entries. Use All skill entries to review other unwanted items.",
+    "zh-CN": "没有匹配的条目。请使用“全部技能条目”检查其他不需要的条目。"
+  },
+  "Previous": {
+    "key": "ui_a57b08a480b8",
+    "en": "Previous",
+    "zh-CN": "上一页"
+  },
+  "Review degrees, experience durations, and other requirements that are not skills. Discarded entries leave the skill map and future regrouping. Original job descriptions stay intact, and entries can be restored.": {
+    "key": "ui_0431c35adfcd",
+    "en": "Review degrees, experience durations, and other requirements that are not skills. Discarded entries leave the skill map and future regrouping. Original job descriptions stay intact, and entries can be restored.",
+    "zh-CN": "检查学位、工作年限及其他不属于技能的要求。丢弃的条目将从技能图谱和后续分组中排除。原始职位描述保持不变，条目可随时恢复。"
+  },
+  "Search cleanup entries": {
+    "key": "ui_e3567208e9de",
+    "en": "Search cleanup entries",
+    "zh-CN": "搜索待清理条目"
+  },
+  "Search discarded entries": {
+    "key": "ui_49bd7ef3f0f9",
+    "en": "Search discarded entries",
+    "zh-CN": "搜索已丢弃的条目"
+  },
+  "Search entries…": {
+    "key": "ui_03d95e9495f4",
+    "en": "Search entries…",
+    "zh-CN": "搜索条目…"
+  },
+  "Select visible": {
+    "key": "ui_70f58736b63e",
+    "en": "Select visible",
+    "zh-CN": "选择当前显示的条目"
+  },
+  "Selected entries discarded. You can restore them from discarded non-skills.": {
+    "key": "ui_65d39180b621",
+    "en": "Selected entries discarded. You can restore them from discarded non-skills.",
+    "zh-CN": "已丢弃所选条目。您可以从已丢弃的非技能条目中恢复它们。"
+  },
+  "Showing {{v0}} of {{v1}} matching entries": {
+    "key": "ui_883315d7cf4a",
+    "en": "Showing {{v0}} of {{v1}} matching entries",
+    "zh-CN": "显示 {{v1}} 个匹配条目中的 {{v0}} 个"
+  },
+  "Suggested non-skills": {
+    "key": "ui_adf4f2d907e5",
+    "en": "Suggested non-skills",
+    "zh-CN": "建议排除的非技能条目"
+  },
+  "These entries are excluded from skill demand and regrouping. Restore any valid entries.": {
+    "key": "ui_adad6c71d8dd",
+    "en": "These entries are excluded from skill demand and regrouping. Restore any valid entries.",
+    "zh-CN": "这些条目已从技能需求和重新分组中排除。请恢复任何有效的技能条目。"
   }
 }

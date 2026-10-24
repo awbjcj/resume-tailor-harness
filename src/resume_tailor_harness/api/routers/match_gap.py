@@ -34,6 +34,7 @@ from resume_tailor_harness.profile.matrix import (
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.services.suggestions import suggestion_statuses
 from resume_tailor_harness.taxonomy.corrections import corrections_file_path
+from resume_tailor_harness.taxonomy.non_skills import cleanup_candidates
 from resume_tailor_harness.tracking.match_gap import build_demand_graph, profile_skill_tokens
 from resume_tailor_harness.tenancy.paths import FACTS_PATH as _FACTS_PATH, resolve_tenant_path
 
@@ -59,6 +60,7 @@ def build_match_gap_payload(session: Session) -> MatchGapOut:
         cluster_map=taxonomy.cluster_map,
         corrections=taxonomy.corrections,
         grouping_statuses=taxonomy.state.grouping_status,
+        retired_keys=taxonomy.retired_keys,
     )
     graph.taxonomy_generation = taxonomy.state.generation_id
     graph.taxonomy_algorithm_version = taxonomy.state.algorithm_version
@@ -79,6 +81,9 @@ def build_match_gap_payload(session: Session) -> MatchGapOut:
                 for key, retired in sorted(taxonomy.state.retired_skills.items())
             ],
             "taxonomy_revision": taxonomy.semantic_revision,
+            "cleanup_candidates": cleanup_candidates(
+                taxonomy, (skill.key for skill in graph.skills)
+            ),
             "taxonomy_manifest": TaxonomyManifestOut(**asdict(taxonomy.manifest)),
             "override_conflicts": [
                 OverrideConflictOut(**asdict(conflict))

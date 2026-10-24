@@ -10,7 +10,7 @@ from sqlmodel import Session
 from resume_tailor_harness.api.deps import get_session
 from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.routers.match_gap import build_match_gap_payload
-from resume_tailor_harness.api.schemas.match_gap import MatchGapOut
+from resume_tailor_harness.api.schemas.match_gap import DiscardSkillsIn, MatchGapOut
 from resume_tailor_harness.api.schemas.taxonomy import (
     AddSkillIn,
     AliasIn,
@@ -97,6 +97,17 @@ def remove_skill(token: str, session: Session = Depends(get_session)):
     corrections_path, cluster_path = _paths()
     with _translated_errors():
         service.remove_skill(corrections_path, token, cluster_path=cluster_path)
+    return build_match_gap_payload(session)
+
+
+@router.post("/taxonomy/discard-skills", response_model=MatchGapOut)
+def discard_skills(body: DiscardSkillsIn, session: Session = Depends(get_session)):
+    corrections_path, cluster_path = _paths()
+    with _translated_errors():
+        service.discard_skills(
+            corrections_path, cluster_path, body.skill_keys,
+            known_tokens=collect_target_skill_tokens(session),
+        )
     return build_match_gap_payload(session)
 
 

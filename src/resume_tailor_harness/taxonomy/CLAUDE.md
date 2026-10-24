@@ -186,6 +186,17 @@ experience`); they land in `TaxonomyState.retired_skills`, are subtracted from
   unassigned count; nothing in it lowers that count. The button is named for
   what it does so it is not mistaken for a second Regroup.
 
+- **Cleanup is reviewed and reversible.** Match / Gap's `cleanupCandidates`
+  scans saved canonicals and current demand for conservative degree, experience,
+  eligibility and travel patterns, including already assigned entries. Rules in
+  `non_skills.py` only suggest; `POST /api/taxonomy/discard-skills` validates the
+  entire selected batch and retires it under taxonomy custody. Manual and model
+  retirements both leave the demand graph, research targets and future regrouping;
+  aliases resolve before exclusion. Original job descriptions, extracted criteria
+  and profile facts remain intact. Restore uses the existing retirement endpoint.
+  The UI also permits reviewing other active skill entries and batches restores
+  at 500 keys, the API's per-request limit.
+
 - **Use source evidence for the ambiguous tail.** With an active database
   session, regroup supplies up to two bounded excerpts per skill from active
   target jobs. Evidence follows aliases and is included only for the current

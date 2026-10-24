@@ -1,4 +1,6 @@
 import { Undo2Icon } from "lucide-react";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,30 +22,45 @@ type RetiredSkill = components["schemas"]["RetiredSkillOut"];
  */
 export function RetiredSkills({ skills }: { skills: RetiredSkill[] }) {
   const restore = useRestoreSkills();
+  const [query, setQuery] = useState("");
+  const matching = skills.filter((skill) =>
+    skill.key.toLowerCase().includes(query.toLowerCase()),
+  );
   if (skills.length === 0) return null;
 
   return (
     <Popover>
       <PopoverTrigger
-        render={<Button variant="ghost" size="xs" className="text-muted-foreground" />}
+        render={
+          <Button variant="ghost" size="xs" className="text-muted-foreground" />
+        }
       >
-        {skills.length} retired as non-skills
+        {`${skills.length} discarded non-skills`}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <PopoverHeader className="gap-1 p-4 pb-2">
-          <PopoverTitle>Retired as non-skills</PopoverTitle>
+          <PopoverTitle>Discarded non-skills</PopoverTitle>
           <p className="text-xs text-muted-foreground">
-            These entries did not name a skill, so they no longer use a
-            classification call. Restore any valid entries.
+            These entries are excluded from skill demand and regrouping. Restore
+            any valid entries.
           </p>
+          <Input
+            aria-label="Search discarded entries"
+            placeholder="Search entries…"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
         </PopoverHeader>
         <ul className="max-h-72 overflow-y-auto border-t">
-          {skills.map((skill) => (
+          {matching.slice(0, 100).map((skill) => (
             <li
               key={skill.key}
               className="flex items-center justify-between gap-2 border-b px-4 py-2 last:border-b-0"
             >
-              <span className="min-w-0 truncate text-sm" title={skill.key}>
+              <span
+                className="min-w-0 break-words text-sm"
+                title={skill.reason}
+              >
                 {skill.key}
               </span>
               <Button
@@ -58,6 +75,7 @@ export function RetiredSkills({ skills }: { skills: RetiredSkill[] }) {
             </li>
           ))}
         </ul>
+        <p className="px-4 pt-2 text-xs text-muted-foreground">{`Showing ${Math.min(matching.length, 100)} of ${matching.length} matching entries`}</p>
         <div className="p-3">
           <Button
             variant="outline"

@@ -29,6 +29,7 @@ import { Filters } from "./Filters";
 import { RankedList } from "./RankedList";
 import { RefreshClustersButton } from "./RefreshClustersButton";
 import { RetiredSkills } from "./RetiredSkills";
+import { CleanupSkills } from "./CleanupSkills";
 import { SelectionTray } from "./SelectionTray";
 import { SkillMap } from "./SkillMap";
 import { SkillModal } from "./SkillModal";
@@ -58,13 +59,19 @@ export function MatchGapContainer() {
   const [activeView, setActiveView] = useState("map");
   const [selection, setSelection] = useState<SuggestionTarget[]>([]);
   const [openSkill, setOpenSkill] = useState<SkillRow | null>(null);
-  const view = useMemo(() => (data ? deriveView(data, filters) : null), [data, filters]);
+  const view = useMemo(
+    () => (data ? deriveView(data, filters) : null),
+    [data, filters],
+  );
   const visibleUnassignedKeys = useMemo(
     () => (view ? visibleUnassignedSkillKeys(view) : []),
     [view],
   );
   const scopedRegroup = hasActiveScopeFilters(filters);
-  const recoveryKeys = useMemo(() => view ? visibleRecoverySkillKeys(view) : [], [view]);
+  const recoveryKeys = useMemo(
+    () => (view ? visibleRecoverySkillKeys(view) : []),
+    [view],
+  );
   const provisionalCount = view?.skills.filter(isProvisionalSkill).length ?? 0;
   const regroup = useCallback(
     () => refresh(scopedRegroup ? recoveryKeys : undefined),
@@ -77,13 +84,22 @@ export function MatchGapContainer() {
     [data],
   );
   const persistedStateOf = useCallback(
-    (kind: "skill" | "domain", key: string) => view?.persistedStateOf(kind, key),
+    (kind: "skill" | "domain", key: string) =>
+      view?.persistedStateOf(kind, key),
     [view],
   );
   const suggestionRuns = useSuggestionRuns(persistedStateOf);
+  const activeSelection = useMemo(() => {
+    if (!data) return [];
+    const skills = new Set(data.skills.map((skill) => skill.key));
+    const domains = new Set(data.domains.map((domain) => domain.id));
+    return selection.filter((target) =>
+      (target.kind === "skill" ? skills : domains).has(target.key),
+    );
+  }, [data, selection]);
   const selectedIds = useMemo(
-    () => new Set(selection.map((target) => targetId(target))),
-    [selection],
+    () => new Set(activeSelection.map((target) => targetId(target))),
+    [activeSelection],
   );
 
   const toggleSelection = useCallback((target: SuggestionTarget) => {
@@ -96,7 +112,9 @@ export function MatchGapContainer() {
   }, []);
   const removeSelection = useCallback((target: SuggestionTarget) => {
     const id = targetId(target);
-    setSelection((current) => current.filter((candidate) => targetId(candidate) !== id));
+    setSelection((current) =>
+      current.filter((candidate) => targetId(candidate) !== id),
+    );
   }, []);
 
   if (isLoading) return <BoardSkeleton />;
@@ -108,7 +126,12 @@ export function MatchGapContainer() {
         <AlertTitle>Couldn't load skill demand</AlertTitle>
         <AlertDescription>
           Check the API connection, then try again.
-          <Button className="mt-3 block" type="button" variant="outline" onClick={() => void refetch()}>
+          <Button
+            className="mt-3 block"
+            type="button"
+            variant="outline"
+            onClick={() => void refetch()}
+          >
             Retry
           </Button>
         </AlertDescription>
@@ -123,6 +146,13 @@ export function MatchGapContainer() {
         title="Match / Gap"
         sub="Compare role requirements with evidence in your profile, then identify skills to develop."
       />
+
+      {data && data.targetTotal === 0 && (
+        <div className="mb-4 flex flex-wrap justify-end gap-2">
+          <CleanupSkills data={data} />
+          <RetiredSkills skills={data.retiredSkills ?? []} />
+        </div>
+      )}
 
       {!data || data.targetTotal === 0 || !view ? (
         <Empty className="min-h-80 border">
@@ -154,7 +184,12 @@ export function MatchGapContainer() {
               canUndo={data.taxonomyUndoAvailable}
               onUndo={undo}
               maintenanceDue={data.taxonomyMaintenanceDue}
-              trailing={<RetiredSkills skills={data.retiredSkills ?? []} />}
+              trailing={
+                <>
+                  <CleanupSkills data={data} />
+                  <RetiredSkills skills={data.retiredSkills ?? []} />
+                </>
+              }
             />
           </section>
 
@@ -163,8 +198,20 @@ export function MatchGapContainer() {
               ["Filtered jobs", String(view.filteredJobCount)],
               ["Distinct skills", String(view.skills.length)],
               ["Provisional skills", String(provisionalCount)],
-              ["Open gaps", String(view.skills.filter((skill) => skill.coverage === "gap").length)],
-              ["Adjacent", String(view.skills.filter((skill) => skill.coverage === "adjacent").length)],
+              [
+                "Open gaps",
+                String(
+                  view.skills.filter((skill) => skill.coverage === "gap")
+                    .length,
+                ),
+              ],
+              [
+                "Adjacent",
+                String(
+                  view.skills.filter((skill) => skill.coverage === "adjacent")
+                    .length,
+                ),
+              ],
             ]}
           />
 
@@ -175,14 +222,21 @@ export function MatchGapContainer() {
                 <EmptyDescription>
                   Clear a filter or include covered skills to restore results.
                 </EmptyDescription>
-                <Button variant="outline" onClick={() => setFilters(DEFAULT_FILTERS)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setFilters(DEFAULT_FILTERS)}
+                >
                   Reset filters
                 </Button>
               </EmptyHeader>
             </Empty>
           ) : (
             <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
-              <Tabs value={activeView} onValueChange={setActiveView} className="min-w-0">
+              <Tabs
+                value={activeView}
+                onValueChange={setActiveView}
+                className="min-w-0"
+              >
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
                   <TabsList aria-label="Skill demand view">
                     <TabsTrigger value="map">
@@ -201,7 +255,9 @@ export function MatchGapContainer() {
                 <TabsContent value="map">
                   <SkillMap
                     categoryRows={view.categoryRows}
-                    editCategoryRows={editView?.categoryRows ?? view.categoryRows}
+                    editCategoryRows={
+                      editView?.categoryRows ?? view.categoryRows
+                    }
                     categories={data.categories}
                     stateOf={suggestionRuns.stateOf}
                     selected={selectedIds}
@@ -222,11 +278,13 @@ export function MatchGapContainer() {
               </Tabs>
 
               <SelectionTray
-                targets={selection}
+                targets={activeSelection}
                 stateOf={suggestionRuns.stateOf}
                 onRemove={removeSelection}
                 onClear={() => setSelection([])}
-                onGenerateAll={(targets) => void suggestionRuns.generateAll(targets)}
+                onGenerateAll={(targets) =>
+                  void suggestionRuns.generateAll(targets)
+                }
                 onRetry={(target) => void suggestionRuns.retry(target)}
                 generating={suggestionRuns.generating}
                 launchError={suggestionRuns.launchError}
@@ -240,10 +298,14 @@ export function MatchGapContainer() {
         skill={openSkill}
         domainLabel={
           openSkill
-            ? (view?.domainRows.find((domain) => domain.id === openSkill.domainId)?.label ?? null)
+            ? (view?.domainRows.find(
+                (domain) => domain.id === openSkill.domainId,
+              )?.label ?? null)
             : null
         }
-        state={openSkill ? suggestionRuns.stateOf("skill", openSkill.key) : "none"}
+        state={
+          openSkill ? suggestionRuns.stateOf("skill", openSkill.key) : "none"
+        }
         jobs={openSkill ? (view?.jobsForSkill(openSkill.key) ?? []) : []}
         onClose={() => setOpenSkill(null)}
       />

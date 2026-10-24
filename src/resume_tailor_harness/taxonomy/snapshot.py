@@ -208,7 +208,9 @@ class EffectiveTaxonomy:
             for raw in (overrides.ban if overrides is not None else [])
             if (token := normalize_skill(raw))
         )
-        retired = frozenset(state.retired_skills)
+        retired = frozenset(
+            aliases.get(token, token) for token in state.retired_skills
+        )
         semantic = _semantic_digest(effective, banned, retired)
         projection = _digest(
             {

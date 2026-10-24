@@ -33,6 +33,15 @@ class RestoreSkillsIn(RefreshClustersIn):
     """Retired keys to return to the backlog; same bounds as a scoped regroup."""
 
 
+class DiscardSkillsIn(RefreshClustersIn):
+    """Known entries explicitly selected for reversible non-skill exclusion."""
+
+
+class CleanupCandidateOut(CamelModel):
+    key: str
+    reason: str
+
+
 class RestoreSkillsOut(CamelModel):
     restored: int
     restored_skills: list[str]
@@ -149,3 +158,4 @@ class MatchGapOut(CamelModel):
     # backlog, so they must stay visible somewhere or a wrong call is invisible
     # and irreversible.
     retired_skills: list[RetiredSkillOut] = Field(default_factory=list)
+    cleanup_candidates: list[CleanupCandidateOut] = Field(default_factory=list)

@@ -4097,6 +4097,24 @@
         "title": "CategoryOut",
         "type": "object"
       },
+      "CleanupCandidateOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "reason"
+        ],
+        "title": "CleanupCandidateOut",
+        "type": "object"
+      },
       "CoachDraftNoteOut": {
         "properties": {
           "quotes": {
@@ -5633,6 +5651,25 @@
           "skillKey"
         ],
         "title": "DemandEdgeOut",
+        "type": "object"
+      },
+      "DiscardSkillsIn": {
+        "description": "Known entries explicitly selected for reversible non-skill exclusion.",
+        "properties": {
+          "skillKeys": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Skillkeys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "skillKeys"
+        ],
+        "title": "DiscardSkillsIn",
         "type": "object"
       },
       "DiscoverParams": {
@@ -9680,6 +9717,13 @@
               "$ref": "#/components/schemas/CategoryOut"
             },
             "title": "Categories",
+            "type": "array"
+          },
+          "cleanupCandidates": {
+            "items": {
+              "$ref": "#/components/schemas/CleanupCandidateOut"
+            },
+            "title": "Cleanupcandidates",
             "type": "array"
           },
           "clustersStale": {
@@ -36132,6 +36176,62 @@
           }
         },
         "summary": "Add Alias"
+      }
+    },
+    "/api/taxonomy/discard-skills": {
+      "post": {
+        "operationId": "discard_skills_api_taxonomy_discard_skills_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscardSkillsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchGapOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discard Skills"
       }
     },
     "/api/taxonomy/domains/{domain_id}": {

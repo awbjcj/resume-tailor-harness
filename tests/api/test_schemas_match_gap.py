@@ -111,6 +111,7 @@ def test_match_gap_out_shape():
         "taxonomyManifest",
         "overrideConflicts",
         "retiredSkills",
+        "cleanupCandidates",
     }
     assert dumped["suggestionStatuses"] == []
     assert dumped["taxonomyAlgorithmVersion"] == "legacy"

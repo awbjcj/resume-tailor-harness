@@ -145,6 +145,7 @@ def test_match_gap_projects_jobs_skills_edges_domains_and_categories(
         "unassignedCount": 0,
         "taxonomyUndoAvailable": False,
         "retiredSkills": [],
+        "cleanupCandidates": [],
     }
     assert body["categories"][7] == {
         "slug": "cloud-infra",

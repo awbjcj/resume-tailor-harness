@@ -4093,6 +4093,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/taxonomy/discard-skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discard Skills */
+        post: operations["discard_skills_api_taxonomy_discard_skills_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/taxonomy/domains/{domain_id}": {
         parameters: {
             query?: never;
@@ -5741,6 +5758,13 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** CleanupCandidateOut */
+        CleanupCandidateOut: {
+            /** Key */
+            key: string;
+            /** Reason */
+            reason: string;
+        };
         /** CoachDraftNoteOut */
         CoachDraftNoteOut: {
             /** Quotes */
@@ -6412,6 +6436,14 @@ export interface components {
              * @enum {string}
              */
             source: "must" | "nice" | "tech";
+        };
+        /**
+         * DiscardSkillsIn
+         * @description Known entries explicitly selected for reversible non-skill exclusion.
+         */
+        DiscardSkillsIn: {
+            /** Skillkeys */
+            skillKeys: string[];
         };
         /** DiscoverParams */
         DiscoverParams: Record<string, never>;
@@ -7878,6 +7910,8 @@ export interface components {
         MatchGapOut: {
             /** Categories */
             categories: components["schemas"]["CategoryOut"][];
+            /** Cleanupcandidates */
+            cleanupCandidates?: components["schemas"]["CleanupCandidateOut"][];
             /** Clustersstale */
             clustersStale: boolean;
             /** Domains */
@@ -21104,6 +21138,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AliasIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchGapOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discard_skills_api_taxonomy_discard_skills_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscardSkillsIn"];
             };
         };
         responses: {
