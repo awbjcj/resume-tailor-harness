@@ -339,13 +339,19 @@ def refresh_clusters(
         # A retired token names no skill.  Dropping it here is what stops the
         # backlog from re-buying the same LLM verdict on every single run.
         existing = snapshot.effective
+        retired_keys = {
+            existing.aliases.get(token, token) for token in taxonomy_state.retired_skills
+        }
+        removed_keys = {
+            existing.aliases.get(token, token) for token in corrections.removed_skills
+        }
         demanded = {
             normalize_skill(token) for token in demanded if normalize_skill(token)
         }
         demanded = {
             token
             for token in demanded
-            if existing.aliases.get(token, token) not in taxonomy_state.retired_skills
+            if existing.aliases.get(token, token) not in retired_keys | removed_keys
         }
         _, pinned_skills = pinned_domains_and_skills(existing, corrections)
         # Moving one skill pins that skill, not every other generated member

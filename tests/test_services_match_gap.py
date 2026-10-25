@@ -891,6 +891,25 @@ def test_a_token_naming_no_skill_is_retired_and_leaves_the_backlog(tmp_path):
     assert repeat.calls == 0
 
 
+def test_manual_discard_stays_out_of_regroup_through_aliases(tmp_path):
+    from resume_tailor_harness.services.taxonomy import discard_skills
+
+    engine = _engine_with_target_skills("Python", "Five years experience", "5 years of experience")
+    path = tmp_path / "cluster_map.json"
+    save_cluster_map(ClusterMap(aliases={"five years experience": "5 years of experience"}), path)
+    discard_skills(
+        tmp_path / "taxonomy_corrections.json", path, ["Five years experience"],
+    )
+    canonicalizer = _AsyncCanonicalizer()
+    themer = _AsyncThemer(_languages)
+    with get_session(engine) as session:
+        result = refresh_clusters(session, canonicalizer=canonicalizer, themer=themer, path=path)
+        repeat = refresh_clusters(session, canonicalizer=canonicalizer, themer=themer, path=path)
+    assert result["processedSkillKeys"] == ["python"]
+    assert repeat["processedSkillKeys"] == []
+    assert "5 years of experience" in load_taxonomy_state(path).retired_skills
+
+
 def test_a_retired_skill_can_be_restored_to_the_backlog(tmp_path):
     """A wrong retirement must be one call from being undone."""
 

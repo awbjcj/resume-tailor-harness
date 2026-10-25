@@ -40,6 +40,7 @@ def load_suggestion_graph(
         facts,
         cluster_map=taxonomy.cluster_map,
         corrections=taxonomy.corrections,
+        retired_keys=taxonomy.retired_keys,
     )
     return facts, graph
 

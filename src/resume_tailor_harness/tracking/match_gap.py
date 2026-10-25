@@ -256,6 +256,7 @@ def build_demand_graph(
     *,
     corrections: "TaxonomyCorrections | None" = None,
     grouping_statuses: Mapping[str, object] | None = None,
+    retired_keys: Collection[str] = (),
 ) -> DemandGraph:
     """Build normalized target-job skill demand for dashboard consumers."""
     from resume_tailor_harness.taxonomy.corrections import (
@@ -295,8 +296,10 @@ def build_demand_graph(
             "last_attempted_at": attempted_at,
         }
 
-    removed = removed_canonical_tokens(corrections, aliases)
-    profile_canonical = {aliases.get(token, token) for token in profile_tokens}
+    removed = removed_canonical_tokens(corrections, aliases) | {
+        aliases.get(token, token) for token in retired_keys
+    }
+    profile_canonical = {aliases.get(token, token) for token in profile_tokens} - removed
     covered_themes = {
         domain_of[token]
         for token in profile_canonical

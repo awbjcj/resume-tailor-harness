@@ -17,6 +17,8 @@ from resume_tailor_harness.taxonomy.corrections import (
     update_taxonomy_corrections,
 )
 from resume_tailor_harness.taxonomy.custody import TaxonomyCustody
+from resume_tailor_harness.taxonomy.non_skills import non_skill_reason
+from resume_tailor_harness.taxonomy.state import RetiredSkill, save_taxonomy_state
 from resume_tailor_harness.taxonomy.vocabulary import SKILL_GROUPS
 from resume_tailor_harness.tracking.match_gap import normalize_skill
 
@@ -188,6 +190,45 @@ def remove_skill(
     cluster_file = cluster_path or Path(corrections_path).with_name("cluster_map.json")
     with TaxonomyCustody(cluster_file, corrections_path).mutation():
         update_taxonomy_corrections(corrections_path, mutate)
+
+
+def discard_skills(
+    corrections_path: str | Path,
+    cluster_path: str | Path,
+    tokens: list[str],
+    *,
+    known_tokens: set[str] | frozenset[str] = frozenset(),
+) -> None:
+    """Retire a reviewed batch atomically, retaining source records for restore."""
+    from resume_tailor_harness.profile.matrix import load_overrides
+    from resume_tailor_harness.taxonomy.snapshot import EffectiveTaxonomy
+
+    requested = {_require_token(raw) for raw in tokens}
+    custody = TaxonomyCustody(cluster_path, corrections_path)
+    with custody.mutation():
+        snapshot = custody.read_for_mutation()
+        taxonomy = EffectiveTaxonomy.from_parts(
+            snapshot.generated, corrections=snapshot.corrections, state=snapshot.state,
+            overrides=load_overrides(Path(cluster_path).with_name("overrides.yaml")),
+        )
+        cmap = taxonomy.cluster_map
+        known = _known_skill_tokens(cmap, taxonomy.corrections) | {
+            normalize_skill(token) for token in known_tokens
+        } | set(taxonomy.state.retired_skills)
+        if unknown := requested - known:
+            raise UnknownSkillError(f"Unknown skill {sorted(unknown)[0]!r}")
+        state = taxonomy.state
+        canonicals = {cmap.aliases.get(token, token) for token in requested}
+        for canonical in canonicals:
+            state.retired_skills.setdefault(
+                canonical,
+                RetiredSkill(reason=non_skill_reason(canonical) or "Discarded by user"),
+            )
+        state.grouping_status = {
+            token: status for token, status in state.grouping_status.items()
+            if cmap.aliases.get(token, token) not in canonicals
+        }
+        save_taxonomy_state(state, cluster_path)
 
 
 def patch_domain(

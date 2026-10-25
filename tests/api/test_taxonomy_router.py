@@ -99,6 +99,73 @@ def test_remove_then_readd_skill(client):
     assert any(s["key"] == "python" for s in response.json()["skills"])
 
 
+def test_discard_alias_hides_demand_and_edges_and_is_restorable(client):
+    before = client.get("/api/match-gap").json()
+    response = client.post("/api/taxonomy/discard-skills", json={"skillKeys": ["JS", "JavaScript"]})
+    assert response.status_code == 200
+    body = response.json()
+    assert [skill["key"] for skill in body["skills"]] == ["python"]
+    assert {edge["skillKey"] for edge in body["edges"]} == {"python"}
+    assert [entry["key"] for entry in body["retiredSkills"]] == ["javascript"]
+    assert body["taxonomyRevision"] != before["taxonomyRevision"]
+    repeat = client.post("/api/taxonomy/discard-skills", json={"skillKeys": ["js"]}).json()
+    assert repeat["retiredSkills"] == body["retiredSkills"]
+    assert client.get("/api/match-gap").json()["skills"] == body["skills"]
+    assert client.post("/api/match-gap/restore-skills", json={"skillKeys": ["javascript"]}).status_code == 200
+    restored = client.get("/api/match-gap").json()
+    assert restored["skills"] == before["skills"]
+    assert restored["edges"] == before["edges"]
+    assert restored["retiredSkills"] == []
+
+
+def test_discard_unknown_batch_is_atomic_and_bounds_are_enforced(client):
+    response = client.post("/api/taxonomy/discard-skills", json={"skillKeys": ["python", "unknown"]})
+    assert response.status_code == 404
+    assert client.get("/api/match-gap").json()["retiredSkills"] == []
+    for values in [[], [" "], ["python"] * 501]:
+        assert client.post("/api/taxonomy/discard-skills", json={"skillKeys": values}).status_code == 422
+
+
+def test_cleanup_reviews_previously_assigned_requirements_and_preserves_source(client):
+    from resume_tailor_harness.taxonomy.clusters import load_cluster_map
+
+    _, path = taxonomy_router._paths()
+    cmap = load_cluster_map(path)
+    cmap.domain_of["8+ years of machine learning experience"] = "scripting"
+    save_cluster_map(cmap, path)
+    with get_session(client.app.state.engine) as session:
+        save_job(session, Job(
+            source="manual", status=JobStatus.shortlisted.value,
+            jd_text="Bachelor's degree and 8+ years of machine learning experience. Python required.",
+            criteria_json={"must_have_skills": ["Bachelor's degree in computer engineering", "8+ years of machine learning experience", "Python"]},
+        ))
+    preview = client.get("/api/match-gap").json()["cleanupCandidates"]
+    assert {item["reason"] for item in preview} == {"Education or degree requirement", "Years-of-experience requirement"}
+    result = client.post("/api/taxonomy/discard-skills", json={"skillKeys": [item["key"] for item in preview]})
+    assert result.status_code == 200
+    assert result.json()["cleanupCandidates"] == []
+    assert {skill["key"] for skill in result.json()["skills"]} == {"javascript", "python"}
+    with get_session(client.app.state.engine) as session:
+        from sqlmodel import select
+        job = session.exec(select(Job).where(Job.jd_text != "")).first()
+        assert job is not None and "Bachelor's degree" in job.jd_text
+        assert job.criteria_json is not None
+        assert len(job.criteria_json["must_have_skills"]) == 3
+
+
+def test_discard_refuses_corrupt_state_without_overwriting_it(client):
+    from pathlib import Path
+    from resume_tailor_harness.taxonomy.state import taxonomy_state_path
+
+    _, path = taxonomy_router._paths()
+    state_path = taxonomy_state_path(Path(path))
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text("{broken", encoding="utf-8")
+    response = client.post("/api/taxonomy/discard-skills", json={"skillKeys": ["python"]})
+    assert response.status_code == 400
+    assert state_path.read_text(encoding="utf-8") == "{broken"
+
+
 def test_compound_domain_patch_and_merge(client):
     patched = client.patch(
         "/api/taxonomy/domains/web",

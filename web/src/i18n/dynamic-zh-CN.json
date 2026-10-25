@@ -101,7 +101,11 @@
     "ownership_not_proven": "尚未核实招聘页面归属",
     "ats_conflict": "招聘页面归属与公司不符",
     "resolution_timeout": "来源核实超时",
-    "unsafe_url": "此链接不符合访问要求"
+    "unsafe_url": "此链接不符合访问要求",
+    "years-of-experience requirement": "工作年限要求",
+    "education or degree requirement": "教育或学位要求",
+    "employment eligibility or clearance requirement": "工作资格或安全许可要求",
+    "travel or relocation requirement": "出差或搬迁要求"
   },
   "sourceModes": {
     "literal": "原文",

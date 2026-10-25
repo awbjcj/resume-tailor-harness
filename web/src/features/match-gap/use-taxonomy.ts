@@ -30,12 +30,19 @@ function useTaxonomyMutationMessage<V>(
 export function useRestoreSkills() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (skillKeys: string[]) =>
-      unwrap(
-        api.POST("/api/match-gap/restore-skills", { body: { skillKeys } }),
-      ) as Promise<components["schemas"]["RestoreSkillsOut"]>,
+    mutationFn: async (skillKeys: string[]) => {
+      const restoredSkills: string[] = [];
+      for (let offset = 0; offset < skillKeys.length; offset += 500) {
+        const result = await unwrap(
+          api.POST("/api/match-gap/restore-skills", {
+            body: { skillKeys: skillKeys.slice(offset, offset + 500) },
+          }),
+        );
+        restoredSkills.push(...result.restoredSkills);
+      }
+      return { restored: restoredSkills.length, restoredSkills };
+    },
     onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: MATCH_GAP_QUERY_KEY });
       toast.success(
         result.restored === 1
           ? "Skill restored"
@@ -43,7 +50,22 @@ export function useRestoreSkills() {
       );
     },
     onError: (error: Error) => toast.error(error.message),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: MATCH_GAP_QUERY_KEY });
+    },
   });
+}
+
+export function useDiscardSkills() {
+  return useTaxonomyMutationMessage(
+    (skillKeys: string[]) =>
+      unwrap(
+        api.POST("/api/taxonomy/discard-skills", {
+          body: { skillKeys },
+        }),
+      ) as Promise<MatchGap>,
+    "Selected entries discarded. You can restore them from discarded non-skills.",
+  );
 }
 
 export function useMoveSkill() {
