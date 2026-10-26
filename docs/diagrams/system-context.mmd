@@ -1,12 +1,14 @@
 C4Context
     title System context — Résumé Tailor Harness
     Person(seeker, "Job seeker", "Approves jobs; reviews documents; tracks applications")
+    System_Ext(agent, "External agent + SDK", "Codex, Claude Code, pi; browser preparation with confirmation before submission")
     System(harness, "Résumé Tailor Harness", "Builds evidence profiles and tailored application documents")
     System_Ext(github, "GitHub", "Project evidence")
     System_Ext(sources, "Job sources", "Job boards and company sites")
     System_Ext(models, "Model providers", "Extraction, drafting and review")
     System_Ext(gmail, "Gmail (optional)", "Application signals and email drafts")
     Rel(seeker, harness, "Operates", "Web UI / CLI")
+    Rel(agent, harness, "Reads scoped context; submits drafts for server review", "Authenticated HTTP / JSON")
     Rel(harness, github, "Reads project evidence", "HTTPS")
     Rel(harness, sources, "Fetches postings", "HTTPS")
     Rel(harness, models, "Requests model inference", "HTTPS")

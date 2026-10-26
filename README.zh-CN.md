@@ -6,63 +6,87 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-Résumé Tailor Harness 覆盖完整的求职流程。它从招聘网站连接器、LinkedIn 或手动粘贴的职位描述中收集职位；根据你的**事实锁定**经历档案进行匹配评分；定制简历，起草配套求职信；将两者渲染为 PDF；并在工作区级 SQLite 数据库中跟踪每份申请。你可以将它作为命令行工具、本地网页应用或多用户托管服务使用。
+Résumé Tailor Harness 帮你收集职位、筛选机会、准备申请材料，并跟踪投递进展。它从招聘网站、LinkedIn 或手动粘贴的职位描述中导入职位，与有事实依据的经历档案进行匹配，再定制简历、起草求职信并生成 PDF。每份申请保存在当前工作区的 SQLite 数据库中。你可以使用命令行、本地网页应用或多用户托管服务。
 
-**事实锁定（fact-lock）**要求定制简历中的每条要点都能追溯到你提供的事实。智能体可以起草、重新表述和评审；确定性的控制流闸门决定哪些内容可以进入已保存的文档。[框架机制](#框架机制)一节会说明这些保护措施。
+Codex、Claude Code、pi 或其他外部智能体可以通过 [Python SDK 和智能体技能](sdk/python/README.md)访问工作区。使用个人访问令牌认证后，它们可以拉取职位、调用定制流程、提交自行起草的简历接受评审，也可以读取申请上下文和已核验的附件。
 
-_下文截图来自一个可随时丢弃的演示工作区，其中的公司和职位均为虚构。_
+事实锁定（fact-lock）要求定制简历中的每条经历描述都能追溯到你提供的事实。智能体负责起草、改写和评审，程序中的校验规则决定草稿能否通过。[框架机制](#框架机制)说明了具体规则。
+
+_下文截图使用演示工作区，公司和职位均为虚构。_
 
 ## 系统架构
 
-下面两张 C4 架构图分别展示系统的外部关系和运行结构。[工作流程](#工作流程)一节展示职位的完整生命周期。
+两张 C4 图分别展示外部系统关系和运行结构，后面的智能体流程图说明证据如何进入最终文档。模块边界、数据归属、部署方式和扩展方法见[架构蓝图](Project_Architecture_Blueprint.md)。
 
 ### 系统上下文
 
 求职者决定批准哪些职位，并审核最终文档。系统收集项目证据和职位描述，调用配置的模型服务，也可连接 Gmail 来跟踪申请和起草邮件。
 
-![C4 系统上下文：求职者、Résumé Tailor Harness、GitHub、职位来源、模型服务和可选的 Gmail](docs/diagrams/system-context.svg)
+![系统上下文：求职者、外部智能体、项目证据、职位来源、模型服务和可选的 Gmail](docs/diagrams/system-context.zh-CN.svg)
 
-[打开系统上下文图](docs/diagrams/system-context.html) · [C4 源文件](docs/diagrams/system-context.mmd)
+[打开系统上下文图](docs/diagrams/system-context.zh-CN.html) · [C4 源文件](docs/diagrams/system-context.mmd)
 
 ### 容器与持久化
 
-React 前端调用 FastAPI；CLI 直接调用同一套 Python 用例服务。后台任务在 API 进程的线程池中执行，通过 Server-Sent Events（SSE）推送进度。智能体、确定性事实锁定闸门和 Typst 渲染都属于 Python 应用内部的能力。
+React 前端和外部 SDK 调用 FastAPI；CLI 直接调用同一套 Python 业务服务。后台任务在 API 进程的线程池中执行，通过 Server-Sent Events（SSE）推送进度。智能体、事实校验和 Typst 渲染都在 Python 应用内部运行。
 
-![C4 容器图：浏览器与 CLI 入口、API 运行时、外部集成、平台数据库，以及工作区数据库和文件](docs/diagrams/system-architecture.svg)
+![运行架构：网页与 SDK、CLI、API 及后台任务、外部集成、平台数据库和工作区数据](docs/diagrams/system-architecture.zh-CN.svg)
 
-[打开容器图](docs/diagrams/system-architecture.html) · [C4 源文件](docs/diagrams/system-architecture.mmd) · [图示范围与代码依据](docs/diagrams/README.md)
+[打开容器图](docs/diagrams/system-architecture.zh-CN.html) · [C4 源文件](docs/diagrams/system-architecture.mmd) · [图示范围与代码依据](docs/diagrams/README.md)
 
 - **工作区隔离：**托管模式为每个用户提供独立的 SQLite 数据库和工作区文件；平台账号、配额和用量保存在 `system.db` 中。本地模式直接使用默认工作区，无需账号认证。
 - **运行边界：**Docker 将构建后的前端和 API 打包在同一镜像中，前端在浏览器中运行。独立 CLI 使用相同的服务代码，也会访问外部集成和工作区文件；容器图省略了这些连线。
 - **出站边界：**由用户输入影响的公网请求经过受验证的出站网关；模型路由和费用策略由共享模型调用层处理。
 
+### 智能体分工与文档评审
+
+业务服务按任务调用智能体，并控制可用证据、工具、模型档位和保存时机。智能体族用于区分职责，各智能体并非独立部署的服务。每个技能型任务使用一份经过校验的本地技能文件。
+
+![智能体流程：技能与事实进入写作流程，草稿经过程序校验和事实评审，修订后保存文档](docs/diagrams/agent-workflow.zh-CN.svg)
+
+[打开智能体流程图](docs/diagrams/agent-workflow.zh-CN.html)
+
+| 职责 | 处理的任务 | 限制 |
+| --- | --- | --- |
+| 职位分析与 Source Scout | 抽取要求、评估匹配度、推荐职位来源 | 来源须经重新检查和用户批准后保存 |
+| 简历写作与修订 | 根据引用的档案事实起草、修改简历 | 必须通过三项程序校验和事实评审 |
+| 评审团 | 核验事实，评估相关性、文风和版式 | 事实评审失败即拦截，其他评分不能抵消 |
+| 求职信写作与修订 | 根据档案证据撰写段落 | 检查事实引用，不运行评审团 |
+| 档案抽取与 Profile Coach | 整理证据，起草尚未记录的经历笔记 | 项目来源不能生成工作或教育经历；辅导笔记需经批准 |
+| 模拟面试与 Career Lab | 演练、复盘，准备谈薪或转行材料 | Career Lab 只生成草稿，不能投递、发信或修改档案 |
+| 公司与担保研究 | 收集带引用的雇主资料和历史申报记录 | 研究结论仅供参考，历史申报不能证明当前担保政策 |
+
+技能分类另有独立流程，在预算内归并技能名称、分配领域并重试未解决条目。外部 Codex 或 Claude Code 智能体通过 SDK/API 获取资料，其浏览器操作在服务端智能体循环之外执行。
+
 ---
 
 ## 框架机制
 
-本仓库组合了六项保护措施，让开放式写作任务更可信、更易复现，也更容易控制。
+以下六项机制约束写作、评审和保存流程。
 
 ### 1. 事实锁定保护每条表述
 
-你的简历和代码仓库会被抽取为**封闭 schema** 的证据档案（`data/profile/facts.json`）：每条事实都有 id，抽取 schema 会拒绝未定义的字段，因此项目类来源无法悄悄生成工作或教育经历。
+系统从简历和代码仓库中抽取证据，写入 `data/profile/facts.json`。每条事实都有 ID。抽取结果必须符合预先定义的数据结构，不能包含额外字段，因此项目类来源无法生成工作或教育经历。
 
-随后，每轮定制都会经过**三道确定性闸门**。它们全部在进程内运行，不调用模型：
+每轮定制先执行三项程序校验，全部在进程内完成，不调用模型：
 
-| 闸门               | 在草稿出现以下情况时拦截本轮     |
+| 校验项             | 在草稿出现以下情况时拦截本轮     |
 | ------------------ | -------------------------------- |
 | `provenance`       | 引用的事实 id 无法解析为真实事实 |
 | `skill-naming`     | 声称了档案中未能证明的技能       |
 | `numeric-evidence` | 写入了证据无法支持的数字         |
 
-这三个名称是**保留名**。把评审员配置成其中任意一个都会导致启动失败，因此修改评审名单无法遮蔽闸门。闸门结果和 LLM 评审意见都会汇入同一个判定构造函数（`tailor/verdict.py::aggregate`），因此“本轮是否通过”只有一个定义。任何闸门失败都会拦截本轮，与评分高低无关。
+这三个名称是保留名，不能用作评审员名称，否则配置校验会失败。程序校验和模型评审的结果统一交给 `tailor/verdict.py::aggregate` 判定。任意硬性校验失败，本轮就不能通过，其他评分再高也无效。
 
-求职信使用同一道确定性 provenance 闸门，不使用评审团。
+模型执行的 `fact-check` 事实评审失败时会拦截草稿，不参与加权评分。旧配置即使将其设为建议类评审，也会被纠正为硬性校验。随附评审名单包含该项；外部草稿提交接口还会拒绝缺少该项的名单。外部简历通过程序预检后，仍须接受服务端评审。
 
-### 2. 技能集中式定制（skill-concentrated tailoring）
+求职信使用相同的 `provenance` 来源校验，不运行评审团。
 
-任务智能体属于一个稳定的**智能体族（agent family）**，例如职位分析、简历撰写、简历评审、求职信、面试、Career Lab、内部档案或担保研究。每个智能体只使用**一个**已批准的执行程序。
+### 2. 每项任务使用一个已验证技能
 
-这些程序是本地 `SKILL.md` 文件。根目录受限、经过 **SHA-256 校验的注册表**（`career_skills/registry.py`）会根据 `skills-lock.json` 中锁定的清单解析它们。模型不选择路径，只提供能力名称；注册表返回唯一且不可变的 `SkillRef`（名称、版本、摘要、族）。如果文件被编辑、改为符号链接或指向技能根目录之外，该能力就会被**停用**，系统不会加载被篡改的文本。解析出的引用会与它影响的每份产物和每轮对话一同保存，从而将任何输出追溯到生成它的程序字节。
+系统按职责划分智能体族（agent family），包括职位分析、简历写作、简历评审、求职信、面试、Career Lab、内部档案和担保研究。每个技能型任务只使用一个已批准的技能文件。
+
+技能保存在本地 `SKILL.md` 文件中。注册表（`career_skills/registry.py`）按 `skills-lock.json` 检查路径和 SHA-256 摘要。模型只提供能力名称，不能指定文件路径；注册表返回包含名称、版本、摘要和所属智能体族的 `SkillRef`。文件被修改、替换为符号链接或越出技能根目录时，对应能力会停用。产物和对话会保存使用过的技能引用，便于追溯具体版本。
 
 ### 3. 受限的只读工具循环
 
@@ -72,22 +96,22 @@ Source Scout、Profile Coach、担保研究和 Career Lab 在循环内只使用*
 
 评审员看到的上下文按权限划分：
 
-- **闸门评审员**可以看到草稿、职位描述，以及*草稿实际引用的档案事实*。
+- 硬性校验评审员可以看到草稿、职位描述，以及草稿实际引用的档案事实。
 - **建议类评审员**（文风、影响力、格式）完全看不到原始档案。
 - 每份第三方职位描述都会被包在明确的“不可信内容”分隔符中，因此 JD 里的“忽略你的指令”属于数据，不是策略。
 - 评审意见如果声称了错误的评审员身份，就会被拒绝。合并后的建议评审组必须准确覆盖配置名单，不能遗漏或重复评审员。
 
-### 5. 用控制流表达成本控制
+### 5. 在流程中控制模型调用成本
 
-评审团是成本最高的环节，因此框架会谨慎使用它：
+评审需要调用模型，系统用以下规则限制重复调用：
 
-- 可以机械证明的闸门会在付费评审团**之前**运行，因此引用错误能在同一轮中交给修订者，避免再用一轮高成本事实检查来发现它。
-- **仅**因 provenance 失败的一轮可以获得一次**免费重试**，不占用 `max_rounds` 中的质量轮次。
-- 每次修订都从**评分最高且通过所有闸门的那一轮**开始，糟糕的修订不会成为下一轮的基础。
+- 能由程序判断的问题先在本地检查。引用错误会直接交给修订智能体，避免为此再调用付费评审。
+- 仅因 `provenance` 失败时，可以额外重试，不占用 `max_rounds` 中的质量轮次；模型调用仍会产生费用。
+- 每次修订都以评分最高且通过全部硬性校验的版本为基础。
 - 评分下降时，循环会提前结束，避免再执行一轮付费评审。
 - 三个模型档位（`CHEAP_MODEL`、`MID_MODEL`、`PREMIUM_MODEL`）都使用**提供商前缀**。低成本抽取可以在 Gemini 上运行，写作器可以继续使用 Claude，而且未使用的提供商 SDK 不会被导入。
 
-### 6. 持久化运行与数据保管
+### 6. 保存运行记录并隔离用户数据
 
 耗时操作以后台**运行（run）**的形式执行，并配有持久事件日志：Server-Sent Events 可以恢复，取消采用协作方式，终态结果会写入幂等历史记录，因此浏览器断开不会丢失结果。在托管模式下，每个用户都有独立工作区，包含各自的数据库、语料库、密钥和渲染产物。所有受用户输入影响的请求都会通过抗 DNS 重绑定的出站网关；网关会校验每次重定向，并锁定已验证的地址。
 
@@ -95,7 +119,7 @@ Source Scout、Profile Coach、担保研究和 Career Lab 在循环内只使用*
 
 ## 工作流程
 
-职位会沿着一条漏斗流转。每个阶段都有一条推进流程的命令，其中两个节点由你做决定。两个生成文档的阶段在保存产物前，都会执行[框架机制](#1-事实锁定保护每条表述)中的确定性闸门。
+职位按下表推进，每个阶段都有对应命令。批准职位和记录投递由你决定。文档生成流程会执行[事实校验](#1-事实锁定保护每条表述)，校验结果与版本一同保留。
 
 ![事实锁定的简历生命周期](docs/diagrams/resume-lifecycle.svg)
 
@@ -105,7 +129,7 @@ Source Scout、Profile Coach、担保研究和 Career Lab 在循环内只使用*
 | ----------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | **导入**    | `pull` / `scrape` / `addjob` | 原始职位写入数据库（按 URL 或 JD 文本去重）。`pull` 运行所有已启用的招聘网站连接器；`scrape` 驱动 LinkedIn；`addjob` 手动导入一个职位。 |
 | **发现**    | `discover`                   | 智能体抽取结构化条件，执行硬性筛选和匹配评分，并把符合条件的职位移到 `shortlisted`。                                                    |
-| **👤 批准** | 网页应用或 `approve`         | 这是成本闸门：你只批准值得花费模型成本进行定制的职位。                                                                                  |
+| **👤 批准** | 网页应用或 `approve`         | 你决定哪些职位值得花费模型调用成本来定制材料。                                                                                  |
 | **定制**    | `tailor`                     | 写作智能体起草事实锁定的简历；评审团提出意见，修订者循环修改直到通过。                                                                  |
 | **求职信**  | `cover-letter`               | 为每个职位起草事实锁定的求职信，经确定性来源检查后渲染为 PDF。                                                                          |
 | **渲染**    | `render`                     | 将选定的简历版本生成到 `output/` 中的 PDF。                                                                                             |
@@ -125,7 +149,7 @@ Source Scout、Profile Coach、担保研究和 Career Lab 在循环内只使用*
 
 ![Triage：清理原始和已拒绝的待处理职位](docs/screenshots/triage.png)
 
-**👤 批准。** **Shortlist** 页面（`/shortlist`）是成本闸门。查看已评分职位，只批准值得花费成本定制的职位：
+**👤 批准。** **Shortlist** 页面（`/shortlist`）是费用确认环节。查看已评分职位，只批准值得花费成本定制的职位：
 
 ![Shortlist：批准值得定制的职位](docs/screenshots/shortlist.png)
 
@@ -242,8 +266,8 @@ PowerShell 可以使用反引号代替反斜杠执行同一命令，也可以将
 
 ```bash
 uv run --no-project scripts/bootstrap.py
-uv run resume-tailor-harness setup                 # optional guided configuration
-uv run python scripts/dev.py              # API + frontend; Ctrl+C stops both
+uv run resume-tailor-harness setup                 # 可选：引导式配置
+uv run python scripts/dev.py              # 启动 API 和前端，Ctrl+C 同时停止
 ```
 
 打开 <http://localhost:5173>。这些命令可以在 PowerShell、命令提示符和 POSIX shell 中执行。如果你使用 `make`，`make setup` 和 `make dev` 是简写命令。只有需要 LinkedIn 等浏览器驱动的职位来源时，才向引导命令传入 `--browser`。
@@ -256,7 +280,7 @@ uv run python scripts/dev.py              # API + frontend; Ctrl+C stops both
 
 ## 求职工具
 
-这些工具共用同一份事实锁定档案、已验证的技能注册表、只读工具循环和持久运行历史。它们用来处理求职过程中反复出现的工作：
+这些工具共用同一份事实锁定档案、已验证的技能注册表、只读工具循环和运行记录。它们用来处理求职过程中反复出现的工作：
 
 | 工具                | 如何帮助你                                                                     |
 | ------------------- | ------------------------------------------------------------------------------ |
@@ -270,6 +294,14 @@ uv run python scripts/dev.py              # API + frontend; Ctrl+C stops both
 | **Gmail 同步**      | 读取收件箱，并建议由你批准的状态更新。                                         |
 | **Analytics**       | 显示哪些来源和匹配分档能够进入更后的阶段。                                     |
 
+### 技能分类与 Match-gap
+
+Match-gap 对比目标职位的技能需求与档案证据。图谱读取统一的有效分类结果，其中包含模型生成的别名和领域、用户纠正、覆盖规则及停用记录。反复分类失败的条目仍会显示，也可以单独重试。暂存到 General 类别的技能会标注为临时归类，不能据此判断技能相邻关系。
+
+一次重新分组默认最多接纳 50 次模型调用、1,000,000 字节的 UTF-8 任务提示，并最多执行三轮恢复。普通重新分组会在条目累计尝试三次后暂停自动重试；手动选择条目后仍可再次尝试。这些限制只统计应用接纳的调用和任务提示，不包括系统提示、数据结构定义、模型输出、嵌入调用和提供商内部重试，因此不代表费用上限。部分批次失败或因预算延后时，成功结果仍可保存。
+
+清理建议会找出误放进技能列表的学历、年限、出差或工作许可要求。只有明确执行丢弃操作才会隐藏条目，之后可以恢复。系统按规范名称同时处理别名，不改写原始职位描述或档案证据。文件锁和版本校验用于防止并发修改相互覆盖。
+
 ### 职业辅导：Profile Coach、Mock Interviews 和 Career Lab
 
 侧边栏中有三个辅导工具，分别对应求职过程中的不同阶段。
@@ -278,7 +310,7 @@ uv run python scripts/dev.py              # API + frontend; Ctrl+C stops both
 
 ![Profile Coach：引导式发现证据](docs/screenshots/profile-coach.png)
 
-**Mock Interviews**（`/interview`）针对具体的定制职位进行集中演练，然后把对话转换为一份可执行的评分复盘：
+**Mock Interviews**（`/interview`）针对具体的定制职位进行集中演练，然后把对话转换为一份带评分和改进建议的复盘：
 
 ![Mock Interviews：针对定制职位进行演练](docs/screenshots/mock-interview.png)
 
@@ -301,6 +333,10 @@ H-1B 补充信息是可选的历史证据，只用于搜索配置要求研究担
 
 ### 申请工作区与公司研究
 
+每个职位都能生成可复制的申请提示，内容来自已保存的档案事实、可选的申请人回答和求职偏好。可复用的专业初筛回答可以记录行业经验、技术方向、工作安排和雇主特定问题。留空表示尚未确认，不会被解释为否定回答，也不会补成未经证实的资历。
+
+[SDK 申请流程](sdk/python/README.md#prepare-job-applications-with-your-agent)提供尚未归档或投递的已批准职位、完整申请上下文、限定适用范围的问题和已核验的附件 ID。更新申请人资料或问题回答时必须携带版本，过期写入会返回冲突。读取上下文不会创建申请记录或提交表单。外部智能体使用自己的浏览器工具，只保存用户提供或确认的回答，并在最终提交前停下等待确认。
+
 **Applications** 页面（`/applications`）从同一份时间线数据集中显示活跃申请。你可以搜索和排序表格、对比重复的技术面试轮次，并导出便于阅读的宽表或无损的事件级 CSV。**Analytics**（`/analytics`）使用同一数据集生成阶段流向、周期时长、活跃流水线和 offer 对比。你还可以将即将发生的事件一次下载为 `.ics` 日历。
 
 每个职位的 **Research** 页签会分开雇主证据和担保证据。**Company intelligence** 会在你主动刷新时创建一份带引用的简报，涵盖战略、近期动向、工程文化、挑战和竞争定位。只有研究输出中确实出现的引用才能通过校验；过期证据会明确标记；标准化公司名相同的职位会共用已保存的档案。
@@ -308,6 +344,16 @@ H-1B 补充信息是可选的历史证据，只用于搜索配置要求研究担
 你可以将 Triage、Shortlist 和 Pipeline 的筛选条件保存为工作区命名视图。通知菜单会保留后台运行的最终成功、失败和取消结果。Dashboard 会汇总练习分数趋势、未解决的来源故障和操作队列。
 
 ---
+
+## 对话工作区与通知
+
+Source Scout 会在对话中显示已保存的来源建议、引用和批准操作。Career Lab 将草稿版本和逐节反馈放在对话旁边，不同技能共享当前会话上下文。职位侧栏助手也使用同一套会话接口。修订草稿会生成新的请求，不会覆盖已有产物。
+
+[AG-UI 事件流](docs/ag-ui-chat-workspace.md)复用现有运行日志的认证、游标重放、取消和工作区归属检查，原生 SSE 格式仍可使用。它不替代任务启动接口，也不会执行模型生成的界面代码。流中的 settled 事件还不代表结果已完成保存。
+
+[邮件通知](docs/email-notifications.md)支持单独验证收件地址、按类别选择通知，并按每天、每周或每 30 天发送摘要。账号通知和提醒邮件使用已保存的界面语言，用户填写的内容和职位名称保留原文。这套通知与 Gmail 收件箱同步、申请邮件草稿分别处理。
+
+研究功能可以调用提供商的搜索工具。DeepSeek 通过 `deepseek_search.py` 使用独立的只读 Search 和 Fetch 端点；自定义网关除了模型推理，还须支持这些端点。工具重试时也会重新检查路由和费用权限。
 
 ## 部署与集成
 
@@ -358,34 +404,34 @@ Gmail 为 CLI 的 `sync-status` 提供支持；在 API/网页应用中，它还�
 ## 快速开始
 
 ```bash
-# 1. Build your fact-lock profile from your resume (+ optional GitHub)
+# 1. 从简历构建事实档案，也可加入 GitHub 项目
 uv run resume-tailor-harness profile build
 
-# 2. Get some jobs into the pipeline (pick one)
-uv run resume-tailor-harness pull --limit 10            # job-board connectors, or…
-uv run resume-tailor-harness scrape --limit 10          # LinkedIn, or…
+# 2. 导入职位，任选一种方式
+uv run resume-tailor-harness pull --limit 10            # 招聘网站连接器
+uv run resume-tailor-harness scrape --limit 10          # LinkedIn
 uv run resume-tailor-harness addjob --company "Acme" --title "Backend Engineer" --jd-file jd.txt
 
-# 3. Score them against your profile and your search criteria
+# 3. 根据档案和求职条件评分
 uv run resume-tailor-harness discover
-uv run resume-tailor-harness match-gap                 # optional: see missing high-demand skills
+uv run resume-tailor-harness match-gap                 # 可选：查看需求较高的缺失技能
 
-# 4. Review the shortlist and approve the keepers in the web app
+# 4. 在网页中查看候选清单，批准需要定制的职位
 make dev                                # http://localhost:5173
 
-# 5. Tailor every approved job, and draft matching cover letters
+# 5. 为已批准的职位定制简历和求职信
 uv run resume-tailor-harness tailor --approved
 uv run resume-tailor-harness cover-letter --approved
 
-# 6. Render a specific resume version to PDF (id shown in the web app)
+# 6. 将指定简历版本生成为 PDF，版本 ID 可在网页中查看
 uv run resume-tailor-harness render 12
 
-# 7. Track submissions back in the web app
+# 7. 在网页中记录投递进展
 make dev                                # http://localhost:5173
 
-# 8. Later, let Gmail propose status updates (review first, then apply)
-uv run resume-tailor-harness sync-status               # lists proposals only
-uv run resume-tailor-harness sync-status --apply        # applies them
+# 8. 根据 Gmail 邮件建议更新状态，先审核再应用
+uv run resume-tailor-harness sync-status               # 只列出建议
+uv run resume-tailor-harness sync-status --apply        # 应用建议
 ```
 
 ---
@@ -426,7 +472,7 @@ uv run resume-tailor-harness scrape [--search config/search.yaml] [--limit 25]
 
 ### `pull`：从招聘网站连接器获取职位
 
-运行 `connectors.yaml` 中已启用的每个连接器，将结果去重后写入 `raw` 职位，并输出每个来源的数量。较高优先级的规范来源重新找到数据库中来自聚合器的职位时，系统会就地**升级**已存储的 URL 和 JD 文本。汇总会显示 `+N added, N upgraded`。Adzuna 等密钥来自 `.env`，需要访问的看板/来源由 `connectors.yaml` 决定。
+运行 `connectors.yaml` 中已启用的每个连接器，将结果去重后写入 `raw` 职位，并输出每个来源的数量。较高优先级的直接来源重新找到数据库中来自聚合器的职位时，系统会就地**升级**已存储的 URL 和 JD 文本。汇总会显示 `+N added, N upgraded`。Adzuna 等密钥来自 `.env`，需要访问的看板/来源由 `connectors.yaml` 决定。
 
 | 连接器       | 所需配置                                                                                      |
 | ------------ | --------------------------------------------------------------------------------------------- |
@@ -466,12 +512,12 @@ uv run resume-tailor-harness discover [--search config/search.yaml] [--facts dat
 ![Match-gap：目标职位需要但档案未体现的技能](docs/screenshots/match-gap.png)
 
 ```bash
-uv run resume-tailor-harness match-gap                 # aggregate, most-demanded first
-uv run resume-tailor-harness match-gap --job-id 7      # gaps for one target job
-uv run resume-tailor-harness match-gap --llm           # optional synonym pass, e.g. k8s/Kubernetes
+uv run resume-tailor-harness match-gap                 # 汇总缺口，需求最多的排在前面
+uv run resume-tailor-harness match-gap --job-id 7      # 查看单个目标职位的缺口
+uv run resume-tailor-harness match-gap --llm           # 可选：归并同义名称，例如 k8s/Kubernetes
 ```
 
-### `approve`：成本闸门（网页应用的 CLI 替代方式）
+### `approve`：费用确认环节（网页应用的 CLI 替代方式）
 
 将候选职位标记为 `approved`，使其可以进入定制流程。
 
@@ -481,9 +527,9 @@ uv run resume-tailor-harness approve 7
 
 ### `tailor`：起草与评审循环
 
-定制一个职位（`--job-id`）或所有已批准职位（`--approved`）。每轮都会保存为 `ResumeVersion`。三道确定性闸门和评审团共同判定该轮结果。循环持续修订，直到草稿通过或用完 `max_rounds` 质量轮次。
+定制一个职位（`--job-id`）或所有已批准职位（`--approved`）。每轮都会保存为 `ResumeVersion`。三项程序校验和评审团共同判定本轮结果。循环持续修订，直到草稿通过或用完 `max_rounds` 质量轮次。
 
-**fact-check** 评审员、`provenance`、`skill-naming` 和 `numeric-evidence` 都是硬性闸门。仅 provenance 失败的一轮可免费重试，不占用质量轮次。可选的 `config/style_guide.md` 文本会附加到写作器、修订器和评审员的固定事实锁定规则之后。它决定简历如何写，不决定可以声称什么。完整控制流见[框架机制](#框架机制)。
+**fact-check** 评审员、`provenance`、`skill-naming` 和 `numeric-evidence` 都是硬性闸门。仅 `provenance` 失败时可额外重试，不占用质量轮次，但模型调用仍会产生费用。可选的 `config/style_guide.md` 文本会附加到写作器、修订器和评审员的固定事实锁定规则之后。它决定简历如何写，不决定可以声称什么。完整控制流见[框架机制](#框架机制)。
 
 ```bash
 uv run resume-tailor-harness tailor --approved
@@ -492,7 +538,7 @@ uv run resume-tailor-harness tailor --job-id 7
 
 ### `cover-letter`：起草事实锁定的求职信
 
-为一个职位（`--job-id`）或所有已批准职位（`--approved`）撰写求职信，然后渲染为 `output/` 中的 PDF。写作器只使用你的 `facts.json`。**确定性 provenance 闸门**会检查每一段是否引用了真实事实 ID，并让修订器循环处理直到草稿干净。如果最终没有通过，应用会记录 `fact_check_passed=False`，提醒你不要发送。此流程使用确定性闸门，不使用评审团。
+为一个职位（`--job-id`）或所有已批准职位（`--approved`）撰写求职信，然后渲染为 `output/` 中的 PDF。写作器只使用你的 `facts.json`。`provenance` 校验会检查每一段是否引用了真实事实 ID，并让修订器循环处理直到草稿通过校验。如果最终没有通过，应用会记录 `fact_check_passed=False`，提醒你不要发送。此流程使用确定性闸门，不使用评审团。
 
 ```bash
 uv run resume-tailor-harness cover-letter --approved
@@ -526,8 +572,8 @@ make dev                                # http://localhost:5173
 以只读方式扫描近期收件箱邮件，按公司将邮件与已跟踪申请匹配，再使用确定性规则和可选的低成本 LLM 回退进行分类（拒绝 / 面试 / 测评 / offer），最后**建议**只向前的状态变更。只有使用 `--apply` 再次运行后才会实际更改，状态不会被静默修改。它需要 [Gmail 设置](#gmail-设置用于-sync-status同步提醒和邮件草稿)中的 CLI/Desktop app 配置。
 
 ```bash
-uv run resume-tailor-harness sync-status                 # list proposals only
-uv run resume-tailor-harness sync-status --apply         # apply them
+uv run resume-tailor-harness sync-status                 # 只列出建议
+uv run resume-tailor-harness sync-status --apply         # 应用建议
 uv run resume-tailor-harness sync-status --max-results 100
 ```
 
@@ -550,7 +596,9 @@ uv run resume-tailor-harness serve --mode hosted --host 0.0.0.0 --port 8080
 - 申请事件位于 `/api/jobs/{job_id}/events`；跨职位投影是 `/api/applications`，提供宽表/长表 CSV 和按用途限制的 ICS 下载。已保存看板视图使用 `/api/board-views`，显式公司研究使用 `/api/jobs/{job_id}/company-intelligence/refreshes`。
 - 在托管模式下，为 API 访问配置账户凭据/PAT，并为独立的前端开发服务器设置 `CORS_ORIGINS`（逗号分隔）。本地模式会有意忽略账户和 API 认证设置。
 
-Gmail 同步（`POST /api/gmail/sync`）、连接/状态/断开（`/api/gmail/connect|status|token`）和邮件草稿都通过 HTTP 开放。尚未通过 HTTP 开放的功能有 `profile build` 和 LinkedIn `scrape`。
+Gmail 同步（`POST /api/gmail/sync`）、连接/状态/断开（`/api/gmail/connect|status|token`）和邮件草稿都提供 HTTP 接口。档案构建接口为 `POST /api/profile/build`。外部智能体的运行轮询、写作上下文、服务端评审和申请准备方式见 [SDK 指南](sdk/python/README.md)。
+
+LinkedIn 抓取接口为 `POST /api/sources/linkedin/scrape`，需要已保存的浏览器配置或账号凭据，浏览器会在服务器主机上打开。需要交互登录时，请使用本地原生安装。
 
 ---
 
@@ -565,9 +613,9 @@ Gmail 同步（`POST /api/gmail/sync`）、连接/状态/断开（`/api/gmail/co
 每次 LLM 调用使用三个模型档位之一：`CHEAP_MODEL`、`MID_MODEL` 和 `PREMIUM_MODEL`。它们默认使用 Claude Haiku、Sonnet 和 Opus。模型 ID 可以带提供商前缀；不带前缀的 ID 使用 Anthropic，`openai:`、`gemini:` 或 `deepseek:` 前缀则将该档位路由到其他提供商。每个档位使用对应提供商的密钥，因此可以自由混用：
 
 ```bash
-CHEAP_MODEL=gemini:gemini-3.5-flash-lite # cheap extract/fit/relevance on Gemini
-MID_MODEL=deepseek:deepseek-flash       # reviewers / cover-letter reviser on DeepSeek V4.1 Flash
-PREMIUM_MODEL=claude-opus-5             # bare id → Anthropic for the tailor writer
+CHEAP_MODEL=gemini:gemini-3.5-flash-lite # 用 Gemini 处理低成本抽取、匹配和相关性判断
+MID_MODEL=deepseek:deepseek-flash       # 用 DeepSeek V4.1 Flash 评审和修订求职信
+PREMIUM_MODEL=claude-opus-5             # 不带前缀时由 Anthropic 承担简历写作
 ```
 
 只需设置实际使用的提供商密钥。提供商 SDK 会延迟加载，因此仅使用 Claude 的运行不会触及 OpenAI 或 Gemini 库。
@@ -591,18 +639,18 @@ PREMIUM_MODEL=claude-opus-5             # bare id → Anthropic for the tailor w
 
 ### 来源优先级
 
-多个连接器发现同一职位时，**规范来源**总是优先于**聚合来源**副本：
+多个连接器发现同一职位时，**直接来源**总是优先于**聚合来源**副本：
 
 | 层级                       | 来源                                                                                         |
 | -------------------------- | -------------------------------------------------------------------------------------------- |
-| **规范来源**（优先级较高） | `greenhouse`、`lever`、`ashby`、`workday`、`tesla`、`google`、`companies`、`url`（手动粘贴） |
+| **直接来源**（优先级较高） | `greenhouse`、`lever`、`ashby`、`workday`、`tesla`、`google`、`companies`、`url`（手动粘贴） |
 | **回退来源**（优先级较低） | `adzuna`、`remoteok`、`linkedin`                                                             |
 
 同一层级中采用**先发现者优先**，避免相同层级的重复拉取导致内容来回变化。
 
-**升级而不是丢弃。** 如果规范来源重新找到此前从回退来源导入的职位，已存储的职位字段（`url`、`jd_text`、`source`、`title`、`location`）会就地升级，并保留相同的 `Job` id。定制简历、求职信和申请状态都不会改变。
+**升级而不是丢弃。** 如果直接来源重新找到此前从回退来源导入的职位，已存储的职位字段（`url`、`jd_text`、`source`、`title`、`location`）会就地升级，并保留相同的 `Job` id。定制简历、求职信和申请状态都不会改变。
 
-职位状态一旦越过 `raw`，系统只更新规范的申请 `url`；JD 文本会被冻结，避免已按该文本定制的简历在不知情的情况下更换基础。
+职位状态一旦越过 `raw`，系统只更新直接来源的申请 `url`；JD 文本会被冻结，避免已按该文本定制的简历在不知情的情况下更换基础。
 
 ---
 
@@ -627,21 +675,21 @@ PREMIUM_MODEL=claude-opus-5             # bare id → Anthropic for the tailor w
 
 `scrape` 只适合使用**专用账号**进行**个人低频**抓取。它会驱动已登录的真实浏览器，主动控制请求节奏，并限制每次运行的抓取量。请把 `--limit` 保持在较小范围，不要使用你在意的账号。如果不想抓取，随时可以改用手动 `addjob`。
 
-`companies` 连接器的 Workday 后端会为每个通过初筛的职位发送一次详情请求。请在 `search.yaml` 中设置严格的相关性筛选条件，让标题闸门在详情请求开始前缩小列表。
+`companies` 连接器的 Workday 后端会为每个通过初筛的职位发送一次详情请求。请在 `search.yaml` 中设置严格的相关性筛选条件，先按标题过滤，再请求剩余职位的详情。
 
 ---
 
 ## 开发
 
 ```bash
-uv run pytest              # run the full test suite
-uv run pytest -k scraper   # run a subset
-ruff check                 # lint
+uv run pytest              # 运行完整测试套件
+uv run pytest -k scraper   # 运行部分测试
+ruff check                 # 代码检查
 ```
 
 测试是纯离线的。智能体和浏览器都由替身实现，因此测试套件不需要 API 密钥或网络。连接器后端使用从真实响应中保存的固定 JSON 数据进行测试。
 
-v1.5 中的定制循环仍为同步执行。当前版本通过精简提示来降低成本，因此并行评审团和职位级并发留待以后实现。
+异步定制流程通过 `gather_isolated` 并行处理职位和评审调用，在实际模型调用时获取并发许可。同步流程仍可使用。共享服务和数据保存的边界见[架构蓝图](Project_Architecture_Blueprint.md)。
 
 ## 参与贡献
 

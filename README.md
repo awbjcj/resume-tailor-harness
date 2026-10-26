@@ -28,8 +28,10 @@ jobs._
 
 ## System architecture
 
-Two C4 views separate the product's external relationships from its runtime
-structure. The [lifecycle](#how-it-works) below shows the job workflow.
+Two C4 views separate external relationships from runtime structure. The agent
+workflow below shows how evidence reaches a saved document. For module boundaries,
+data ownership, deployment, and extension guidance, see the
+[architecture blueprint](Project_Architecture_Blueprint.md).
 
 ### System context
 
@@ -37,15 +39,15 @@ The job seeker controls approvals and final documents. The harness gathers
 project evidence and job postings, calls configured model providers, and can
 connect to Gmail for application tracking and drafts.
 
-![C4 system context: the job seeker, Résumé Tailor Harness, GitHub, job sources, model providers, and optional Gmail](docs/diagrams/system-context.svg)
+![System context: the job seeker, external agent and SDK, Résumé Tailor Harness, GitHub, job sources, model providers, and optional Gmail](docs/diagrams/system-context.svg)
 
 [Open context diagram](docs/diagrams/system-context.html) ·
 [C4 source](docs/diagrams/system-context.mmd)
 
 ### Containers and persistence
 
-The React app calls FastAPI; the CLI calls the same Python use-case services
-directly. Background runs execute in the API's thread pools and stream progress
+The React app and Python SDK call FastAPI; the CLI calls the same Python
+use-case services directly. Background runs execute in the API's thread pools and stream progress
 via Server-Sent Events (SSE). Agents, deterministic fact-lock gates, and Typst
 rendering are internal capabilities of the Python application.
 
@@ -65,6 +67,32 @@ rendering are internal capabilities of the Python application.
 - **Outbound boundary:** user-influenced public fetches cross the validated
   egress gateway. Provider routing and spend policy stay inside the shared
   model-call layer.
+
+### Agents and document review
+
+The application dispatches task agents through shared Python services. Agent
+families describe their responsibilities; they are not independent deployed
+services or an unrestricted swarm. A skilled task uses one verified procedure,
+and the service controls its evidence, tools, model tier, and persistence.
+
+![Agent workflow: verified skills and cited facts feed drafting, deterministic gates, mandatory fact verification, revision, and document storage](docs/diagrams/agent-workflow.svg)
+
+[Open agent workflow](docs/diagrams/agent-workflow.html)
+
+| Role | Work it performs | Boundary |
+| --- | --- | --- |
+| Job analysis and Source Scout | Extract requirements, score fit, and propose job sources | Source proposals are rechecked before approval and saving |
+| Resume writer and reviser | Draft and revise against cited profile facts | Three deterministic gates and required fact verification govern acceptance |
+| Reviewer panel | Verify facts and assess relevance, style, and presentation | Fact-check blocks acceptance; advisory scores cannot override it |
+| Cover-letter writer and reviser | Draft paragraphs grounded in profile evidence | Deterministic provenance checks; no reviewer panel |
+| Profile extraction and Coach | Build evidence records and draft missing-experience notes | Project extraction cannot emit employment or education; coach notes need approval |
+| Mock Interview and Career Lab | Rehearse roles, debrief answers, and prepare career drafts | Career Lab cannot submit applications, send messages, or update the profile |
+| Employer and sponsorship research | Gather cited employer information and historical filing evidence | Research is advisory; historical filings do not establish current sponsorship |
+
+Taxonomy classification is a separate structured workflow: it canonicalizes
+skills, assigns domains, and retries unresolved items within a shared budget.
+External Codex or Claude Code agents use the SDK/API surface described below;
+their browser actions execute outside the server's internal agent loops.
 
 ---
 
@@ -95,14 +123,20 @@ critiques flow through one verdict constructor
 (`tailor/verdict.py::aggregate`), so "what makes a round pass" has exactly one
 definition, and any failed gate blocks the round no matter how well it scored.
 
+The model-backed `fact-check` reviewer is blocking and unscored. Legacy settings
+that mark it advisory are normalized to a gate. The shipped rosters include it,
+and external draft submission rejects a roster without it. A deterministic
+preflight pass alone does not approve an externally authored resume.
+
 Cover letters use the same deterministic provenance gate. They do not use a
 reviewer panel.
 
 ### 2. Skill-concentrated tailoring
 
-A task agent belongs to a stable **agent family** such as job analysis, resume
+A skilled task agent belongs to a stable **agent family** such as job analysis, resume
 authoring, resume review, cover letter, interview, career lab, internal profile,
-or sponsorship research. Each agent uses **exactly one** approved procedure.
+or sponsorship research. Each skilled task uses **exactly one** approved procedure.
+Other helpers, including taxonomy classifiers, use dedicated structured prompts.
 
 Those procedures are local `SKILL.md` files resolved through a root-confined,
 **SHA-256-verified registry** (`career_skills/registry.py`) against the pinned
@@ -142,8 +176,8 @@ The reviewer panel is the expensive part, so the harness spends it carefully:
 - Mechanically provable gates run **before** the paid panel, so a citation error
   reaches the reviser in the same round and avoids another premium fact-check
   round.
-- A round that fails **only** on provenance earns a **free retry** and does not
-  consume one of the `max_rounds` quality passes.
+- A round that fails **only** on provenance can use an extra retry outside the
+  `max_rounds` quality budget. Its model calls still incur usage costs.
 - Each revision starts from the **best gate-clean round**. A bad revision cannot
   become the base for the next.
 - A score regression ends the loop early and avoids another paid round.
@@ -400,6 +434,28 @@ search:
 | **Gmail sync**           | Reads your inbox and proposes status updates for you to approve.                                  |
 | **Analytics**            | Shows which sources and fit bands lead to later-stage progress.                                   |
 
+### Skill taxonomy and match-gap
+
+Match-gap compares target-job demand with evidence in your profile. Its graph
+uses one effective taxonomy that combines generated aliases and domains with
+saved corrections, overrides, and retirement records. Repeated classification
+failures remain visible and can be retried selectively. Broad **General**
+placements are marked provisional and do not establish skill adjacency.
+
+Regrouping shares a default budget of 50 model calls and 1,000,000 UTF-8 task
+prompt bytes, with up to three recovery rounds. Ordinary regrouping pauses an
+item after three recorded attempts; selected-skill retries can revisit it.
+These are application admission limits, not a token or billing cap: system and
+schema text, output, embeddings, and provider retries are outside that count.
+Successful batches can still be saved when other batches fail or are deferred.
+
+Cleanup suggestions identify entries such as degree, tenure, travel, or work
+authorization requirements that were filed as skills. Discarding an entry is an
+explicit, reversible action. It hides the canonical and its aliases from skill
+views without rewriting source job descriptions or profile evidence. Restoring
+it makes it available again. Taxonomy writes use file locks and revision checks
+to protect concurrent edits.
+
 ### Career coaching: Profile Coach, Mock Interviews, and Career Lab
 
 The sidebar has three coaching tools, each for a different point in the job
@@ -458,6 +514,20 @@ than the companion service.
 
 ### Application workspace and company research
 
+Each job has a copyable application prompt built from saved profile facts,
+optional applicant answers, and search preferences. Reusable professional
+screening answers cover industry experience, technical focus, work arrangements,
+and employer-specific questions. Blank answers stay unknown; they are not converted
+into a negative answer or a guessed qualification.
+
+The [SDK application workflow](sdk/python/README.md#prepare-job-applications-with-your-agent)
+exposes approved jobs that have not been archived or submitted, a complete
+application context, scoped questions, and fact-checked attachment IDs. Profile
+and question updates carry revisions so stale writers receive a conflict rather
+than overwriting a newer answer. The context is read-only: fetching it does not
+create an application or submit a form. The external agent uses its own browser
+tools, saves only user-confirmed answers, and stops before final submission.
+
 The **Applications** page (`/applications`) shows active applications from one
 timeline dataset. You can search and sort the grid, compare repeated technical
 rounds, and export either a readable wide grid or a lossless event-level CSV.
@@ -478,6 +548,31 @@ outcomes for background runs. The Dashboard summarizes practice-score trends,
 open source failures, and the action queues.
 
 ---
+
+## Chat workspaces and notifications
+
+Scout displays persisted source proposals inline with citations and approval
+controls. Career Lab keeps draft versions and section feedback alongside the
+conversation, shares conversation context across skills, and supports a
+job-context assistant using the same session. Revising a draft prepares a new
+request rather than overwriting the earlier artifact.
+
+The [AG-UI stream projection](docs/ag-ui-chat-workspace.md) uses the existing
+authenticated run log, cursor replay, cancellation, and workspace ownership.
+It does not replace the launch API or execute model-generated interface code.
+Native SSE remains available. A settled stream event is not yet a durable
+completion result.
+
+[Email notifications](docs/email-notifications.md) add an independently verified
+destination, per-category preferences, and daily, weekly, or 30-day digests.
+Account notices and notification emails follow the saved dashboard language;
+user-written content and job titles retain their original text. These messages
+are separate from Gmail inbox synchronization and application email drafts.
+
+Research can use provider search tools. DeepSeek uses its standalone read-only
+Search and Fetch endpoints through `deepseek_search.py`; a custom provider
+gateway must support those endpoints as well as model inference. Routing and
+spend checks apply on tool retries too.
 
 ## Deployment and integrations
 
@@ -730,8 +825,8 @@ judge the round. The loop revises until a draft passes or it uses all
 
 The **fact-check** reviewer, `provenance`, `skill-naming`, and
 `numeric-evidence` are hard gates. A round that fails _only_ on provenance gets
-a free retry without spending a quality pass. Optional `config/style_guide.md`
-prose is appended below the fixed fact-lock rules for the writer, reviser, and
+an extra retry without consuming a quality pass; model usage is still billed.
+Optional `config/style_guide.md` prose is appended below the fixed fact-lock rules for the writer, reviser, and
 reviewers. It controls how resumes are written, never what is claimed. See
 [The harness](#the-harness) for the full control flow.
 
@@ -838,7 +933,13 @@ or when hosted-only settings such as `APP_BASE_URL` are present.
 
 Gmail sync (`POST /api/gmail/sync`), connect/status/disconnect
 (`/api/gmail/connect|status|token`), and email drafts are exposed over HTTP.
-Deferred (not yet exposed over HTTP): `profile build` and LinkedIn `scrape`.
+Profile builds are available at `POST /api/profile/build`. For external agents,
+use the [SDK guide](sdk/python/README.md) for run polling, authoring contexts,
+server-owned review, and application preparation.
+
+LinkedIn scraping also has a launch endpoint, `POST /api/sources/linkedin/scrape`.
+It requires a configured browser profile or credentials and opens the browser
+on the server host; use a native local setup for interactive sign-in.
 
 ---
 
@@ -960,8 +1061,10 @@ Tests are pure and offline. Agents and the browser are faked, so the suite needs
 no API key and no network. Connector backends are tested against fixture JSON
 payloads captured from real responses.
 
-v1.5 keeps the tailor loop synchronous. Parallel reviewer panels and job-level
-concurrency are deferred while this pass reduces cost through leaner prompts.
+The async tailoring path supports concurrent jobs and reviewer calls through
+`gather_isolated`, with LLM permits acquired at leaf calls. The synchronous path
+remains available. See the [architecture blueprint](Project_Architecture_Blueprint.md)
+for the shared service and persistence boundaries.
 
 ## Contributing
 

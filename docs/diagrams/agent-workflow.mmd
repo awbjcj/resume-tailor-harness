@@ -1,0 +1,11 @@
+flowchart TD
+    facts[Profile evidence and untrusted JD] --> writer[Writer or revised draft]
+    skill[One hash-verified skill procedure] --> writer
+    writer --> gates[Provenance, skill-naming, numeric-evidence]
+    gates -->|Pass| review[Blocking fact-check and advisory review]
+    gates -.->|Fail| revise[Bounded revision]
+    review -.->|Fail| revise
+    revise -.-> writer
+    review -->|Pass verdict and score threshold| save[Accepted version; separate PDF rendering]
+    %% Internal attempts retain history; external submission saves only accepted drafts.
+    %% Semantic source only: generate.py owns manual HTML layout.
