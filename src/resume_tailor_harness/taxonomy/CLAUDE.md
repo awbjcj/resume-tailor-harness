@@ -116,7 +116,13 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   `taxonomy_escalation_max_skills` admits up to 300 skills per round. Durable
   `GroupingStatus.escalation_attempts` increments only on actual attempts.
   Least-attempted work runs first, with age/key tie breakers; deferral preserves
-  history. Repeated attempts shrink batches (15, 3, 1 by default). A whole
+  history. Repeated attempts shrink batches (15, 10, 10 by default). Ordinary
+  regrouping pauses after three durable attempts; selected-skill retries may
+  revisit those skills. All classification passes share a 50-call / 1 MB
+  task-prompt budget. Budget deferrals carry no model judgment, never fabricate
+  canonicals or placements, and do not increment attempts. Successful siblings
+  still commit. These are application-level limits, excluding system/schema
+  overhead, output, embeddings and runner/provider retries. A whole
   round of provider errors stops recovery until the next run. Error envelopes
   are call failures, not uncertain model judgments.
 - **Recovery sees every domain, with bounded member examples.** Each domain
@@ -155,10 +161,10 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   and forking provider support since the seam covers four vendors and Batches
   is Anthropic-only. The pipeline is also only partly batchable — reconcile is
   strictly sequential by design — so it would take three dispatches of up to an
-  hour each and turn an interactive Regroup into an overnight job. And the
-  money is not there: a regroup is a sub-dollar operation, so halving it does
-  not pay for a second dispatch architecture. **The trigger to revisit is rate
-  limiting, not cost:** if regroups start failing with `kind="call"` 429s, the
+  hour each and turn an interactive Regroup into an overnight job. The original
+  sub-dollar estimate does not apply to repeated full-directory recovery; the
+  October usage regression is controlled by admission budgets and durable retry
+  limits, not by changing provider APIs. If regroups fail with `kind="call"` 429s, the
   Batches API's separate and much higher throughput ceiling becomes the actual
   reason to adopt it. Full evaluation:
   `docs/superpowers/specs/2026-08-27-taxonomy-canonicalize-repair-design.md`.

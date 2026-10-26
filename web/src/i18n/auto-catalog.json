@@ -12038,5 +12038,15 @@
     "key": "ui_adad6c71d8dd",
     "en": "These entries are excluded from skill demand and regrouping. Restore any valid entries.",
     "zh-CN": "这些条目已从技能需求和重新分组中排除。请恢复任何有效的技能条目。"
+  },
+  "· {{v0}} paused after repeated attempts; narrow filters to retry": {
+    "key": "ui_4243694ad83c",
+    "en": "· {{v0}} paused after repeated attempts; narrow filters to retry",
+    "zh-CN": "· {{v0}} 项在多次尝试后已暂停；请缩小筛选范围后重试"
+  },
+  "· run usage limit reached": {
+    "key": "ui_0eabf17afe8a",
+    "en": "· run usage limit reached",
+    "zh-CN": "· 已达到本次运行的用量上限"
   }
 }
