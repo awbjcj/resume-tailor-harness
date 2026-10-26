@@ -145,7 +145,11 @@ units and rollout behavior.
 | `SKILL_EMBEDDING_BATCH_SIZE` | `256` | Embedding request/cache batch size; integer from 1 through 256. |
 | `TAXONOMY_MAINTENANCE_MAX_CHURN` | `0.2` | Maximum maintenance churn ratio; number from 0.01 through 1.0. |
 | `TAXONOMY_ESCALATION_MAX_SKILLS` | `300` | Maximum skill admissions per recovery round; `0` disables escalation (0–5000). |
-| `TAXONOMY_RECOVERY_ROUNDS` | `3` | Bounded recovery rounds per regroup (1–5); least-attempted skills run first. Set `1` to retain the previous total escalation budget. |
+| `TAXONOMY_RECOVERY_ROUNDS` | `3` | Maximum recovery rounds per regroup (1–5); least-attempted skills run first, within the shared usage budget. |
+| `TAXONOMY_MAX_MODEL_CALLS` | `50` | Maximum application-level classification calls across the initial pass, canonical repairs, reconciliation and all recovery rounds (1–5000). Provider/runner retries are additional. |
+| `TAXONOMY_MAX_PROMPT_BYTES` | `1000000` | Maximum cumulative UTF-8 task-prompt bytes admitted per regroup (1–100000000). Excludes system instructions, schemas, outputs, embeddings and retries; not a dollar cap. |
+| `TAXONOMY_RECOVERY_MIN_BATCH_SIZE` | `10` | Minimum recovery batch target (1–500), capped by `CLUSTER_BATCH_SIZE`; the final partial batch can be smaller. Set `1` only to explicitly permit singleton repair within the usage budget. |
+| `TAXONOMY_MAX_AUTO_ATTEMPTS` | `3` | Maximum durable recovery attempts per skill during ordinary regrouping (1–100). Explicitly selected skills may retry beyond this limit, within the same per-run budget. |
 | `TAXONOMY_CANONICAL_REPAIR_MAX_SINGLETONS` | `500` | Maximum one-token calls the terminal canonicalize repair round may dispatch per run; overflow is kept as its own canonical. Integer from 0 through 5000. |
 | `TAXONOMY_PLACEMENT_FLOOR` | `true` | Places eligible unresolved skills into deterministic general categories; `false` restores historical unassigned behavior. |
 

@@ -10,7 +10,9 @@ supply same-domain adjacency in career guidance.
 A refresh performs its incremental pass, then up to three recovery rounds.
 Each round admits at most 300 canonical skills. Durable attempt counts give
 least-attempted work priority; deferred skills retain their previous history.
-Repeated attempts reduce batch sizes (15 -> 3 -> 1 by default). A whole round
+Repeated attempts reduce batch sizes to a floor (15 -> 10 -> 10 by default).
+Ordinary regrouping pauses a skill after three durable recovery attempts;
+explicitly selecting that skill allows another bounded retry. A whole round
 of provider errors stops recovery until the next run. Provider error envelopes
 are failures, not classification judgments. Cross-batch reconciliation outages
 retain already valid canonical heads instead of discarding successful work.
@@ -56,9 +58,31 @@ its legacy meaning of initial batches.
 ## Configuration and compatibility
 
 `TAXONOMY_RECOVERY_ROUNDS=3` (range 1-5) and
-`TAXONOMY_ESCALATION_MAX_SKILLS=300` bound recovery to 900 admissions per refresh
-by default. The skill limit now applies per round; set rounds to 1 to restore
-the old total budget. A zero skill limit disables escalation.
+`TAXONOMY_ESCALATION_MAX_SKILLS=300` bound recovery to at most 900 skill
+admissions per refresh. A zero skill limit disables escalation. These are
+subordinate to the shared `TAXONOMY_MAX_MODEL_CALLS=50` and
+`TAXONOMY_MAX_PROMPT_BYTES=1000000` budgets, which cover canonicalization,
+repairs, reconciliation, domain classification and recovery together. A batch
+reserves its allowance before dispatch, including during concurrent fan-out.
+Once the allowance is exhausted, successes are saved and remaining work is
+deferred without inventing judgments or incrementing unattempted retry counts.
+Oversized batches are deferred as a whole; lower `CLUSTER_BATCH_SIZE` or raise
+the prompt budget deliberately if a first batch cannot fit.
+
+`TAXONOMY_RECOVERY_MIN_BATCH_SIZE=10` prevents repeated full-directory singleton
+calls. The final partial batch can be smaller. `TAXONOMY_MAX_AUTO_ATTEMPTS=3`
+pauses exhausted skills across ordinary regroups without hiding or retiring
+them; narrow the Match / Gap filters and run Regroup again to revisit that
+explicit scope (`skillKeys` in the API). Existing General
+placements and user corrections remain intact. Raising the retry limit also
+reopens eligible automatic work.
+
+The budget counts application-level calls and serialized UTF-8 task payloads,
+not invoice dollars. System instructions, schemas, generated output, embeddings,
+and runner/provider retries are additional. Existing spend governance still
+applies. Run results include `modelCalls`, `maxModelCalls`, `promptBytes`,
+`maxPromptBytes`, `usageLimitReached`, `retryLimitSkills`, and `deferredSkills`.
+
 `TAXONOMY_PLACEMENT_FLOOR` still controls new provisional placements. Disabling
 it does not erase existing placements.
 
@@ -71,8 +95,10 @@ again treat General placements as terminal and ignore attempt history.
 ## Verification boundary
 
 The offline regression has 16,000 canonical skills in 160 domains: 14,400
-placed and 1,600 unresolved. Mock model responses resolve 900 on the first
-refresh and 700 on the second, without re-canonicalizing existing skills.
+placed and 1,600 unresolved. Mock model responses resolve the backlog over
+bounded regroups, without re-canonicalizing existing skills. Each run stays
+within 50 calls and 1 MB of task prompts; large maps can require more regroups
+than the previous two-run regression, which lacked those usage limits.
 Domain member examples are bounded at 1,280 per prompt instead of 16,000:
 92% fewer member entries. This does not measure total tokens, live latency or
 cost savings.

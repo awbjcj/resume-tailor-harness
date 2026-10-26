@@ -105,13 +105,16 @@ function announceOne(run: RunRecord): void {
       return;
     }
     const [assigned, aliases, domains, uncertain, failed, skipped] = fields;
-    // Read separately and default to 0: a run recorded before this key existed
-    // must still produce the detailed toast rather than falling back to the
-    // generic one. "Deferred" is not a verdict -- the escalation cap simply
-    // has not reached these yet, and they go first on the next run. Folding
-    // them into "uncertain" is what made convergence look like a plateau.
+    // Older run records lack the limit fields. Separate retry exhaustion from
+    // the ordinary backlog: another unfiltered run cannot retry paused skills.
     const deferred = numberField(result, "deferredSkills", "deferred_skills") ?? 0;
-    const deferredNote = deferred > 0 ? ` · ${deferred} deferred to next run` : "";
+    const retryLimited = numberField(result, "retryLimitSkills", "retry_limit_skills") ?? 0;
+    const nextRun = Math.max(0, deferred - retryLimited);
+    const nextRunNote = nextRun > 0 ? ` · ${nextRun} deferred to next run` : "";
+    const retryLimitNote = retryLimited > 0
+      ? ` · ${retryLimited} paused after repeated attempts; narrow filters to retry` : "";
+    const usageLimitNote = result?.usageLimitReached === true ? " · run usage limit reached" : "";
+    const deferredNote = nextRunNote + retryLimitNote + usageLimitNote;
     toast.success(
       `Regroup complete: ${assigned} assigned · ${aliases} aliases merged · ${domains} domains created · ${uncertain} uncertain${deferredNote} · ${failed} failed · ${skipped} skipped.`,
     );

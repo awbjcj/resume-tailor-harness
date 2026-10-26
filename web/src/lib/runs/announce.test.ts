@@ -171,6 +171,24 @@ it("omits the deferred clause when nothing was deferred", () => {
   );
 });
 
+it("distinguishes paused retries from work deferred to the next run", () => {
+  announceCompletions([
+    run({
+      kind: "refreshClusters",
+      result: {
+        assignedSkills: 3, aliasesMerged: 0, domainsCreated: 1,
+        uncertainSkills: 17, deferredSkills: 17, retryLimitSkills: 12,
+        usageLimitReached: true, failedSkills: 0, skippedStaleSkills: 0,
+      },
+    }),
+  ]);
+  const message = toast.success.mock.calls[0][0];
+  expect(message).toContain("5 deferred to next run");
+  expect(message).toContain("12 paused after repeated attempts; narrow filters to retry");
+  expect(message).toContain("run usage limit reached");
+  expect(message).not.toContain("17 deferred to next run");
+});
+
 it("uses honest generic summaries when specialized result detail is malformed", () => {
   announceCompletions([
     run({ kind: "refreshClusters", result: {} }),
