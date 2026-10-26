@@ -43,7 +43,7 @@ describe("ApplicationProfilePage", () => {
     await act(() => changeLanguage("zh-CN"));
     expect(screen.getByLabelText("期望薪资")).toHaveValue("USD 120,000/year");
     expect(screen.getByLabelText("种族／族裔")).toHaveValue("");
-    expect(screen.getByLabelText("是否年满18岁")).toHaveValue("Yes");
+    expect(screen.getByLabelText("是否年满 18 岁")).toHaveValue("Yes");
     expect(screen.getByLabelText("美国劳工身份类别")).toHaveValue("No");
     expect(screen.getByLabelText("向各雇主提交过的申请")).toHaveValue("Acme: No");
     expect(screen.getByLabelText("行业工作年限")).toHaveValue("3 years, confirmed 2026-10-23");

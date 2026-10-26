@@ -86,7 +86,7 @@ for (const width of [1280, 390]) {
     await page.evaluate(() => localStorage.setItem("theme", "dark"));
     await page.goto("/settings/application-profile");
     await expect(page.getByLabel("期望薪资", { exact: true })).toHaveValue("USD 120,000/year");
-    await expect(page.getByLabel("是否年满18岁", { exact: true })).toHaveValue("Yes");
+    await expect(page.getByLabel("是否年满 18 岁", { exact: true })).toHaveValue("Yes");
     await expect(page.getByLabel("出口管制所涉国籍／双重国籍", { exact: true })).toHaveValue("Cuba, Iran, North Korea, Syria: No");
     await expect(page.getByLabel("在各雇主处的任职经历", { exact: true })).toHaveValue("Acme: No");
     await expect(page.getByText("不确定的内容可以留空。自愿填写的问题，请如实回答，也可以填写“不愿透露”。留空的项目不会自动补全。", { exact: true })).toBeVisible();

@@ -35,7 +35,7 @@ for (const { width, theme } of [{ width: 1280, theme: "light" }, { width: 390, t
     await page.screenshot({ path: `test-results/email-notifications-zh-CN-${width}.png`, fullPage: true });
     await page.getByRole("switch", { name: emailNotificationsZh.statistics, exact: true }).click();
     await expect(page.getByRole("button", { name: "保存更改", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "丢弃", exact: true }).click();
+    await page.getByRole("button", { name: "放弃", exact: true }).click();
     await expect(page.getByRole("switch", { name: emailNotificationsZh.statistics, exact: true })).toBeChecked();
     await expect(page.getByRole("button", { name: "保存更改", exact: true })).toHaveCount(0);
     await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");

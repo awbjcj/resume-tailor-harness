@@ -105,7 +105,7 @@ test("localizes interview style values and keeps the answer when switching langu
   } }));
   await page.goto("/interview?session=translation-session");
   await expect(page.getByText("技术面试", { exact: true })).toBeVisible();
-  await expect(page.getByText("中性", { exact: true })).toBeVisible();
+  await expect(page.getByText("平和", { exact: true })).toBeVisible();
   await expect(page.getByText("标准", { exact: true })).toBeVisible();
   await expect(page.getByText("第 1 题，共 4 题", { exact: true })).toBeVisible();
   const answer = page.locator("textarea").last();
