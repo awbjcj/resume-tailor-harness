@@ -76,8 +76,8 @@ describe("analytics chart transforms", () => {
       { eventId: 12, jobId: 1, company: null, sequence: 1, occurredAt: "2026-03-20T12:00:00Z", compBase: null, compBonus: null, compEquityAnnual: null, compSigning: null, compCurrency: null, totalComp: 0 },
     ]);
 
-    expect(flow.nodes.map((node) => node.name)).toEqual(["已投递", "招聘方初筛"]);
-    expect(cycles[0].label).toBe("招聘方初筛 → 技术面");
+    expect(flow.nodes.map((node) => node.name)).toEqual(["已投递", "招聘初筛"]);
+    expect(cycles[0].label).toBe("招聘初筛 → 技术面试");
     expect(offers[0]).toMatchObject({ company: "录用通知", label: "录用通知 · #1", currency: "未注明币种" });
   });
 });

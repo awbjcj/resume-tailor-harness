@@ -6,6 +6,7 @@ import { expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
 
 import type { components } from "@/lib/api/schema";
+import { changeLanguage } from "@/i18n";
 import { server } from "@/test/server";
 import { CleanupSkills } from "./CleanupSkills";
 import { MATCH_GAP_QUERY_KEY } from "./use-match-gap";
@@ -52,7 +53,9 @@ function setup() {
   return { client, ...view };
 }
 
-it("reviews candidates without changing data, then discards only checked entries", async () => {
+it.each(["en", "zh-CN"] as const)("reviews candidates and excludes only checked entries in %s", async (language) => {
+  await changeLanguage(language);
+  const chinese = language === "zh-CN";
   const calls: unknown[] = [];
   const fresh = {
     ...data,
@@ -67,21 +70,21 @@ it("reviews candidates without changing data, then discards only checked entries
   );
   const { client, baseElement } = setup();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Clean up skills" }));
+  await user.click(screen.getByRole("button", { name: chinese ? "清理技能" : "Clean up skills" }));
   expect(
-    screen.getByText("Years-of-experience requirement"),
+    screen.getByText(chinese ? "工作年限要求" : "Years-of-experience requirement"),
   ).toBeInTheDocument();
   expect(
-    screen.queryByRole("checkbox", { name: "Discard Python" }),
+    screen.queryByRole("checkbox", { name: chinese ? "排除 Python" : "Discard Python" }),
   ).not.toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Discard selected (0)" }),
+    screen.getByRole("button", { name: chinese ? "排除所选条目（0）" : "Discard selected (0)" }),
   ).toBeDisabled();
   expect(calls).toEqual([]);
   expect((await axe(baseElement)).violations).toEqual([]);
-  await user.click(screen.getByRole("checkbox", { name: "Discard 2 years" }));
+  await user.click(screen.getByRole("checkbox", { name: chinese ? "排除 2 years" : "Discard 2 years" }));
   await user.click(
-    screen.getByRole("button", { name: "Discard selected (1)" }),
+    screen.getByRole("button", { name: chinese ? "排除所选条目（1）" : "Discard selected (1)" }),
   );
   await waitFor(() =>
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),

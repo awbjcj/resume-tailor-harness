@@ -57,7 +57,7 @@ const term = (): ScoutProposal => ({
 describe("Scout proposal verification policy", () => {
   it("localizes saved research and search-term labels without changing their stored values", async () => {
     await changeLanguage("zh-CN");
-    expect(companyIntelligenceLabel(source("validated", { companyIntelligenceStatus: "stale", companyIntelligenceVersion: 2 }))).toBe("调研版本 2 · 已过期");
+    expect(companyIntelligenceLabel(source("validated", { companyIntelligenceStatus: "stale", companyIntelligenceVersion: 2 }))).toBe("调研版本 2 · 已过时");
     const keyword = term();
     expect(proposalDetail(keyword)).toBe("关键词");
     expect(keyword.term?.termKind).toBe("keyword");

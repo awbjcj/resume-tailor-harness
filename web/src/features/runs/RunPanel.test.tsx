@@ -108,7 +108,7 @@ describe("RunPanel", () => {
     });
     render(<RunPanel />);
 
-    expect(screen.getByText(/个人资料生成 · 正在提取并整合源文档内容/)).toBeInTheDocument();
+    expect(screen.getByText(/个人资料生成 · 正在提取并合并来源文档的内容/)).toBeInTheDocument();
     expect(screen.queryByText(/PROFILE-BUILD|EXTRACTING AND MERGING SOURCE DOCUMENTS/)).not.toBeInTheDocument();
   });
 

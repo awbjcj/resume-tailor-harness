@@ -136,7 +136,7 @@ describe("EmailNotificationsPage", () => {
     const user = userEvent.setup();
     render(<EmailNotificationsPage />, { wrapper: withQueryClient });
     expect(await screen.findByText("邮件语言与界面语言设置一致。")).toBeInTheDocument();
-    expect(screen.getByText("求职摘要邮件可随时关闭。账户和安全通知仍会发送至注册邮箱。")).toBeInTheDocument();
+    expect(screen.getByText("你可以选择是否接收求职摘要邮件。账户和安全通知仍会发送至注册邮箱。")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "接收求职摘要邮件" })).toBeChecked();
     await user.type(screen.getByLabelText("6 位验证码"), "111111");
     await user.click(screen.getByRole("button", { name: /^验证邮箱$/ }));

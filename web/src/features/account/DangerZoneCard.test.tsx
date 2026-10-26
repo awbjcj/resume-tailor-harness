@@ -68,6 +68,24 @@ describe("DangerZoneCard", () => {
     expect(screen.getByRole("button", { name: "Erase selected data" })).toBeDisabled();
   });
 
+  it("shows the required confirmation token verbatim in Chinese and accepts only that token", async () => {
+    await changeLanguage("zh-CN");
+    const user = userEvent.setup();
+    render(<DangerZoneCard />);
+    await user.click(screen.getByRole("button", { name: "重置数据" }));
+
+    const confirmation = screen.getByLabelText("输入 RESET 以确认");
+    const submit = screen.getByRole("button", { name: "清除选定数据" });
+    expect(confirmation).toHaveAttribute("placeholder", "RESET");
+    expect(submit).toBeDisabled();
+
+    await user.type(confirmation, "重置");
+    expect(submit).toBeDisabled();
+    await user.clear(confirmation);
+    await user.type(confirmation, "RESET");
+    expect(submit).toBeEnabled();
+  });
+
   it("posts the selected scope and reloads after a clean reset", async () => {
     const reload = vi.fn();
     let requestUrl = "";
