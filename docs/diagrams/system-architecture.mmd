@@ -1,7 +1,7 @@
 C4Container
     title Containers — Résumé Tailor Harness
     System_Boundary(harness, "Résumé Tailor Harness") {
-        Container(web, "Web app", "React / TypeScript", "Boards, editors and run progress; executes in browser")
+        Container(web, "Web app / SDK clients", "React / TypeScript / Python SDK", "Client group: UI in browser; SDK in external agent process")
         Container(cli, "Command line", "Python / Typer", "Embeds shared services; runs without the API")
         Container(api, "API + background runs", "Python / FastAPI", "Services, agents, gates, thread pools and Typst rendering")
         ContainerDb(workspace, "Workspace database", "SQLite / SQLModel", "Per-workspace jobs, versions and application events")
@@ -18,3 +18,4 @@ C4Container
     Rel(cli, workspace, "Reads and writes workspace state", "SQL")
     %% Selected edges only: CLI also accesses integrations and workspace files.
     %% The Python service layer is shared code, not a separately deployed container.
+    %% The HTML/SVG expands shared services as an internal component of the Python process.
