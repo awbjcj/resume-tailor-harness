@@ -13,6 +13,7 @@ from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.llm_runner import Runner, run_with_cleanup
 from resume_tailor_harness.progress import ProgressReporter
 from resume_tailor_harness.taxonomy.classification import (
+    ClassificationBudget,
     ClassificationFailure,
     ClassificationMetrics,
     ClassificationOutcome,
@@ -137,6 +138,9 @@ def _combine_recovery(
         failures=tuple(failure for outcome in outcomes for failure in outcome.failures),
         not_skills=frozenset(
             token for outcome in outcomes for token in outcome.not_skills
+        ),
+        deferred_tokens=frozenset(
+            token for outcome in outcomes for token in outcome.deferred_tokens
         ),
         fallback_categories={
             token: category
@@ -404,10 +408,22 @@ def refresh_clusters(
             for token, status in taxonomy_state.grouping_status.items()
             if status.phase == "domain"
         }
+        retry_limited = {
+            existing.aliases.get(token, token)
+            for token in target_raw
+            if skill_keys is None
+            and (
+                status := taxonomy_state.grouping_status.get(
+                    existing.aliases.get(token, token)
+                )
+            ) is not None
+            and status.escalation_attempts >= settings.taxonomy_max_auto_attempts
+        }
         first_pass = {
             token
             for token in target_raw
-            if existing.aliases.get(token, token) not in attempted | provisional
+            if existing.aliases.get(token, token)
+            not in attempted | provisional | retry_limited
         }
         source_context = (
             skill_context
@@ -451,6 +467,10 @@ def refresh_clusters(
         }
         attempted_this_run: set[str] = set()
         recovery_rounds = 0
+        budget = ClassificationBudget(
+            max_calls=settings.taxonomy_max_model_calls,
+            max_prompt_bytes=settings.taxonomy_max_prompt_bytes,
+        )
 
         async def classify_both() -> tuple[
             ClassificationOutcome, ClassificationOutcome | None, ClusterMap, set[str]
@@ -475,6 +495,7 @@ def refresh_clusters(
                 repair_max_singletons=(
                     settings.taxonomy_canonical_repair_max_singletons
                 ),
+                budget=budget,
             )
             after_first = merge_cluster_map(existing, first.additions)
             # Temporarily remove only generated provisional placements from the
@@ -487,9 +508,18 @@ def refresh_clusters(
             retired = set(first.not_skills)
             recovery: list[ClassificationOutcome] = []
             for _round in range(settings.taxonomy_recovery_rounds):
+                if budget.exhausted:
+                    break
                 pending = (
                     _unassigned(after_first, target_raw) - retired - canonical_failed
+                    - set(first.deferred_tokens)
                 )
+                if skill_keys is None:
+                    pending = {
+                        token for token in pending
+                        if recovery_attempts.get(token, 0)
+                        < settings.taxonomy_max_auto_attempts
+                    }
                 ordered = sorted(
                     pending,
                     key=lambda token: (
@@ -505,15 +535,16 @@ def refresh_clusters(
                 if not leftovers:
                     break
                 recovery_rounds += 1
-                # Retry history changes the batch shape across runs as well as
-                # within this run: 15 -> 3 -> 1 at the default batch size.
+                # Shrink only to the configured floor. A persistent ambiguous
+                # tail must not turn into hundreds of full-directory singletons.
                 tiers: dict[int, set[str]] = {}
                 for token in leftovers:
                     tries = recovery_attempts.get(token, 0)
-                    repair_size = max(1, size // (4 ** min(tries + 1, 4)))
+                    repair_size = max(
+                        min(size, settings.taxonomy_recovery_min_batch_size),
+                        size // (4 ** min(tries + 1, 4)),
+                    )
                     tiers.setdefault(repair_size, set()).add(token)
-                    recovery_attempts[token] = tries + 1
-                    attempted_this_run.add(token)
                     after_first.aliases.setdefault(token, token)
                 for repair_size, tokens in sorted(tiers.items(), reverse=True):
                     second = await classify_incrementally(
@@ -531,7 +562,13 @@ def refresh_clusters(
                         min_new_domain_members=1,
                         category_hints=category_hints,
                         skill_context=source_context,
+                        budget=budget,
                     )
+                    # Admission, not scheduling, buys an attempt. Preserve
+                    # history for batches the shared budget did not admit.
+                    for token in tokens - second.deferred_tokens:
+                        recovery_attempts[token] = recovery_attempts.get(token, 0) + 1
+                        attempted_this_run.add(token)
                     recovery.append(second)
                     retired.update(second.not_skills)
                     after_first = merge_cluster_map(after_first, second.additions)
@@ -549,7 +586,7 @@ def refresh_clusters(
             remaining = (
                 _unassigned(after_first, target_raw) - retired - canonical_failed
             )
-            deferred = remaining - attempted_this_run
+            deferred = (remaining - attempted_this_run) | set(first.deferred_tokens)
             return first, _combine_recovery(recovery), after_first, deferred
 
         outcome, escalated, merged, deferred = asyncio.run(
@@ -660,9 +697,13 @@ def refresh_clusters(
                 token,
                 GroupingStatus(
                     state="uncertain",
-                    reason="no high-confidence existing or coherent new domain",
-                    # Canonicalization settled; only the domain is unresolved.
-                    phase="domain",
+                    reason=(
+                        "Deferred by taxonomy usage limits; explicitly retry selected skills"
+                        if token in deferred
+                        else "no high-confidence existing or coherent new domain"
+                    ),
+                    # A budget deferral can precede canonicalization itself.
+                    phase="domain" if token in final.aliases.values() else "canonicalize",
                 ),
             )
 
@@ -794,6 +835,11 @@ def refresh_clusters(
         "escalatedSkills": escalated_count,
         "recoveryRounds": recovery_rounds,
         "recoveryAttemptedSkills": len(attempted_this_run),
+        "modelCalls": budget.calls,
+        "maxModelCalls": budget.max_calls,
+        "maxPromptBytes": budget.max_prompt_bytes,
+        "usageLimitReached": budget.exhausted,
+        "retryLimitSkills": len(retry_limited),
         "provisionalSkills": len(provisional_now),
         "refinedSkills": len((provisional & assigned) - provisional_now),
         "confirmedSkills": len(assigned - provisional_now),

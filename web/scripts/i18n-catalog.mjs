@@ -29,6 +29,8 @@ const {
 // translation. They are deliberately authored and checked against the catalog;
 // the catalog is never generated from a translation service.
 const BASE_ZH_CN_TRANSLATIONS = {
+  "· {{v0}} paused after repeated attempts; narrow filters to retry": "· {{v0}} 项在多次尝试后已暂停；请缩小筛选范围后重试",
+  "· run usage limit reached": "· 已达到本次运行的用量上限",
   "Clean up skills": "清理技能",
   "Review degrees, experience durations, and other requirements that are not skills. Discarded entries leave the skill map and future regrouping. Original job descriptions stay intact, and entries can be restored.": "检查学位、工作年限及其他不属于技能的要求。丢弃的条目将从技能图谱和后续分组中排除。原始职位描述保持不变，条目可随时恢复。",
   "Suggested non-skills": "建议排除的非技能条目",

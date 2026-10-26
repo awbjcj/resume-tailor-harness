@@ -125,6 +125,185 @@ def _seed_domain_backlog(path, tokens, *, attempts=0):
     )
 
 
+def test_recovery_usage_does_not_explode_into_repeated_singletons(tmp_path):
+    path = tmp_path / "cluster_map.json"
+    tokens = {f"ambiguous {i:04d}" for i in range(300)}
+    _seed_domain_backlog(path, tokens, attempts=2)
+    sizes = []
+
+    def uncertain(new, _categories):
+        sizes.append(len(new))
+        return []
+
+    first = refresh_clusters(
+        None, path=path, demanded_tokens=tokens,
+        canonicalizer=_AsyncCanonicalizer(), themer=_AsyncThemer(uncertain),
+    )
+    assert len(sizes) <= 30
+    assert min(sizes) >= 10
+    assert first["confirmedSkills"] == 0
+    assert first["provisionalSkills"] == 300
+    before = load_taxonomy_state(path)
+    sizes.clear()
+    second = refresh_clusters(
+        None, path=path, demanded_tokens=tokens,
+        canonicalizer=_AsyncCanonicalizer(), themer=_AsyncThemer(uncertain),
+    )
+    assert sizes == []
+    assert second["deferredSkills"] == 300
+    assert load_taxonomy_state(path).grouping_status == before.grouping_status
+
+
+def test_recovery_call_budget_saves_success_and_preserves_unattempted_history(
+    tmp_path, monkeypatch,
+):
+    from resume_tailor_harness.config import env_settings
+
+    monkeypatch.setenv("TAXONOMY_MAX_MODEL_CALLS", "2")
+    env_settings.cache_clear()
+    path = tmp_path / "cluster_map.json"
+    tokens = {f"skill {i:04d}" for i in range(300)}
+    _seed_domain_backlog(path, tokens)
+    before = load_taxonomy_state(path)
+    themer = _AsyncThemer()
+    try:
+        result = refresh_clusters(
+            None, path=path, demanded_tokens=tokens,
+            canonicalizer=_AsyncCanonicalizer(), themer=themer, concurrency=8,
+        )
+    finally:
+        env_settings.cache_clear()
+    assert themer.calls == 2
+    assert result["modelCalls"] == 2
+    assert result["usageLimitReached"] is True
+    assert result["confirmedSkills"] == 30
+    assert result["deferredSkills"] == 270
+    assert result["failedSkills"] == 0
+    assert len(load_cluster_map(path).domain_of) == 30
+    after = load_taxonomy_state(path)
+    assert len(after.grouping_status) == 270
+    for token, status in after.grouping_status.items():
+        assert status == before.grouping_status[token]
+
+
+def test_prompt_budget_defers_without_inventing_a_canonical_or_placement(
+    tmp_path, monkeypatch,
+):
+    from resume_tailor_harness.config import env_settings
+
+    monkeypatch.setenv("TAXONOMY_MAX_PROMPT_BYTES", "1")
+    env_settings.cache_clear()
+    path = tmp_path / "cluster_map.json"
+    canonicalizer, themer = _AsyncCanonicalizer(), _AsyncThemer()
+    try:
+        result = refresh_clusters(
+            None, path=path, demanded_tokens={"rust"},
+            canonicalizer=canonicalizer, themer=themer,
+        )
+    finally:
+        env_settings.cache_clear()
+    assert canonicalizer.calls == themer.calls == 0
+    assert result["deferredSkills"] == 1
+    assert result["failedSkills"] == result["placedByFallback"] == 0
+    assert result["promptBytes"] == 0
+    assert load_cluster_map(path).aliases == {}
+    assert load_taxonomy_state(path).grouping_status["rust"].phase == "canonicalize"
+
+
+def test_explicit_skill_retry_can_revisit_automatic_retry_limit(tmp_path):
+    path = tmp_path / "cluster_map.json"
+    _seed_domain_backlog(path, {"rust"}, attempts=3)
+    automatic = _AsyncThemer()
+    refresh_clusters(
+        None, path=path, demanded_tokens={"rust"},
+        canonicalizer=_AsyncCanonicalizer(), themer=automatic,
+    )
+    assert automatic.calls == 0
+    result = refresh_clusters(
+        None, path=path, demanded_tokens={"rust"}, skill_keys={"rust"},
+        canonicalizer=_AsyncCanonicalizer(), themer=_AsyncThemer(),
+    )
+    assert result["confirmedSkills"] == 1
+    assert load_cluster_map(path).domain_of["rust"] == "languages"
+
+
+def test_usage_budget_is_shared_with_canonical_repairs(tmp_path, monkeypatch):
+    from resume_tailor_harness.config import env_settings
+
+    monkeypatch.setenv("TAXONOMY_MAX_MODEL_CALLS", "3")
+    env_settings.cache_clear()
+    path = tmp_path / "cluster_map.json"
+    canonicalizer = _AsyncCanonicalizer(lambda *_: [])
+    themer = _AsyncThemer()
+    try:
+        result = refresh_clusters(
+            None, path=path, demanded_tokens={f"unknown {i}" for i in range(20)},
+            canonicalizer=canonicalizer, themer=themer,
+        )
+    finally:
+        env_settings.cache_clear()
+    assert canonicalizer.calls == 3
+    assert themer.calls == 0
+    assert result["deferredSkills"] == 20
+    assert result["canonicalIdentityFiled"] == 0
+    assert load_cluster_map(path).aliases == {}
+
+
+def test_usage_budget_keeps_canonicals_when_domain_pass_is_deferred(tmp_path, monkeypatch):
+    from resume_tailor_harness.config import env_settings
+
+    monkeypatch.setenv("TAXONOMY_MAX_MODEL_CALLS", "2")
+    env_settings.cache_clear()
+    path = tmp_path / "cluster_map.json"
+    canonicalizer, themer = _AsyncCanonicalizer(), _AsyncThemer()
+    try:
+        result = refresh_clusters(
+            None, path=path, demanded_tokens={"rust"},
+            canonicalizer=canonicalizer, themer=themer,
+        )
+    finally:
+        env_settings.cache_clear()
+    assert canonicalizer.calls == 2
+    assert themer.calls == 0
+    assert result["deferredSkills"] == 1
+    assert load_cluster_map(path).aliases == {"rust": "rust"}
+    assert load_cluster_map(path).domain_of == {}
+    assert load_taxonomy_state(path).grouping_status["rust"].phase == "domain"
+
+
+def test_prompt_budget_counts_cumulative_payloads_across_concurrent_calls(
+    tmp_path, monkeypatch,
+):
+    from resume_tailor_harness.config import env_settings
+
+    monkeypatch.setenv("TAXONOMY_MAX_PROMPT_BYTES", "6000")
+    env_settings.cache_clear()
+    path = tmp_path / "cluster_map.json"
+    tokens = {f"skill {i:04d}" for i in range(100)}
+    _seed_domain_backlog(path, tokens)
+    payload_sizes = []
+
+    class RecordingThemer(_AsyncThemer):
+        async def arun(self, prompt):
+            payload_sizes.append(len(prompt.encode("utf-8")))
+            return await super().arun(prompt)
+
+    try:
+        result = refresh_clusters(
+            None, path=path, demanded_tokens=tokens, concurrency=8,
+            canonicalizer=_AsyncCanonicalizer(), themer=RecordingThemer(),
+        )
+    finally:
+        env_settings.cache_clear()
+    assert 0 < sum(payload_sizes) <= 6000
+    assert result["promptBytes"] == sum(payload_sizes)
+    confirmed = result["confirmedSkills"]
+    assert isinstance(confirmed, int)
+    assert 0 < confirmed < 100
+    assert result["deferredSkills"] == 100 - confirmed
+    assert result["usageLimitReached"] is True
+
+
 def test_recovery_is_fair_across_runs_despite_a_persistent_early_outage(
     tmp_path, monkeypatch
 ):
@@ -161,7 +340,11 @@ def test_recovery_is_fair_across_runs_despite_a_persistent_early_outage(
     assert load_taxonomy_state(path).grouping_status["alpha"].escalation_attempts == 1
 
 
-def test_recovery_shrinks_batches_until_incomplete_outputs_are_resolved(tmp_path):
+def test_recovery_can_explicitly_opt_into_singleton_repair(tmp_path, monkeypatch):
+    from resume_tailor_harness.config import env_settings
+
+    monkeypatch.setenv("TAXONOMY_RECOVERY_MIN_BATCH_SIZE", "1")
+    env_settings.cache_clear()
     path = tmp_path / "cluster_map.json"
     tokens = {f"skill {i}" for i in range(8)}
     _seed_domain_backlog(path, tokens)
@@ -171,21 +354,24 @@ def test_recovery_shrinks_batches_until_incomplete_outputs_are_resolved(tmp_path
         sizes.append(len(new))
         return _languages(new, categories) if len(new) == 1 else []
 
-    result = refresh_clusters(
-        None,
-        path=path,
-        demanded_tokens=tokens,
-        canonicalizer=_AsyncCanonicalizer(),
-        themer=_AsyncThemer(),
-        escalation_themer=_AsyncThemer(respond),
-    )
+    try:
+        result = refresh_clusters(
+            None,
+            path=path,
+            demanded_tokens=tokens,
+            canonicalizer=_AsyncCanonicalizer(),
+            themer=_AsyncThemer(),
+            escalation_themer=_AsyncThemer(respond),
+        )
+    finally:
+        env_settings.cache_clear()
     assert result["recoveryRounds"] == 3
     assert result["confirmedSkills"] == len(tokens)
     assert result["placedByFallback"] == 0
     assert sizes == [8, 3, 3, 2, *([1] * 8)]
 
 
-def test_16000_skill_map_recovers_1600_backlog_in_two_regroups(tmp_path):
+def test_16000_skill_map_recovers_1600_backlog_with_bounded_regroups(tmp_path):
     from resume_tailor_harness.taxonomy.state import (
         GroupingStatus,
         TaxonomyState,
@@ -230,8 +416,9 @@ def test_16000_skill_map_recovers_1600_backlog_in_two_regroups(tmp_path):
             for i in range(160)
         ]
 
-    results = [
-        refresh_clusters(
+    results = []
+    for _ in range(8):
+        result = refresh_clusters(
             None,
             path=path,
             demanded_tokens=tokens,
@@ -239,10 +426,13 @@ def test_16000_skill_map_recovers_1600_backlog_in_two_regroups(tmp_path):
             themer=_AsyncThemer(),
             escalation_themer=_AsyncThemer(respond),
         )
-        for _ in range(2)
-    ]
-    assert [r["confirmedSkills"] for r in results] == [900, 700]
-    assert [r["deferredSkills"] for r in results] == [700, 0]
+        results.append(result)
+        calls, prompt_bytes = result["modelCalls"], result["promptBytes"]
+        assert isinstance(calls, int) and calls <= 50
+        assert isinstance(prompt_bytes, int) and prompt_bytes <= 1_000_000
+        if result["remainingUnassigned"] == 0:
+            break
+    assert sum(r["confirmedSkills"] for r in results) == 1600
     assert results[-1]["remainingUnassigned"] == 0
     assert canonicalizer.calls == 0
     assert max(prompt_member_counts) == 1280

@@ -137,6 +137,15 @@ class Settings(BaseSettings):
     # Each round admits this many skills, least-attempted first. Three bounded
     # rounds recover a large tail without requiring one click per 300 skills.
     taxonomy_recovery_rounds: int = Field(default=3, ge=1, le=5)
+    # Shared across canonicalization, repairs, reconciliation and recovery.
+    # These bound application calls/payload bytes, not invoice dollars.
+    taxonomy_max_model_calls: int = Field(default=50, ge=1, le=5000)
+    taxonomy_max_prompt_bytes: int = Field(default=1_000_000, ge=1, le=100_000_000)
+    # Avoid paying for the full taxonomy once per singleton on every Regroup.
+    taxonomy_recovery_min_batch_size: int = Field(default=10, ge=1, le=500)
+    # Explicitly selected skills can be retried; ordinary regrouping pauses
+    # exhausted skills without discarding their provisional placements.
+    taxonomy_max_auto_attempts: int = Field(default=3, ge=1, le=100)
     # Bounds the terminal singleton repair round.  In the normal case it is
     # never reached -- that round only ever sees the residue of a residue.  It
     # exists for the systematic-failure case (a bad prompt edit, a schema

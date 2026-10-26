@@ -29,6 +29,41 @@ from resume_tailor_harness.tracking.match_gap import normalize_skill
 ClassificationPhase = Literal["canonicalize", "domain"]
 
 
+class _BudgetDeferred(Exception):
+    """No model judgment was purchased for this batch."""
+
+
+@dataclass
+class ClassificationBudget:
+    """One admission budget shared by all passes of a regroup.
+
+    Counts application calls and UTF-8 task payloads, not billed tokens,
+    system/schema overhead, embeddings or provider-internal retries.
+    Reservations have no await, so concurrent batches cannot overspend it.
+    """
+
+    max_calls: int
+    max_prompt_bytes: int
+    calls: int = 0
+    prompt_bytes: int = 0
+    limit_reached: bool = False
+
+    @property
+    def exhausted(self) -> bool:
+        return (
+            self.limit_reached
+            or self.calls >= self.max_calls
+            or self.prompt_bytes >= self.max_prompt_bytes
+        )
+
+    def reserve(self, prompt_bytes: int) -> None:
+        if self.exhausted or self.prompt_bytes + prompt_bytes > self.max_prompt_bytes:
+            self.limit_reached = True
+            raise _BudgetDeferred("taxonomy usage budget reached")
+        self.calls += 1
+        self.prompt_bytes += prompt_bytes
+
+
 @dataclass(frozen=True)
 class ClassificationFailure:
     phase: ClassificationPhase
@@ -71,6 +106,7 @@ class ClassificationOutcome:
     metrics: ClassificationMetrics
     not_skills: frozenset[str] = frozenset()
     fallback_categories: dict[str, str] = field(default_factory=dict)
+    deferred_tokens: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -393,6 +429,7 @@ async def classify_incrementally(
     skill_context: Mapping[str, list[str]] | None = None,
     enforce_candidates: bool = True,
     repair_max_singletons: int = 500,
+    budget: ClassificationBudget | None = None,
 ) -> ClassificationOutcome:
     if batch_size < 1:
         raise ValueError("batch_size must be at least 1")
@@ -411,6 +448,7 @@ async def classify_incrementally(
     prompt_bytes = 0
     canonical_calls = 0
     failures: list[ClassificationFailure] = []
+    deferred_tokens: set[str] = set()
     alias_delta = demanded_tokens - existing.aliases.keys()
     alias_batches = _shard(alias_delta, batch_size)
     # A migrated map can legitimately have a direct domain key without a
@@ -442,7 +480,10 @@ async def classify_incrementally(
             {"new": batch, "existing_canonicals": candidate_canonicals},
             separators=(",", ":"),
         )
-        prompt_bytes += len(prompt.encode("utf-8"))
+        payload_bytes = len(prompt.encode("utf-8"))
+        if budget is not None:
+            budget.reserve(payload_bytes)
+        prompt_bytes += payload_bytes
         canonical_calls += 1
         response = await acall(
             canonicalizer,
@@ -499,6 +540,9 @@ async def classify_incrementally(
         )
         uncovered: set[str] = set()
         for batch, result in zip(batches, results, strict=True):
+            if isinstance(result.error, _BudgetDeferred):
+                deferred_tokens.update(batch)
+                continue
             if not result.ok or result.value is None:
                 failures.append(
                     ClassificationFailure(
@@ -541,8 +585,10 @@ async def classify_incrementally(
                 | overflow
             )
             canonical_repair_rounds += 1
-        residue -= canonical_call_failed
-        canonical_repaired = len(first_residue - residue - canonical_call_failed)
+        residue -= canonical_call_failed | deferred_tokens
+        canonical_repaired = len(
+            first_residue - residue - canonical_call_failed - deferred_tokens
+        )
         if residue:
             # Two rounds and a singleton attempt have now declined to cluster
             # these.  A token that is its own canonical is always structurally
@@ -597,6 +643,10 @@ async def classify_incrementally(
                     sorted(running_stable),
                     use_candidates=candidate_context is not None,
                 )
+            except _BudgetDeferred:
+                # These heads already have valid canonical judgments. Keep
+                # them unchanged; domain admission will defer if necessary.
+                reconciled = _AliasBatchResult({}, frozenset())
             except Exception as exc:
                 # These heads already passed canonicalization. A refinement
                 # outage must not discard the successful partitions of an
@@ -738,7 +788,10 @@ async def classify_incrementally(
             },
             separators=(",", ":"),
         )
-        prompt_bytes += len(prompt.encode("utf-8"))
+        payload_bytes = len(prompt.encode("utf-8"))
+        if budget is not None:
+            budget.reserve(payload_bytes)
+        prompt_bytes += payload_bytes
         response = await acall(
             themer,
             prompt,
@@ -779,6 +832,9 @@ async def classify_incrementally(
             checkpoint=reporter.checkpoint if reporter is not None else None,
         )
         for batch, result in zip(domain_batches, domain_results, strict=True):
+            if isinstance(result.error, _BudgetDeferred):
+                deferred_tokens.update(batch)
+                continue
             if not result.ok or result.value is None:
                 failures.append(
                     ClassificationFailure(
@@ -863,4 +919,5 @@ async def classify_incrementally(
         metrics=metrics,
         not_skills=not_skills,
         fallback_categories=fallback_categories,
+        deferred_tokens=frozenset(deferred_tokens),
     )
