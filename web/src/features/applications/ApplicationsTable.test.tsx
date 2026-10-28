@@ -54,7 +54,7 @@ describe("ApplicationsTable", () => {
     );
     expect(screen.getByRole("columnheader", { name: "Tech 2" })).toBeInTheDocument();
     expect(screen.getByText("+3")).toBeInTheDocument();
-    expect(container.querySelector(".min-w-0.overflow-x-auto")).not.toBeNull();
+    expect(container.querySelector('[data-slot="table-container"].overflow-x-auto')).not.toBeNull();
   });
 
   it("makes compact cell metadata available without relying on title", async () => {
