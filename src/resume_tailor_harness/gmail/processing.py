@@ -22,7 +22,7 @@ from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
 from resume_tailor_harness.tracking.queries import application_job_pairs
 from resume_tailor_harness.tracking.tables import Notification, utcnow
 
-PROCESSING_VERSION = "gmail-decisions-v2"
+PROCESSING_VERSION = "gmail-decisions-v3"
 
 
 class MessageProcessor:
@@ -70,6 +70,7 @@ class MessageProcessor:
         self.stats = {
             "processed": 0,
             "cached": 0,
+            "classification_cache_hits": 0,
             "metadata_reads": 0,
             "body_reads": 0,
             "matched": 0,
@@ -104,10 +105,23 @@ class MessageProcessor:
                 )
             ).all()
         }
-        work = [
+        # History can rediscover a message already read by a backfill. Its
+        # content is unchanged; only previously excluded/missing messages need
+        # new metadata to detect recovery from spam/trash or a missing read.
+        refresh_ids = {
             mid
             for mid in ids
             if refresh
+            and (
+                mid not in existing
+                or not existing[mid].email_json
+                or not existing[mid].email_json.get("incoming", True)
+            )
+        }
+        work = [
+            mid
+            for mid in ids
+            if mid in refresh_ids
             or mid not in existing
             or existing[mid].revision != self.revision
             or (
@@ -117,7 +131,7 @@ class MessageProcessor:
             )
         ]
         self.stats["cached"] += len(ids) - len(work)
-        fresh = [mid for mid in work if refresh or mid not in existing]
+        fresh = [mid for mid in work if mid in refresh_ids or mid not in existing]
         metadata = (
             batch_read_messages(self.service, fresh, checkpoint=self.checkpoint)
             if fresh
@@ -126,7 +140,7 @@ class MessageProcessor:
         self.stats["metadata_reads"] += len(fresh)
         emails: dict[str, EmailMessage] = {}
         for mid in work:
-            if mid in existing and existing[mid].email_json and not refresh:
+            if mid in existing and existing[mid].email_json and mid not in refresh_ids:
                 email = EmailMessage(**existing[mid].email_json)
                 email.recruiting_candidate |= recruiting
                 emails[mid] = email
@@ -179,12 +193,15 @@ class MessageProcessor:
         self.stats["processed"] += len(work)
 
     def _record(self, receipt: GmailReceipt, email: EmailMessage | None) -> None:
-        previous_label = (
-            receipt.label
-            if receipt.classification_version == PROCESSING_VERSION
-            else "none"
+        classification_key = self._classification_key(email) if email else ""
+        reuse_classification = (
+            bool(classification_key)
+            and receipt.classification_version == classification_key
+            and receipt.outcome == "matched"
+            and bool(receipt.revision)
         )
-        receipt.classification_version = PROCESSING_VERSION
+        previous_label = receipt.label
+        receipt.classification_version = ""
         receipt.application_id = None
         receipt.label = "none"
         receipt.revision = self.revision
@@ -223,15 +240,33 @@ class MessageProcessor:
         receipt.bound_application_id = app.id
         receipt.outcome = "matched"
         self.stats["matched"] += 1
-        # Successful classifications survive catalog-only changes without another
-        # AI call. A rules-version change invalidates all evidence via revision.
-        if previous_label != "none":
+        # Completed "none" decisions are useful cache entries too. Rematching
+        # after a catalog change must not spend tokens reviewing the same text.
+        if reuse_classification:
             receipt.label = previous_label
+            receipt.classification_version = classification_key
+            self.stats["classification_cache_hits"] += 1
         else:
             receipt.label, retry = self.classifier.classify(email)
             if retry:
                 receipt.revision = ""
                 receipt.outcome = "retry"
+            else:
+                receipt.classification_version = classification_key
+
+    def _classification_key(self, email: EmailMessage) -> str:
+        # Exclude the application catalog: it affects association, not the email's
+        # decision. Include actual classifier input, rules version and AI mode.
+        return sha256(
+            json.dumps(
+                [
+                    PROCESSING_VERSION,
+                    self.classifier.max_calls > 0,
+                    email.subject,
+                    authored_text(email.body or email.snippet),
+                ]
+            ).encode()
+        ).hexdigest()
 
     def _propose_latest(self, affected: set[int]) -> None:
         if not affected:

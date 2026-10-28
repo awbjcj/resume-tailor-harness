@@ -24,6 +24,22 @@ reduces connection overhead; each inner request still consumes Gmail quota.
 Once backfill and deferred processing finish, an unchanged mailbox requires one
 profile request and no message reads or AI calls.
 
+## Avoiding duplicate work
+
+Known messages are keyed by tenant, connected mailbox, and Gmail message ID.
+The message cache retains bounded evidence; the decision cache also retains
+completed “no decision” outcomes. Adding an unrelated application rematches saved
+evidence without calling AI again for already reviewed messages.
+
+Decision reuse checks the classifier input, rules version, and whether AI is
+enabled. Changed inputs or classification rules invalidate the decision; failures
+and budget-deferred reviews are not marked complete. The result's
+`classification_cache_hits` counter reports decisions reused during rematching.
+
+When history overlaps with a completed backfill, known incoming messages reuse
+their metadata, bodies, and decisions. Previously excluded or missing messages
+still refresh metadata so restoring a message from spam/trash can make it eligible.
+
 ## Decision accuracy
 
 - Company names and domains use complete normalized names, not arbitrary substrings
