@@ -24,16 +24,17 @@ function translateTemplate(table: Record<string, string>, value: string): string
 
   let bestMatch: { sourceLength: number; translation: string } | null = null;
   for (const [source, translation] of Object.entries(table)) {
-    const marker = source.indexOf(PLACEHOLDER);
-    if (marker === -1) continue;
-    const prefix = source.slice(0, marker);
-    const suffix = source.slice(marker + PLACEHOLDER.length);
-    if (value.startsWith(prefix) && value.endsWith(suffix)) {
-      const sourceLength = prefix.length + suffix.length;
+    const parts = source.split(PLACEHOLDER);
+    if (parts.length === 1) continue;
+    const pattern = parts.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("(.*?)");
+    const match = new RegExp(`^${pattern}$`, "s").exec(value);
+    if (match) {
+      const sourceLength = parts.join("").length;
       if (!bestMatch || sourceLength > bestMatch.sourceLength) {
+        let capture = 1;
         bestMatch = {
           sourceLength,
-          translation: translation.replace(PLACEHOLDER, value.slice(prefix.length, value.length - suffix.length)),
+          translation: translation.replaceAll(PLACEHOLDER, () => match[capture++] ?? ""),
         };
       }
     }

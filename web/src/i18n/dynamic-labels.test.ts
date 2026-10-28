@@ -43,6 +43,12 @@ describe("dynamic Chinese labels", () => {
     expect(localizeRunLogMessage("Draft is ready", "en")).toBe("Draft is ready");
   });
 
+  it("preserves distinct processed and cached counts in Gmail progress", () => {
+    expect(localizeRunPhase("Processed 50 emails; reused 25 cached results", "zh-CN")).toBe(
+      "已处理 50 封邮件；复用了 25 条缓存结果",
+    );
+  });
+
   it("does not leak unrecognized backend phases or errors in Chinese mode", () => {
     expect(localizeRunPhase("Future backend phase", "zh-CN")).toBe("正在处理");
     expect(localizeRunError("Provider unavailable", "zh-CN")).toBe("操作失败。请重试。");

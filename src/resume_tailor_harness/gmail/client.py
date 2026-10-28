@@ -1,6 +1,9 @@
 import base64
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from email.utils import parseaddr
+from typing import Any
 
 from resume_tailor_harness.discovery.connectors.text import html_to_text
 from resume_tailor_harness.gmail.auth import (  # noqa: F401 — CLI compat re-export
@@ -16,6 +19,8 @@ RECRUITING_QUERY = (
     '"offer letter" "not moving forward" "decided not to" '
     "from:myworkday.com from:greenhouse.io from:lever.co from:ashbyhq.com}"
 )
+BACKFILL_QUERY = RECRUITING_QUERY.replace("newer_than:90d ", "")
+BATCH_SIZE = 25
 
 
 @dataclass
@@ -31,6 +36,7 @@ class EmailMessage:
     body: str | None = None
     internal_date: int = 0
     recruiting_candidate: bool = False
+    incoming: bool = True
 
 
 def _decode(data: str) -> str:
@@ -64,7 +70,14 @@ def extract_body(payload: dict) -> str:
                 return plain[:BODY_CHAR_LIMIT]
         if part.get("mimeType") == "text/html" and not html:
             html = _decode(data)
-    return html_to_text(html)[:BODY_CHAR_LIMIT].strip() if html else ""
+    if not html:
+        return ""
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+    for quoted in soup.select("blockquote, .gmail_quote, .yahoo_quoted"):
+        quoted.decompose()
+    return html_to_text(str(soup))[:BODY_CHAR_LIMIT].strip()
 
 
 def fetch_message_body(service, message_id: str) -> str:
@@ -83,9 +96,90 @@ def _header(headers: list[dict], name: str) -> str:
 
 
 def _domain(sender: str) -> str:
-    if "@" not in sender:
-        return ""
-    return sender.split("@", 1)[1].rstrip(">").strip().lower()
+    return parseaddr(sender)[1].rpartition("@")[2].lower()
+
+
+def authored_text(text: str) -> str:
+    """Exclude quoted correspondence from role matching and decision rules."""
+    text = re.split(
+        r"(?im)^\s*(?:On .+wrote:|[-_]{2,}\s*Original Message|From:\s)", text
+    )[0]
+    return "\n".join(
+        line for line in text.splitlines() if not line.lstrip().startswith(">")
+    )
+
+
+def email_from_payload(
+    message_id: str, payload: dict, *, recruiting: bool
+) -> EmailMessage:
+    headers = payload.get("payload", {}).get("headers", [])
+    sender = _header(headers, "From")
+    labels = set(payload.get("labelIds", []))
+    return EmailMessage(
+        sender=sender,
+        sender_domain=_domain(sender),
+        subject=_header(headers, "Subject"),
+        snippet=payload.get("snippet", ""),
+        thread_id=payload.get("threadId"),
+        message_id=message_id,
+        internal_date=int(payload.get("internalDate") or 0),
+        recruiting_candidate=recruiting,
+        incoming=not bool(labels & {"SENT", "DRAFT", "SPAM", "TRASH"}),
+    )
+
+
+def batch_read_messages(
+    service,
+    ids: list[str],
+    *,
+    full: bool = False,
+    checkpoint: Callable[[], None] | None = None,
+) -> dict[str, dict | None]:
+    """Small serial HTTP batches; retry only failed parts through execute_read.
+
+    Batching reduces network round trips, not Gmail quota usage. The SDK's
+    shared HTTP transport is never used concurrently across threads.
+    """
+    from google.auth.exceptions import RefreshError, TransportError
+    from googleapiclient.errors import HttpError
+    from httplib2 import HttpLib2Error
+
+    results: dict[str, dict | None] = {}
+    for start in range(0, len(ids), BATCH_SIZE):
+        if checkpoint:
+            checkpoint()
+        requests: dict[str, Any] = {}
+        failures: set[str] = set()
+
+        def callback(request_id, response, exception):
+            if exception is not None:
+                failures.add(request_id)
+            else:
+                results[request_id] = response
+
+        batch = service.new_batch_http_request(callback=callback)
+        for message_id in ids[start : start + BATCH_SIZE]:
+            params = {} if full else {"metadataHeaders": ["From", "Subject"]}
+            request = (
+                service.users()
+                .messages()
+                .get(
+                    userId="me",
+                    id=message_id,
+                    format="full" if full else "metadata",
+                    **params,
+                )
+            )
+            requests[message_id] = request
+            batch.add(request, request_id=message_id)
+        try:
+            batch.execute()
+        except (HttpError, RefreshError, TransportError, HttpLib2Error, OSError):
+            failures.update(requests.keys() - results.keys())
+        for message_id, request in requests.items():
+            if message_id in failures or message_id not in results:
+                results[message_id] = execute_read(request, allow_missing=True)
+    return results
 
 
 def _list_message_ids(

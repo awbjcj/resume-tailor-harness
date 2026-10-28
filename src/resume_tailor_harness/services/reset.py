@@ -11,6 +11,7 @@ from sqlalchemy import delete, func, select
 from sqlmodel import SQLModel, Session
 
 from resume_tailor_harness.tenancy.context import current_context
+from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 from resume_tailor_harness.tracking.tables import (
     Application,
@@ -31,6 +32,8 @@ class ResetScope(StrEnum):
 
 
 _PIPELINE_TABLES: tuple[type[SQLModel], ...] = (
+    GmailReceipt,
+    GmailSyncState,
     RunCompletion,
     SavedBoardView,
     Notification,

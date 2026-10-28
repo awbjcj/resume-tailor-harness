@@ -22,12 +22,21 @@ class _FakeRequest:
 class _FakeListing:
     def __init__(self, messages):
         self._messages = messages
+        self.gets: list[tuple[str, str]] = []
+        self.list_calls = 0
 
     def list(self, **kwargs):
-        refs = [{"id": m["id"]} for m in self._messages]
-        return _FakeRequest({"messages": refs})
+        self.list_calls += 1
+        start = int(kwargs.get("pageToken", "0"))
+        end = start + kwargs["maxResults"]
+        refs = [{"id": m["id"]} for m in self._messages[start:end]]
+        result: dict[str, object] = {"messages": refs}
+        if end < len(self._messages):
+            result["nextPageToken"] = str(end)
+        return _FakeRequest(result)
 
     def get(self, userId, id, format, metadataHeaders=None):
+        self.gets.append((id, format))
         msg = next(m for m in self._messages if m["id"] == id)
         if format == "full":
             result = {"payload": msg.get("payload", {})}
@@ -36,6 +45,8 @@ class _FakeListing:
                 "payload": {"headers": msg["headers"]},
                 "snippet": msg.get("snippet", ""),
                 "threadId": msg.get("threadId"),
+                "internalDate": msg.get("internalDate", "0"),
+                "labelIds": msg.get("labelIds", ["INBOX"]),
             }
         return _FakeRequest(result)
 
@@ -43,10 +54,58 @@ class _FakeListing:
 class FakeGmailService:
     def __init__(self, messages):
         self._messages = _FakeListing(messages)
+        self.history_id = "1"
+        self.mailbox = "test@example.com"
+        self.history_pages: list[dict] = []
+        self.batch_sizes: list[int] = []
+        self.profile_reads = 0
+        self.history_reads = 0
 
     def users(self):
-        messages = self._messages
-        return type("Users", (), {"messages": staticmethod(lambda: messages)})()
+        return self
+
+    def messages(self):
+        return self._messages
+
+    def getProfile(self, **kwargs):
+        self.profile_reads += 1
+        return _FakeRequest(
+            {"emailAddress": self.mailbox, "historyId": self.history_id}
+        )
+
+    def history(self):
+        return self
+
+    def list(self, **kwargs):
+        self.history_reads += 1
+        index = int(kwargs.get("pageToken", "0"))
+        return _FakeRequest(
+            self.history_pages[index]
+            if self.history_pages
+            else {"historyId": self.history_id}
+        )
+
+    def new_batch_http_request(self, callback):
+        sizes = self.batch_sizes
+
+        class Batch:
+            def __init__(self):
+                self.requests = []
+
+            def add(self, request, request_id):
+                self.requests.append((request_id, request))
+
+            def execute(self):
+                sizes.append(len(self.requests))
+                for request_id, request in self.requests:
+                    try:
+                        result = request.execute()
+                    except Exception as exc:
+                        callback(request_id, None, exc)
+                    else:
+                        callback(request_id, result, None)
+
+        return Batch()
 
 
 def _reporter(tmp_path):
@@ -79,7 +138,8 @@ def test_run_gmail_sync_creates_notifications_without_owning_reminders(tmp_path)
     )
     result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
     assert result["pending"] >= 1
-    assert set(result) == {"pending"}
+    assert result["stats"]["matched"] >= 1
+    assert not result["has_more"]
 
 
 def test_run_gmail_sync_disconnected_raises(tmp_path, monkeypatch):
@@ -127,14 +187,15 @@ def test_optional_ai_failure_preserves_rule_proposals(tmp_path, monkeypatch, fai
     monkeypatch.setattr(gmail_sync, "build_classifier_llm", factory)
     result = run_gmail_sync(engine, _reporter(tmp_path), service=service)
     assert result["pending"] == 1
-    assert result["warnings"] == [
+    assert (
         "AI classification is unavailable. Synced using email rules only."
-    ]
+        in result["warnings"]
+    )
     assert factory.call_count == 1
     assert runner.run.call_count == (1 if fail_at == "classify" else 0)
     with Session(engine) as session:
         notifications = pending_notifications(session)
-        assert notifications[0].message_id == "Gamma"
+        assert notifications[0].message_id.endswith(":Gamma")
         application = session.get(Application, notifications[0].application_id)
         assert application is not None
         assert application.status == "submitted"
@@ -155,9 +216,10 @@ def test_empty_inbox_does_not_build_ai(tmp_path, monkeypatch):
     init_db(engine)
     factory = Mock(side_effect=AssertionError("AI should not be needed"))
     monkeypatch.setattr(gmail_sync, "build_classifier_llm", factory)
-    assert run_gmail_sync(
-        engine, _reporter(tmp_path), service=FakeGmailService([])
-    ) == {"pending": 0}
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=FakeGmailService([]))
+    assert result["pending"] == 0
+    assert result["stats"]["processed"] == 0
+    assert not result["has_more"]
     factory.assert_not_called()
 
 
@@ -239,11 +301,15 @@ def test_sync_recovers_nvidia_rejection_beyond_inbox_limit(tmp_path):
 
     class Listing(_FakeListing):
         def list(self, **kwargs):
-            candidates = [rejection] if kwargs.get("q") else ordinary + [rejection]
-            refs = [{"id": m["id"]} for m in candidates[: kwargs["maxResults"]]]
+            candidates = (
+                ordinary + [rejection] if kwargs.get("labelIds") else [rejection]
+            )
+            start = int(kwargs.get("pageToken", "0"))
+            end = start + kwargs["maxResults"]
+            refs = [{"id": m["id"]} for m in candidates[start:end]]
             result: dict[str, object] = {"messages": refs}
-            if len(candidates) > kwargs["maxResults"]:
-                result["nextPageToken"] = "more"
+            if len(candidates) > end:
+                result["nextPageToken"] = str(end)
             return _FakeRequest(result)
 
     service = FakeGmailService([])
@@ -254,7 +320,7 @@ def test_sync_recovers_nvidia_rejection_beyond_inbox_limit(tmp_path):
         notice = pending_notifications(session)[0]
         assert notice.application_id == target_id
         assert notice.proposed_status == "rejected"
-        assert notice.message_id == "nvidia-rejection"
+        assert notice.message_id.endswith(":nvidia-rejection")
         assert all(
             a.status == "submitted" for a in session.exec(select(Application)).all()
         )

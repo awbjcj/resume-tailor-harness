@@ -8,6 +8,7 @@ from sqlmodel import select
 from resume_tailor_harness.api.app import create_app
 from resume_tailor_harness.api.auth import hash_password
 from resume_tailor_harness.db import init_db, make_engine
+from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
 from resume_tailor_harness.tenancy.system_db import User
 from resume_tailor_harness.tenancy.workspace import provision_workspace, workspace_paths
 from resume_tailor_harness.tracking.tables import Job
@@ -46,6 +47,10 @@ def _seed_workspace(app, user_id):
     with WorkspaceSession(engine) as session:
         session.add(
             Job(source="manual", company="Acme", title="Engineer", dedup_key="a|e")
+        )
+        session.add(GmailReceipt(account="mailbox", message_id="m1"))
+        session.add(
+            GmailSyncState(account="mailbox", cursors={"history": {"cursor": "1"}})
         )
         session.commit()
     paths.output_dir.mkdir(parents=True, exist_ok=True)
@@ -114,6 +119,8 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
             "scrape_cache": 0,
             "scrape_approvals": 0,
             "scrape_drafts": 0,
+            "gmail_receipts": 1,
+            "gmail_sync_state": 1,
             "run_completions": 0,
             "saved_board_views": 0,
             "notifications": 0,
@@ -131,8 +138,12 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
     assert (bob_paths.output_dir / "resume.pdf").exists()
     with WorkspaceSession(alice_engine) as session:
         assert session.exec(select(Job)).first() is None
+        assert session.exec(select(GmailReceipt)).first() is None
+        assert session.exec(select(GmailSyncState)).first() is None
     with WorkspaceSession(bob_engine) as session:
         assert session.exec(select(Job)).first() is not None
+        assert session.exec(select(GmailReceipt)).first() is not None
+        assert session.exec(select(GmailSyncState)).first() is not None
 
 
 def test_reset_profile_clears_corpus_and_keeps_pipeline(mu_app, mu_client):
@@ -161,6 +172,8 @@ def test_reset_profile_clears_corpus_and_keeps_pipeline(mu_app, mu_client):
     assert (paths.output_dir / "resume.pdf").exists()
     with WorkspaceSession(engine) as session:
         assert session.exec(select(Job)).first() is not None
+        assert session.exec(select(GmailReceipt)).first() is not None
+        assert session.exec(select(GmailSyncState)).first() is not None
 
 
 def test_single_user_reset_uses_configured_app_paths(tmp_path: Path, monkeypatch):

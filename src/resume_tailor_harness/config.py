@@ -204,6 +204,8 @@ class Settings(BaseSettings):
     interview_reminder_hours: int = Field(default=24, ge=0)  # 0 = off
     offer_deadline_reminder_days: int = Field(default=2, ge=0)  # 0 = off
     gmail_max_messages: int = Field(default=50, ge=1)
+    gmail_sync_max_pages: int = Field(default=20, ge=1, le=200)
+    gmail_max_ai_calls: int = Field(default=20, ge=0, le=200)
 
     @property
     def domains_per_category_cap(self) -> int:

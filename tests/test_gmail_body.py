@@ -143,3 +143,11 @@ def test_text_attachment_is_not_the_message_body():
         "parts": [attachment, _payload_plain("We are pleased to offer you the role.")]
     }
     assert extract_body(payload) == "We are pleased to offer you the role."
+
+
+def test_html_quoted_history_is_not_current_evidence():
+    html = "<p>We are still reviewing your application.</p><blockquote>We are pleased to offer you the role.</blockquote>"
+    assert (
+        extract_body({"mimeType": "text/html", "body": {"data": _b64(html)}})
+        == "We are still reviewing your application."
+    )
