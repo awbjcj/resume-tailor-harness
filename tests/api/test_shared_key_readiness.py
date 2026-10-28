@@ -38,7 +38,7 @@ def test_shared_balance_opens_profile_build_and_model_selection_until_exhausted(
 ):
     mu_app.state.settings = mu_app.state.settings.model_copy(
         update={
-            "anthropic_api_key": "railway-anthropic-key",
+            "openai_api_key": "railway-openai-key",
             "cost_quota_enforcement": "enforce",
         }
     )
@@ -61,12 +61,11 @@ def test_shared_balance_opens_profile_build_and_model_selection_until_exhausted(
         assert login.status_code == 200
 
         setup = client.get("/api/setup/status").json()
-        assert setup["secrets"]["anthropicKey"] is True
         assert setup["secrets"]["anyLlmKey"] is True
 
         catalog = client.get("/api/config/models/catalog").json()
-        anthropic = next(row for row in catalog if row["provider"] == "anthropic")
-        assert anthropic["hasKey"] is True
+        openai = next(row for row in catalog if row["provider"] == "openai")
+        assert openai["hasKey"] is True
 
         client.post(
             "/api/profile/documents",
@@ -79,7 +78,8 @@ def test_shared_balance_opens_profile_build_and_model_selection_until_exhausted(
             },
             data={"docType": "resume"},
         )
-        assert client.post("/api/profile/build").status_code == 202
+        response = client.post("/api/profile/build")
+        assert response.status_code == 202, response.json()
 
         charge_shared_cost(
             mu_app.state.system_engine,
@@ -88,25 +88,24 @@ def test_shared_balance_opens_profile_build_and_model_selection_until_exhausted(
         )
 
         exhausted_setup = client.get("/api/setup/status").json()
-        assert exhausted_setup["secrets"]["anthropicKey"] is False
         assert exhausted_setup["secrets"]["anyLlmKey"] is False
 
         exhausted_catalog = client.get("/api/config/models/catalog").json()
-        exhausted_anthropic = next(
-            row for row in exhausted_catalog if row["provider"] == "anthropic"
+        exhausted_openai = next(
+            row for row in exhausted_catalog if row["provider"] == "openai"
         )
-        assert exhausted_anthropic["hasKey"] is False
+        assert exhausted_openai["hasKey"] is False
         assert client.post("/api/profile/build").status_code == 400
 
         client.put(
             "/api/secrets",
-            json={"anthropicApiKey": "member-anthropic-key"},
+            json={"openaiApiKey": "member-openai-key"},
         )
         fallback_setup = client.get("/api/setup/status").json()
-        assert fallback_setup["secrets"]["anthropicKey"] is True
+        assert fallback_setup["secrets"]["anyLlmKey"] is True
         fallback_catalog = client.get("/api/config/models/catalog").json()
-        fallback_anthropic = next(
-            row for row in fallback_catalog if row["provider"] == "anthropic"
+        fallback_openai = next(
+            row for row in fallback_catalog if row["provider"] == "openai"
         )
-        assert fallback_anthropic["hasKey"] is True
+        assert fallback_openai["hasKey"] is True
         assert client.post("/api/profile/build").status_code == 202
