@@ -16,6 +16,7 @@ def test_known_model_capabilities_are_model_gated():
     assert provider_capabilities("openai:gpt-6-astra").supports_reasoning is True
     assert provider_capabilities("openai:gpt-6-sol").supports_reasoning is True
     assert provider_capabilities("openai:gpt-6.1-sol").supports_reasoning is True
+    assert provider_capabilities("openai:gpt-6.1-terra").supports_reasoning is True
     assert provider_capabilities("openai:gpt-6-luna").supports_reasoning is True
     assert provider_capabilities("claude-opus-5-5").supports_reasoning is True
     assert provider_capabilities("claude-haiku-5-5") == ProviderCapabilities(
@@ -28,6 +29,11 @@ def test_known_model_capabilities_are_model_gated():
     assert provider_capabilities("openai:gpt-4o").supports_reasoning is False
     assert provider_capabilities("gemini:gemini-3.5-flash").supports_reasoning is True
     assert provider_capabilities("gemini:gemini-3.8-flash").supports_reasoning is True
+    assert provider_capabilities("gemini:gemini-4-argon") == ProviderCapabilities(
+        supports_reasoning=True,
+        supports_native_citations=True,
+        supports_prompt_cache=True,
+    )
     # Search function results carry source URLs, not native citation annotations.
     assert provider_capabilities("deepseek:deepseek-v4-pro") == ProviderCapabilities(
         supports_reasoning=True,

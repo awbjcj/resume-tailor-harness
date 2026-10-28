@@ -8049,7 +8049,7 @@ export interface components {
             cheapReasoningEffort?: string | null;
             /**
              * Midmodel
-             * @default claude-sonnet-5
+             * @default openai:gpt-6.1-terra
              */
             midModel: string;
             /** Midreasoningeffort */

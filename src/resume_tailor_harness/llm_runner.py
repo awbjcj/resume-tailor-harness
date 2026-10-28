@@ -932,6 +932,11 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
         ),
     ],
     "openai": [
+        ModelCatalogEntry(
+            "openai:gpt-6.1-terra",
+            "GPT-6.1 Terra",
+            ("none", "low", "medium", "high", "xhigh", "max"),
+        ),
         # GPT-6.1 Sol rejects `none` and `minimal`; low still allows reasoning.
         ModelCatalogEntry(
             "openai:gpt-6.1-sol",
@@ -987,6 +992,11 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
         ),
     ],
     "gemini": [
+        ModelCatalogEntry(
+            "gemini:gemini-4-argon",
+            "Gemini 4 Argon",
+            ("low", "medium", "high"),
+        ),
         # 3.8 and 3.7 Flash both reject `minimal`: their documented levels are
         # low/medium/high only (default medium, thinking always on). The tuple
         # is the whole guard: `_reasoning_effort_for` can only
@@ -1199,13 +1209,22 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
     if provider == "openai" and folded.startswith(("gpt-", "o1", "o3", "o4")):
         return ProviderCapabilities(
             folded.startswith(("gpt-5", "o1", "o3", "o4"))
-            or folded in {"gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna"},
+            or folded
+            in {
+                "gpt-6.1-terra",
+                "gpt-6.1-sol",
+                "gpt-6-astra",
+                "gpt-6-sol",
+                "gpt-6-luna",
+            },
             True,
             True,
         )
     if provider == "gemini" and folded.startswith("gemini-"):
         return ProviderCapabilities(
-            folded.startswith(("gemini-3", "gemini-2.5")), True, True
+            folded == "gemini-4-argon" or folded.startswith(("gemini-3", "gemini-2.5")),
+            True,
+            True,
         )
     if provider == "deepseek" and folded.startswith("deepseek-"):
         # Standalone Search returns source URLs as function results rather than
@@ -1740,6 +1759,20 @@ def _compatible_gemini_class():
     class CompatibleGemini(StreamLifecycle, Gemini):
         """Gemini adapter that preserves dictionaries and referenced item types."""
 
+        def _get_metrics(self, response_usage):
+            metrics = super()._get_metrics(response_usage)
+            # Generate Content reports candidates and thoughts separately.
+            # Agno 3.1.3 only puts candidates in output_tokens; normalize at
+            # the provider boundary so downstream billing counts both once.
+            metrics.output_tokens = (response_usage.candidates_token_count or 0) + (
+                response_usage.thoughts_token_count or 0
+            )
+            metrics.input_tokens = (response_usage.prompt_token_count or 0) + (
+                response_usage.tool_use_prompt_token_count or 0
+            )
+            metrics.total_tokens = metrics.input_tokens + metrics.output_tokens
+            return metrics
+
         def _parse_provider_response_delta(self, response_delta, **kwargs):
             parsed = gemini_delta(
                 response_delta,
@@ -1894,9 +1927,9 @@ def _anthropic_thinking(
     Anthropic has the same hazard as Gemini -- an unset thinking config is
     "provider decides", not "off" -- but the default differs by generation:
     omitting ``thinking`` runs ADAPTIVE on Sonnet 5/5.5 and Opus 5, and runs
-    without thinking on Opus 4.8/4.7 and everything older. Since
-    ``Settings.mid_model`` defaults to ``claude-sonnet-5``, leaving it unset
-    silently bought thinking on every non-reasoning agent -- and because
+    without thinking on Opus 4.8/4.7 and everything older. Leaving the config
+    unset on a Sonnet 5 tier silently bought thinking on every non-reasoning
+    agent -- and because
     thinking shares the ``max_tokens`` budget with the response text, that
     truncated large structured outputs into the unparsed-``str`` failure
     ``expect_schema`` exists to diagnose. So bound it explicitly.
@@ -2041,9 +2074,9 @@ def _endpoint_kwargs(provider: str, base_url: str | None) -> dict[str, Any]:
       only as ``http_options={"base_url": ...}``.
 
     Isolated here so ``build_model`` reads as one uniform decision. Note the
-    Gemini branch replaces any ``http_options`` agno would have built itself --
-    that dict carries only ``timeout``, which this codebase never sets on a
-    Gemini model, so nothing is lost today; it would need merging if one were.
+    Gemini branch supplies ``http_options`` via ``client_params``, overriding
+    Agno's generated HTTP options. Callers needing a timeout must merge it into
+    that dict alongside the route, as the Argon builder does.
     """
     sdk_base_url = provider_sdk_base_url(provider, base_url)
     if not sdk_base_url:
@@ -2217,13 +2250,24 @@ def _build_model_from_route(
         # plain str (the error body) rather than the output_schema. Bound it
         # with thinking_level="low" instead; that reports no thought tokens.
         # Pre-3 ids have no thinking_level, so there 0 is still the way off.
-        if model.casefold().startswith("gemini-3"):
+        if model.casefold().startswith(("gemini-3", "gemini-4")):
+            options = _endpoint_kwargs("gemini", base_url)
+            if model.casefold() == "gemini-4-argon":
+                # This adapter uses generateContent, whose non-streaming hop
+                # cap is 32K (Interactions instead permits 64K synchronously).
+                # Stay within one hop; SDK continuation is version-dependent.
+                options["max_output_tokens"] = 32_768
+                # SDK HTTP options use milliseconds. Merge with the route so
+                # a gateway override does not discard the longer timeout.
+                options.setdefault("client_params", {}).setdefault("http_options", {})[
+                    "timeout"
+                ] = 900_000
             return Gemini(
                 id=model,
                 api_key=key,
                 thinking_level=reasoning_effort if reasoning else "low",
                 include_thoughts=reasoning,
-                **_endpoint_kwargs("gemini", base_url),
+                **options,
             )
         # Pre-3 ids have no thinking_level at all -- sending one is the mirror
         # image of the thinking_budget-on-Gemini-3 failure, and agno forwards any

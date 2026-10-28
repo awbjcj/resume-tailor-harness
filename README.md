@@ -275,9 +275,10 @@ Choose one setup path:
 - For native development, install **[uv](https://docs.astral.sh/uv/)** and
   **Node.js 22+** with npm. `uv` manages Python 3.13 for the project.
 
-AI-powered operations need an LLM provider key. Discover, tailor, and
-cover-letter steps default to **Claude**, so an Anthropic key is enough to
-begin. OpenAI, Google Gemini, and DeepSeek are also supported. The app can start
+AI-powered operations need provider access. Defaults use **Claude Haiku/Opus**
+for cheap/premium work and **GPT-6.1 Terra** for mid-tier work, so configure
+Anthropic and OpenAI access or choose different tiers. Google Gemini and
+DeepSeek are also supported. The app can start
 without a key, letting you configure one in the web UI. See
 [LLM providers](#env--secrets-and-models).
 
@@ -956,7 +957,8 @@ requirements.
 #### Choosing an LLM provider
 
 Every LLM call uses one of three model tiers: `CHEAP_MODEL`, `MID_MODEL`, and
-`PREMIUM_MODEL`. They default to Claude Haiku, Sonnet, and Opus. A model ID can
+`PREMIUM_MODEL`. They default to Claude Haiku 5.5, GPT-6.1 Terra, and Claude
+Opus 5. Gemini 4 Argon is also selectable. A model ID can
 carry a provider prefix. An unprefixed ID uses Anthropic, while an `openai:`,
 `gemini:`, or `deepseek:` prefix routes that tier to another provider. Each tier
 uses its provider's key, so you can mix providers freely:

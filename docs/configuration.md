@@ -39,7 +39,7 @@ hosted-only settings such as `APP_BASE_URL`, `AUTH_PASSWORD_HASH`, or
 | `GEMINI_ROUTE_MODE` | `auto` | `auto`, `subscription`, or `api`; selects gateway routing when configured, forces the gateway, or forces the direct Gemini API. |
 | `DEEPSEEK_ROUTE_MODE` | `auto` | `auto`, `subscription`, or `api`; selects gateway routing when configured, forces the gateway, or forces the direct DeepSeek API. |
 | `CHEAP_MODEL` | `claude-haiku-5-5` | Model used for inexpensive extraction and classification work. |
-| `MID_MODEL` | `claude-sonnet-5` | Model used for intermediate reasoning and review work. |
+| `MID_MODEL` | `openai:gpt-6.1-terra` | Model used for intermediate reasoning and review work. |
 | `PREMIUM_MODEL` | `claude-opus-5` | Model used for the highest-quality writing and escalation paths. |
 | `CHEAP_REASONING_EFFORT` | unset | Optional provider-specific reasoning setting for the cheap tier. |
 | `MID_REASONING_EFFORT` | unset | Optional provider-specific reasoning setting for the mid tier. |
@@ -57,6 +57,19 @@ Model IDs can use `openai:`, `gemini:`, or `deepseek:` prefixes. A bare model
 ID uses Anthropic. Reasoning-effort strings are provider-specific. Leave them
 unset unless the selected provider and model document support for the chosen
 value.
+
+The default mid tier uses GPT-6.1 Terra (`openai:gpt-6.1-terra`), requiring
+OpenAI API access or a configured OpenAI subscription route. Existing explicit
+environment and workspace model selections remain in effect. Terra supports
+`none`, `low`, `medium`, `high`, `xhigh`, and `max`; reasoning-enabled agents
+use the project's `high` fallback unless an effort is selected, while agents
+without reasoning send `none`. The provider's own omitted-effort default is
+`medium`. Tool calling uses Responses. See [verified model contracts](model-refresh-2026-10-28.md).
+
+Gemini 4 is selectable as `gemini:gemini-4-argon`, with `low`, `medium`, and
+`high` levels. Agents without reasoning use `low` (thinking remains enabled).
+The Generate Content adapter uses a 32,768-token total output ceiling and a
+15-minute timeout; it does not enable multi-hop long decode or explicit caching.
 
 The default cheap tier uses Claude Haiku 5.5 (`claude-haiku-5-5`). Existing
 explicit model selections remain in effect; select the new model in Settings

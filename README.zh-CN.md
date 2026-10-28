@@ -178,7 +178,7 @@ Source Scout、Profile Coach、担保研究和 Career Lab 在循环内只使用*
 - 容器运行需要 Docker Engine 和 Compose 插件。Docker Desktop 已包含两者。
 - 原生开发需要 **[uv](https://docs.astral.sh/uv/)** 和带 npm 的 **Node.js 22+**。项目由 `uv` 管理 Python 3.13。
 
-AI 功能需要一个 LLM 提供商密钥。发现、定制和求职信步骤默认使用 **Claude**，因此只有 Anthropic 密钥也可以开始。系统也支持 OpenAI、Google Gemini 和 DeepSeek。没有密钥时仍可启动应用，然后在网页界面中完成配置。详见 [LLM 提供商](#env密钥和模型)。
+AI 功能需要相应提供商的访问权限。低成本和高质量档位默认使用 **Claude Haiku/Opus**，中档默认使用 **GPT-6.1 Terra**，因此需要配置 Anthropic 和 OpenAI 访问权限，也可以自行更改档位模型。系统还支持 Google Gemini 和 DeepSeek。没有密钥时仍可启动应用，然后在网页界面中完成配置。详见 [LLM 提供商](#env密钥和模型)。
 
 可选集成：
 
@@ -610,7 +610,7 @@ LinkedIn 抓取接口为 `POST /api/sources/linkedin/scrape`，需要已保存�
 
 #### 选择 LLM 提供商
 
-每次 LLM 调用使用三个模型档位之一：`CHEAP_MODEL`、`MID_MODEL` 和 `PREMIUM_MODEL`。它们默认使用 Claude Haiku、Sonnet 和 Opus。模型 ID 可以带提供商前缀；不带前缀的 ID 使用 Anthropic，`openai:`、`gemini:` 或 `deepseek:` 前缀则将该档位路由到其他提供商。每个档位使用对应提供商的密钥，因此可以自由混用：
+每次 LLM 调用使用三个模型档位之一：`CHEAP_MODEL`、`MID_MODEL` 和 `PREMIUM_MODEL`。它们分别默认使用 Claude Haiku 5.5、GPT-6.1 Terra 和 Claude Opus 5，也可选择 Gemini 4 Argon。模型 ID 可以带提供商前缀；不带前缀的 ID 使用 Anthropic，`openai:`、`gemini:` 或 `deepseek:` 前缀则将该档位路由到其他提供商。每个档位使用对应提供商的密钥，因此可以自由混用：
 
 ```bash
 CHEAP_MODEL=gemini:gemini-3.5-flash-lite # 用 Gemini 处理低成本抽取、匹配和相关性判断

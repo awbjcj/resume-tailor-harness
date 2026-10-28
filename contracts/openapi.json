@@ -10062,7 +10062,7 @@
             "title": "Cheapreasoningeffort"
           },
           "midModel": {
-            "default": "claude-sonnet-5",
+            "default": "openai:gpt-6.1-terra",
             "title": "Midmodel",
             "type": "string"
           },
