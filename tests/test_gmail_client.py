@@ -6,7 +6,7 @@ import pytest
 from googleapiclient.errors import HttpError
 from googleapiclient.http import HttpRequest
 
-from resume_tailor_harness.gmail.client import fetch_recent_messages
+from resume_tailor_harness.gmail.client import RECRUITING_QUERY, fetch_recent_messages
 from resume_tailor_harness.gmail.errors import (
     GmailApiError,
     GmailNotConnected,
@@ -118,3 +118,51 @@ def test_permission_failure_is_not_retried():
     with pytest.raises(GmailScopeMissing):
         execute_read(request)
     assert http.request.call_count == 1
+
+
+def test_recruiting_search_includes_archive_deduplicates_and_orders_by_receipt():
+    service = Mock()
+    messages = service.users.return_value.messages.return_value
+    messages.list.return_value.execute.side_effect = [
+        {"messages": [{"id": "older"}, {"id": "shared"}]},
+        {"messages": [{"id": "archived"}, {"id": "shared"}]},
+    ]
+    messages.get.return_value.execute.side_effect = [
+        {"internalDate": "100"},
+        {"internalDate": "200"},
+        {"internalDate": "300"},
+    ]
+    result = fetch_recent_messages(service, max_results=2, include_recruiting=True)
+    assert [email.message_id for email in result] == ["archived", "shared", "older"]
+    assert [email.recruiting_candidate for email in result] == [True, True, False]
+    assert messages.get.call_count == 3
+    assert messages.list.call_args_list[0].kwargs["labelIds"] == ["INBOX"]
+    assert messages.list.call_args_list[1].kwargs["q"] == RECRUITING_QUERY
+    assert "labelIds" not in messages.list.call_args_list[1].kwargs
+    for exclusion in ("-in:sent", "-in:drafts", "-in:spam", "-in:trash"):
+        assert exclusion in RECRUITING_QUERY
+
+
+def test_scan_limit_reports_incomplete_results():
+    service = Mock()
+    messages = service.users.return_value.messages.return_value
+    messages.list.return_value.execute.return_value = {
+        "messages": [{"id": "m1"}],
+        "nextPageToken": "page2",
+    }
+    messages.get.return_value.execute.return_value = {}
+    warnings = []
+    assert (
+        len(fetch_recent_messages(service, max_results=1, on_warning=warnings.append))
+        == 1
+    )
+    assert len(warnings) == 1
+    assert "scan limit" in warnings[0]
+
+
+def test_recruiting_search_failure_does_not_claim_complete_sync():
+    service = Mock()
+    messages = service.users.return_value.messages.return_value
+    messages.list.return_value.execute.side_effect = [{"messages": []}, _error(503)]
+    with pytest.raises(GmailApiError):
+        fetch_recent_messages(service, include_recruiting=True)

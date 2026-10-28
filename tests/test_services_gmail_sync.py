@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.gmail.errors import GmailNotConnected
@@ -11,15 +11,21 @@ from resume_tailor_harness.tracking.repository import save_application, save_job
 from resume_tailor_harness.tracking.tables import Application, Job
 
 
+class _FakeRequest:
+    def __init__(self, result: dict[str, object]):
+        self.result = result
+
+    def execute(self, **kwargs) -> dict[str, object]:
+        return self.result
+
+
 class _FakeListing:
     def __init__(self, messages):
         self._messages = messages
 
     def list(self, **kwargs):
         refs = [{"id": m["id"]} for m in self._messages]
-        return type(
-            "Req", (), {"execute": staticmethod(lambda **_: {"messages": refs})}
-        )()
+        return _FakeRequest({"messages": refs})
 
     def get(self, userId, id, format, metadataHeaders=None):
         msg = next(m for m in self._messages if m["id"] == id)
@@ -31,7 +37,7 @@ class _FakeListing:
                 "snippet": msg.get("snippet", ""),
                 "threadId": msg.get("threadId"),
             }
-        return type("Req", (), {"execute": staticmethod(lambda **_: result)})()
+        return _FakeRequest(result)
 
 
 class FakeGmailService:
@@ -181,3 +187,80 @@ def test_sync_honors_configured_data_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(gmail_sync, "build_service", build)
     run_gmail_sync(engine, _reporter(tmp_path), data_dir=tmp_path, llm=None)
     build.assert_called_once_with(tmp_path)
+
+
+def test_sync_recovers_nvidia_rejection_beyond_inbox_limit(tmp_path):
+    """The real failure: 51 ordinary emails hid a role-specific rejection."""
+    import base64
+    from resume_tailor_harness.tracking.repository import pending_notifications
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        for ref in ("JR2018181", "JR2025254"):
+            job = save_job(
+                session,
+                Job(
+                    source="workday",
+                    company="NVIDIA",
+                    title="Senior Applied AI Engineer",
+                    url=f"https://nvidia.wd5.myworkdayjobs.com/jobs/Engineer_{ref}",
+                ),
+            )
+            assert job.id is not None
+            app = save_application(
+                session, Application(job_id=job.id, status="submitted")
+            )
+        target_id = app.id
+    body = (
+        "<p>We have reviewed your application and have decided not to move forward "
+        "for the JR2025254 Senior Applied AI Engineer role at this time.</p>"
+    )
+    rejection = {
+        "id": "nvidia-rejection",
+        "headers": [
+            {"name": "From", "value": "NVIDIA HR <nvidia@myworkday.com>"},
+            {"name": "Subject", "value": "Thank you from NVIDIA"},
+        ],
+        "snippet": "Thank you for your interest in working at NVIDIA.",
+        "payload": {
+            "mimeType": "multipart/mixed",
+            "parts": [
+                {
+                    "mimeType": "text/html",
+                    "body": {"data": base64.urlsafe_b64encode(body.encode()).decode()},
+                }
+            ],
+        },
+    }
+    ordinary = [
+        {"id": str(i), "headers": [], "snippet": "Daily newsletter"} for i in range(51)
+    ]
+
+    class Listing(_FakeListing):
+        def list(self, **kwargs):
+            candidates = [rejection] if kwargs.get("q") else ordinary + [rejection]
+            refs = [{"id": m["id"]} for m in candidates[: kwargs["maxResults"]]]
+            result: dict[str, object] = {"messages": refs}
+            if len(candidates) > kwargs["maxResults"]:
+                result["nextPageToken"] = "more"
+            return _FakeRequest(result)
+
+    service = FakeGmailService([])
+    service._messages = Listing(ordinary + [rejection])
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert result["pending"] == 1
+    with Session(engine) as session:
+        notice = pending_notifications(session)[0]
+        assert notice.application_id == target_id
+        assert notice.proposed_status == "rejected"
+        assert notice.message_id == "nvidia-rejection"
+        assert all(
+            a.status == "submitted" for a in session.exec(select(Application)).all()
+        )
+    assert (
+        run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)[
+            "pending"
+        ]
+        == 1
+    )
