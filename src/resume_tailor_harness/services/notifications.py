@@ -25,9 +25,10 @@ def sync_notifications(
     emails: Sequence[EmailMessage],
     *,
     classify: Callable[[EmailMessage], str] = classify_email,
+    hydrate: Callable[[EmailMessage], None] | None = None,
 ) -> list[Notification]:
     for proposal in propose_transitions(
-        emails, application_job_pairs(session), classify
+        emails, application_job_pairs(session), classify, hydrate=hydrate
     ):
         if not proposal.message_id:
             continue

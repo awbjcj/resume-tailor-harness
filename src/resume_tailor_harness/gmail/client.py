@@ -9,6 +9,13 @@ from resume_tailor_harness.gmail.auth import (  # noqa: F401 — CLI compat re-e
 from resume_tailor_harness.gmail.requests import execute_read
 
 BODY_CHAR_LIMIT = 4000
+# A separate budget prevents ordinary inbox traffic from hiding recruiting mail.
+RECRUITING_QUERY = (
+    "newer_than:90d -in:sent -in:drafts -in:spam -in:trash "
+    '{application interview assessment "coding challenge" "phone screen" '
+    '"offer letter" "not moving forward" "decided not to" '
+    "from:myworkday.com from:greenhouse.io from:lever.co from:ashbyhq.com}"
+)
 
 
 @dataclass
@@ -22,16 +29,23 @@ class EmailMessage:
     thread_id: str | None = None
     message_id: str | None = None
     body: str | None = None
+    internal_date: int = 0
+    recruiting_candidate: bool = False
 
 
 def _decode(data: str) -> str:
     try:
-        return base64.urlsafe_b64decode(data.encode()).decode("utf-8", errors="replace")
+        padded = data + "=" * (-len(data) % 4)
+        return base64.urlsafe_b64decode(padded.encode()).decode(
+            "utf-8", errors="replace"
+        )
     except (ValueError, TypeError):
         return ""
 
 
 def _walk_parts(payload: dict):
+    if payload.get("filename"):
+        return
     yield payload
     for part in payload.get("parts") or []:
         yield from _walk_parts(part)
@@ -45,7 +59,9 @@ def extract_body(payload: dict) -> str:
         if not data:
             continue
         if part.get("mimeType") == "text/plain":
-            return _decode(data)[:BODY_CHAR_LIMIT].strip()
+            plain = _decode(data).strip()
+            if plain:
+                return plain[:BODY_CHAR_LIMIT]
         if part.get("mimeType") == "text/html" and not html:
             html = _decode(data)
     return html_to_text(html)[:BODY_CHAR_LIMIT].strip() if html else ""
@@ -72,14 +88,14 @@ def _domain(sender: str) -> str:
     return sender.split("@", 1)[1].rstrip(">").strip().lower()
 
 
-def fetch_recent_messages(
+def _list_message_ids(
     service,
-    max_results: int = 50,
-    *,
-    on_progress: Callable[[int, int], None] | None = None,
-) -> list[EmailMessage]:
-    """Fetch recent inbox messages as EmailMessages (read-only)."""
-    refs: list[dict] = []
+    max_results: int,
+    query: str | None,
+    on_progress: Callable[[int, int], None] | None,
+    on_warning: Callable[[str], None] | None,
+) -> list[str]:
+    refs: dict[str, None] = {}
     page_token = None
     seen_pages: set[str] = set()
     while len(refs) < max_results:
@@ -93,17 +109,57 @@ def fetch_recent_messages(
                 .list(
                     userId="me",
                     maxResults=min(500, max_results - len(refs)),
-                    labelIds=["INBOX"],
+                    **({"q": query} if query else {"labelIds": ["INBOX"]}),
                     **params,
                 )
             )
             or {}
         )
-        refs.extend(listing.get("messages", [])[: max_results - len(refs)])
+        previous_count = len(refs)
+        for ref in listing.get("messages", []):
+            refs[ref["id"]] = None
+            if len(refs) >= max_results:
+                break
         page_token = listing.get("nextPageToken")
-        if not page_token or page_token in seen_pages:
+        if not page_token:
+            break
+        if page_token in seen_pages or len(refs) == previous_count:
+            if on_warning:
+                on_warning("Gmail repeated a results page. The scan may be incomplete.")
             break
         seen_pages.add(page_token)
+    if page_token and len(refs) >= max_results and on_warning:
+        scope = "recruiting-mail" if query else "inbox"
+        on_warning(
+            f"Reached the {max_results}-message {scope} scan limit. "
+            "Older messages may be missing; increase GMAIL_MAX_MESSAGES to scan more."
+        )
+    return list(refs)
+
+
+def fetch_recent_messages(
+    service,
+    max_results: int = 50,
+    *,
+    include_recruiting: bool = False,
+    on_progress: Callable[[int, int], None] | None = None,
+    on_warning: Callable[[str], None] | None = None,
+) -> list[EmailMessage]:
+    """Read the inbox, optionally plus a separately bounded recruiting search.
+
+    Each search gets max_results messages. Merge before fetching metadata so
+    overlapping results cost one read, then order by Gmail's receipt timestamp.
+    """
+    refs = _list_message_ids(service, max_results, None, on_progress, on_warning)
+    recruiting_ids = (
+        _list_message_ids(
+            service, max_results, RECRUITING_QUERY, on_progress, on_warning
+        )
+        if include_recruiting
+        else []
+    )
+    refs = list(dict.fromkeys([*refs, *recruiting_ids]))
+    recruiting_set = set(recruiting_ids)
     messages: list[EmailMessage] = []
     for index, ref in enumerate(refs):
         if on_progress:
@@ -113,7 +169,7 @@ def fetch_recent_messages(
             .messages()
             .get(
                 userId="me",
-                id=ref["id"],
+                id=ref,
                 format="metadata",
                 metadataHeaders=["From", "Subject"],
             ),
@@ -131,9 +187,11 @@ def fetch_recent_messages(
                 subject=_header(headers, "Subject"),
                 snippet=msg.get("snippet", ""),
                 thread_id=msg.get("threadId"),
-                message_id=ref["id"],
+                message_id=ref,
+                internal_date=int(msg.get("internalDate") or 0),
+                recruiting_candidate=ref in recruiting_set,
             )
         )
     if on_progress:
         on_progress(len(refs), len(refs))
-    return messages
+    return sorted(messages, key=lambda email: email.internal_date, reverse=True)

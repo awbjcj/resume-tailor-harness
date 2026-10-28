@@ -114,3 +114,32 @@ def test_body_auth_error_is_not_silently_ignored(monkeypatch):
                 "hr@acme.com", "acme.com", "Update", "Interview", message_id="m1"
             )
         )
+
+
+def test_extract_body_accepts_unpadded_base64url():
+    payload = _payload_plain("We have decided not to move forward now.")
+    assert payload["body"]["data"].endswith("=")
+    payload["body"]["data"] = payload["body"]["data"].rstrip("=")
+    assert extract_body(payload) == "We have decided not to move forward now."
+
+
+def test_empty_plain_part_does_not_hide_html_decision():
+    payload = {
+        "parts": [
+            _payload_plain("  \n"),
+            {
+                "mimeType": "text/html",
+                "body": {"data": _b64("<p>We have decided not to move forward.</p>")},
+            },
+        ]
+    }
+    assert "decided not to move forward" in extract_body(payload)
+
+
+def test_text_attachment_is_not_the_message_body():
+    attachment = _payload_plain("Unfortunately this is old correspondence")
+    attachment["filename"] = "old-message.txt"
+    payload = {
+        "parts": [attachment, _payload_plain("We are pleased to offer you the role.")]
+    }
+    assert extract_body(payload) == "We are pleased to offer you the role."

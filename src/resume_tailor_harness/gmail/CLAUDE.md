@@ -62,3 +62,15 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   deterministic rules. On provider failure, disable AI for the remainder of the
   pass, retain rule-based proposals, and record warnings in the result and run
   log. Authentication errors must not be swallowed by body hydration.
+- **Inbox traffic must not crowd out recruiting decisions.** Hosted/manual and
+  scheduled sync read both the latest inbox messages and a separate 90-day
+  recruiting search, including archived mail and excluding sent/draft/spam/trash.
+  Each search is capped at `gmail_max_messages`; reaching a cap with another
+  page emits a warning. Merge IDs before metadata reads, then sort by Gmail's
+  `internalDate` so the newest proposal wins across both searches.
+- **Company identity is only a candidate match.** Hydrate recruiting/company
+  candidates before matching so HTML-only messages and body-only requisitions
+  work. Prefer an exact JR/R/REQ reference from the job URL/source identity;
+  otherwise use a unique role title for multiple applications at one company.
+  Ambiguous or explicitly different requisitions must not update an arbitrary
+  application. Proposals remain reviewable notifications, never auto-applied.

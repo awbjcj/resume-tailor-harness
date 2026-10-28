@@ -59,3 +59,12 @@ def test_llm_fallback_used_only_when_rules_inconclusive():
             return self.run(prompt)
 
     assert classify_email(_email("Re: your application"), llm=_LLM()) == "interview"
+
+
+def test_rejection_phrase_survives_html_layout_whitespace():
+    assert (
+        classify_email(
+            _email("NVIDIA update", "We have decided\nnot\u00a0to move forward.")
+        )
+        == "rejection"
+    )

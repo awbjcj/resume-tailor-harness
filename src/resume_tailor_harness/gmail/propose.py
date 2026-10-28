@@ -1,6 +1,11 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 
-from resume_tailor_harness.gmail.match import match_email_to_application
+from resume_tailor_harness.gmail.client import EmailMessage
+from resume_tailor_harness.gmail.match import (
+    match_email_to_application,
+    matching_company_jobs,
+)
 from resume_tailor_harness.tracking.tables import Application, ApplicationStatus, Job
 
 _CLASS_TO_STATUS = {
@@ -32,7 +37,11 @@ def _is_forward(current: str, proposed: str) -> bool:
 
 
 def propose_transitions(
-    emails, pairs: list[tuple[Application, Job]], classify
+    emails,
+    pairs: list[tuple[Application, Job]],
+    classify,
+    *,
+    hydrate: Callable[[EmailMessage], None] | None = None,
 ) -> list[Proposal]:
     """Match emails to applications and propose forward status changes. Applies nothing.
 
@@ -43,9 +52,15 @@ def propose_transitions(
     """
     by_job_id = {job.id: (app, job) for app, job in pairs if job.id is not None}
     jobs = [job for _, job in pairs]
+    if not jobs:
+        return []
     proposals: list[Proposal] = []
     proposed_app_ids: set[int] = set()
     for email in emails:
+        if hydrate and (
+            email.recruiting_candidate or matching_company_jobs(email, jobs)
+        ):
+            hydrate(email)
         job = match_email_to_application(email, jobs)
         if job is None or job.id not in by_job_id:
             continue
