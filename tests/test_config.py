@@ -67,7 +67,7 @@ def test_settings_has_cheap_model_default():
 
 def test_settings_has_model_tier_defaults():
     settings = _settings(env_file=None)
-    assert settings.mid_model == "claude-sonnet-5"
+    assert settings.mid_model == "openai:gpt-6.1-terra"
     assert settings.premium_model == "claude-opus-5"
 
 

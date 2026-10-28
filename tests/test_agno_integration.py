@@ -293,7 +293,9 @@ async def test_h1b_tool_evidence_reaches_cache_and_api(monkeypatch, surface):
 
 
 @pytest.mark.parametrize("mode", ["sync", "async", "stream"])
-@pytest.mark.parametrize("model_id", ["openai:gpt-5.6-terra", "openai:gpt-6.1-sol"])
+@pytest.mark.parametrize(
+    "model_id", ["openai:gpt-5.6-terra", "openai:gpt-6.1-sol", "openai:gpt-6.1-terra"]
+)
 async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, model_id):
     settings = Settings(
         _env_file=None,  # type: ignore[call-arg]

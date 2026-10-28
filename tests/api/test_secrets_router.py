@@ -54,6 +54,7 @@ def test_put_null_clears_key(client, env_file):
 def test_models_config_readable_round_trip(client):
     body = client.get("/api/config/models").json()
     assert "cheapModel" in body and body["cheapModel"]  # defaults visible
+    assert body["midModel"] == "openai:gpt-6.1-terra"
     put = client.put(
         "/api/config/models",
         json={
@@ -145,6 +146,18 @@ def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
     assert sol_61["supportsReasoning"] is True
     assert sol_61["supportsNativeSearch"] is True
     assert sol_61["reasoningEfforts"] == ["low", "medium", "high", "xhigh", "max"]
+    terra = next(m for m in openai["models"] if m["id"] == "openai:gpt-6.1-terra")
+    assert terra["label"] == "GPT-6.1 Terra"
+    assert terra["supportsReasoning"] is True
+    assert terra["supportsNativeSearch"] is True
+    assert terra["reasoningEfforts"] == [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+    ]
     for model_id in ("openai:gpt-6-sol", "openai:gpt-6-luna"):
         model = next(m for m in openai["models"] if m["id"] == model_id)
         assert model["reasoningEfforts"] == [
@@ -161,6 +174,11 @@ def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
         m for m in gemini["models"] if m["id"] == "gemini:gemini-3.8-flash"
     )
     assert gemini_38["reasoningEfforts"] == ["low", "medium", "high"]
+    argon = next(m for m in gemini["models"] if m["id"] == "gemini:gemini-4-argon")
+    assert argon["label"] == "Gemini 4 Argon"
+    assert argon["supportsReasoning"] is True
+    assert argon["supportsNativeSearch"] is True
+    assert argon["reasoningEfforts"] == ["low", "medium", "high"]
 
     flash = next(m for m in deepseek["models"] if m["id"] == "deepseek:deepseek-flash")
     assert flash["label"] == "DeepSeek V4.1 Flash"

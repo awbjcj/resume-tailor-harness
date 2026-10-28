@@ -49,7 +49,7 @@ def test_builder_refuses_reasoning_for_incapable_model():
 
 
 def test_non_reasoning_claude_disables_thinking_rather_than_omitting_it():
-    # Omitting `thinking` runs ADAPTIVE on Sonnet 5 -- the default mid_model -- so
+    # Omitting `thinking` runs ADAPTIVE on a tier selecting Sonnet 5, so
     # an unset config bought thinking on every writer/reviser agent, and thinking
     # shares max_tokens with the response text. Same class of bug as sending
     # thinking_budget to Gemini 3: the request looks fine and the JSON comes back
@@ -210,6 +210,67 @@ def test_sol_61_forwards_only_supported_api_efforts(
         "effort": expected,
         "summary": "auto",
     }
+
+
+@pytest.mark.parametrize(
+    "reasoning,selected,expected",
+    [
+        (True, effort, effort)
+        for effort in ("none", "low", "medium", "high", "xhigh", "max")
+    ]
+    + [(False, "max", "none"), (True, "minimal", "high")],
+)
+def test_terra_61_forwards_only_supported_api_efforts(
+    monkeypatch, reasoning, selected, expected
+):
+    settings = SimpleNamespace(
+        cheap_model=None,
+        mid_model="openai:gpt-6.1-terra",
+        mid_reasoning_effort=selected,
+        premium_model=None,
+    )
+    monkeypatch.setattr(llm_runner, "get_settings", lambda: settings)
+    model = build_model("openai:gpt-6.1-terra", api_key="k", reasoning=reasoning)
+    params = model.get_request_params()
+    assert params["reasoning"] == {"effort": expected, "summary": "auto"}
+    assert params["max_output_tokens"] == (64_000 if reasoning else 32_000)
+    assert params["store"] is False
+    assert not {"temperature", "top_p", "top_logprobs"}.intersection(params)
+
+
+@pytest.mark.parametrize(
+    "reasoning,selected,expected",
+    [(True, effort, effort) for effort in ("low", "medium", "high")]
+    + [(False, "high", "low"), (True, "minimal", "high")],
+)
+@pytest.mark.parametrize("gateway", [False, True])
+def test_argon_uses_named_levels_and_a_single_generate_content_hop(
+    monkeypatch, reasoning, selected, expected, gateway
+):
+    from resume_tailor_harness.config import Settings
+
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        mid_model="gemini:gemini-4-argon",
+        mid_reasoning_effort=selected,
+        gemini_api_key="offline-key",
+        gemini_route_mode="subscription" if gateway else "api",
+        sub2api_base_url="https://gateway.invalid" if gateway else "",
+        sub2api_gemini_key="offline-gateway-key" if gateway else "",
+    )
+    monkeypatch.setattr(llm_runner, "get_settings", lambda: settings)
+    model = build_model("gemini:gemini-4-argon", reasoning=reasoning, settings=settings)
+    config = model.get_request_params()["config"].model_dump(exclude_none=True)
+    assert config["thinking_config"] == {
+        "thinking_level": expected.upper(),
+        "include_thoughts": reasoning,
+    }
+    assert config["max_output_tokens"] == 32_768
+    assert not {"temperature", "top_p", "top_k", "cached_content"}.intersection(config)
+    options = model.client_params["http_options"]
+    assert options["timeout"] == 900_000
+    if gateway:
+        assert options["base_url"] == "https://gateway.invalid"
 
 
 def test_non_reasoning_deepseek_disables_thinking_rather_than_omitting_it():
