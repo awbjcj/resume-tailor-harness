@@ -109,9 +109,13 @@ export function ApplicationsTable({
     (_, index) => `technical_round_${index + 1}`,
   );
   const stages = [...FIXED_STAGES, ...technicalStages, ...LATE_STAGES];
+  // Keep the comparison width in sync with the company's sticky offset;
+  // translated headers must not shrink it and push the company over the role.
+  const comparisonColumnClassName = "w-20 min-w-20 max-w-20 bg-card md:sticky md:left-0";
+  const companyColumnClassName = `w-44 min-w-44 max-w-44 bg-card md:sticky ${onToggleSelection ? "md:left-20" : "md:left-0"}`;
 
   return (
-    <div className="min-w-0 overflow-x-auto rounded-lg border bg-card shadow-card">
+    <div className="min-w-0 rounded-lg border bg-card shadow-card">
       <Table className="min-w-[1180px] caption-top">
         <caption className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           {t("applicationTimeline.headers.caption")}
@@ -119,12 +123,12 @@ export function ApplicationsTable({
         <TableHeader>
           <TableRow>
             {onToggleSelection ? (
-              <TableHead className="sticky left-0 z-20 w-20 bg-card">
+              <TableHead className={`${comparisonColumnClassName} md:z-20`}>
                 {t("applications.comparison.column")}
               </TableHead>
             ) : null}
-            <TableHead className={`sticky ${onToggleSelection ? "left-20" : "left-0"} z-10 min-w-44 bg-card`}>{t("applicationTimeline.headers.company")}</TableHead>
-            <TableHead className="min-w-44">{t("applicationTimeline.headers.role")}</TableHead>
+            <TableHead className={`${companyColumnClassName} md:z-10`}>{t("applicationTimeline.headers.company")}</TableHead>
+            <TableHead className="w-72 min-w-72">{t("applicationTimeline.headers.role")}</TableHead>
             <TableHead>{t("applicationTimeline.headers.status")}</TableHead>
             {stages.map((key) => (
               <TableHead key={key}>
@@ -144,7 +148,7 @@ export function ApplicationsTable({
             return (
               <TableRow key={row.jobId}>
                 {onToggleSelection ? (
-                  <TableCell className="sticky left-0 z-10 bg-card">
+                  <TableCell className={`${comparisonColumnClassName} md:z-10`}>
                     <input
                       type="checkbox"
                       checked={selectedJobIds.includes(row.jobId)}
@@ -165,15 +169,17 @@ export function ApplicationsTable({
                     />
                   </TableCell>
                 ) : null}
-              <TableCell className={`sticky ${onToggleSelection ? "left-20" : "left-0"} z-[1] max-w-52 bg-card font-medium`}>
+              <TableCell className={`${companyColumnClassName} font-medium md:z-[1]`}>
                 <Link
                   to={`/pipeline?job=${row.jobId}`}
-                  className="block truncate text-primary underline-offset-4 hover:underline"
+                  className="block w-40 whitespace-normal text-primary underline-offset-4 [overflow-wrap:anywhere] hover:underline"
                 >
                   {row.company || t("applicationTimeline.unknownCompany")}
                 </Link>
               </TableCell>
-              <TableCell className="max-w-56 truncate">{row.title || "—"}</TableCell>
+              <TableCell className="w-72 min-w-72 whitespace-normal">
+                <div className="w-68 leading-relaxed [overflow-wrap:anywhere]">{row.title || "—"}</div>
+              </TableCell>
               <TableCell><Badge variant="outline">{applicationStatusLabel(t, row.status)}</Badge></TableCell>
               {stages.map((key) => {
                 const isLastVisibleRound = key === `technical_round_${table.technicalRoundColumns}`;
