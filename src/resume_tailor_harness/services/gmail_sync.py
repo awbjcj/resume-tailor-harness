@@ -14,6 +14,7 @@ from resume_tailor_harness.db import get_session
 from resume_tailor_harness.gmail.auth import build_service
 from resume_tailor_harness.gmail.classify import (
     build_classifier_llm,
+    hydrate_email_body,
     hydrating_classifier,
 )
 from resume_tailor_harness.gmail.client import fetch_recent_messages
@@ -54,6 +55,8 @@ def run_gmail_sync(
         service,
         max_results=get_settings().gmail_max_messages,
         on_progress=fetch_progress,
+        include_recruiting=True,
+        on_warning=warn,
     )
     classify_message = hydrating_classifier(
         service,
@@ -66,9 +69,15 @@ def run_gmail_sync(
         reporter.checkpoint()
         return classify_message(email)
 
+    def hydrate(email):
+        reporter.checkpoint()
+        hydrate_email_body(service, email, on_warning=warn)
+
     reporter.begin(1, "Classifying")
     with get_session(engine) as session:
-        pending = sync_notifications(session, emails, classify=classify)
+        pending = sync_notifications(
+            session, emails, classify=classify, hydrate=hydrate
+        )
     for warning in warnings:
         reporter.step(1, label=warning)
     reporter.step(1, label="Done with warnings" if warnings else "Done")

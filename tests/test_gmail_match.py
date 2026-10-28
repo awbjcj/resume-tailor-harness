@@ -36,3 +36,56 @@ def test_no_match_returns_none():
         snippet="",
     )
     assert match_email_to_application(email, [_job(1, "Acme")]) is None
+
+
+def _nvidia_job(id_, requisition, title="Senior Applied AI Engineer"):
+    return Job(
+        id=id_,
+        source="workday",
+        company="NVIDIA",
+        title=title,
+        url=f"https://nvidia.wd5.myworkdayjobs.com/jobs/Engineer_{requisition}-1",
+    )
+
+
+def test_requisition_selects_correct_application_regardless_of_order():
+    email = EmailMessage(
+        "NVIDIA HR <nvidia@myworkday.com>",
+        "myworkday.com",
+        "Thank you from NVIDIA",
+        "We have decided not to move forward for the JR2025254 Senior Applied AI Engineer role.",
+    )
+    other = _nvidia_job(1, "JR2018181")
+    target = _nvidia_job(2, "JR2025254")
+    assert match_email_to_application(email, [other, target]) == target
+    assert match_email_to_application(email, [target, other]) == target
+    assert match_email_to_application(email, [other]) is None
+
+
+def test_same_company_without_role_evidence_is_ambiguous():
+    email = EmailMessage(
+        "NVIDIA HR <nvidia@myworkday.com>", "myworkday.com", "NVIDIA update", ""
+    )
+    assert (
+        match_email_to_application(
+            email, [_nvidia_job(1, "JR2018181"), _nvidia_job(2, "JR2025254")]
+        )
+        is None
+    )
+
+
+def test_body_role_and_sender_name_disambiguate_company():
+    email = EmailMessage(
+        "NVIDIA HR <nvidia@myworkday.com>",
+        "myworkday.com",
+        "Update",
+        "",
+        body="Your application for Senior Applied AI Engineer was not selected.",
+    )
+    target = _nvidia_job(2, "JR2025254")
+    assert (
+        match_email_to_application(
+            email, [_nvidia_job(1, "JR2018181", "Applied AI Engineer"), target]
+        )
+        == target
+    )

@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable
+from html import unescape
 
 from resume_tailor_harness.gmail.client import EmailMessage
 from resume_tailor_harness.gmail.errors import GmailApiError
@@ -57,7 +58,9 @@ _RULES: list[tuple[str, tuple[str, ...]]] = [
 
 def classify_email(email: EmailMessage, llm: Runner | None = None) -> str:
     """Return one of rejection|interview|assessment|offer|none."""
-    text = f"{email.subject}\n{email.body or email.snippet}".lower()
+    text = " ".join(
+        unescape(f"{email.subject}\n{email.body or email.snippet}").lower().split()
+    )
     for label, phrases in _RULES:
         if any(phrase in text for phrase in phrases):
             return label
@@ -109,11 +112,9 @@ def hydrating_classifier(
 ):
     """Classifier that lazily fetches the full body for matched messages.
 
-    propose_transitions only calls classify AFTER an email matched an
-    application, so the body fetch happens for matches only.
+    Sync may already have hydrated the body to identify the role. Reuse that
+    body, and only construct the optional AI classifier after a definite match.
     """
-    from resume_tailor_harness.gmail.client import fetch_message_body
-
     initialized = llm_factory is None
 
     def warn(message: str) -> None:
@@ -123,12 +124,7 @@ def hydrating_classifier(
 
     def classify(email: EmailMessage) -> str:
         nonlocal initialized, llm
-        if email.body is None and email.message_id:
-            try:
-                email.body = fetch_message_body(service, email.message_id)
-            except GmailApiError:
-                warn("Some email bodies could not be read. Used available snippets.")
-                email.body = ""
+        hydrate_email_body(service, email, on_warning=warn)
         label = classify_email(email)
         if label != "none":
             return label
@@ -145,3 +141,19 @@ def hydrating_classifier(
             return "none"
 
     return classify
+
+
+def hydrate_email_body(
+    service, email: EmailMessage, *, on_warning: Callable[[str], None] | None = None
+) -> None:
+    """Fetch once for both role matching and classification; preserve auth errors."""
+    from resume_tailor_harness.gmail.client import fetch_message_body
+
+    if email.body is not None or not email.message_id:
+        return
+    try:
+        email.body = fetch_message_body(service, email.message_id)
+    except GmailApiError:
+        if on_warning:
+            on_warning("Some email bodies could not be read. Used available snippets.")
+        email.body = ""
