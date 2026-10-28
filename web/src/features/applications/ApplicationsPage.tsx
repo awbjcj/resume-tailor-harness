@@ -70,7 +70,7 @@ export function ApplicationsPage() {
         title="Applications"
         sub="Read every application across the same timeline, then export the complete event history."
       />
-      <section aria-label="Application controls" className="grid gap-3 rounded-lg border bg-card p-4 shadow-card md:grid-cols-[minmax(15rem,1fr)_11rem_13rem_auto] md:items-end">
+      <section aria-label="Application controls" className="grid gap-3 rounded-lg border bg-card p-4 shadow-card lg:grid-cols-2 lg:items-end 2xl:grid-cols-[minmax(15rem,1fr)_11rem_13rem_auto]">
         <label className="grid min-w-0 gap-1.5 text-sm font-medium" htmlFor="application-company-search">
           Company or role
           <span className="relative">
@@ -101,7 +101,7 @@ export function ApplicationsPage() {
             <option value="status">{t("applications.sortOptions.status")}</option>
           </select>
         </label>
-        <div className="flex flex-wrap gap-2 md:justify-end">
+        <div className="flex flex-wrap gap-2 lg:justify-end">
           <Button variant="outline" onClick={() => download("wide")}><Download aria-hidden="true" />Export grid</Button>
           <Button variant="outline" onClick={() => download("long")}><Download aria-hidden="true" />Export events</Button>
         </div>
