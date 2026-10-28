@@ -4,20 +4,24 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 
-from sqlmodel import Session, select
+from sqlalchemy import update
+from sqlmodel import Session, col, select
 
 from resume_tailor_harness.gmail.classify import classify_email
 from resume_tailor_harness.gmail.client import EmailMessage
-from resume_tailor_harness.gmail.propose import propose_transitions
+from resume_tailor_harness.gmail.propose import _is_forward, propose_transitions
 from resume_tailor_harness.tracking.queries import application_job_pairs
 from resume_tailor_harness.tracking.repository import (
     get_notification,
     notification_by_key,
     pending_notifications,
     save_notification,
-    update_application_status,
 )
-from resume_tailor_harness.tracking.tables import Notification
+from resume_tailor_harness.tracking.tables import (
+    Application,
+    ApplicationStatus,
+    Notification,
+)
 
 
 def sync_notifications(
@@ -52,15 +56,38 @@ def sync_notifications(
 
 def accept_notification(session: Session, notification_id: int) -> Notification | None:
     notification = get_notification(session, notification_id)
-    if notification is None:
+    if notification is None or notification.state != "pending":
+        return None
+    claimed = session.execute(
+        update(Notification)
+        .where(
+            col(Notification.id) == notification_id,
+            col(Notification.state) == "pending",
+        )
+        .values(state="accepted")
+        .returning(col(Notification.id))
+    ).first()
+    if claimed is None:
+        session.rollback()
         return None
     # Reminder kinds carry no status proposal — accepting only acknowledges.
     if notification.proposed_status:
-        update_application_status(
-            session, notification.application_id, notification.proposed_status
+        allowed = [
+            status.value
+            for status in ApplicationStatus
+            if _is_forward(status.value, notification.proposed_status)
+        ]
+        session.execute(
+            update(Application)
+            .where(
+                col(Application.id) == notification.application_id,
+                col(Application.status).in_(allowed),
+            )
+            .values(status=notification.proposed_status)
         )
-    notification.state = "accepted"
-    return save_notification(session, notification)
+    session.commit()
+    session.refresh(notification)
+    return notification
 
 
 def dismiss_notification(session: Session, notification_id: int) -> Notification | None:

@@ -1,3 +1,4 @@
+import pytest
 from sqlmodel import Session
 
 from resume_tailor_harness.db import init_db, make_engine
@@ -8,7 +9,11 @@ from resume_tailor_harness.services.notifications import (
     list_pending,
     sync_notifications,
 )
-from resume_tailor_harness.tracking.repository import get_application, save_application, save_job
+from resume_tailor_harness.tracking.repository import (
+    get_application,
+    save_application,
+    save_job,
+)
 from resume_tailor_harness.tracking.tables import Application, Job
 
 
@@ -72,3 +77,40 @@ def test_accept_applies_transition_and_dismiss_suppresses():
         assert dismissed is not None
         sync_notifications(session, [_email("m2")], classify=lambda email: "offer")
         assert all(item.message_id != "m2" for item in list_pending(session))
+
+
+@pytest.mark.parametrize("current", ["offer", "rejected", "closed"])
+def test_accept_cannot_regress_an_application_that_advanced_since_sync(current):
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        app = _seed(session)
+        [notification] = sync_notifications(session, [_email("m1")])
+        app.status = current
+        session.add(app)
+        session.commit()
+        assert notification.id is not None
+        assert accept_notification(session, notification.id) is not None
+        session.refresh(app)
+        assert app.status == current
+
+
+def test_accept_rechecks_pending_state_even_when_session_has_stale_object():
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        app = _seed(session)
+        [notification] = sync_notifications(session, [_email("m1")])
+        assert notification.id is not None
+        assert notification.state == "pending"
+        with Session(engine) as other:
+            from resume_tailor_harness.tracking.tables import Notification
+
+            newer = other.get(Notification, notification.id)
+            assert newer is not None
+            newer.state = "superseded"
+            other.add(newer)
+            other.commit()
+        assert accept_notification(session, notification.id) is None
+        session.refresh(app)
+        assert app.status == "submitted"

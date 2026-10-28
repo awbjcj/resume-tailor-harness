@@ -222,7 +222,9 @@ for supported prices, customer portal configuration and signed webhooks.
 | `FOLLOW_UP_DAYS` | `14` | Age at which stale-application reminders are proposed; non-negative integer, with `0` disabling reminders. |
 | `INTERVIEW_REMINDER_HOURS` | `24` | Lead time for upcoming-interview reminders; non-negative integer, with `0` disabling these reminders. |
 | `OFFER_DEADLINE_REMINDER_DAYS` | `2` | Lead time for offer-deadline reminders; non-negative integer, with `0` disabling these reminders. |
-| `GMAIL_MAX_MESSAGES` | `50` | Maximum recent messages read per sync/draft lookup; integer at least 1. |
+| `GMAIL_MAX_MESSAGES` | `50` | Messages per resumable Gmail sync page (clamped to 500); also the legacy CLI/draft recent-message limit. Integer at least 1. |
+| `GMAIL_SYNC_MAX_PAGES` | `20` | Maximum processing pages per web/scheduled sync, 1–200. Remaining work resumes on the next sync. |
+| `GMAIL_MAX_AI_CALLS` | `20` | Maximum optional AI classifications per sync, 0–200. `0` uses deterministic rules only. |
 | `RESEND_API_KEY` | empty | Resend HTTPS mail credential. When present, Resend wins over SMTP. |
 | `MAIL_FROM` | empty | Backend-neutral sender address; falls back to `SMTP_FROM`. |
 | `SMTP_HOST` | empty | SMTP server; blank selects the null mailer unless Resend is configured. |

@@ -43,7 +43,8 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   a user who never connected Gmail silently received **no reminders at all**,
   and nothing said so. `services/reminder_scheduler.py` now owns them on its
   own hourly tick that runs for every user regardless of Gmail state;
-  `run_gmail_sync` returns `{"pending": n}` and does email classification only.
+  `run_gmail_sync` returns pending counts, sync statistics, and continuation state,
+  and does email classification only.
   Keep it that way: reminders are a property of having dated events, not of
   having connected a mailbox. Pinned by
   `tests/test_reminder_scheduler.py::test_reminder_pass_runs_without_any_gmail_token`
@@ -62,15 +63,42 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   deterministic rules. On provider failure, disable AI for the remainder of the
   pass, retain rule-based proposals, and record warnings in the result and run
   log. Authentication errors must not be swallowed by body hydration.
-- **Inbox traffic must not crowd out recruiting decisions.** Hosted/manual and
-  scheduled sync read both the latest inbox messages and a separate 90-day
-  recruiting search, including archived mail and excluding sent/draft/spam/trash.
-  Each search is capped at `gmail_max_messages`; reaching a cap with another
-  page emits a warning. Merge IDs before metadata reads, then sort by Gmail's
-  `internalDate` so the newest proposal wins across both searches.
+- **Sync is resumable and incremental.** `scan.py` checkpoints history plus
+  independent inbox/recruiting backfill cursors in the tenant database, keyed by
+  a hash of the connected mailbox identity. Backfills have a fixed upper time
+  boundary and no 90-day cutoff. Capture history before starting them; new mail
+  is processed while the backfill continues. Persist each discovered page before
+  processing; commit receipts, proposals, and pending-ID removal together. An
+  expired history cursor restarts discovery while retaining cached evidence.
+- **Budgets limit each run, not mailbox coverage.** `gmail_max_messages` controls
+  page size (max 500), `gmail_sync_max_pages` controls pages per run, and
+  `gmail_max_ai_calls` bounds optional AI. The result reports `has_more` plus
+  processed/cached/read/matching counts. After backfill and deferred processing,
+  an unchanged mailbox needs only its profile read, with zero message reads or AI
+  calls. HTTP batches contain at most
+  25 reads; failed parts use the existing bounded retry seam. Batching saves
+  connections, not quota. Body transport failures leave the page retryable.
 - **Company identity is only a candidate match.** Hydrate recruiting/company
   candidates before matching so HTML-only messages and body-only requisitions
   work. Prefer an exact JR/R/REQ reference from the job URL/source identity;
   otherwise use a unique role title for multiple applications at one company.
   Ambiguous or explicitly different requisitions must not update an arbitrary
   application. Proposals remain reviewable notifications, never auto-applied.
+- **Precision precedes a guessed decision.** Rules require decision phrases,
+  discard quoted history, and avoid receipt/marketing/conditional messages.
+  AI returns structured labels with confidence >= 0.9 and an exact evidence quote;
+  ungrounded answers are discarded. Company/domain and requisition indexes are
+  built once per pass. A prior message-to-application association cannot transfer
+  silently when another job is archived. Cached unmatched messages are reconsidered
+  when the application catalog changes, without rereading available evidence.
+- **Chronology spans runs.** Select the latest cached decision per application,
+  using Gmail's receipt timestamp, so later backfill pages cannot resurrect old
+  stages. Supersede older pending Gmail proposals; keep accepted/dismissed/cleared
+  identities. Acceptance atomically claims a still-pending notification and applies
+  only a forward transition against the current application status. A workspace
+  lock serializes manual/scheduled syncs, including separate SQLite workers.
+- **Cache custody.** `gmail_receipts` stores normalized metadata and at most 4,000
+  body characters, not attachments. It is tenant/account-scoped and cleared by a
+  jobs/all workspace reset. Bump `PROCESSING_VERSION` when decision semantics change.
+  Gmail read/unread changes do not redownload messages; archived/deleted mail does
+  not undo an already recorded employer decision. See `docs/gmail-sync.md`.
