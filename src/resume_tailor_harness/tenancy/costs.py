@@ -278,6 +278,7 @@ def seed_llm_rates(engine: Engine) -> None:
     openai_astra_release = datetime(2026, 9, 3, tzinfo=timezone.utc)
     catalog_refresh = datetime(2026, 9, 22, tzinfo=timezone.utc)
     openai_sol_61_release = datetime(2026, 9, 29, tzinfo=timezone.utc)
+    openai_terra_61_release = datetime(2026, 10, 26, tzinfo=timezone.utc)
     sonnet_55_release = datetime(2026, 9, 28, tzinfo=timezone.utc)
     haiku_55_release = datetime(2026, 10, 7, tzinfo=timezone.utc)
     gemini_price_update = datetime(2026, 8, 15, tzinfo=timezone.utc)
@@ -299,6 +300,7 @@ def seed_llm_rates(engine: Engine) -> None:
     openai_astra = "https://developers.openai.com/api/docs/models/gpt-6-astra"
     openai_sol_6 = "https://developers.openai.com/api/docs/models/gpt-6-sol"
     openai_sol_61 = "https://developers.openai.com/api/docs/models/gpt-6.1-sol"
+    openai_terra_61 = "https://developers.openai.com/api/docs/models/gpt-6.1-terra"
     openai_luna_6 = "https://developers.openai.com/api/docs/models/gpt-6-luna"
     anthropic = "https://platform.claude.com/docs/en/about-claude/pricing"
     gemini = "https://ai.google.dev/gemini-api/docs/pricing"
@@ -627,6 +629,13 @@ def seed_llm_rates(engine: Engine) -> None:
 
         for model, source, release, short, long in (
             (
+                "gpt-6.1-terra",
+                openai_terra_61,
+                openai_terra_61_release,
+                (1, 0.05, 1.25, 5),
+                (2, 0.1, 2.5, 7.5),
+            ),
+            (
                 "gpt-6.1-sol",
                 openai_sol_61,
                 openai_sol_61_release,
@@ -665,6 +674,26 @@ def seed_llm_rates(engine: Engine) -> None:
                     minimum=minimum,
                     maximum=maximum,
                 )
+        # Argon's introductory Standard price ends at the December boundary.
+        # Implicit caching has a read rate but no explicit-cache write charge.
+        argon_regular = datetime(2026, 12, 1, tzinfo=timezone.utc)
+        for argon_start, argon_end, input_rate, cache_read, output_rate in (
+            (datetime(2026, 10, 13, tzinfo=timezone.utc), argon_regular, 2, 0.1, 10),
+            (argon_regular, None, 4, 0.2, 20),
+        ):
+            rate = upsert_rate(
+                provider="gemini",
+                model="gemini-4-argon",
+                effective_from=argon_start,
+                input_rate=input_rate,
+                cache_read=cache_read,
+                cache_write=None,
+                output_rate=output_rate,
+                tool=14_000,
+                source=gemini,
+            )
+            rate.effective_to = argon_end
+
         upsert_rate(
             provider="anthropic",
             model="claude-opus-5-5",

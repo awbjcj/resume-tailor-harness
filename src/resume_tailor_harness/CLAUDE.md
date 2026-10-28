@@ -83,6 +83,10 @@ builder imports a concrete agno model class directly.
   standing rule that the visible answer is never reasoning.
 - **Tiers unchanged.** `model_for_tier` still maps `cheap`/`mid`/`premium` →
   `Settings.{cheap,mid,premium}_model`; the prefix lives inside those ids.
+  The mid-tier default is `openai:gpt-6.1-terra` (existing explicit selections
+  remain in effect). Terra accepts `none` through `max`, excluding `minimal`;
+  unlike Sol, its non-reasoning effort is `none`. Its 5% cache-read rate and
+  >272K full-request context pricing are effective from October 26, 2026.
 - **Dependency note.** Agno is on 3.1.3 or newer within major version 3.
   The Gemini SDK range stays at `>=2.5.0,<2.30.0` during this upgrade.
   DeepSeek and OpenAI both ride the `openai` SDK. The Responses compatibility
@@ -116,6 +120,12 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
   bounds at `"low"`, which every Gemini 3 snapshot accepts. Do not borrow a
   sibling model's levels when adding a snapshot — read its own row in the
   provider matrix.
+  Gemini 4 Argon also uses `low`/`medium`/`high`, with implicit caching only.
+  The Generate Content adapter caps total output at 32,768 tokens (one
+  non-streaming hop) and sets a 900,000ms timeout, preserving it through route
+  changes. Interactions' 64K synchronous limit is a different endpoint contract.
+  Agno 3.1.3 omits thoughts from Gemini `output_tokens`; the adapter normalizes
+  candidate + thought tokens there once, keeping the reasoning detail separate.
 - **DeepSeek runs on the Responses API, and its whole request surface changed
   with it.** DeepSeek serves the OpenAI Responses wire format at
   `base_url="https://api.deepseek.com"`, so `_compatible_deepseek_responses_class`

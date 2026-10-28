@@ -413,6 +413,82 @@ def test_sol_61_rates_preserve_release_and_context_boundaries(tmp_path):
         )
 
 
+def test_terra_61_rates_preserve_release_context_and_seed_idempotency(tmp_path):
+    engine = _engine(tmp_path)
+    model = "gpt-6.1-terra"
+    release = datetime(2026, 10, 26, tzinfo=UTC)
+    assert find_rate(engine, "openai", model, now=release.replace(day=25)) is None
+    seed_llm_rates(engine)
+    with Session(engine) as session:
+        rows = (
+            session.execute(select(LlmRate).where(LlmRate.model == model))
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 2
+    for tokens, expected, total in (
+        (272_000, (1_000_000, 50_000, 1_250_000, 5_000_000), 271_800),
+        (272_001, (2_000_000, 100_000, 2_500_000, 7_500_000), 543_352),
+    ):
+        rate = find_rate(engine, "openai", model, input_tokens=tokens, now=release)
+        assert rate is not None
+        assert (
+            rate.input_micros_per_million,
+            rate.cache_read_micros_per_million,
+            rate.cache_write_micros_per_million,
+            rate.output_micros_per_million,
+        ) == expected
+        assert rate.source_url.endswith("/models/gpt-6.1-terra")
+        priced = calculate_cost(
+            engine,
+            MeteredUsage(
+                provider="openai",
+                model=model,
+                input_tokens=tokens,
+                cache_read_tokens=1_000,
+                cache_write_tokens=1_000,
+                output_tokens=100,
+            ),
+            now=release,
+        )
+        assert priced.total_micros == total
+
+
+def test_argon_rates_preserve_ga_and_introductory_price_boundaries(tmp_path):
+    engine = _engine(tmp_path)
+    model = "gemini-4-argon"
+    assert (
+        find_rate(engine, "gemini", model, now=datetime(2026, 10, 12, tzinfo=UTC))
+        is None
+    )
+    seed_llm_rates(engine)
+    with Session(engine) as session:
+        rows = (
+            session.execute(select(LlmRate).where(LlmRate.model == model))
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 2
+    for moment, expected in (
+        (datetime(2026, 10, 13, tzinfo=UTC), (2_000_000, 100_000, 10_000_000)),
+        (
+            datetime(2026, 11, 30, 23, 59, 59, tzinfo=UTC),
+            (2_000_000, 100_000, 10_000_000),
+        ),
+        (datetime(2026, 12, 1, tzinfo=UTC), (4_000_000, 200_000, 20_000_000)),
+    ):
+        rate = find_rate(engine, "gemini", model, now=moment)
+        assert rate is not None
+        assert (
+            rate.input_micros_per_million,
+            rate.cache_read_micros_per_million,
+            rate.output_micros_per_million,
+        ) == expected
+        assert rate.cache_write_micros_per_million is None
+        assert rate.tool_micros_per_unit == 14_000
+        assert rate.source_url == "https://ai.google.dev/gemini-api/docs/pricing"
+
+
 def test_sonnet_55_rate_starts_at_its_release(tmp_path):
     engine = _engine(tmp_path)
     assert (

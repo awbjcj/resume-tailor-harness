@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     linkedin_user_data_dir: str = ".linkedin_profile"
     db_url: str = "sqlite:///data/resume_tailor_harness.db"
     cheap_model: str = "claude-haiku-5-5"
-    mid_model: str = "claude-sonnet-5"
+    mid_model: str = "openai:gpt-6.1-terra"
     premium_model: str = "claude-opus-5"
     cheap_reasoning_effort: str | None = None
     mid_reasoning_effort: str | None = None
