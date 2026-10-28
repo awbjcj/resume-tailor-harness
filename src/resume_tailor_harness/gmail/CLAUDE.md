@@ -100,5 +100,10 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 - **Cache custody.** `gmail_receipts` stores normalized metadata and at most 4,000
   body characters, not attachments. It is tenant/account-scoped and cleared by a
   jobs/all workspace reset. Bump `PROCESSING_VERSION` when decision semantics change.
+  Completed classifications, including `none`, are fingerprinted by classifier
+  input, rules version, and AI mode, independently of the application catalog.
+  Rematching must reuse them; failed/deferred classifications remain retryable.
+  History/backfill overlaps reuse known incoming messages. Refresh metadata for
+  excluded/missing messages so recovery from spam/trash can be processed.
   Gmail read/unread changes do not redownload messages; archived/deleted mail does
   not undo an already recorded employer decision. See `docs/gmail-sync.md`.

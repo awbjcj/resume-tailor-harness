@@ -35,6 +35,7 @@ class GmailReceipt(SQLModel, table=True):
     bound_application_id: int | None = None
     internal_date: int = 0
     label: str = "none"
+    # Fingerprint of completed classifier input/version/mode, including "none".
     classification_version: str = ""
     outcome: str = "unmatched"
     attempted_at: datetime = Field(default_factory=utcnow)
