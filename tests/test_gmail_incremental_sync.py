@@ -257,6 +257,89 @@ def test_ai_budget_and_success_cache(tmp_path, monkeypatch):
     assert Counter(service._messages.gets).most_common(1)[0][1] == 1
 
 
+def test_no_decision_classification_survives_unrelated_application_changes(tmp_path):
+    engine = _seed()
+    service = FakeGmailService([_mail("m1", decision="uncertain")])
+    runner = Mock()
+    runner.run.return_value.content = '{"label":"none","confidence":1,"evidence":""}'
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=runner)
+    reads = len(service._messages.gets)
+    with Session(engine) as session:
+        session.add(
+            Job(id=2, source="manual", company="Another employer", title="Engineer")
+        )
+        session.add(Application(id=2, job_id=2, status="submitted"))
+        session.commit()
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=runner)
+    assert result["stats"]["ai_calls"] == 0
+    assert result["stats"]["classification_cache_hits"] == 1
+    assert runner.run.call_count == 1
+    assert len(service._messages.gets) == reads
+    assert not result["has_more"]
+
+
+@pytest.mark.parametrize("decision", ["rejection", "uncertain"])
+def test_known_email_reappearing_in_history_reuses_all_completed_work(
+    tmp_path, decision
+):
+    engine = _seed()
+    message = _mail("m1", decision=decision)
+    service = FakeGmailService([message])
+    runner = Mock()
+    runner.run.return_value.content = '{"label":"none","confidence":1,"evidence":""}'
+    first = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=runner)
+    reads, calls = len(service._messages.gets), runner.run.call_count
+    _history(service, [message])
+    second = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=runner)
+    assert second["pending"] == first["pending"]
+    assert second["stats"]["cached"] == 1
+    assert second["stats"]["metadata_reads"] == 0
+    assert second["stats"]["body_reads"] == 0
+    assert second["stats"]["ai_calls"] == 0
+    assert len(service._messages.gets) == reads
+    assert runner.run.call_count == calls
+
+
+def test_restored_spam_email_refreshes_cached_exclusion(tmp_path):
+    engine = _seed()
+    message = {**_mail("m1"), "labelIds": ["SPAM"]}
+    service = FakeGmailService([message])
+    first = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert first["pending"] == 0
+    assert first["stats"]["body_reads"] == 0
+    message["labelIds"] = ["INBOX"]
+    service.history_id = "2"
+    service.history_pages = [
+        {
+            "historyId": "2",
+            "history": [
+                {
+                    "labelsRemoved": [{"message": {"id": "m1"}, "labelIds": ["SPAM"]}],
+                }
+            ],
+        }
+    ]
+    restored = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert restored["pending"] == 1
+    assert restored["stats"]["metadata_reads"] == 1
+    assert restored["stats"]["body_reads"] == 1
+
+
+def test_enabling_ai_reconsiders_rules_only_no_decision(tmp_path, monkeypatch):
+    monkeypatch.setenv("GMAIL_MAX_AI_CALLS", "0")
+    engine = _seed()
+    service = FakeGmailService([_mail("m1", decision="uncertain")])
+    runner = Mock()
+    runner.run.return_value.content = '{"label":"none","confidence":1,"evidence":""}'
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=runner)
+    runner.run.assert_not_called()
+    reads = len(service._messages.gets)
+    monkeypatch.setenv("GMAIL_MAX_AI_CALLS", "2")
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=runner)
+    assert result["stats"]["ai_calls"] == 1
+    assert len(service._messages.gets) == reads
+
+
 def test_history_pagination_continues_across_runs_before_advancing_cursor(
     tmp_path, monkeypatch
 ):
