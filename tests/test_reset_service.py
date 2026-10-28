@@ -149,6 +149,8 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
         for key, value in report.rows_deleted.items()
         if not key.startswith("scrape_")
     } == {
+        "gmail_receipts": 0,
+        "gmail_sync_state": 0,
         "run_completions": 1,
         "saved_board_views": 1,
         "notifications": 1,

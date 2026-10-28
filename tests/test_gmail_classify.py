@@ -49,7 +49,7 @@ def test_inconclusive_returns_none_without_llm():
 
 def test_llm_fallback_used_only_when_rules_inconclusive():
     class _Result:
-        content = "interview"
+        content = '{"label":"interview","confidence":0.95,"evidence":"We would love to speak with you on Tuesday."}'
 
     class _LLM:
         def run(self, prompt):
@@ -58,7 +58,29 @@ def test_llm_fallback_used_only_when_rules_inconclusive():
         async def arun(self, prompt):
             return self.run(prompt)
 
-    assert classify_email(_email("Re: your application"), llm=_LLM()) == "interview"
+    assert (
+        classify_email(
+            _email(
+                "Re: your application", "We would love to speak with you on Tuesday."
+            ),
+            llm=_LLM(),
+        )
+        == "interview"
+    )
+
+
+def test_ai_must_supply_confident_evidence_present_in_current_email():
+    from unittest.mock import Mock
+
+    email = _email("Update", "We are evaluating your background.")
+    for content in (
+        "rejection",
+        '{"label":"rejection","confidence":0.99,"evidence":"We have decided not to proceed."}',
+        '{"label":"rejection","confidence":0.4,"evidence":"We are evaluating your background."}',
+    ):
+        runner = Mock()
+        runner.run.return_value.content = content
+        assert classify_email(email, llm=runner) == "none"
 
 
 def test_rejection_phrase_survives_html_layout_whitespace():

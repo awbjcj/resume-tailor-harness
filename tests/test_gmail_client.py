@@ -6,7 +6,11 @@ import pytest
 from googleapiclient.errors import HttpError
 from googleapiclient.http import HttpRequest
 
-from resume_tailor_harness.gmail.client import RECRUITING_QUERY, fetch_recent_messages
+from resume_tailor_harness.gmail.client import (
+    RECRUITING_QUERY,
+    batch_read_messages,
+    fetch_recent_messages,
+)
 from resume_tailor_harness.gmail.errors import (
     GmailApiError,
     GmailNotConnected,
@@ -166,3 +170,34 @@ def test_recruiting_search_failure_does_not_claim_complete_sync():
     messages.list.return_value.execute.side_effect = [{"messages": []}, _error(503)]
     with pytest.raises(GmailApiError):
         fetch_recent_messages(service, include_recruiting=True)
+
+
+def test_batch_retries_only_failed_parts():
+    service = Mock()
+    good, transient, missing = Mock(), Mock(), Mock()
+    transient.execute.return_value = {"id": "retry"}
+    missing.execute.side_effect = _error(404)
+    requests = {"good": good, "retry": transient, "deleted": missing}
+    service.users.return_value.messages.return_value.get.side_effect = lambda **kwargs: (
+        requests[kwargs["id"]]
+    )
+
+    def batch(callback):
+        result = Mock()
+
+        def execute():
+            callback("good", {"id": "good"}, None)
+            callback("retry", None, _error(503))
+            callback("deleted", None, _error(404))
+
+        result.execute.side_effect = execute
+        return result
+
+    service.new_batch_http_request.side_effect = batch
+    assert batch_read_messages(service, list(requests)) == {
+        "good": {"id": "good"},
+        "retry": {"id": "retry"},
+        "deleted": None,
+    }
+    good.execute.assert_not_called()
+    transient.execute.assert_called_once_with(num_retries=3)
