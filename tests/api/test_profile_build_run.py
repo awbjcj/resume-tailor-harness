@@ -11,7 +11,10 @@ from resume_tailor_harness.api.app import create_app
 @pytest.fixture()
 def client(tmp_path):
     env = tmp_path / ".env"
-    env.write_text("ANTHROPIC_API_KEY=sk-ant-test-abcd1234\n", encoding="utf-8")
+    env.write_text(
+        "ANTHROPIC_API_KEY=sk-ant-test-abcd1234\nMID_MODEL=anthropic:claude-sonnet-4-6\n",
+        encoding="utf-8",
+    )
     app = create_app(
         db_url="sqlite://",
         config_dir=tmp_path / "config",
