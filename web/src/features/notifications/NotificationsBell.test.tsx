@@ -190,7 +190,7 @@ describe("NotificationsBell", () => {
 });
 
 
-it("clears notification history after confirmation", async () => {
+it("clears run history after confirmation", async () => {
   let cleared = false;
   server.use(
     http.get("*/api/notifications", () => HttpResponse.json([])),
@@ -203,8 +203,26 @@ it("clears notification history after confirmation", async () => {
   const user = userEvent.setup();
   render(<NotificationsBell />, { wrapper: withQueryClient });
   await user.click(await screen.findByRole("button", { name: /notifications \(1 pending\)/i }));
-  await user.click(screen.getByRole("button", { name: "Clear notification history" }));
+  await user.click(screen.getByRole("button", { name: "Clear run history" }));
   await user.click(screen.getByRole("button", { name: "Clear history" }));
   expect(await screen.findByText("Nothing pending.")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+});
+
+it("keeps pending application actions separate from clearing run history", async () => {
+  server.use(
+    http.get("*/api/notifications", () => HttpResponse.json([{
+      id: 1, applicationId: 2, kind: "rejected", proposedStatus: "rejected",
+      evidence: "Thank you for applying", messageId: "decision", state: "pending",
+      createdAt: "2026-10-26T00:00:00Z", jobId: 7, company: "Acme", title: "Engineer",
+    }])),
+    http.get("*/api/run-completions", () => HttpResponse.json([])),
+  );
+  const user = userEvent.setup();
+  render(<NotificationsBell />, { wrapper: withQueryClient });
+  await user.click(await screen.findByRole("button", { name: /notifications/i }));
+  expect(await screen.findByRole("button", { name: "Accept" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Clear run history" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Review cleared Gmail updates" })).toBeEnabled();
+  expect(screen.getByText(/Choose Accept to update an application/)).toBeInTheDocument();
 });

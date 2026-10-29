@@ -28,6 +28,7 @@ from resume_tailor_harness.api.runs.sse import record_to_run, run_events
 from resume_tailor_harness.api.runs.stream_sse import stream_events
 from resume_tailor_harness.api.runs.agui import agui_stream
 from resume_tailor_harness.api.schemas.base import Page
+from resume_tailor_harness.api.schemas.gmail import GmailSyncIn
 from resume_tailor_harness.api.schemas.jobs import ReviseRequest
 from resume_tailor_harness.api.schemas.runs import (
     AckRunsIn,
@@ -441,7 +442,11 @@ def launch_cover_letters(
 
 
 @router.post("/gmail/sync", response_model=RunOut, status_code=202)
-def launch_gmail_sync(request: Request, mgr: RunManager = Depends(get_run_manager)):
+def launch_gmail_sync(
+    request: Request,
+    body: GmailSyncIn | None = None,
+    mgr: RunManager = Depends(get_run_manager),
+):
     from resume_tailor_harness.gmail.auth import load_credentials
 
     engine = _engine(request)
@@ -454,7 +459,12 @@ def launch_gmail_sync(request: Request, mgr: RunManager = Depends(get_run_manage
     def work(reporter):
         from resume_tailor_harness.services.gmail_sync import run_gmail_sync
 
-        return run_gmail_sync(engine, reporter, data_dir=data_dir)
+        return run_gmail_sync(
+            engine,
+            reporter,
+            data_dir=data_dir,
+            review_cleared=body.review_cleared if body else False,
+        )
 
     return launch(mgr, "gmailSync", work, singleton_key="gmailSync")
 

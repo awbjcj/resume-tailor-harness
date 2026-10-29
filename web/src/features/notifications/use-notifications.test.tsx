@@ -1,4 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { PropsWithChildren } from "react";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -6,7 +8,7 @@ import { server } from "@/test/server";
 import { withQueryClient } from "@/test/utils";
 import { useRunStore, type RunRecord } from "@/lib/runs/store";
 import { watchRun } from "@/lib/runs/sse";
-import { useGmailSync } from "./use-notifications";
+import { useAcceptNotification, useGmailSync } from "./use-notifications";
 
 vi.mock("@/lib/runs/sse", () => ({ watchRun: vi.fn() }));
 
@@ -42,4 +44,31 @@ describe("useGmailSync", () => {
     const { result } = renderHook(() => useGmailSync(), { wrapper: withQueryClient });
     expect(result.current.isPending).toBe(true);
   });
+
+  it("requests cleared updates only when explicitly selected", async () => {
+    const bodies: unknown[] = [];
+    server.use(http.post("*/api/gmail/sync", async ({ request }) => {
+      bodies.push(await request.json());
+      return HttpResponse.json({ runId: "recovery", kind: "gmailSync", state: "running" }, { status: 202 });
+    }));
+    const { result } = renderHook(() => useGmailSync(), { wrapper: withQueryClient });
+    await act(async () => { await result.current.mutateAsync({ reviewCleared: true }); });
+    expect(bodies).toEqual([{ reviewCleared: true }]);
+  });
+});
+
+it("refreshes application status across views after accepting a Gmail update", async () => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const keys = [
+    ["notifications"], ["applications", { status: "submitted" }], ["job", 7],
+    ["pipeline"], ["dashboard-summary"], ["analytics-timeline"],
+  ];
+  keys.forEach((key) => qc.setQueryData(key, { status: "submitted" }));
+  qc.setQueryData(["settings"], {});
+  server.use(http.post("*/api/notifications/1/accept", () => HttpResponse.json({ state: "accepted" })));
+  const wrapper = ({ children }: PropsWithChildren) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+  const { result } = renderHook(() => useAcceptNotification(), { wrapper });
+  await act(async () => { await result.current.mutateAsync(1); });
+  for (const key of keys) expect(qc.getQueryState(key)?.isInvalidated).toBe(true);
+  expect(qc.getQueryState(["settings"])?.isInvalidated).toBe(false);
 });

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 
 from sqlalchemy import update
-from sqlmodel import Session, col, select
+from sqlmodel import Session, col
 
 from resume_tailor_harness.gmail.classify import classify_email
 from resume_tailor_harness.gmail.client import EmailMessage
@@ -105,11 +105,6 @@ def list_pending(session: Session) -> list[Notification]:
 def clear_notification_history(session: Session) -> int:
     from resume_tailor_harness.services.run_completions import clear_run_history
 
-    # Keep message identities so the next Gmail sync cannot recreate cleared proposals.
-    rows = session.exec(
-        select(Notification).where(Notification.state != "cleared")
-    ).all()
-    for row in rows:
-        row.state = "cleared"
-        session.add(row)
-    return len(rows) + clear_run_history(session, surface="notifications")
+    # Application actions have their own Accept/Dismiss controls. Clearing run
+    # history must neither hide pending proposals nor erase prior decisions.
+    return clear_run_history(session, surface="notifications")

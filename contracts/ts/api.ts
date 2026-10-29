@@ -6924,6 +6924,14 @@ export interface components {
              */
             scopes: string[];
         };
+        /** GmailSyncIn */
+        GmailSyncIn: {
+            /**
+             * Reviewcleared
+             * @default false
+             */
+            reviewCleared: boolean;
+        };
         /** GoogleStartOut */
         GoogleStartOut: {
             /** Authurl */
@@ -15585,7 +15593,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["GmailSyncIn"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             202: {

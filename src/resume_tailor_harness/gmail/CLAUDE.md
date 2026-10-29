@@ -94,7 +94,10 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 - **Chronology spans runs.** Select the latest cached decision per application,
   using Gmail's receipt timestamp, so later backfill pages cannot resurrect old
   stages. Supersede older pending Gmail proposals; keep accepted/dismissed/cleared
-  identities. Acceptance atomically claims a still-pending notification and applies
+  identities. Explicit `POST /api/gmail/sync` with `reviewCleared: true` can restore
+  a legacy cleared proposal from the latest current-revision cached decision;
+  accepted/dismissed decisions stay put. Clearing run history preserves proposals.
+  Acceptance atomically claims a still-pending notification and applies
   only a forward transition against the current application status. A workspace
   lock serializes manual/scheduled syncs, including separate SQLite workers.
 - **Cache custody.** `gmail_receipts` stores normalized metadata and at most 4,000
