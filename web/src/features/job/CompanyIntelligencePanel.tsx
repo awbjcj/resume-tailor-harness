@@ -21,7 +21,7 @@ type ResearchDepth = "quick" | "standard" | "deep";
 
 const DEPTH_COPY: Record<ResearchDepth, string> = {
   quick: "Quick scan prioritizes the strongest official and current independent evidence.",
-  standard: "Standard balances coverage and cost across every supported research axis.",
+  standard: "Standard research balances coverage and cost across all supported research areas.",
   deep: "Deep seeks corroboration, dates, and credible conflicting evidence.",
 };
 
@@ -69,7 +69,7 @@ export function CompanyIntelligencePanel({
         icon={<Building2 className="size-5" aria-hidden="true" />}
         eyebrow="Cited employer dossier"
         title="Company intelligence"
-        description="Public evidence about strategy, recent moves, culture, challenges, and competitive position. Refreshes are always explicit."
+        description="Public evidence about strategy, recent moves, culture, challenges, and competitive position. Refresh the research to update it."
         context={
           company?.trim()
             ? `${DEPTH_COPY[depth]} Refreshing updates every job at this company.`

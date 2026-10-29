@@ -1,6 +1,6 @@
 export const emailNotificationsEn = {
   title: "Email notifications",
-  description: "Keep up with your job search at a pace that works for you.",
+  description: "Choose how often to receive a summary of your job-search activity.",
   loading: "Loading email preferences…",
   loadError: "Could not load email preferences.",
   retry: "Retry",
@@ -21,7 +21,7 @@ export const emailNotificationsEn = {
   pendingReviews: "Jobs awaiting review",
   pendingReviewsHelp: "A count and preview of jobs in your shortlist.",
   statistics: "Job-search statistics",
-  statisticsHelp: "Current job, submitted application, interview, and offer totals.",
+  statisticsHelp: "Counts of active jobs, submitted applications, applications in interview, and offers.",
   reminders: "Reminders",
   remindersHelp: "Upcoming interviews, offer deadlines, and applications due for a follow-up.",
   save: "Save preferences",

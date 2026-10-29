@@ -1,6 +1,9 @@
+import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { localizeTemplate } from "@/i18n/template-labels";
 import { api, apiUrl, authHeaders, unwrap } from "@/lib/api/client";
 import type { paths } from "@/lib/api/schema";
 
@@ -10,10 +13,17 @@ export type TemplateListItem =
 const TEMPLATES_KEY = ["render-templates"] as const;
 
 export function useRenderTemplates() {
+  const { i18n } = useTranslation();
+  const language = i18n.resolvedLanguage;
+  const select = useCallback(
+    (items: TemplateListItem[]) => items.map((item) => localizeTemplate(item, language)),
+    [language],
+  );
   return useQuery({
     queryKey: TEMPLATES_KEY,
     queryFn: () =>
       unwrap(api.GET("/api/config/render/templates")) as Promise<TemplateListItem[]>,
+    select,
   });
 }
 

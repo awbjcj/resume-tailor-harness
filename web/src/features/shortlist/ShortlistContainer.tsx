@@ -84,7 +84,7 @@ export function ShortlistContainer() {
       <PageHeader
         kicker="Human checkpoint"
         title="The Shortlist"
-        sub="The cost gate before the premium tailoring step. Approve only the jobs worth the spend."
+        sub="Review jobs before the premium tailoring step. Approve the ones worth the cost."
       />
       <MetricRow
         items={[
@@ -103,7 +103,7 @@ export function ShortlistContainer() {
       {!rows.length ? (
         <EmptyState
           title={total === 0 ? "Nothing shortlisted yet" : "No jobs loaded"}
-          body="Run a discover to score jobs and surface the keepers here."
+          body="Run discovery to score jobs and show promising matches here."
         />
       ) : (
         <>

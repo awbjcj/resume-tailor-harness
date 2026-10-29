@@ -40,7 +40,7 @@ export function PruningSettingsPage() {
         <div>
           <h1 className="text-lg font-semibold">Pruning</h1>
           <p className="text-sm text-muted-foreground">
-            Archiving is reversible and never touches jobs you have progressed.
+            You can restore archived jobs. Jobs with progress are not archived.
           </p>
         </div>
         <ResetSectionButton sectionId="prune" label="Pruning" onReset={() => setDraft(null)} />

@@ -164,7 +164,7 @@ export function CompanyIntelligenceEvidence({
           icon={<AlertTriangle className="size-4" />}
           tone="warning"
         >
-          This saved research is past its freshness window. It remains visible until you choose to refresh it.
+          This research is past its freshness window and may be out of date. Saved results stay visible until you refresh them.
         </ResearchNotice>
       )}
 

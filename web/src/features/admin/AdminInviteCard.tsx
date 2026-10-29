@@ -38,7 +38,7 @@ export function AdminInviteCard() {
               <h3>Invite a teammate</h3>
             </CardTitle>
             <CardDescription>
-              Mint a single-use code for a new member account.
+              Create a single-use invite code for a new member.
             </CardDescription>
           </div>
         </div>

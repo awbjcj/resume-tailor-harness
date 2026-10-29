@@ -85,10 +85,7 @@ function CleanupDialog({
       <DialogHeader>
         <DialogTitle>Clean up skills</DialogTitle>
         <DialogDescription>
-          Review degrees, experience durations, and other requirements that are
-          not skills. Discarded entries leave the skill map and future
-          regrouping. Original job descriptions stay intact, and entries can be
-          restored.
+          Review degrees, years of experience, and other requirements that are not skills. Discarded entries no longer appear in the skill map or participate in future regrouping. Original job descriptions stay intact, and entries can be restored.
         </DialogDescription>
       </DialogHeader>
       <div className="flex flex-wrap gap-2">

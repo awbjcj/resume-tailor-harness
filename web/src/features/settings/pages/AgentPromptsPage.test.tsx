@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { withQueryClient } from "@/test/utils";
 import { AgentPromptsPage } from "./AgentPromptsPage";
 
@@ -11,7 +12,7 @@ const items = [
     key: "tailor-writer",
     title: "Resume writer",
     stage: "tailoring",
-    description: "Writes the targeted resume.",
+    description: "Writes a targeted resume under the profile fact-lock.",
     instructions: ["Rule one.", "Rule two."],
     guidance: null,
     editable: true,
@@ -34,6 +35,15 @@ const items = [
     guidance: "Existing guidance text.",
     editable: true,
   },
+  {
+    key: "email-writer",
+    title: "Email writer",
+    stage: "email",
+    description: "Drafts fact-grounded job-search emails.",
+    instructions: [..."Draft a thoughtful email.", "Additional quality rules."],
+    guidance: null,
+    editable: true,
+  },
 ];
 
 vi.mock("../use-prompts", () => ({
@@ -43,12 +53,32 @@ vi.mock("../use-prompts", () => ({
 
 describe("AgentPromptsPage", () => {
   beforeEach(() => save.mockClear());
+  afterEach(async () => { await changeLanguage("en"); });
 
   it("groups agents and reveals immutable base instructions", async () => {
     render(<AgentPromptsPage />, { wrapper: withQueryClient });
     expect(screen.getByRole("heading", { name: "Tailoring" })).toBeInTheDocument();
     await userEvent.click(screen.getByText("Resume writer"));
     expect(screen.getByText("Rule one.")).toBeInTheDocument();
+  });
+
+  it("localizes built-in labels while showing the original instructions and guidance", async () => {
+    await changeLanguage("zh-CN");
+    render(<AgentPromptsPage />, { wrapper: withQueryClient });
+
+    expect(screen.getByText("内置指令以原文显示。")).toBeInTheDocument();
+    expect(screen.getByText("依据个人资料中的事实撰写针对职位的简历。")).toBeInTheDocument();
+    await userEvent.click(screen.getByText("简历写作助手"));
+    expect(screen.getByText("Rule one.")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /简历写作助手/ })).toHaveValue("");
+  });
+
+  it("displays character-split email instructions as readable text", async () => {
+    render(<AgentPromptsPage />, { wrapper: withQueryClient });
+    await userEvent.click(screen.getByText("Email writer"));
+
+    expect(screen.getByText("Draft a thoughtful email.")).toBeInTheDocument();
+    expect(screen.getByText("Additional quality rules.")).toBeInTheDocument();
   });
 
   it("saves guidance for writers", async () => {

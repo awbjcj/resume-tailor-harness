@@ -117,7 +117,7 @@ export function PdfPreviewDialog({
         <DialogHeader className="p-4 pb-2">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="sr-only">
-            Rendered PDF preview. Use the Download button to save a copy.
+            Preview of the generated PDF. Use Download to save a copy.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden p-4 pt-0">
