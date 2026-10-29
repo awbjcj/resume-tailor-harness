@@ -22,35 +22,35 @@ def test_get_lists_complete_prompt_contract(client) -> None:
     assert "reviewer-merged-advisory" in by_key
     assert "email-classifier" in by_key
     assert by_key["tailor-writer"]["guidance"] is None
-    assert by_key["reviewer-fact-check"]["editable"] is False
+    assert by_key["reviewer-fact-check"]["editable"] is True
     assert by_key["tailor-writer"]["instructions"]
 
 
-def test_put_round_trips_and_clears_guidance(client) -> None:
+@pytest.mark.parametrize("key", ["coach", "reviewer-fact-check"])
+def test_put_round_trips_and_clears_guidance(client, key) -> None:
+    original = next(
+        item for item in client.get("/api/agents/prompts").json() if item["key"] == key
+    )
     response = client.put(
-        "/api/agents/prompts/coach", json={"guidance": "Ask about open source."}
+        f"/api/agents/prompts/{key}", json={"guidance": "Check cited evidence first."}
     )
     assert response.status_code == 200
-    assert response.json()["guidance"] == "Ask about open source."
+    assert response.json()["guidance"] == "Check cited evidence first."
+    assert response.json()["instructions"] == original["instructions"]
     listed = client.get("/api/agents/prompts").json()
-    assert next(item for item in listed if item["key"] == "coach")["guidance"] == (
-        "Ask about open source."
+    assert next(item for item in listed if item["key"] == key)["guidance"] == (
+        "Check cited evidence first."
     )
-    cleared = client.put("/api/agents/prompts/coach", json={"guidance": ""})
+    cleared = client.put(f"/api/agents/prompts/{key}", json={"guidance": ""})
     assert cleared.status_code == 200
     assert cleared.json()["guidance"] is None
+    assert cleared.json()["instructions"] == original["instructions"]
 
 
 def test_put_error_contracts(client) -> None:
     unknown = client.put("/api/agents/prompts/nope", json={"guidance": "x"})
     assert unknown.status_code == 404
     assert unknown.json()["error"]["code"] == "unknown_agent"
-
-    locked = client.put(
-        "/api/agents/prompts/reviewer-fact-check", json={"guidance": "Be lenient."}
-    )
-    assert locked.status_code == 409
-    assert locked.json()["error"]["code"] == "agent_not_editable"
 
     over_cap = client.put("/api/agents/prompts/coach", json={"guidance": "x" * 4001})
     assert over_cap.status_code == 422

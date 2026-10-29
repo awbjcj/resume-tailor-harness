@@ -7,13 +7,14 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   from each production agent builder. Per-agent guidance lives in
   `config/agent_guidance.yaml`, is capped at 4,000 characters, and is appended
   beneath immutable rules by `prompts/guidance.py:with_guidance`; it may steer
-  tone, emphasis, or process, never facts. `reviewer-fact-check` is the only
-  non-editable integrity gate. API: `GET /api/agents/prompts` and
+  tone, emphasis, or process, never facts. `reviewer-fact-check` also accepts
+  procedure guidance; its evidence requirements remain immutable and its
+  verdict remains a blocking, unscored gate. API: `GET /api/agents/prompts` and
   `PUT /api/agents/prompts/{key}`.
 - **Task quality is application-owned.** `quality.py` adds versioned, bounded,
   task-specific rules via `with_guidance`; the registry uses `with_quality`
   to project the same rules without loading user guidance. New builder keys
-  must appear in both the quality map and registry. The fact-check gate is
-  deliberately unchanged, and eval judges never use this composition. The
+  must appear in both the quality map and registry. Fact-check has no added
+  task-quality rubric, and eval judges never use this composition. The
   merged advisory builder must include each individual reviewer's quality
   rubric. See `docs/agent-prompt-quality.md` for sources and measurement limits.

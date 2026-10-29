@@ -40,10 +40,8 @@ def test_every_spec_is_complete() -> None:
         )
 
 
-def test_fact_check_is_the_only_locked_agent() -> None:
-    assert {spec.key for spec in PROMPT_SPECS if not spec.editable} == {
-        "reviewer-fact-check"
-    }
+def test_all_agents_allow_procedure_guidance() -> None:
+    assert all(spec.editable for spec in PROMPT_SPECS)
 
 
 def test_registry_projects_real_instruction_constants() -> None:

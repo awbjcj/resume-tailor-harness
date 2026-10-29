@@ -22,8 +22,8 @@ const items = [
     stage: "review",
     description: "Hard integrity gate.",
     instructions: ["Verify every claim."],
-    guidance: null,
-    editable: false,
+    guidance: "Check each claim against cited facts.",
+    editable: true,
   },
   {
     key: "tailor-reviser",
@@ -51,7 +51,7 @@ describe("AgentPromptsPage", () => {
     expect(screen.getByText("Rule one.")).toBeInTheDocument();
   });
 
-  it("saves editable guidance and keeps integrity gates read-only", async () => {
+  it("saves guidance for writers", async () => {
     render(<AgentPromptsPage />, { wrapper: withQueryClient });
     await userEvent.click(screen.getByText("Resume writer"));
     await userEvent.type(screen.getByLabelText("Your guidance for Resume writer"), "Punchy verbs.");
@@ -60,10 +60,20 @@ describe("AgentPromptsPage", () => {
       key: "tailor-writer",
       guidance: "Punchy verbs.",
     });
+  });
 
+  it("saves the fact-check procedure while showing its evidence rules", async () => {
+    render(<AgentPromptsPage />, { wrapper: withQueryClient });
     await userEvent.click(screen.getByText("Fact-check gate"));
-    expect(screen.getByText("Integrity gate (read-only)")).toBeInTheDocument();
-    expect(screen.queryByLabelText(/guidance for Fact-check/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Verify every claim.")).toBeInTheDocument();
+    const guidance = screen.getByLabelText("Your guidance for Fact-check gate");
+    await userEvent.clear(guidance);
+    await userEvent.type(guidance, "Check metrics first.");
+    await userEvent.click(screen.getByRole("button", { name: "Save guidance" }));
+    expect(save).toHaveBeenLastCalledWith({
+      key: "reviewer-fact-check",
+      guidance: "Check metrics first.",
+    });
   });
 
   it("resetting one agent clears just its guidance", async () => {
@@ -78,13 +88,12 @@ describe("AgentPromptsPage", () => {
     );
   });
 
-  it("does not offer a reset control on an integrity gate", async () => {
+  it("resets the fact-check procedure guidance", async () => {
     const user = userEvent.setup();
     render(<AgentPromptsPage />, { wrapper: withQueryClient });
 
     await user.click(screen.getByText("Fact-check gate"));
-    expect(
-      screen.queryByRole("button", { name: /reset this agent/i }),
-    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /reset this agent/i }));
+    expect(save).toHaveBeenCalledWith({ key: "reviewer-fact-check", guidance: "" });
   });
 });
