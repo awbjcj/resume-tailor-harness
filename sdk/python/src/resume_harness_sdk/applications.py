@@ -160,6 +160,47 @@ class ApplicationAttachment(TypedDict):
     downloadPath: str | None
 
 
+class ApplicationRecord(TypedDict):
+    id: int
+    jobId: int
+    resumeVersionId: int | None
+    coverLetterId: int | None
+    status: str
+    notes: str | None
+    submittedAt: str | None
+    updatedAt: str
+
+
+class ApplicationEvent(TypedDict):
+    id: int
+    applicationId: int
+    kind: str
+    customLabel: str | None
+    sequence: int
+    sequenceOverride: int | None
+    occurredAt: str | None
+    allDay: bool
+    timezone: str | None
+    durationMinutes: int | None
+    modality: str | None
+    platform: str | None
+    platformOther: str | None
+    locationOrLink: str | None
+    interviewers: str | None
+    result: str
+    notes: str | None
+    reflection: str | None
+    compBase: int | None
+    compBonus: int | None
+    compEquityAnnual: int | None
+    compSigning: int | None
+    compCurrency: str | None
+    totalComp: int | None
+    source: str
+    createdAt: str
+    updatedAt: str
+
+
 class ApplicationContext(TypedDict):
     job: ApplicationJobContext
     prompt: str
@@ -190,3 +231,6 @@ CONTEXT = TypeAdapter(ApplicationContext)
 PROFILE = TypeAdapter(ApplicationProfileSnapshot)
 QUESTION = TypeAdapter(ApplicationQuestion)
 QUESTIONS = TypeAdapter(Page[ApplicationQuestion])
+APPLICATION = TypeAdapter(ApplicationRecord)
+EVENT = TypeAdapter(ApplicationEvent)
+EVENTS = TypeAdapter(list[ApplicationEvent])

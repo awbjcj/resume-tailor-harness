@@ -543,6 +543,104 @@ def test_sdk_pat_workflow_and_tenant_isolation(mu_app, mu_client):
         assert exc.value.status_code == 401
 
 
+def test_sdk_interactive_application_round_trip_and_lost_tracking_response(
+    app_client, tmp_path
+):
+    app, api = app_client
+    job_id = seed_job(app, status="shortlisted", url="https://example.com/apply/42")
+    pdf = tmp_path / "approved.pdf"
+    pdf.write_bytes(b"%PDF-approved")
+    with Session(app.state.engine) as session:
+        resume = ResumeVersion(job_id=job_id, fact_check_passed=True, pdf_path=str(pdf))
+        letter = CoverLetter(job_id=job_id, fact_check_passed=True, pdf_path=str(pdf))
+        session.add_all([resume, letter])
+        session.commit()
+        session.refresh(resume)
+        session.refresh(letter)
+        resume_id, letter_id = resume.id, letter.id
+        assert resume_id is not None and letter_id is not None
+
+    event_posts = []
+
+    def transport(request):
+        response = api.request(
+            request.method,
+            str(request.url),
+            headers=dict(request.headers),
+            content=request.content,
+        )
+        if request.method == "POST" and request.url.path.endswith("/events"):
+            assert response.status_code == 201, response.text
+            event_posts.append(request)
+            # The write committed, but the external agent never saw its response.
+            raise httpx.ReadTimeout("Connection lost after commit", request=request)
+        return httpx.Response(
+            response.status_code, headers=response.headers, content=response.content
+        )
+
+    with ResumeHarness(
+        base_url="https://testserver",
+        api_key="rat_local_test",
+        transport=httpx.MockTransport(transport),
+    ) as sdk:
+        assert sdk.get_job(job_id)["status"] == "shortlisted"
+        assert sdk.approve_job(job_id)["status"] == "approved"
+        context = sdk.application_context(job_id)
+        assert {(a["kind"], a["id"]) for a in context["attachments"]} == {
+            ("resume", resume_id),
+            ("cover_letter", letter_id),
+        }
+        with Session(app.state.engine) as session:
+            assert not session.exec(select(Application)).all()
+
+        question = sdk.record_application_question(
+            "Days in this office?",
+            job_id=job_id,
+            context="Example, this requisition; New York; options 0 through 5",
+        )
+        assert question["answer"] is None
+        # A later turn supplies the human's answer using its current revision.
+        current = sdk.get_application_question(question["id"])
+        saved = sdk.answer_application_question(
+            current["id"], "3 days", revision=current["revision"], user_confirmed=True
+        )
+        assert saved["revision"] == current["revision"] + 1
+        assert sdk.application_context(job_id)["questions"][0]["answer"] == "3 days"
+
+        assert sdk.download_resume(resume_id) == b"%PDF-approved"
+        assert sdk.select_resume(job_id, resume_id)["resumeVersionId"] == resume_id
+        application = sdk.select_cover_letter(job_id, letter_id)
+        assert application["coverLetterId"] == letter_id
+        assert application["status"] == "ready" and application["submittedAt"] is None
+        assert sdk.download_cover_letter(letter_id) == b"%PDF-approved"
+        assert all(
+            a["isSelected"] for a in sdk.application_context(job_id)["attachments"]
+        )
+        assert sdk.list_application_events(job_id) == []
+        assert [j["jobId"] for j in sdk.iter_application_jobs()] == [job_id]
+
+        # This represents the observed employer receipt, not merely a filled form.
+        with pytest.raises(httpx.ReadTimeout):
+            sdk.record_application_event(
+                job_id,
+                {
+                    "kind": "application_submitted",
+                    "occurredAt": "2026-10-29T14:05:00-04:00",
+                    "notes": "Verified employer receipt TEST-42",
+                },
+            )
+        events = sdk.list_application_events(job_id)
+        assert len(event_posts) == len(events) == 1  # no automatic retry/duplicate
+        assert events[0]["kind"] == "application_submitted"
+        assert events[0]["occurredAt"] == "2026-10-29T18:05:00Z"
+        assert events[0]["notes"] == "Verified employer receipt TEST-42"
+        assert sdk.get_job(job_id)["application"]["status"] == "submitted"
+        assert list(sdk.iter_application_jobs()) == []
+        with pytest.raises(APIError) as exc:
+            sdk.application_context(job_id)
+        assert exc.value.code == "APPLICATION_NOT_READY"
+
+
 def test_questions_survive_database_init_and_job_delete_preserves_global_answers(
     app_client,
 ):

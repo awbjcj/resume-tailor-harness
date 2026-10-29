@@ -111,7 +111,7 @@ class ResumeHarness:
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Accept": "application/json",
-                "User-Agent": "resume-harness-sdk/0.2.0",
+                "User-Agent": "resume-harness-sdk/0.3.0",
             },
             follow_redirects=False,
         )
@@ -190,6 +190,16 @@ class ResumeHarness:
     def get_job(self, job_id: int) -> JSON:
         return self._request("GET", f"jobs/{_id(job_id)}").json()
 
+    def approve_job(self, job_id: int) -> JSON:
+        """Move a chosen job to approved when the user authorizes preparation.
+
+        Inspect get_job first; do not reset a tailored/rendered job's stage.
+        Approval alone does not authorize employer submission.
+        """
+        return self._request(
+            "PATCH", f"jobs/{_id(job_id)}", json={"status": "approved"}
+        ).json()
+
     def list_application_jobs(
         self,
         *,
@@ -230,6 +240,53 @@ class ResumeHarness:
     def application_prompt(self, job_id: int) -> str:
         """Complete readable prompt including the JD, personal facts, and questions."""
         return self.application_context(job_id)["prompt"]
+
+    def select_resume(
+        self, job_id: int, version_id: int
+    ) -> applications.ApplicationRecord:
+        """Remember the resume chosen from this job's fresh eligible attachments.
+
+        Selection creates/updates tracking only; it does not upload or submit.
+        """
+        return _validated(
+            self._request(
+                "POST", f"jobs/{_id(job_id)}/select-resume/{_id(version_id)}"
+            ),
+            applications.APPLICATION,
+        )
+
+    def select_cover_letter(
+        self, job_id: int, cover_letter_id: int
+    ) -> applications.ApplicationRecord:
+        """Remember the cover letter chosen from eligible application attachments."""
+        return _validated(
+            self._request(
+                "POST", f"jobs/{_id(job_id)}/select-cover-letter/{_id(cover_letter_id)}"
+            ),
+            applications.APPLICATION,
+        )
+
+    def list_application_events(
+        self, job_id: int
+    ) -> list[applications.ApplicationEvent]:
+        """Read timeline history, including evidence of an earlier submission."""
+        return _validated(
+            self._request("GET", f"jobs/{_id(job_id)}/events"), applications.EVENTS
+        )
+
+    def record_application_event(
+        self, job_id: int, event: JSON
+    ) -> applications.ApplicationEvent:
+        """Record an observed event using API camelCase fields.
+
+        application_submitted requires occurredAt with a UTC offset and advances
+        tracking to submitted. Only record it after verified employer submission.
+        This POST is not idempotent; inspect history after an ambiguous failure.
+        """
+        return _validated(
+            self._request("POST", f"jobs/{_id(job_id)}/events", json=event),
+            applications.EVENT,
+        )
 
     def get_application_profile(self) -> applications.ApplicationProfileSnapshot:
         return _validated(
@@ -375,6 +432,16 @@ class ResumeHarness:
             _id(job_id)
         return self._request(
             "POST", "tailor", json={"jobIds": job_ids, "deep": deep}
+        ).json()
+
+    def generate_cover_letters(self, job_ids: list[int]) -> JSON:
+        """Start hosted cover-letter writing, fact checking, and PDF rendering."""
+        if not job_ids:
+            raise ValueError("Provide at least one job ID")
+        for job_id in job_ids:
+            _id(job_id)
+        return self._request(
+            "POST", "cover-letters", json={"jobIds": job_ids, "approved": False}
         ).json()
 
     def authoring_context(self, job_id: int) -> JSON:

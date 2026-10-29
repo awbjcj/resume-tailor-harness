@@ -5,6 +5,12 @@ agent through the standalone Python SDK or CLI. Browser/computer automation runs
 in that agent's environment. The server supplies data and persists confirmed
 answers; it does not run a browser or submit an employer's application.
 
+For the agent's interactive operating instructions, use the bundled
+[resume-harness-apply skill](../sdk/python/src/resume_harness_sdk/skills/resume-harness-apply/SKILL.md)
+and its [conversation and resumption examples](../sdk/python/src/resume_harness_sdk/skills/resume-harness-apply/references/interactive-application.md).
+The [SDK guide](../sdk/python/README.md#prepare-job-applications-with-your-agent)
+explains installation and invocation. This document describes the server contract.
+
 ## Contract
 
 All resources are workspace scoped. Outer JSON uses camelCase and errors use the
@@ -20,13 +26,20 @@ existing `{ "error": { "code", "message", "details" } }` envelope.
 | `POST /api/application-questions` | Records an unanswered question with exact wording and context. `scope=job` requires `jobId`; `scope=profile` is reusable across jobs. Identical scope, question, and context return the existing record without changing its answer. |
 | `PATCH /api/application-questions/{id}` | `{revision, answer, userConfirmed: true}`. Saves a user-confirmed answer; null clears it. Question wording and scope are immutable. |
 | `GET /api/application-questions/{id}` | Read one question and its current revision before answering or reconciling a conflict. |
+| `PATCH /api/jobs/{job_id}` | Existing `{status: "approved"}` prepares a specifically chosen raw/shortlisted job; inspect the current stage first. SDK: `approve_job`. |
+| `POST /api/cover-letters` | Existing `{jobIds: [...], approved: false}` starts hosted writing, fact checking, and rendering. SDK: `generate_cover_letters`. |
+| `POST /api/resume-versions/{id}/render` | Renders a stored resume using workspace settings; choose eligible versions through application context. SDK: `render_resume`. Page overflow returns `422 resume_page_overflow`. |
+| `POST /api/jobs/{job_id}/select-resume/{id}` | Remembers the chosen resume; creates/updates ready tracking, without uploading. SDK: `select_resume`. |
+| `POST /api/jobs/{job_id}/select-cover-letter/{id}` | Remembers the chosen cover letter. SDK: `select_cover_letter`. |
+| `GET /api/jobs/{job_id}/events` | Existing timeline history, including earlier submission evidence. SDK: `list_application_events`. |
+| `POST /api/jobs/{job_id}/events` | Existing timeline write. An observed `application_submitted` event advances tracking; requires `occurredAt` with UTC offset. SDK: `record_application_event`. |
 
 Profile revisions are content hashes. Question revisions are increasing integers.
 Stale writes return `409 PROFILE_STALE` or `409 QUESTION_STALE`; read again and
 reconcile with the user's answer instead of overwriting another edit. A missing
 job/question returns `404 NOT_FOUND`; an ineligible context returns
-`409 APPLICATION_NOT_READY`. Reads and writes containing personal data are
-`Cache-Control: no-store`.
+`409 APPLICATION_NOT_READY`. Application context, profile, and question responses
+use `Cache-Control: no-store`.
 
 ## Agent behavior
 
@@ -37,16 +50,34 @@ job/question returns `404 NOT_FOUND`; an ineligible context returns
 3. Inspect available attachments, download the selected/appropriate fact-checked
    PDF through the SDK, and upload only the file intended for this application.
    If no usable document exists, request it or use the existing tailoring flow.
-4. Record unfamiliar questions before asking the user. Use job scope by default;
+4. Inspect each live page and fill supported fields. Record missing required
+   questions or scope conflicts before asking the user. Use job scope by default;
    only explicitly reusable personal questions belong in profile scope. Include
    country, employer, timeframe, options, and other limits in `context`.
-5. After the user supplies or confirms an answer, save it with the question's
+5. Ask concise questions with the live answer options; group related questions
+   on the current page and continue independent fields while waiting. After the
+   user supplies or confirms an answer, save it with the question's
    current revision. Update common personal fields through the profile PATCH.
    Confirmation is a caller assertion, not proof of a separate authenticated
    human approval. Never mark model guesses as confirmed answers.
-6. Re-fetch context after updates. Verify the actual form and stop before final
+   A direct user answer is confirmation; do not ask them to reconfirm it. Keep
+   the current form page, question IDs, run IDs, and chosen files so later turns
+   can resume after answers, login, or verification. Do not store credentials or
+   verification codes in question records or progress notes.
+6. Re-fetch context after updates and apply the confirmed answer to the live
+   field. Verify the actual form and stop before final
    submission, attestations, or consent. Job approval permits preparation; it
-   does not itself authorize final submission. Do not mark a filled form submitted.
+   does not itself authorize final submission. Continue after specific
+   confirmation for the unchanged final action and required consent. Do not
+   mark a filled form submitted.
+7. Verify the employer's actual receipt/status, then inspect timeline history and
+   record a missing `application_submitted` event with the observed time and
+   minimal receipt evidence. This removes the job from the queue; context reads
+   become ineligible, so use job detail/events afterward. Event creation is not
+   idempotent: inspect history after an ambiguous failure before retrying. If
+   employer submission succeeded but tracking failed, repair tracking without
+   resubmitting the employer form. Distinguish prepared, blocked, uncertain, and
+   verified submitted outcomes in the report.
 
 Existing board, config PUT, and concise application-prompt contracts remain
 available. New question records live in the workspace database and travel with
