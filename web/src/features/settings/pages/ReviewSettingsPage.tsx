@@ -480,16 +480,13 @@ function ReviewRosterForm({
         <FieldDescription>
           Used by the writer, reviser, and advisory panel. Minimums stay within
           the evidence in your profile, so they do not require invented claims.
+          Rendering selects one or two pages. One-page drafts use lower bullet
+          limits and preserve space for experience and projects.
         </FieldDescription>
 
         <FieldSet className="gap-3">
           <FieldLegend variant="label">Length</FieldLegend>
           <div className={GRID}>
-            <NumberField
-              id="pageTarget" label="Page target" min={1}
-              value={budget.pageTarget}
-              onChange={(v) => setBudget({ pageTarget: v })}
-            />
             <NumberField
               id="maxExperiences" label="Max experiences"
               value={budget.maxExperiences}
@@ -552,9 +549,9 @@ function ReviewRosterForm({
           <FieldLegend variant="label">Skills</FieldLegend>
           <FieldDescription>
             Aim for this number. It is not a hard cap. The skills section renders
-            one comma-separated line per category. About 40 entries use roughly
-            five lines, so trimming them saves little space and can reduce
-            keyword coverage.
+            compact comma-separated categories; long names can wrap. Preserve
+            evidenced must-have skills and remove redundant supporting entries
+            before cutting work or project evidence.
           </FieldDescription>
           <div className={GRID}>
             <NumberField

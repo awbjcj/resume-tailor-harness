@@ -5,7 +5,12 @@ from resume_tailor_harness.models.resume import (
     TailoredExperience,
     TailoredProject,
 )
-from resume_tailor_harness.tailor.length import format_budget, format_depth_plan, resume_stats
+from resume_tailor_harness.tailor.length import (
+    format_budget,
+    format_depth_plan,
+    prepare_draft,
+    resume_stats,
+)
 from resume_tailor_harness.tailor.review_config import LengthBudget, ReviewConfig
 
 
@@ -17,6 +22,54 @@ def test_length_budget_defaults_present_on_config():
     assert cfg.length_budget.min_bullets_per_role == 5
     assert cfg.length_budget.min_bullets_per_project == 4
     assert cfg.length_budget.target_total_bullets == 40
+
+
+def test_one_page_envelope_reconciles_legacy_depth_without_mutating_saved_budget():
+    saved = LengthBudget()
+    compact = saved.for_pages(1)
+    assert saved.page_target == 2 and saved.target_total_bullets == 40
+    assert compact.page_target == 1 and compact.target_total_bullets == 16
+    assert (compact.min_bullets_per_role, compact.max_bullets_per_role) == (2, 4)
+    assert (compact.min_bullets_per_project, compact.max_bullets_per_project) == (1, 3)
+    assert compact.for_pages() == compact
+
+
+def test_one_page_envelope_respects_lower_user_caps():
+    compact = LengthBudget(
+        max_experiences=1,
+        max_projects=1,
+        max_evidence_owners=2,
+        max_bullets_per_role=1,
+        max_bullets_per_project=1,
+        target_total_bullets=2,
+        target_skills=10,
+    ).for_pages(1)
+    assert compact.max_experiences == 1
+    assert compact.min_bullets_per_role == compact.max_bullets_per_role == 1
+    assert compact.target_total_bullets == 2 and compact.target_skills == 10
+
+
+def test_one_page_draft_drops_summary_before_review_and_keeps_evidence():
+    from resume_tailor_harness.render.sample_content import sample_resume_content
+
+    original = sample_resume_content()
+    original.summary = "A redundant profile summary."
+    original.summary_provenance = ["sample-experience"]
+    prepared = prepare_draft(original, LengthBudget(page_target=1))
+    assert prepared.summary is None and prepared.summary_provenance == []
+    assert prepared.experience == original.experience
+    assert prepared.projects == original.projects
+    assert prepared.skills == original.skills
+    assert original.summary
+    assert prepare_draft(original, LengthBudget(page_target=2)) is original
+
+
+def test_one_page_prompt_prioritizes_work_over_summary_and_uses_realistic_floors():
+    text = format_budget(LengthBudget(page_target=1))
+    assert "Set summary to null" in text
+    assert "professional experience and projects" in text
+    assert "2–4 bullets" in text and "1–3" in text
+    assert "16 bullets in total" in text
 
 
 def test_budget_tells_the_writer_to_span_the_configured_aspects():

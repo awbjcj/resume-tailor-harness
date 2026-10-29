@@ -35,6 +35,30 @@ def test_list_starts_with_bundled_template(client) -> None:
     assert response.status_code == 200
     assert response.json()[0]["id"] == "classic"
     assert response.json()[0]["kind"] == "bundled"
+    assert len(response.json()) == 8
+
+
+@pytest.mark.parametrize(
+    "template_id",
+    [
+        "classic",
+        "modern",
+        "technical",
+        "executive",
+        "graduate",
+        "academic",
+        "minimal",
+        "compact",
+    ],
+)
+def test_every_bundled_template_can_be_selected_and_previewed(client, template_id):
+    selected = client.put(
+        "/api/config/render", json={"template": template_id, "fitOnePage": True}
+    )
+    assert selected.status_code == 200
+    preview = client.get(f"/api/config/render/templates/{template_id}/preview")
+    assert preview.status_code == 200, preview.text
+    assert preview.content.startswith(b"%PDF")
 
 
 def test_upload_validates_lists_and_previews(client) -> None:

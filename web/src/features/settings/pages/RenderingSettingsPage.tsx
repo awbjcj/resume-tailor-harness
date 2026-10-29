@@ -190,7 +190,9 @@ export function RenderingSettingsPage() {
           <FieldContent>
             <FieldLabel htmlFor="fit-one-page">Fit resume to one page</FieldLabel>
             <FieldDescription>
-              Gradually tightens the layout while keeping a readable minimum size.
+              New drafts prioritize experience and projects and omit the summary.
+              Turn off for a detailed resume of up to two pages. Text stays at
+              least 10pt; content that still overflows must be shortened before export.
             </FieldDescription>
           </FieldContent>
         </Field>

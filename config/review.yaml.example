@@ -37,14 +37,15 @@ reviewers:
     model_tier: mid
     score_bands: true
 
-# Optional two-page evidence budget handed to the tailor and surfaced to advisory
-# reviewers. Omit the block to accept these defaults.
+# Detailed two-page evidence budget handed to the tailor and advisory reviewers.
+# Rendering's fit_one_page option derives a smaller, consistent one-page envelope
+# (about 16 bullets, no summary) before planning, writing, or review. These saved
+# larger ceilings are retained for detailed mode. See templates/README.md.
 #
 # Each owner's floor is clamped to its source-bullet supply before it reaches a
-# writer, so the plan never asks for invented evidence. The skill numbers are a TARGET:
-# the skills section renders one comma-joined line per category, so ~40 entries
-# cost about five lines, and trimming it saves almost no space while losing
-# keyword coverage. Raise target_skills for a broader skills section.
+# writer, so the plan never asks for invented evidence. target_skills is a TARGET,
+# not a cap. Compact categories still wrap when names are long; preserve
+# evidenced must-haves before adding adjacent supporting skills.
 length_budget:
   page_target: 2
   max_experiences: 5

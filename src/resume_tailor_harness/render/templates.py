@@ -29,10 +29,59 @@ BUNDLED = {
     "classic": TemplateInfo(
         id="classic",
         title="Classic",
-        description="Compact single-column resume with clear section hierarchy.",
+        description="Traditional serif layout for general applications and conservative industries.",
         kind="bundled",
         path=_REPOSITORY_ROOT / "templates" / "resume.typ",
-    )
+    ),
+    "modern": TemplateInfo(
+        id="modern",
+        title="Modern",
+        kind="bundled",
+        description="Clean sans-serif type and blue accents for product, business, and technology roles.",
+        path=_REPOSITORY_ROOT / "templates" / "modern.typ",
+    ),
+    "technical": TemplateInfo(
+        id="technical",
+        title="Technical",
+        kind="bundled",
+        description="Experience and projects lead a precise engineering-focused layout.",
+        path=_REPOSITORY_ROOT / "templates" / "technical.typ",
+    ),
+    "executive": TemplateInfo(
+        id="executive",
+        title="Executive",
+        kind="bundled",
+        description="Restrained navy headings and strong role hierarchy for senior professionals.",
+        path=_REPOSITORY_ROOT / "templates" / "executive.typ",
+    ),
+    "graduate": TemplateInfo(
+        id="graduate",
+        title="Graduate",
+        kind="bundled",
+        description="Education-first serif layout for students, internships, and early careers.",
+        path=_REPOSITORY_ROOT / "templates" / "graduate.typ",
+    ),
+    "academic": TemplateInfo(
+        id="academic",
+        title="Academic",
+        kind="bundled",
+        description="Research-oriented typography with education and publications placed prominently.",
+        path=_REPOSITORY_ROOT / "templates" / "academic.typ",
+    ),
+    "minimal": TemplateInfo(
+        id="minimal",
+        title="Minimal",
+        kind="bundled",
+        description="Quiet monochrome styling with generous whitespace for a simple professional resume.",
+        path=_REPOSITORY_ROOT / "templates" / "minimal.typ",
+    ),
+    "compact": TemplateInfo(
+        id="compact",
+        title="Compact",
+        kind="bundled",
+        description="Space-efficient headings and entries for a concise resume with substantial project work.",
+        path=_REPOSITORY_ROOT / "templates" / "compact.typ",
+    ),
 }
 
 

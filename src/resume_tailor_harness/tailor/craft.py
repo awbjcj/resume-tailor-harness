@@ -43,13 +43,15 @@ CRAFT_WRITER = [
     "renaming one to the job's own term is not. Then order by this job's "
     "priorities: must-have skills first, then supporting skills. Cut only "
     "low-signal entries (default office tools, tech irrelevant to this role); "
-    "a bullet costs a line but the skills section renders one comma-joined "
-    "line per category, so trimming it saves almost no space and loses "
-    "keyword coverage.",
+    "use compact comma-joined categories and account for wrapped lines. "
+    "Preserve evidenced must-haves; prune redundant supporting entries before "
+    "reducing professional experience or project evidence.",
     "Give the most recent and most role-relevant positions the largest bullet "
     "share; compress older or off-target roles to one or two bullets instead "
     "of trimming every role evenly.",
-    "Keep the summary to at most three lines aimed at this role: seniority, the "
+    "Omit the summary by default, especially for a one-page resume. For a "
+    "two-page career transition or senior specialization, use at most two "
+    "lines and 40 words aimed at this role: seniority, the "
     "strongest matching skills, and a signature outcome or concrete contribution, "
     "each supported by facts listed in summary_provenance. Never fill it with empty self-praise "
     "such as 'results-driven', 'team player', or 'detail-oriented', and never "
@@ -73,7 +75,7 @@ CRAFT_REVIEWERS: dict[str, list[str]] = {
         "entry and in context inside at least one bullet; a skills-list-only "
         "mention is weak coverage. Weight must-have coverage above "
         "nice-to-have coverage.",
-        "Check that the summary or most recent title visibly aligns with the "
+        "Check that the headline or most recent title visibly aligns with the "
         "job's role name and seniority when the underlying evidence supports it.",
         "Treat a near-synonym of a JD term as weak coverage when the evidence "
         "would support the exact term ('risk mitigation' where the job says "
@@ -87,7 +89,7 @@ CRAFT_REVIEWERS: dict[str, list[str]] = {
         "own term.",
     ],
     "recruiter": [
-        "Apply a six-second scan standard: the summary, first role, and its "
+        "Apply a six-second scan standard: the headline, first role, and its "
         "first bullets must carry the strongest role-relevant evidence, and a "
         "resume whose best material sits below the top third scans poorly.",
         "Bullet lead words carry the scan: flag bullets that open with weak, "
@@ -105,6 +107,9 @@ CRAFT_REVIEWERS: dict[str, list[str]] = {
         "ownership level does not match the role's seniority.",
     ],
     "concision": [
+        "Preserve professional experience and projects when resolving length "
+        "pressure. An absent summary is valid; remove a redundant summary and "
+        "secondary details before recommending cuts to distinct work evidence.",
         "Flag bullets over roughly thirty words when excess wording obscures "
         "their evidence, vague duty phrasing, and duplicated evidence across "
         "bullets. A repeated verb or truthful participation qualifier alone "

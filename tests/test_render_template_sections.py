@@ -1,4 +1,5 @@
 from pypdf import PdfReader
+import pytest
 
 from resume_tailor_harness.models.profile import Contact, Education, Language
 from resume_tailor_harness.models.resume import (
@@ -11,6 +12,7 @@ from resume_tailor_harness.models.resume import (
     TailoredVolunteer,
 )
 from resume_tailor_harness.render.renderer import render_pdf
+from resume_tailor_harness.render.templates import BUNDLED
 
 
 def _rich_content() -> ResumeContent:
@@ -81,9 +83,10 @@ def _text_of(pdf_path) -> str:
     )
 
 
-def test_template_renders_all_new_sections(tmp_path):
+@pytest.mark.parametrize("template_id", BUNDLED)
+def test_template_renders_all_new_sections(tmp_path, template_id):
     out = tmp_path / "rich.pdf"
-    render_pdf(_rich_content(), out, template_path="templates/resume.typ")
+    render_pdf(_rich_content(), out, template_path=BUNDLED[template_id].path)
     assert out.read_bytes().startswith(b"%PDF")
     text = _text_of(out)
     for needle in [
@@ -97,4 +100,4 @@ def test_template_renders_all_new_sections(tmp_path):
         "Six Sigma",
         "Robotics Club",
     ]:
-        assert needle in text, f"missing {needle!r} in rendered PDF"
+        assert needle.lower() in text.lower(), f"missing {needle!r} in rendered PDF"
