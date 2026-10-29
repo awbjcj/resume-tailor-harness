@@ -73,6 +73,19 @@ def test_interviewer_registers_the_persona_core() -> None:
     )
 
 
+def test_email_writer_keeps_whole_instructions_in_registry_and_agent(
+    tmp_path, monkeypatch
+) -> None:
+    from resume_tailor_harness.services.email_writer import build_writer_agent
+
+    monkeypatch.chdir(tmp_path)
+    instructions = _instructions(build_writer_agent())
+    assert instructions[0].startswith("You draft professional job-search emails")
+    assert "never invent experience, numbers, or credentials" in instructions[0]
+    assert all(len(instruction) > 1 for instruction in instructions)
+    assert SPECS_BY_KEY["email-writer"].instructions == tuple(instructions)
+
+
 def test_composed_registry_entries_match_their_built_agents() -> None:
     from resume_tailor_harness.profile.aspect_classifier import (
         build_aspect_classifier_agent,
