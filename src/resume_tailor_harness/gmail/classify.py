@@ -111,6 +111,14 @@ def _prompt(email: EmailMessage) -> str:
     return f"EMAIL SUBJECT:\n{email.subject}\n\nEMAIL BODY:\n{_content(email)}"
 
 
+def classifier_available() -> bool:
+    """Check effective tenant funding without constructing an agent or spending."""
+    from resume_tailor_harness.llm_runner import resolve_api_key
+    from resume_tailor_harness.tailor.agents import model_for_tier
+
+    return bool(resolve_api_key(model_for_tier("cheap")))
+
+
 def build_classifier_llm() -> Runner | None:
     """Cheap-tier fallback agent, or None when that provider has no key."""
     from resume_tailor_harness.llm_runner import (
@@ -140,7 +148,9 @@ def build_classifier_llm() -> Runner | None:
 class SyncClassifier:
     """Rules first, evidence-checked AI with a per-pass spend/latency budget."""
 
-    def __init__(self, llm, factory, max_calls: int, warn):
+    def __init__(
+        self, llm, factory, max_calls: int, warn, *, ai_available: bool | None = None
+    ):
         self.llm, self.factory, self.max_calls, self.warn = (
             llm,
             factory,
@@ -150,6 +160,13 @@ class SyncClassifier:
         self.initialized = factory is None
         self.calls = 0
         self.failed = False
+        # Freeze the mode for this pass; lazy initialization/failure must not
+        # change cache fingerprints halfway through processing a page.
+        self.cache_ai_enabled = max_calls > 0 and (
+            ai_available
+            if ai_available is not None
+            else llm is not None or factory is not None
+        )
 
     def classify(self, email: EmailMessage) -> tuple[str, bool]:
         label = _rule_label(email)

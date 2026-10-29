@@ -3,7 +3,7 @@ from collections import Counter
 from unittest.mock import Mock
 
 import pytest
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from resume_tailor_harness.api.runs.manager import RunCancelled
 from resume_tailor_harness.db import init_db, make_engine
@@ -337,6 +337,73 @@ def test_enabling_ai_reconsiders_rules_only_no_decision(tmp_path, monkeypatch):
     monkeypatch.setenv("GMAIL_MAX_AI_CALLS", "2")
     result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=runner)
     assert result["stats"]["ai_calls"] == 1
+    assert len(service._messages.gets) == reads
+
+
+def test_adding_provider_key_reconsiders_cached_uncertain_mail(tmp_path, monkeypatch):
+    import json
+    from resume_tailor_harness import llm_runner
+    from resume_tailor_harness.services import gmail_sync
+
+    credentials = {"key": ""}
+    monkeypatch.setattr(llm_runner, "resolve_api_key", lambda _: credentials["key"])
+    runner = Mock()
+    message = _mail("m1", decision="uncertain")
+    runner.run.return_value.content = json.dumps({
+        "label": "interview", "confidence": 0.99, "evidence": message["snippet"],
+    })
+    monkeypatch.setattr(
+        gmail_sync, "build_classifier_llm", lambda: runner if credentials["key"] else None
+    )
+    engine = _seed()
+    service = FakeGmailService([message])
+    first = run_gmail_sync(engine, _reporter(tmp_path), service=service)
+    assert first["pending"] == 0
+    reads = len(service._messages.gets)
+    unchanged = run_gmail_sync(engine, _reporter(tmp_path), service=service)
+    assert unchanged["stats"]["processed"] == 0
+    credentials["key"] = "configured-test-key"
+    enabled = run_gmail_sync(engine, _reporter(tmp_path), service=service)
+    assert enabled["pending"] == 1
+    assert enabled["stats"]["ai_calls"] == 1
+    again = run_gmail_sync(engine, _reporter(tmp_path), service=service)
+    assert again["stats"]["ai_calls"] == 0
+    assert runner.run.call_count == 1
+    assert len(service._messages.gets) == reads
+
+
+@pytest.mark.parametrize("older_state", ["superseded", "accepted", "dismissed", "cleared"])
+def test_correcting_latest_decision_restores_only_automatically_superseded_card(
+    tmp_path, monkeypatch, older_state
+):
+    from resume_tailor_harness.gmail import processing
+    from resume_tailor_harness.gmail.classify import SyncClassifier
+
+    engine = _seed()
+    service = FakeGmailService([_mail("old", decision="interview", date=1000)])
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    _history(service, [_mail("new", date=2000)])
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    with Session(engine) as session:
+        older = session.exec(select(Notification).where(Notification.kind == "interview")).one()
+        assert older.state == "superseded"
+        older.state = older_state
+        session.add(older)
+        session.commit()
+    reads = len(service._messages.gets)
+    monkeypatch.setattr(processing, "PROCESSING_VERSION", "corrected-classifier")
+    monkeypatch.setattr(
+        SyncClassifier, "classify",
+        lambda self, email: ("interview" if email.message_id == "old" else "none", False),
+    )
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert result["pending"] == (1 if older_state == "superseded" else 0)
+    with Session(engine) as session:
+        notices = session.exec(select(Notification).order_by(col(Notification.id))).all()
+        assert len(notices) == 2
+        assert notices[0].state == ("pending" if older_state == "superseded" else older_state)
+        assert notices[1].state == "superseded"
+    assert run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)["pending"] == result["pending"]
     assert len(service._messages.gets) == reads
 
 
