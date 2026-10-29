@@ -1,9 +1,22 @@
 from resume_tailor_harness.models.job import JobCriteria
-from resume_tailor_harness.models.profile import Bullet, Contact, Experience, ProfileFacts
+from resume_tailor_harness.models.profile import (
+    Bullet,
+    Contact,
+    Experience,
+    ProfileFacts,
+)
 from resume_tailor_harness.models.review import Severity
-from resume_tailor_harness.models.resume import ResumeContent, TailoredBullet, TailoredExperience
+from resume_tailor_harness.models.resume import (
+    ResumeContent,
+    TailoredBullet,
+    TailoredExperience,
+)
 from resume_tailor_harness.models.review import ReviewCritique, ReviewIssue
-from resume_tailor_harness.tailor.review_config import ReviewConfig, ReviewerSpec
+from resume_tailor_harness.tailor.review_config import (
+    LengthBudget,
+    ReviewConfig,
+    ReviewerSpec,
+)
 from resume_tailor_harness.tailor.verdict import PanelVerdict, aggregate
 from resume_tailor_harness.tailor.workflow import (
     TailorRound,
@@ -91,6 +104,72 @@ def test_loop_revises_until_gate_passes():
     assert isinstance(rounds[0], TailorRound)
     assert rounds[0].verdict.passed is False
     assert rounds[-1].verdict.passed is True
+
+
+def test_one_page_draft_and_revision_remove_summary_before_all_gates():
+    class SummaryAgent(_ContentAgent):
+        def run(self, prompt):
+            return _Result(
+                ResumeContent(
+                    contact=Contact(name="Ada"),
+                    summary="A redundant summary.",
+                    summary_provenance=["unsupported-summary-id"],
+                )
+            )
+
+    config = ReviewConfig(
+        length_budget=LengthBudget(page_target=1),
+        reviewers=[ReviewerSpec(name="fact-check", gate=True)],
+    )
+    rounds = run_tailor_review(
+        "jd",
+        JobCriteria(),
+        ProfileFacts(contact=Contact(name="Ada")),
+        config,
+        SummaryAgent(),
+        {"fact-check": _FactCheck()},
+        SummaryAgent(),
+    )
+    assert len(rounds) == 2 and rounds[-1].verdict.passed
+    assert all(
+        r.content.summary is None and not r.content.summary_provenance for r in rounds
+    )
+
+
+def test_async_one_page_revisions_apply_same_summary_policy():
+    import asyncio
+    from resume_tailor_harness.tailor.workflow import arun_tailor_review
+
+    class SummaryAgent(_ContentAgent):
+        def run(self, prompt):
+            return _Result(
+                ResumeContent(
+                    contact=Contact(name="Ada"),
+                    summary="A redundant summary.",
+                    summary_provenance=["unsupported-summary-id"],
+                )
+            )
+
+    async def go():
+        return await arun_tailor_review(
+            "jd",
+            JobCriteria(),
+            ProfileFacts(contact=Contact(name="Ada")),
+            ReviewConfig(
+                length_budget=LengthBudget(page_target=1),
+                reviewers=[ReviewerSpec(name="fact-check", gate=True)],
+            ),
+            SummaryAgent(),
+            {"fact-check": _FactCheck()},
+            SummaryAgent(),
+            sem=asyncio.Semaphore(2),
+        )
+
+    rounds = asyncio.run(go())
+    assert len(rounds) == 2 and rounds[-1].verdict.passed
+    assert all(
+        r.content.summary is None and not r.content.summary_provenance for r in rounds
+    )
 
 
 def test_rounds_record_stage_seconds_on_the_round_the_content_enters():

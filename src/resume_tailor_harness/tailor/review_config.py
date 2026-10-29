@@ -74,6 +74,38 @@ class LengthBudget(ExtensibleModel):
     target_skills: int = 40
     max_skills_per_category: int = 12
 
+    def for_pages(self, pages: int | None = None) -> "LengthBudget":
+        """Resolve a one-page envelope without enlarging user caps.
+
+        Older saved rosters ask for 40 bullets even when rendering requests a
+        single page. Planning, writing, and review must see the same achievable
+        floors and ceilings.
+        """
+        target = self.page_target if pages is None else pages
+        if target != 1:
+            return self.model_copy(update={"page_target": target})
+        limits = {
+            "max_experiences": 3,
+            "max_projects": 3,
+            "max_evidence_owners": 5,
+            "min_bullets_per_role": 2,
+            "max_bullets_per_role": 4,
+            "min_bullets_per_project": 1,
+            "max_bullets_per_project": 3,
+            "target_total_bullets": 16,
+            "min_aspects_per_owner": 2,
+            "target_skills": 28,
+            "max_skills_per_category": 10,
+        }
+        return self.model_copy(
+            update={
+                "page_target": 1,
+                **{
+                    key: min(getattr(self, key), limit) for key, limit in limits.items()
+                },
+            }
+        )
+
     @model_validator(mode="before")
     @classmethod
     def _backfill_legacy_floors(cls, data: object) -> object:

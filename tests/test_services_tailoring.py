@@ -13,6 +13,7 @@ from resume_tailor_harness.profile.store import save_facts
 from resume_tailor_harness.services import rendering, tailoring
 from resume_tailor_harness.services.errors import StageFailure
 from resume_tailor_harness.tailor.service import TailorOutcome
+from resume_tailor_harness.tailor.review_config import ReviewConfig
 from resume_tailor_harness.taxonomy.clusters import ClusterMap, save_cluster_map
 from resume_tailor_harness.taxonomy.corrections import (
     TaxonomyCorrections,
@@ -77,7 +78,7 @@ def test_tailor_loads_config_and_calls_tailor_jobs(monkeypatch):
     monkeypatch.setattr(
         tailoring,
         "load_review_config",
-        lambda p: type("C", (), {"style_guide_path": None, "reviewers": []})(),
+        lambda p: ReviewConfig(style_guide_path=""),
     )
     monkeypatch.setattr(tailoring, "load_facts", lambda p: object())
     monkeypatch.setattr(tailoring, "load_style_guide", lambda p: None)
@@ -115,7 +116,7 @@ def test_tailor_does_not_raise_when_only_some_targets_fail(monkeypatch):
     monkeypatch.setattr(
         tailoring,
         "load_review_config",
-        lambda p: type("C", (), {"style_guide_path": None, "reviewers": []})(),
+        lambda p: ReviewConfig(style_guide_path=""),
     )
     monkeypatch.setattr(tailoring, "load_facts", lambda p: object())
     monkeypatch.setattr(tailoring, "load_style_guide", lambda p: None)
@@ -197,7 +198,7 @@ def test_tailoring_sees_a_taxonomy_correction(tmp_path, monkeypatch):
     monkeypatch.setattr(
         tailoring,
         "load_review_config",
-        lambda path: type("C", (), {"style_guide_path": None, "reviewers": []})(),
+        lambda path: ReviewConfig(style_guide_path=""),
     )
     monkeypatch.setattr(tailoring, "load_style_guide", lambda path: None)
     monkeypatch.setattr(
@@ -271,7 +272,7 @@ def test_fail_on_partial_raises_only_when_everything_failed(monkeypatch, session
     monkeypatch.setattr(
         tailoring,
         "load_review_config",
-        lambda p: type("C", (), {"style_guide_path": None, "reviewers": []})(),
+        lambda p: ReviewConfig(style_guide_path=""),
     )
     monkeypatch.setattr(tailoring, "load_style_guide", lambda p: None)
     monkeypatch.setattr(
@@ -315,7 +316,7 @@ def test_partial_failure_does_not_raise(monkeypatch, session):
     monkeypatch.setattr(
         tailoring,
         "load_review_config",
-        lambda p: type("C", (), {"style_guide_path": None, "reviewers": []})(),
+        lambda p: ReviewConfig(style_guide_path=""),
     )
     monkeypatch.setattr(tailoring, "load_style_guide", lambda p: None)
     monkeypatch.setattr(

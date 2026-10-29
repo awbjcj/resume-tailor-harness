@@ -7,7 +7,11 @@ from resume_tailor_harness.llm_runner import Runner, acall, expect_schema
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import MergedPanelReview, ReviewCritique
-from resume_tailor_harness.tailor.length import format_depth_plan, resume_stats
+from resume_tailor_harness.tailor.length import (
+    format_budget,
+    format_depth_plan,
+    resume_stats,
+)
 from resume_tailor_harness.tailor.prompt_blocks import coverage_section, untrusted
 from resume_tailor_harness.tailor.provenance import resolve_evidence
 from resume_tailor_harness.tailor.review_config import ReviewConfig
@@ -90,7 +94,10 @@ def run_panel(
     coverage: str = "",
 ) -> list[ReviewCritique]:
     """Run configured reviewers with the smallest sufficient input per role."""
-    depth_plan = format_depth_plan(profile_facts, config.length_budget)
+    depth_plan = (
+        f"LENGTH BUDGET:\n{format_budget(config.length_budget)}\n\n"
+        f"{format_depth_plan(profile_facts, config.length_budget)}"
+    )
     if not config.merged_advisory:
         return [
             review_one(text, reviewer_agents[name], expected_reviewer=name)
@@ -187,7 +194,10 @@ async def arun_panel(
     coverage: str = "",
 ) -> list[ReviewCritique]:
     """Run configured reviewers concurrently; results stay in reviewer order."""
-    depth_plan = format_depth_plan(profile_facts, config.length_budget)
+    depth_plan = (
+        f"LENGTH BUDGET:\n{format_budget(config.length_budget)}\n\n"
+        f"{format_depth_plan(profile_facts, config.length_budget)}"
+    )
     if not config.merged_advisory:
         inputs = _panel_inputs(
             content,

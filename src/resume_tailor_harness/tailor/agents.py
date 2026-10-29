@@ -176,7 +176,7 @@ REVIEWER_INSTRUCTIONS: dict[str, list[str]] = {
     ],
     "concision": [
         "Assess concision from the structured resume and RESUME STATS: prioritization, repetition, "
-        "bullet length, active voice, specificity, and likely one-page density.",
+        "bullet length, active voice, specificity, and density within the supplied page budget.",
         "Do not require a metric where the resume provides no truthful metric. Prefer deleting low-value "
         "content over compressing it into vague or unsupported claims.",
     ],

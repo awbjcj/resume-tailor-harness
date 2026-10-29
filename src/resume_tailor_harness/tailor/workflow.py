@@ -15,6 +15,7 @@ from resume_tailor_harness.models.review import ReviewCritique
 from resume_tailor_harness.profile.matrix import SkillMatchContext
 from resume_tailor_harness.tailor.coverage import coverage_critique, format_coverage
 from resume_tailor_harness.tailor.depth import depth_critique
+from resume_tailor_harness.tailor.length import prepare_draft
 from resume_tailor_harness.tailor.evidence_portfolio import (
     PortfolioPlanRequest,
     aplan_portfolio,
@@ -22,8 +23,13 @@ from resume_tailor_harness.tailor.evidence_portfolio import (
 )
 from resume_tailor_harness.tailor.numeric_evidence import numeric_evidence_critique
 from resume_tailor_harness.tailor.panel import arun_panel, run_panel
-from resume_tailor_harness.tailor.portfolio_alignment import portfolio_alignment_critique
-from resume_tailor_harness.tailor.provenance import PROVENANCE_REVIEWER, provenance_critique
+from resume_tailor_harness.tailor.portfolio_alignment import (
+    portfolio_alignment_critique,
+)
+from resume_tailor_harness.tailor.provenance import (
+    PROVENANCE_REVIEWER,
+    provenance_critique,
+)
 from resume_tailor_harness.tailor.review_config import LengthBudget, ReviewConfig
 from resume_tailor_harness.tailor.skill_naming import skill_naming_critique
 from resume_tailor_harness.tailor.tailoring import (
@@ -35,7 +41,11 @@ from resume_tailor_harness.tailor.tailoring import (
     revise,
     tailor,
 )
-from resume_tailor_harness.tailor.verdict import PanelVerdict, aggregate, failing_gate_names
+from resume_tailor_harness.tailor.verdict import (
+    PanelVerdict,
+    aggregate,
+    failing_gate_names,
+)
 
 
 class TailorRound(ExtensibleModel):
@@ -288,6 +298,9 @@ def run_tailor_review(
     evidence_portfolio_agent: Runner | None = None,
 ) -> list[TailorRound]:
     """Draft, then gate/review/revise until the round passes or max_rounds is hit."""
+    config = config.model_copy(
+        update={"length_budget": config.length_budget.for_pages()}
+    )
     pending: dict[str, float] = {}
     portfolio = None
     if config.portfolio_enabled:
@@ -313,7 +326,7 @@ def run_tailor_review(
     pending["draft"] = time.monotonic() - started
     state = _WorkflowState(
         request=TailorRequest(jd_text, criteria, profile_facts, config, skill_context),
-        content=content,
+        content=prepare_draft(content, config.length_budget),
         coverage=coverage,
         portfolio=portfolio,
         pending=pending,
@@ -335,9 +348,12 @@ def run_tailor_review(
         if state.should_stop(verdict):
             break
         started = time.monotonic()
-        state.content = revise(
-            state.next_revision_input(),
-            reviser_agent,
+        state.content = prepare_draft(
+            revise(
+                state.next_revision_input(),
+                reviser_agent,
+            ),
+            config.length_budget,
         )
         state.pending["revise"] = time.monotonic() - started
     return state.rounds
@@ -358,6 +374,9 @@ async def arun_tailor_review(
     evidence_portfolio_agent: Runner | None = None,
 ) -> list[TailorRound]:
     """Async twin of run_tailor_review; DB writes happen after callers gather."""
+    config = config.model_copy(
+        update={"length_budget": config.length_budget.for_pages()}
+    )
     pending: dict[str, float] = {}
     portfolio = None
     if config.portfolio_enabled:
@@ -385,7 +404,7 @@ async def arun_tailor_review(
     pending["draft"] = time.monotonic() - started
     state = _WorkflowState(
         request=TailorRequest(jd_text, criteria, profile_facts, config, skill_context),
-        content=content,
+        content=prepare_draft(content, config.length_budget),
         coverage=coverage,
         portfolio=portfolio,
         pending=pending,
@@ -408,10 +427,13 @@ async def arun_tailor_review(
         if state.should_stop(verdict):
             break
         started = time.monotonic()
-        state.content = await arevise(
-            state.next_revision_input(),
-            reviser_agent,
-            sem=sem,
+        state.content = prepare_draft(
+            await arevise(
+                state.next_revision_input(),
+                reviser_agent,
+                sem=sem,
+            ),
+            config.length_budget,
         )
         state.pending["revise"] = time.monotonic() - started
     return state.rounds

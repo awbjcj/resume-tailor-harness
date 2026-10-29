@@ -857,6 +857,14 @@ Renders a stored resume version (by ID) through the Typst template into
 `output/`. Filenames are unique per version, so re-rendering does not overwrite
 an earlier PDF.
 
+**Settings → Rendering** offers eight bundled layouts: Classic, Modern,
+Technical, Executive, Graduate, Academic, Minimal, and Compact. The one-page
+option also guides new tailoring: preserve experience and projects, omit the
+summary, and use a smaller bullet budget. Turn it off for a detailed resume of
+up to two pages. Body text stays at least 10pt; an impossible fit returns a
+shortening hint instead of publishing an overflow. See the
+[layout catalog and design sources](templates/README.md).
+
 ```bash
 uv run resume-tailor-harness render 12 [--config config/render.yaml]
 ```
@@ -985,7 +993,7 @@ lazily, so a Claude-only run never touches the OpenAI or Gemini libraries.
 | `search.yaml`          | Keywords, titles, locations, and **hard filters** (salary, years of experience, remote policy, sponsorship).                                                                                                                                                               |
 | `connectors.yaml`      | The job-board connectors that `pull` runs and their parameters: Greenhouse board tokens, Lever slugs, Adzuna country, RemoteOK, LinkedIn on/off, and `companies.urls` for direct ATS or portal URLs. It detects Greenhouse, Lever, Ashby, Workday, Tesla, and Google. Secrets stay in `.env`. |
 | `review.yaml`          | The reviewer roster, their weights/model tiers, `max_rounds`, `score_threshold`, optional `length_budget` one-page guidance, and optional `style_guide_path`.                                                                                                              |
-| `render.yaml`          | Typst `template_path` and the PDF `output_dir`.                                                                                                                                                                                                                            |
+| `render.yaml`          | Template `template` and one/two-page `fit_one_page`; CLI also supports legacy `template_path` and `output_dir`.                                                                                                                                                                                                                            |
 | `style_guide.md`       | Optional house-style prose appended to the resume tailor loop. Governs how resumes are written, never what is claimed. Missing or empty means no change.                                                                                                                   |
 
 Each `*.yaml.example` is annotated. Copy it, then edit it.

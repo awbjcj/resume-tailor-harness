@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from resume_tailor_harness.api.app import create_app
 from resume_tailor_harness.api.routers import resumes
+from resume_tailor_harness.render.renderer import PageFitError
 from resume_tailor_harness.db import get_session
 from resume_tailor_harness.tracking.tables import Job, JobStatus, ResumeVersion
 
@@ -51,3 +52,15 @@ def test_render_endpoint_invokes_service(monkeypatch, tmp_path):
             vid = v.id
         body = client.post(f"/api/resume-versions/{vid}/render").json()
     assert body["pdfPath"].endswith("r.pdf")
+
+
+def test_render_overflow_is_an_actionable_422(monkeypatch):
+    def cannot_fit(*args, **kwargs):
+        raise PageFitError(2, 1)
+
+    monkeypatch.setattr(resumes, "render_resume_version", cannot_fit)
+    with _client() as client:
+        response = client.post("/api/resume-versions/1/render")
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "resume_page_overflow"
+    assert "two-page" in response.json()["error"]["message"]
