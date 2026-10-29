@@ -97,6 +97,8 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   identities. Explicit `POST /api/gmail/sync` with `reviewCleared: true` can restore
   a legacy cleared proposal from the latest current-revision cached decision;
   accepted/dismissed decisions stay put. Clearing run history preserves proposals.
+  Automatically superseded cards become pending again if corrections make them
+  the latest valid decision; this never revives an explicit Accept/Dismiss choice.
   Acceptance atomically claims a still-pending notification and applies
   only a forward transition against the current application status. A workspace
   lock serializes manual/scheduled syncs, including separate SQLite workers.
@@ -104,7 +106,10 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   body characters, not attachments. It is tenant/account-scoped and cleared by a
   jobs/all workspace reset. Bump `PROCESSING_VERSION` when decision semantics change.
   Completed classifications, including `none`, are fingerprinted by classifier
-  input, rules version, and AI mode, independently of the application catalog.
+  input, rules version, and effective AI availability (budget and tenant provider
+  funding), independently of the application catalog. Adding credentials must
+  reconsider rules-only abstentions without rereading cached email evidence.
+  Version v4 invalidates legacy receipts that omitted provider availability.
   Rematching must reuse them; failed/deferred classifications remain retryable.
   History/backfill overlaps reuse known incoming messages. Refresh metadata for
   excluded/missing messages so recovery from spam/trash can be processed.

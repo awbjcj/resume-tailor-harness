@@ -22,7 +22,7 @@ from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
 from resume_tailor_harness.tracking.queries import application_job_pairs
 from resume_tailor_harness.tracking.tables import Notification, utcnow
 
-PROCESSING_VERSION = "gmail-decisions-v3"
+PROCESSING_VERSION = "gmail-decisions-v4"
 
 
 class MessageProcessor:
@@ -62,7 +62,7 @@ class MessageProcessor:
         ]
         self.revision = sha256(
             json.dumps(
-                [PROCESSING_VERSION, sorted(catalog), classifier.max_calls > 0],
+                [PROCESSING_VERSION, sorted(catalog), classifier.cache_ai_enabled],
                 default=str,
                 sort_keys=True,
             ).encode()
@@ -262,7 +262,7 @@ class MessageProcessor:
             json.dumps(
                 [
                     PROCESSING_VERSION,
-                    self.classifier.max_calls > 0,
+                    self.classifier.cache_ai_enabled,
                     email.subject,
                     authored_text(email.body or email.snippet),
                 ]
@@ -393,14 +393,17 @@ class MessageProcessor:
                 continue
             notice = existing.get((app_id, row.message_id))
             if notice is not None:
-                if restore_cleared and notice.state == "cleared":
-                    # Claim only a still-cleared row: a concurrent explicit
-                    # dismissal must never be undone by this recovery.
+                if notice.state == "superseded" or (
+                    restore_cleared and notice.state == "cleared"
+                ):
+                    # Automatic supersession is reversible when classifier
+                    # corrections make this decision current again. Claim the
+                    # observed state so a concurrent dismissal stays final.
                     restored = self.session.execute(
                         update(Notification)
                         .where(
                             col(Notification.id) == notice.id,
-                            col(Notification.state) == "cleared",
+                            col(Notification.state) == notice.state,
                         )
                         .values(
                             state="pending",

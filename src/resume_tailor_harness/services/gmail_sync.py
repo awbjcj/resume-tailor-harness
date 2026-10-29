@@ -21,6 +21,7 @@ from resume_tailor_harness.db import get_session
 from resume_tailor_harness.gmail.auth import build_service
 from resume_tailor_harness.gmail.classify import (
     build_classifier_llm,
+    classifier_available,
     SyncClassifier,
 )
 from resume_tailor_harness.gmail.errors import GmailApiError
@@ -103,6 +104,11 @@ def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -
         build_classifier_llm if isinstance(llm, _Unset) else None,
         settings.gmail_max_ai_calls,
         warn,
+        ai_available=(
+            classifier_available()
+            if isinstance(llm, _Unset) and settings.gmail_max_ai_calls > 0
+            else llm is not None and not isinstance(llm, _Unset)
+        ),
     )
     reporter.begin(settings.gmail_sync_max_pages, "Syncing Gmail")
     with get_session(engine) as session:
