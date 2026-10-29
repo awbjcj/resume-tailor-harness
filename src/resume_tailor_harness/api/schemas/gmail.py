@@ -7,6 +7,10 @@ class GmailConnectOut(CamelModel):
     auth_url: str
 
 
+class GmailSyncIn(CamelModel):
+    review_cleared: bool = False
+
+
 class GmailStatusOut(CamelModel):
     connected: bool
     scopes: list[str] = []
