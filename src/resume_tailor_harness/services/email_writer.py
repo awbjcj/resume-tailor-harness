@@ -61,7 +61,7 @@ _WRITER_INSTRUCTIONS = (
     "the opportunity'. Claims about the candidate must come ONLY from the "
     "provided profile facts — never invent experience, numbers, or "
     "credentials. Match the requested tone and length. Return the subject and "
-    "body."
+    "body.",
 )
 
 
