@@ -21,6 +21,7 @@ from resume_tailor_harness.db import get_session
 from resume_tailor_harness.gmail.auth import build_service
 from resume_tailor_harness.gmail.classify import (
     build_classifier_llm,
+    classifier_available,
     SyncClassifier,
 )
 from resume_tailor_harness.gmail.errors import GmailApiError
@@ -98,11 +99,21 @@ def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -
 
     settings = get_settings()
     page_size = min(settings.gmail_max_messages, 500)
+    ai_available = llm is not None and not isinstance(llm, _Unset)
+    if isinstance(llm, _Unset) and settings.gmail_max_ai_calls > 0:
+        try:
+            ai_available = classifier_available()
+        except Exception:  # noqa: BLE001 — optional AI configuration cannot block rules
+            warn("AI classification is unavailable. Synced using email rules only.")
+            # Keep the enabled fingerprint. If uncertain mail reaches the lazy
+            # factory, its existing failure handler leaves it retryable.
+            ai_available = True
     classifier = SyncClassifier(
         None if isinstance(llm, _Unset) else llm,
         build_classifier_llm if isinstance(llm, _Unset) else None,
         settings.gmail_max_ai_calls,
         warn,
+        ai_available=ai_available,
     )
     reporter.begin(settings.gmail_sync_max_pages, "Syncing Gmail")
     with get_session(engine) as session:
