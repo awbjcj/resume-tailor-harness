@@ -50,7 +50,7 @@ tenant isolation independent from the auth-free local container default.
    Add `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, and/or
    `DEEPSEEK_API_KEY` as Railway variables. Every admin, free member, and
    subscriber uses a matching shared key first. Users add fallback keys under
-   Settings → Keys; those persist only in their tenant workspace and take over
+   Settings → API keys & models; those persist only in their tenant workspace and take over
    automatically after the account or platform shared allowance is exhausted.
 
 5. Deploy and sign in at the Railway-provided domain.
@@ -111,7 +111,7 @@ One Google OAuth client covers two separate features:
   email-draft writer. It uses only readonly and compose scopes, and never sends
   mail.
   This is a separate, incremental consent the user grants later from
-  Settings → Keys.
+  Settings → Email & notifications.
 
 It needs a Google OAuth **Web application** client; this is a different
 client type from the **Desktop app** client used by the local CLI's
@@ -150,10 +150,11 @@ client type from the **Desktop app** client used by the local CLI's
 
    This becomes the **platform client** every workspace connects through by
    default; any signed-in user can instead paste their own client id/secret
-   under Settings → Keys, which overrides the platform client for their
+   under Settings → Email & notifications → Custom Gmail OAuth client (optional),
+   which overrides the platform client for their
    workspace only.
 
-6. Sign in to the app, open **Settings → Keys**, and click **Connect Gmail**
+6. Sign in to the app, open **Settings → Email & notifications**, and click **Connect Gmail**
    on the Gmail card to run the consent flow.
 
 Skip this if you prefer to track application statuses by hand. The rest of the

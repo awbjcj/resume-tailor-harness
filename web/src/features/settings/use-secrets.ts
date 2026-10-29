@@ -22,6 +22,7 @@ export function useSaveSecrets() {
       qc.setQueryData(["secrets"], statuses);
       qc.invalidateQueries({ queryKey: ["setup-status"] });
       qc.invalidateQueries({ queryKey: ["model-catalog"] });
+      qc.invalidateQueries({ queryKey: ["gmail-status"] });
       toast.success("Keys updated");
     },
     onError: (err: Error) => toast.error(err.message),

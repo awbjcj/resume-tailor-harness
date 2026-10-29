@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockEmptyRuns } from "./support";
+import { mockEmptyRuns, mockGmailSettings } from "./support";
 import { emailNotificationsZh } from "../src/i18n/email-notifications";
 
 for (const { width, theme } of [{ width: 1280, theme: "light" }, { width: 390, theme: "dark" }]) {
@@ -11,6 +11,7 @@ for (const { width, theme } of [{ width: 1280, theme: "light" }, { width: 390, t
       localStorage.setItem("theme", preferredTheme);
     }, theme);
     await mockEmptyRuns(page);
+    await mockGmailSettings(page);
     await page.route("**/api/setup/status", (route) => route.fulfill({ json: { complete: true } }));
     await page.route("**/api/notifications*", (route) => route.fulfill({ json: [] }));
     await page.route("**/api/run-completions*", (route) => route.fulfill({ json: [] }));

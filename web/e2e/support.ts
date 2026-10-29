@@ -1,5 +1,16 @@
 import type { Page } from "@playwright/test";
 
+export async function mockGmailSettings(page: Page) {
+  await page.route("**/api/gmail/status", (route) => route.fulfill({ json: {
+    connected: true, scopes: [], draftCapable: true, clientSource: "platform",
+  } }));
+  await page.route("**/api/secrets", (route) => route.fulfill({ json: [
+    { key: "openaiApiKey", isSet: false, hint: null },
+    { key: "googleOauthClientId", isSet: false, hint: null },
+    { key: "googleOauthClientSecret", isSet: false, hint: null },
+  ] }));
+}
+
 export async function mockEmptyRuns(page: Page) {
   await page.route("**/api/config/language", async (route) => route.fulfill({ json: route.request().postDataJSON() }));
   await page.route("**/api/auth/me", (route) =>

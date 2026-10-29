@@ -2404,11 +2404,6 @@
     "en": "Connected ({{v0}} client). Sync and drafts are enabled.",
     "zh-CN": "已连接（{{v0}} 客户端）。已启用同步和草稿功能。"
   },
-  "Connected accounts": {
-    "key": "ui_2fc385cd2008",
-    "en": "Connected accounts",
-    "zh-CN": "已连接账户"
-  },
   "Connection type": {
     "key": "ui_a2cfeb2898b2",
     "en": "Connection type",
@@ -4179,11 +4174,6 @@
     "en": "Global (.com)",
     "zh-CN": "全球（.com）"
   },
-  "Gmail": {
-    "key": "ui_d19a15c70437",
-    "en": "Gmail",
-    "zh-CN": "Gmail"
-  },
   "Gmail connected.": {
     "key": "ui_3374e971bc06",
     "en": "Gmail connected.",
@@ -4198,11 +4188,6 @@
     "key": "ui_ba2413ae4ba2",
     "en": "Gmail disconnected",
     "zh-CN": "Gmail 已断开连接"
-  },
-  "Gmail OAuth client (optional)": {
-    "key": "ui_bba01c12929e",
-    "en": "Gmail OAuth client (optional)",
-    "zh-CN": "Gmail OAuth 客户端（可选）"
   },
   "Gmail sign-in link expired or was invalid. Please try connecting again.": {
     "key": "ui_e46172dcd9e0",
@@ -6563,11 +6548,6 @@
     "key": "ui_eabbf3abaf8d",
     "en": "Outline",
     "zh-CN": "大纲"
-  },
-  "Output": {
-    "key": "ui_b2439bcb8dee",
-    "en": "Output",
-    "zh-CN": "输出"
   },
   "Output (USD / 1M)": {
     "key": "ui_72b66f4a1c54",
@@ -9004,11 +8984,6 @@
     "en": "Setup steps",
     "zh-CN": "设置步骤"
   },
-  "Shape how the workspace discovers, reviews, and renders work.": {
-    "key": "ui_b2ee49fa15cd",
-    "en": "Shape how the workspace discovers, reviews, and renders work.",
-    "zh-CN": "设置工作区查找职位、审核和生成材料的方式。"
-  },
   "Share roles, locations, industries, and boundaries in plain language.": {
     "key": "ui_d118bb9c0f5a",
     "en": "Share roles, locations, industries, and boundaries in plain language.",
@@ -9658,11 +9633,6 @@
     "key": "ui_5da22fe4f7ac",
     "en": "Synced",
     "zh-CN": "已同步"
-  },
-  "System": {
-    "key": "ui_6725e7bbcd28",
-    "en": "System",
-    "zh-CN": "系统"
   },
   "System backup": {
     "key": "ui_d9eb3633f346",
@@ -12048,5 +12018,85 @@
     "key": "ui_0eabf17afe8a",
     "en": "· run usage limit reached",
     "zh-CN": "· 已达到本次运行的用量上限"
+  },
+  "Gmail connection & sync": {
+    "key": "ui_3dcddd2a119c",
+    "en": "Gmail connection & sync",
+    "zh-CN": "Gmail 连接与同步"
+  },
+  "Sync recruiting emails to suggest application updates. Review changes in Notifications before applying them.": {
+    "key": "ui_4a869ad1cd5d",
+    "en": "Sync recruiting emails to suggest application updates. Review changes in Notifications before applying them.",
+    "zh-CN": "同步招聘邮件，获取申请状态更新建议。在“通知”中审核后再应用更改。"
+  },
+  "Syncing…": {
+    "key": "ui_8a046cc90ab0",
+    "en": "Syncing…",
+    "zh-CN": "正在同步…"
+  },
+  "Email & notifications": {
+    "key": "ui_55e33f82c576",
+    "en": "Email & notifications",
+    "zh-CN": "邮件与通知"
+  },
+  "Connect Gmail, sync application updates, and choose the email notifications you receive.": {
+    "key": "ui_37524a8bffbb",
+    "en": "Connect Gmail, sync application updates, and choose the email notifications you receive.",
+    "zh-CN": "连接 Gmail，同步申请状态更新，并选择要接收的邮件通知。"
+  },
+  "Custom Gmail OAuth client (optional)": {
+    "key": "ui_3c8600808ce4",
+    "en": "Custom Gmail OAuth client (optional)",
+    "zh-CN": "自定义 Gmail OAuth 客户端（可选）"
+  },
+  "Leave these fields empty to use the platform Gmail connection. Add your own Google OAuth client only if you need a custom connection.": {
+    "key": "ui_e30d4e5b3698",
+    "en": "Leave these fields empty to use the platform Gmail connection. Add your own Google OAuth client only if you need a custom connection.",
+    "zh-CN": "留空即可使用平台的 Gmail 连接。仅在需要自定义连接时填写自己的 Google OAuth 客户端。"
+  },
+  "Could not load Gmail client settings.": {
+    "key": "ui_cbfcf6c882ff",
+    "en": "Could not load Gmail client settings.",
+    "zh-CN": "无法加载 Gmail 客户端设置。"
+  },
+  "Loading Gmail client settings": {
+    "key": "ui_c5301de99f2d",
+    "en": "Loading Gmail client settings",
+    "zh-CN": "正在加载 Gmail 客户端设置"
+  },
+  "Email notifications": {
+    "key": "ui_aab79ba94c1f",
+    "en": "Email notifications",
+    "zh-CN": "邮件通知"
+  },
+  "API keys & models": {
+    "key": "ui_4b445deb5542",
+    "en": "API keys & models",
+    "zh-CN": "API 密钥与模型"
+  },
+  "AI configuration": {
+    "key": "ui_c4da4e567b21",
+    "en": "AI configuration",
+    "zh-CN": "AI 配置"
+  },
+  "Workspace": {
+    "key": "ui_87bb59ba2f92",
+    "en": "Workspace",
+    "zh-CN": "工作区"
+  },
+  "Manage discovery, resumes, applications, and your workspace.": {
+    "key": "ui_77c4ec149a9c",
+    "en": "Manage discovery, resumes, applications, and your workspace.",
+    "zh-CN": "管理职位探索、简历、申请及工作区设置。"
+  },
+  "Settings section": {
+    "key": "ui_f66dfdc6f1b0",
+    "en": "Settings section",
+    "zh-CN": "设置分区"
+  },
+  "Gmail OAuth client (optional)": {
+    "key": "ui_bba01c12929e",
+    "en": "Gmail OAuth client (optional)",
+    "zh-CN": "Gmail OAuth 客户端（可选）"
   }
 }

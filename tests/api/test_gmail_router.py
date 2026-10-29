@@ -112,7 +112,7 @@ def test_connect_callback_status_disconnect_cycle(client, monkeypatch):
         f"/api/gmail/callback?code=abc&state={state}", follow_redirects=False
     )
     assert callback.status_code == 307
-    assert "gmail=connected" in callback.headers["location"]
+    assert callback.headers["location"] == "/settings/notifications?gmail=connected"
 
     status = client.get("/api/gmail/status")
     assert status.status_code == 200
@@ -131,7 +131,7 @@ def test_callback_rejects_forged_state(client, monkeypatch):
         "/api/gmail/callback?code=abc&state=forged", follow_redirects=False
     )
     assert response.status_code == 307
-    assert "gmail=invalid" in response.headers["location"]
+    assert response.headers["location"] == "/settings/notifications?gmail=invalid"
 
 
 def test_callback_denied_by_user(client):
@@ -139,7 +139,7 @@ def test_callback_denied_by_user(client):
         "/api/gmail/callback?error=access_denied&state=x", follow_redirects=False
     )
     assert response.status_code == 307
-    assert "gmail=denied" in response.headers["location"]
+    assert response.headers["location"] == "/settings/notifications?gmail=denied"
 
 
 def test_status_refresh_outage_returns_retryable_error(client, monkeypatch):

@@ -39,6 +39,7 @@ describe("SecretsForm", () => {
     render(
       <SecretsForm
         statuses={[
+          { key: "openaiApiKey", isSet: false, hint: null },
           { key: "googleOauthClientId", isSet: false, hint: null },
           { key: "googleOauthClientSecret", isSet: false, hint: null },
         ]}
@@ -47,6 +48,7 @@ describe("SecretsForm", () => {
       />,
     );
     expect(screen.getByText("Google OAuth client ID")).toBeInTheDocument();
+    expect(screen.getByText("Gmail OAuth client (optional)")).toBeInTheDocument();
     expect(screen.getByText("Google OAuth client secret")).toBeInTheDocument();
     expect(screen.queryByText("googleOauthClientId")).not.toBeInTheDocument();
     expect(screen.getByText(/Web application OAuth client/)).toBeInTheDocument();

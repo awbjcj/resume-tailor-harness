@@ -10,7 +10,7 @@ export type GmailStatus = components["schemas"]["GmailStatusOut"];
 const KEY = ["gmail-status"];
 
 // The OAuth callback (unguarded, no SPA context) can only signal its result by
-// redirecting to /settings/keys?gmail=<outcome>. Surface it here so failures
+// redirecting to /settings/notifications?gmail=<outcome>. Surface it here so failures
 // aren't silent, then strip the param so a refresh doesn't re-toast.
 const CONNECT_OUTCOMES: Record<string, { ok: boolean; message: string }> = {
   connected: { ok: true, message: "Gmail connected." },

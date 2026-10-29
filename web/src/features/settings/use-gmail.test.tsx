@@ -32,7 +32,7 @@ describe("useGmailConnectOutcome", () => {
         useGmailConnectOutcome();
         return useLocation();
       },
-      { wrapper: makeWrapper("/settings/keys?gmail=error&keep=1") },
+      { wrapper: makeWrapper("/settings/notifications?gmail=error&keep=1") },
     );
     await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
     expect(toast.success).not.toHaveBeenCalled();
@@ -47,7 +47,7 @@ describe("useGmailConnectOutcome", () => {
         useGmailConnectOutcome();
         return useLocation();
       },
-      { wrapper: makeWrapper("/settings/keys?gmail=connected") },
+      { wrapper: makeWrapper("/settings/notifications?gmail=connected") },
     );
     await waitFor(() => expect(toast.success).toHaveBeenCalledTimes(1));
     expect(toast.error).not.toHaveBeenCalled();
@@ -59,7 +59,7 @@ describe("useGmailConnectOutcome", () => {
         useGmailConnectOutcome();
         return useLocation();
       },
-      { wrapper: makeWrapper("/settings/keys") },
+      { wrapper: makeWrapper("/settings/notifications") },
     );
     await new Promise((r) => setTimeout(r, 20));
     expect(toast.success).not.toHaveBeenCalled();

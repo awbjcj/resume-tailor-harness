@@ -32,7 +32,7 @@ router = APIRouter()
 callback_router = APIRouter()
 
 _STATE_TTL_SECONDS = 600
-_SETTINGS_PAGE = "/settings/keys"
+_SETTINGS_PAGE = "/settings/notifications"
 
 
 def _build_flow(settings: Settings, redirect_uri: str) -> Any:

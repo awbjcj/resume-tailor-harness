@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
@@ -40,6 +41,26 @@ describe("GmailCard", () => {
     expect(
       await screen.findByRole("button", { name: /connect gmail/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sync Gmail" })).toBeDisabled();
+  });
+
+  it("starts a manual sync from email settings and shows a failed launch inline", async () => {
+    const user = userEvent.setup();
+    let launches = 0;
+    server.use(
+      http.get("*/api/gmail/status", () => HttpResponse.json({
+        connected: true, scopes: [], draftCapable: true, clientSource: "platform",
+      })),
+      http.post("*/api/gmail/sync", () => {
+        launches += 1;
+        return HttpResponse.json({ error: { code: "GMAIL_API_ERROR", message: "Please reconnect Gmail." } }, { status: 503 });
+      }),
+    );
+    render(<GmailCard />, { wrapper: withQueryClient });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Sync Gmail" })).toBeEnabled());
+    await user.click(screen.getByRole("button", { name: "Sync Gmail" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Please reconnect Gmail.");
+    expect(launches).toBe(1);
   });
 
   it("offers reconnect when compose scope is missing", async () => {

@@ -1,7 +1,8 @@
+import { Navigate, useLocation } from "react-router-dom";
+
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GmailCard } from "../GmailCard";
 import {
   findCatalogModel,
   ModelPicker,
@@ -11,7 +12,6 @@ import { SecretsForm } from "../forms/SecretsForm";
 import { SaveBar } from "../SaveBar";
 import { useConfig, useSaveConfig } from "../use-config";
 import { useDraft } from "../use-draft";
-import { useGmailConnectOutcome } from "../use-gmail";
 import { useModelCatalog } from "../use-model-catalog";
 import { useSaveSecrets, useSecrets } from "../use-secrets";
 
@@ -43,19 +43,26 @@ export function KeysSettingsPage() {
   const saveModels = useSaveConfig("/api/config/models");
   const catalog = useModelCatalog();
   const { draft, setDraft, dirty, reset } = useDraft(models.data as ModelsDoc | undefined);
-  useGmailConnectOutcome();
+  const location = useLocation();
+
+  // Preserve OAuth links created before Gmail moved to email settings.
+  if (new URLSearchParams(location.search).has("gmail")) {
+    return <Navigate to={`/settings/notifications${location.search}${location.hash}`} replace />;
+  }
 
   if (!secrets.data || !draft) return <Skeleton className="h-64 w-full" />;
 
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-lg font-semibold">API keys</h1>
+        <h1 className="text-lg font-semibold">API keys & models</h1>
         <p className="text-sm text-muted-foreground">
           Keys are write-only: once saved, only the last four characters are shown.
         </p>
       </header>
-      <SecretsForm statuses={secrets.data} saving={saveSecrets.isPending}
+      <SecretsForm statuses={secrets.data.filter((secret) =>
+        secret.key !== "googleOauthClientId" && secret.key !== "googleOauthClientSecret",
+      )} saving={saveSecrets.isPending}
         onSave={(patch) => saveSecrets.mutate(patch)} />
       <Separator />
       <section className="flex flex-col gap-4">
@@ -100,11 +107,6 @@ export function KeysSettingsPage() {
         <SaveBar dirty={dirty} saving={saveModels.isPending}
           onSave={() => saveModels.mutate(draft as never)}
           onDiscard={reset} />
-      </section>
-      <Separator />
-      <section className="flex flex-col gap-4">
-        <h2 className="text-sm font-medium">Connected accounts</h2>
-        <GmailCard />
       </section>
     </div>
   );
