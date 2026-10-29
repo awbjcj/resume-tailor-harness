@@ -372,6 +372,32 @@ def test_adding_provider_key_reconsiders_cached_uncertain_mail(tmp_path, monkeyp
     assert len(service._messages.gets) == reads
 
 
+def test_availability_failure_preserves_rules_and_retries_uncertain_mail(tmp_path, monkeypatch):
+    from resume_tailor_harness import llm_runner
+    from resume_tailor_harness.llm_routing import RouteConfigError
+    from resume_tailor_harness.services import gmail_sync
+
+    engine = _seed(2)
+    service = FakeGmailService([_mail("rules"), _mail("uncertain", company=1, decision="uncertain")])
+    monkeypatch.setattr(llm_runner, "resolve_api_key", Mock(side_effect=RouteConfigError("invalid provider route")))
+    first = run_gmail_sync(engine, _reporter(tmp_path), service=service)
+    assert first["pending"] == 1
+    assert "AI classification is unavailable. Synced using email rules only." in first["warnings"]
+    with Session(engine) as session:
+        uncertain = session.exec(select(GmailReceipt).where(GmailReceipt.message_id == "uncertain")).one()
+        assert uncertain.outcome == "retry" and uncertain.revision == ""
+    reads = len(service._messages.gets)
+    monkeypatch.setattr(llm_runner, "resolve_api_key", lambda _: "configured-test-key")
+    runner = Mock()
+    runner.run.return_value.content = '{"label":"none","confidence":1,"evidence":""}'
+    monkeypatch.setattr(gmail_sync, "build_classifier_llm", lambda: runner)
+    recovered = run_gmail_sync(engine, _reporter(tmp_path), service=service)
+    assert recovered["pending"] == 1
+    assert recovered["stats"]["ai_calls"] == 1
+    assert len(service._messages.gets) == reads
+    assert not recovered["has_more"]
+
+
 @pytest.mark.parametrize("older_state", ["superseded", "accepted", "dismissed", "cleared"])
 def test_correcting_latest_decision_restores_only_automatically_superseded_card(
     tmp_path, monkeypatch, older_state
