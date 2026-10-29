@@ -77,7 +77,7 @@ export function AdminLimitsCard() {
               <h3>Member defaults</h3>
             </CardTitle>
             <CardDescription>
-              Non-financial workspace limits. Cost allowances are managed in Cost quotas.
+              Manage non-financial workspace limits here. Manage cost allowances in Cost quotas.
             </CardDescription>
           </div>
         </div>

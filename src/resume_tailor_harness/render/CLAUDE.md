@@ -10,3 +10,15 @@ fitOnePage}`; legacy `template_path` and `output_dir` remain runtime-only CLI
   replace live templates only after a successful validation compile. Deleting
   an active custom template falls back to `classic`; missing templates never
   silently fall back during rendering.
+
+- **Eight bundled layouts share `templates/resume-base.typ`.** Stable ids are
+  classic, modern, technical, executive, graduate, academic, minimal, compact.
+  Source references and the bundled Source Sans 3 license are in
+  `templates/README.md` and `templates/fonts/LICENSE.md`. Compile with the
+  bundled font directory; do not require host fonts or remote Typst packages.
+- **Export length is validated before publication.** `fit_one_page` selects
+  one page or a maximum of two. The fitter uses at most five layout probes and
+  one optional two-page balance probe; body text stays >=10pt. `PageFitError`
+  leaves previous artifacts intact and maps to an actionable 422. Rendering
+  never cuts approved content. `services/resume_shape.py` aligns authoring
+  budgets with this length before any native planning or external context.

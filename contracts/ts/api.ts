@@ -4427,6 +4427,33 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** AlternateEmail */
+        AlternateEmail: {
+            /**
+             * Confirmedon
+             * Format: date
+             */
+            confirmedOn: string;
+            /**
+             * Country
+             * @default
+             */
+            country: string;
+            /** Email */
+            email: string;
+            /**
+             * Employer
+             * @default
+             */
+            employer: string;
+            /** Permitted */
+            permitted?: boolean | null;
+            /**
+             * Requisition
+             * @default
+             */
+            requisition: string;
+        };
         /** AnalyticsOut */
         AnalyticsOut: {
             /** Byband */
@@ -4660,6 +4687,29 @@ export interface components {
             /** Url */
             url: string | null;
         };
+        /** ApplicationName */
+        ApplicationName: {
+            /**
+             * Familyname
+             * @default
+             */
+            familyName: string;
+            /**
+             * Givenname
+             * @default
+             */
+            givenName: string;
+            /**
+             * Middlename
+             * @default
+             */
+            middleName: string;
+            /**
+             * Suffix
+             * @default
+             */
+            suffix: string;
+        };
         /** ApplicationOut */
         ApplicationOut: {
             /** Coverletterid */
@@ -4697,6 +4747,16 @@ export interface components {
              * @default
              */
             address: string;
+            /** Aimatchingconfirmedon */
+            aiMatchingConfirmedOn?: string | null;
+            /**
+             * Aimatchingpreference
+             * @default unknown
+             * @enum {string}
+             */
+            aiMatchingPreference: "unknown" | "opt_in" | "opt_out" | "ask";
+            /** Alternateemails */
+            alternateEmails?: components["schemas"]["AlternateEmail"][];
             /**
              * Atleast18
              * @default
@@ -4732,6 +4792,8 @@ export interface components {
              * @default
              */
             email: string;
+            /** Employeranswers */
+            employerAnswers?: components["schemas"]["EmployerAnswer"][];
             /**
              * Employerrelationships
              * @default
@@ -4757,6 +4819,8 @@ export interface components {
              * @default
              */
             experienceNotes: string;
+            /** Experienceranges */
+            experienceRanges?: components["schemas"]["ExperienceRange"][];
             /**
              * Exportcontrolcitizenship
              * @default
@@ -4782,11 +4846,13 @@ export interface components {
              * @default
              */
             industryExperience: string;
+            legalName?: components["schemas"]["ApplicationName"];
             /**
              * Linkedinurl
              * @default
              */
             linkedinUrl: string;
+            mailingAddress?: components["schemas"]["MailingAddress"];
             /**
              * Officeattendance
              * @default
@@ -4812,6 +4878,7 @@ export interface components {
              * @default
              */
             preferredName: string;
+            preferredNameParts?: components["schemas"]["ApplicationName"];
             /**
              * Previousapplications
              * @default
@@ -4842,6 +4909,13 @@ export interface components {
              * @default
              */
             remotePreference: string;
+            /**
+             * Sex
+             * @default
+             */
+            sex: string;
+            /** Sexconfirmedon */
+            sexConfirmedOn?: string | null;
             /**
              * Sponsorshipneeded
              * @default
@@ -4877,6 +4951,8 @@ export interface components {
              * @default
              */
             workAuthorizationVerification: string;
+            /** Workeligibility */
+            workEligibility?: components["schemas"]["WorkEligibility"][];
         };
         /** ApplicationProfileOut */
         ApplicationProfileOut: {
@@ -4899,6 +4975,16 @@ export interface components {
              * @default
              */
             address: string;
+            /** Aimatchingconfirmedon */
+            aiMatchingConfirmedOn?: string | null;
+            /**
+             * Aimatchingpreference
+             * @default unknown
+             * @enum {string}
+             */
+            aiMatchingPreference: "unknown" | "opt_in" | "opt_out" | "ask";
+            /** Alternateemails */
+            alternateEmails?: components["schemas"]["AlternateEmail"][];
             /**
              * Atleast18
              * @default
@@ -4934,6 +5020,8 @@ export interface components {
              * @default
              */
             email: string;
+            /** Employeranswers */
+            employerAnswers?: components["schemas"]["EmployerAnswer"][];
             /**
              * Employerrelationships
              * @default
@@ -4959,6 +5047,8 @@ export interface components {
              * @default
              */
             experienceNotes: string;
+            /** Experienceranges */
+            experienceRanges?: components["schemas"]["ExperienceRange"][];
             /**
              * Exportcontrolcitizenship
              * @default
@@ -4984,11 +5074,13 @@ export interface components {
              * @default
              */
             industryExperience: string;
+            legalName?: components["schemas"]["ApplicationName"];
             /**
              * Linkedinurl
              * @default
              */
             linkedinUrl: string;
+            mailingAddress?: components["schemas"]["MailingAddress"];
             /**
              * Officeattendance
              * @default
@@ -5014,6 +5106,7 @@ export interface components {
              * @default
              */
             preferredName: string;
+            preferredNameParts?: components["schemas"]["ApplicationName"];
             /**
              * Previousapplications
              * @default
@@ -5044,6 +5137,13 @@ export interface components {
              * @default
              */
             remotePreference: string;
+            /**
+             * Sex
+             * @default
+             */
+            sex: string;
+            /** Sexconfirmedon */
+            sexConfirmedOn?: string | null;
             /**
              * Sponsorshipneeded
              * @default
@@ -5079,6 +5179,8 @@ export interface components {
              * @default
              */
             workAuthorizationVerification: string;
+            /** Workeligibility */
+            workEligibility?: components["schemas"]["WorkEligibility"][];
         };
         /** ApplicationProfileUpdate */
         ApplicationProfileUpdate: {
@@ -6730,6 +6832,43 @@ export interface components {
              */
             statistics: boolean;
         };
+        /** EmployerAnswer */
+        EmployerAnswer: {
+            /** Answer */
+            answer?: string | null;
+            /**
+             * Category
+             * @default general
+             * @enum {string}
+             */
+            category: "general" | "referral" | "employment" | "contractor" | "relationship" | "previous_application" | "degree_category" | "role_requirement";
+            /**
+             * Confirmedon
+             * Format: date
+             */
+            confirmedOn: string;
+            /**
+             * Country
+             * @default
+             */
+            country: string;
+            /** Employer */
+            employer: string;
+            /** Question */
+            question: string;
+            /**
+             * Requisition
+             * @default
+             */
+            requisition: string;
+            /**
+             * Timeframe
+             * @default
+             */
+            timeframe: string;
+            /** Validuntil */
+            validUntil?: string | null;
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -6843,6 +6982,20 @@ export interface components {
             status: "planned" | "deterministic_fallback" | "inherited";
             /** Warning */
             warning?: string | null;
+        };
+        /** ExperienceRange */
+        ExperienceRange: {
+            /**
+             * Confirmedon
+             * Format: date
+             */
+            confirmedOn: string;
+            /** Maximumyears */
+            maximumYears?: number | null;
+            /** Minimumyears */
+            minimumYears?: number | null;
+            /** Specialty */
+            specialty: string;
         };
         /** ExternalDraftIn */
         ExternalDraftIn: {
@@ -7893,6 +8046,39 @@ export interface components {
             identifier: string;
             /** Password */
             password: string;
+        };
+        /** MailingAddress */
+        MailingAddress: {
+            /**
+             * City
+             * @default
+             */
+            city: string;
+            /**
+             * Country
+             * @default
+             */
+            country: string;
+            /**
+             * Line1
+             * @default
+             */
+            line1: string;
+            /**
+             * Line2
+             * @default
+             */
+            line2: string;
+            /**
+             * Postalcode
+             * @default
+             */
+            postalCode: string;
+            /**
+             * Region
+             * @default
+             */
+            region: string;
         };
         /** ManualEntryOut */
         ManualEntryOut: {
@@ -11011,6 +11197,33 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** WorkEligibility */
+        WorkEligibility: {
+            /** Authorizedtowork */
+            authorizedToWork?: boolean | null;
+            /** Canverifyauthorization */
+            canVerifyAuthorization?: boolean | null;
+            /**
+             * Confirmedon
+             * Format: date
+             */
+            confirmedOn: string;
+            /** Country */
+            country: string;
+            /** Currentlyonopt */
+            currentlyOnOpt?: boolean | null;
+            /**
+             * Immigrationstatus
+             * @default
+             */
+            immigrationStatus: string;
+            /** Sponsorshipfuture */
+            sponsorshipFuture?: boolean | null;
+            /** Sponsorshipnow */
+            sponsorshipNow?: boolean | null;
+            /** Stemoptextensioneligible */
+            stemOptExtensionEligible?: boolean | null;
         };
         /** ResetPasswordRequest */
         resume_tailor_harness__api__schemas__admin_users__ResetPasswordRequest: {

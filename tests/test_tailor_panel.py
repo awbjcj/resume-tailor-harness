@@ -20,7 +20,11 @@ from resume_tailor_harness.tailor.panel import (
     review_one,
     run_panel,
 )
-from resume_tailor_harness.tailor.review_config import ReviewConfig, ReviewerSpec
+from resume_tailor_harness.tailor.review_config import (
+    LengthBudget,
+    ReviewConfig,
+    ReviewerSpec,
+)
 
 
 class _Result:
@@ -81,6 +85,39 @@ def test_lean_input_has_no_raw_profile():
     assert "Backend role" in text
     assert "experiences=1" in text
     assert "SecretRust" not in text
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+def test_advisory_review_receives_effective_length_policy_without_changing_fact_gate(
+    asynchronous,
+):
+    import asyncio
+    from resume_tailor_harness.tailor.panel import arun_panel
+
+    gate = _Agent(ReviewCritique(reviewer="fact-check", passed=True, score=100))
+    advisory = _Agent(ReviewCritique(reviewer="recruiter", passed=True, score=95))
+    config = ReviewConfig(
+        length_budget=LengthBudget(page_target=1),
+        reviewers=[
+            ReviewerSpec(name="fact-check", gate=True),
+            ReviewerSpec(name="recruiter"),
+        ],
+    )
+    agents = {"fact-check": gate, "recruiter": advisory}
+    if asynchronous:
+
+        async def go():
+            return await arun_panel(
+                _content(), _facts(), "JD", config, agents, sem=asyncio.Semaphore(2)
+            )
+
+        asyncio.run(go())
+    else:
+        run_panel(_content(), _facts(), "JD", config, agents)
+    assert "LENGTH BUDGET" in advisory.received
+    assert "Set summary to null" in advisory.received
+    assert "16 bullets in total" in advisory.received
+    assert "LENGTH BUDGET" not in gate.received
 
 
 def test_lean_review_input_carries_coverage_before_the_current_resume():

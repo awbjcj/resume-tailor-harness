@@ -43,7 +43,7 @@ export function blockedReason(row: ScoutProposal, scrapeAvailable: boolean): str
   if (row.check === "conflict") return "Provider metadata identifies this board as a different company.";
   if (row.check === "failed") return "This source could not be verified.";
   if (row.check === "unverified" && canManuallyConfirm(row, scrapeAvailable))
-    return "This board is unverified. You can review it and explicitly confirm it if it is correct.";
+    return "This board is unverified. Review it and confirm it only if it is correct.";
   if (row.check === "unverified" && !scrapeAvailable)
     return "Browser scraping is unavailable, so an unsupported board cannot be manually added.";
   return "Still being checked.";

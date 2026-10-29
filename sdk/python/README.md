@@ -114,15 +114,36 @@ the job. Agent names are caller-supplied attribution, not verified identities.
 
 ## Prepare job applications with your agent
 
-Version 0.2 adds a typed application workflow. Authenticate as above, install the
-skills below, and ask Codex, Claude Code, or another harness to use
-`resume-harness-apply`. The harness uses its own browser/computer-use tools.
+The application skill teaches Codex, Claude Code, pi, or another agent to work
+through a live employer form with you. Authenticate as above and
+[install the bundled skills](#agent-skills), then ask your agent:
+
+> Use $resume-harness-apply to apply for harness job 42. Prepare the right
+> documents, work through the form, and ask me about missing answers. Show me
+> the completed application before final consent or submission.
+
+The agent selects the requested job, reads fresh application context, prepares
+and uploads eligible documents, and fills supported fields with its own
+browser/computer tools. At a missing required answer, it asks you, saves your
+answer with its exact scope, re-fetches context, and continues from the current
+page. It does not ask you to reconfirm each answer you just supplied. After the
+final review and your specific confirmation, it can submit, verify the employer's
+receipt, and record the outcome in the harness. Login or verification handoffs
+preserve progress so the next turn resumes instead of starting over.
+
+The [apply skill](src/resume_harness_sdk/skills/resume-harness-apply/SKILL.md) is
+the operating guide. Its [interaction examples](src/resume_harness_sdk/skills/resume-harness-apply/references/interactive-application.md)
+include question/answer JSON, multi-turn resumption, consent review, and tracking.
+The SDK supplies data and deterministic writes; the host agent supplies the
+conversation and browser. Version 0.3 adds the preparation, attachment selection,
+and timeline methods used by this workflow.
 
 ```sh
 resume-harness application-jobs --page 1 --page-size 50
 resume-harness application-context 42
 resume-harness application-prompt 42
 resume-harness application-questions --job-id 42 --status unanswered
+resume-harness application-events 42
 ```
 
 `application-prompt` emits complete Markdown directly; the other commands emit
@@ -136,31 +157,35 @@ record and submits nothing.
 from resume_harness_sdk import ResumeHarness
 
 with ResumeHarness.from_env() as harness:
-    jobs = list(harness.iter_application_jobs())
-    if jobs:
-        job_id = jobs[0]["jobId"]
-        context = harness.application_context(job_id)
-        # Give context["prompt"] to your browser/computer-use agent.
-        # Record a question actually encountered on this employer's form:
-        question = harness.record_application_question(
-            "Have you previously worked for this employer?",
-            job_id=job_id,
-            context="Use the exact employer name and timeframe from the live form.",
-        )
-        # Ask the user. Continue ONLY after they provide/confirm the answer:
-        user_answer = input("Your answer to the employer's question: ")
-        harness.answer_application_question(
-            question["id"], user_answer,
-            revision=question["revision"], user_confirmed=True,
-        )
-        context = harness.application_context(job_id)
+    context = harness.application_context(42)  # The user's chosen job.
+    # Inspect the live form using the host's browser tools and context['prompt'].
+    # For a required answer missing from matching saved data:
+    question = harness.record_application_question(
+        "EXACT_QUESTION_FROM_THE_LIVE_FORM",
+        job_id=42,
+        context="ACTUAL_EMPLOYER_REQUISITION_COUNTRY_TIMEFRAME_AND_OPTIONS",
+    )
+    # Preserve question['id'] and ['revision']; ask through the host's chat UI.
+    # In the resumed turn, save the human's answer, re-fetch context, and continue.
 ```
 
 For common personal fields, read `get_application_profile()` and pass only the
 user-confirmed changes to `update_application_profile(changes,
 revision=snapshot["revision"], user_confirmed=True)`. Keys use camelCase; an
-empty string clears an answer, omitted fields are preserved, and null/unknown
-fields are rejected. These are application answers, not edits to resume evidence.
+empty string clears text and omitted fields are preserved. Name/address objects
+merge only supplied parts; lists replace in full (`[]` clears them). Null is
+accepted only for nullable answers/dates, and unknown fields are rejected. Read
+the current profile and preserve other list records when editing one. These are
+application answers, not edits to resume evidence.
+
+Prefer structured fields for reusable answers: `legalName`, `preferredNameParts`,
+`mailingAddress`, `alternateEmails`, `workEligibility`, `experienceRanges`, `sex`,
+`aiMatchingPreference`, and `employerAnswers`. Repeated records require actual
+`confirmedOn` dates and the matching employer/country/requisition/timeframe scope.
+Unknown booleans are null, never an inferred No. Alternate emails require explicit
+permission; sex remains separate from gender, and optional AI matching preferences
+do not authorize consent or submission. See the
+[structured-answer contract](../../docs/agent-applications.md#structured-personal-answers).
 
 Questions default to the current job's scope. Use `scope="profile"` without a
 job ID only when the user wants an answer reused across jobs. Save exact question
@@ -189,10 +214,35 @@ confirmation flag for a model guess. Keep files containing personal data private
 
 Attachments with a non-null `downloadPath` have an available PDF. Use
 `download_resume(id)` or `download_cover_letter(id)` through the SDK; never send
-the token to an employer or arbitrary returned URL. The full prompt instructs
-the agent to fill and verify the form, collect missing answers, and stop before
-final submission or consent. Job approval does not itself authorize submission.
-The queue is live and has no claims/leases; coordinate agents to avoid duplicates.
+the token to an employer or arbitrary returned URL. If an eligible resume lacks a
+PDF, use `render_resume(id)` with the workspace's current template/settings.
+For missing documents within the authorized task, `tailor([job_id])` and
+`generate_cover_letters([job_id])` start hosted runs; wait, inspect their results,
+then re-fetch context. Cover-letter generation includes rendering. Resume
+`resume_page_overflow` requires shortening through normal review; rendering alone
+does not bypass the factual gates.
+
+Use `select_resume(job_id, version_id)` and
+`select_cover_letter(job_id, cover_letter_id)` with eligible attachment IDs to
+remember the uploaded choices. They create/update ready tracking records and
+do not upload or submit anything. The CLI equivalents are `select-resume 42 81`
+and `select-cover-letter 42 12`. `approve_job(job_id)` / `approve JOB_ID` can move
+a specifically requested raw/shortlisted job into preparation; inspect its stage
+first and preserve an already tailored/rendered stage.
+
+The full prompt's `submissionPolicy` is `stop_before_submit`: show the finished
+form and obtain specific confirmation for submission and any consent. Continue
+after that confirmation without asking again for the same unchanged action.
+Only after observing employer success, inspect `list_application_events(job_id)`
+and call `record_application_event(job_id, {"kind": "application_submitted",
+"occurredAt": ACTUAL_ISO_TIME_WITH_OFFSET, "notes": OBSERVED_RECEIPT})` if the
+submission is not recorded yet. The equivalent CLI is
+`record-application-event JOB_ID --input submission.json`. This advances tracking
+and excludes the job from the queue; it does not submit the employer form. Event
+creation is not idempotent: read timeline history after an ambiguous failure
+before retrying. Use job detail and events after submission, since application
+context becomes ineligible. The queue is live and has no claims/leases;
+coordinate agents to avoid duplicates.
 
 Application return types live in `resume_harness_sdk.applications` and are
 validated at the HTTP boundary. `ResponseValidationError` signals an invalid
@@ -217,6 +267,10 @@ resume-harness install-skills --directory .pi/skills
 
 The installer refuses to overwrite existing skill folders. Skills are standard
 directories containing `SKILL.md`; other harnesses may load them directly.
+Updating the Python package does not update previously copied skills. To refresh
+them, install into a new directory, compare with your current copies, and replace
+the intended folders while preserving local customizations. Keep all three
+folders together because their instructions link to each other.
 The installer does not change your agent configuration or install an agent.
 Directory conventions: [Claude Code](https://github.com/anthropics/claude-code),
 [pi skills](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/skills.md).
@@ -228,6 +282,9 @@ Directory conventions: [Claude Code](https://github.com/anthropics/claude-code),
 JSON. `validate 42 --draft draft.json --revision REVISION` checks a local draft;
 `submit` accepts the same arguments plus `--agent`. Use `render VERSION_ID` and
 `download VERSION_ID --output resume.pdf` for PDFs. Downloads refuse overwrite.
+`submit` sends a resume draft to review; employer applications use the host's
+browser and the interactive apply skill. For the complete application command
+map, see the [client reference](src/resume_harness_sdk/skills/resume-harness-sdk/references/client.md#interactive-application-commands).
 
 `APIError` exposes `status_code`, `code`, and `details`. `RunFailed.run` carries
 the server's failed/cancelled record, including `errorCode`. `RunTimeout.run_id`

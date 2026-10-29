@@ -106,7 +106,7 @@ export function HiringContactsPanel({ jobId }: { jobId: number }) {
         icon={<UserSearch className="size-5" aria-hidden="true" />}
         eyebrow="Public-source people research"
         title="Hiring contacts"
-        description="Find publicly verified people who may be relevant to this role, then prepare copy-only drafts."
+        description="Find people whose identities can be verified through public sources and who may be relevant to this role, then prepare drafts to copy."
         context="No private enrichment, login-gated scraping, or automatic outreach."
         action={
           <Button

@@ -66,6 +66,7 @@ def planned_owners(facts: ProfileFacts, budget: "LengthBudget") -> list[OwnerRef
     selection is otherwise source order, constrained independently by kind and
     finally by the combined cap.
     """
+    budget = budget.for_pages()
     owners = evidence_owners(facts)
     experiences = [
         owner
@@ -81,10 +82,22 @@ def planned_owners(facts: ProfileFacts, budget: "LengthBudget") -> list[OwnerRef
         and owner.bullets
         and budget.min_bullets_per_project > 0
     ][: budget.max_projects]
+    if (
+        budget.page_target == 1
+        and experiences
+        and projects
+        and budget.max_evidence_owners >= 2
+    ):
+        # A work-heavy profile must not consume every slot before any project
+        # can be considered. Preserve source ordering within each section.
+        slots = budget.max_evidence_owners
+        work = experiences[: min(len(experiences), slots - 1)]
+        return [*work, *projects[: slots - len(work)]]
     return (experiences + projects)[: budget.max_evidence_owners]
 
 
 def clamped_floor(owner: OwnerRef, budget: "LengthBudget") -> int:
+    budget = budget.for_pages()
     floor = (
         budget.min_bullets_per_role
         if owner.kind == "experience"
@@ -94,6 +107,7 @@ def clamped_floor(owner: OwnerRef, budget: "LengthBudget") -> int:
 
 
 def clamped_ceiling(owner: OwnerRef, budget: "LengthBudget") -> int:
+    budget = budget.for_pages()
     ceiling = (
         budget.max_bullets_per_role
         if owner.kind == "experience"

@@ -58,6 +58,18 @@ describe("dynamic Chinese labels", () => {
     )).toBe("Gmail 尚未连接到此工作区。");
   });
 
+  it("shows readable known Gmail errors in English while retaining unknown errors", () => {
+    expect(localizeRunError(
+      "GmailScopeMissing: Reconnect Gmail in Settings and approve Gmail read access.",
+      "en",
+    )).toBe("Reconnect Gmail in Settings and grant Gmail read access.");
+    expect(localizeRunError("Provider timeout after 30s", "en")).toBe("Provider timeout after 30s");
+    expect(localizeRunLogMessage(
+      "GmailScopeMissing: Reconnect Gmail in Settings and approve Gmail read access.",
+      "en",
+    )).toBe("GmailScopeMissing: Reconnect Gmail in Settings and approve Gmail read access.");
+  });
+
   it("uses Chinese display labels without changing source protocol values", () => {
     expect(localizeSourceMode("synthesis", "zh-CN")).toBe("综合提炼");
     expect(localizeSourceFragmentStatus("source-changed", "zh-CN")).toBe("来源已变更");

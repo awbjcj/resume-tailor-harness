@@ -14,6 +14,7 @@ from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.progress import ProgressReporter
 from resume_tailor_harness.render.export import export_job_artifacts
 from resume_tailor_harness.services.agents import TailorBundle, build_tailor_bundle  # noqa: F401  (TailorBundle re-exported for callers/tests)
+from resume_tailor_harness.services.resume_shape import for_rendering
 from resume_tailor_harness.tailor.agents import model_for_tier
 from resume_tailor_harness.tailor.review_config import load_review_config
 from resume_tailor_harness.tailor.service import TailorOutcome, tailor_jobs
@@ -55,7 +56,7 @@ def tailor(
     targets = resolve_targets(session, job_ids=job_ids, approved=approved)
     if not targets:
         return TailorOutcome()
-    config = load_review_config(review_path)
+    config = for_rendering(load_review_config(review_path))
     enforce_active_budget()
     facts = load_facts(facts_path)
     profile_dir = resolve_tenant_path(facts_path).parent

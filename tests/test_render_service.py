@@ -264,7 +264,7 @@ def test_render_version_can_disable_one_page_fit(tmp_path):
             ),
         )
         render_version(session, _require_id(version.id), config, render_fn=fake_render)
-    assert calls["fit_pages"] is None
+    assert calls["fit_pages"] == 2
 
 
 class _FakeConfigStore:

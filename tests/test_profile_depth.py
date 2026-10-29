@@ -23,6 +23,14 @@ def _bullets(count: int, *, prefix: str = "bullet") -> list[Bullet]:
     ]
 
 
+def test_one_page_plan_reserves_project_evidence_under_combined_cap():
+    facts = _facts()
+    owners = planned_owners(facts, LengthBudget(page_target=1, max_evidence_owners=3))
+    assert len(owners) == 3
+    assert [owner.kind for owner in owners] == ["experience", "experience", "project"]
+    assert owners[0].id == facts.experience[0].id
+
+
 def _facts() -> ProfileFacts:
     return ProfileFacts(
         contact=Contact(name="Ada"),

@@ -519,10 +519,10 @@
     "en": "A company is required",
     "zh-CN": "请填写公司名称"
   },
-  "A gated reviewer blocks the round before scoring. Its weight and score bands are disabled.": {
+  "If a gated reviewer fails, the round fails regardless of its score. Gate reviewers do not contribute a score, so their weight and score bands are disabled.": {
     "key": "ui_8d3c21997cf2",
-    "en": "A gated reviewer blocks the round before scoring. Its weight and score bands are disabled.",
-    "zh-CN": "硬性门槛评审未通过时，本轮直接判为不通过，不再评分。该评审的权重和评分区间不可设置。"
+    "en": "If a gated reviewer fails, the round fails regardless of its score. Gate reviewers do not contribute a score, so their weight and score bands are disabled.",
+    "zh-CN": "硬性门槛评审未通过时，无论本轮得分如何，本轮都不通过。门槛评审不参与评分，因此无法设置权重和评分区间。"
   },
   "A new code is on its way.": {
     "key": "ui_8f5c29c43fff",
@@ -954,11 +954,6 @@
     "en": "AI-generated voice",
     "zh-CN": "AI 生成语音"
   },
-  "Aim for this number. It is not a hard cap. The skills section renders one comma-separated line per category. About 40 entries use roughly five lines, so trimming them saves little space and can reduce keyword coverage.": {
-    "key": "ui_866df9a2c91e",
-    "en": "Aim for this number. It is not a hard cap. The skills section renders one comma-separated line per category. About 40 entries use roughly five lines, so trimming them saves little space and can reduce keyword coverage.",
-    "zh-CN": "这是建议数量，不是硬性上限。技能按类别各占一行，用逗号分隔。40 项技能大约只占五行，删减省不了多少空间，还可能漏掉职位关键词。"
-  },
   "All": {
     "key": "ui_a52ace420f21",
     "en": "All",
@@ -1364,10 +1359,10 @@
     "en": "Archived",
     "zh-CN": "已归档"
   },
-  "Archiving is reversible and never touches jobs you have progressed.": {
+  "You can restore archived jobs. Jobs with progress are not archived.": {
     "key": "ui_b7f0670eeb10",
-    "en": "Archiving is reversible and never touches jobs you have progressed.",
-    "zh-CN": "归档后可以恢复。已有进展的职位不会被归档。"
+    "en": "You can restore archived jobs. Jobs with progress are not archived.",
+    "zh-CN": "归档后的职位可以恢复。已有进展的职位不会被归档。"
   },
   "Archiving…": {
     "key": "ui_af9e1c99f193",
@@ -1469,10 +1464,10 @@
     "en": "Audit log unavailable",
     "zh-CN": "审计日志不可用"
   },
-  "Authorization is enforced by protected admin endpoints behind every action.": {
+  "Each action requires administrator authorization.": {
     "key": "ui_668d89afbf10",
-    "en": "Authorization is enforced by protected admin endpoints behind every action.",
-    "zh-CN": "每项操作都会由管理接口校验权限。"
+    "en": "Each action requires administrator authorization.",
+    "zh-CN": "每项操作都需要管理员权限。"
   },
   "Auto": {
     "key": "ui_0286249762f7",
@@ -2434,10 +2429,10 @@
     "en": "Continue with Google",
     "zh-CN": "使用 Google 继续"
   },
-  "Control recurring allowances, durable credits, pricing coverage, and auditable balance changes.": {
+  "Manage recurring allowances and credits, check pricing coverage, and view the audit trail for balance changes.": {
     "key": "ui_73469b41bb83",
-    "en": "Control recurring allowances, durable credits, pricing coverage, and auditable balance changes.",
-    "zh-CN": "管理周期额度和充值余额，查看费率覆盖情况与余额变更记录。"
+    "en": "Manage recurring allowances and credits, check pricing coverage, and view the audit trail for balance changes.",
+    "zh-CN": "管理周期额度和账户余额，查看费率配置和余额变更的审计记录。"
   },
   "Conversation active": {
     "key": "ui_a8bcac3559cd",
@@ -3694,10 +3689,10 @@
     "en": "Exports are compressed tar.gz files. Keep archives private because they may contain workspace credentials and source data.",
     "zh-CN": "导出文件为压缩的 tar.gz 格式。请妥善保管，因为其中可能包含工作区凭证和来源数据。"
   },
-  "Extra rounds granted when a round failed only on citation ids. 0 makes a citation slip cost a full round.": {
+  "Allow extra retries when a round fails only because of citation IDs. Set to 0 to count these failures against the regular round limit.": {
     "key": "ui_1131b2e1d35a",
-    "en": "Extra rounds granted when a round failed only on citation ids. 0 makes a citation slip cost a full round.",
-    "zh-CN": "仅因引用编号错误而失败时，允许额外重试的次数。设为 0 时，这类错误也会占用一轮。"
+    "en": "Allow extra retries when a round fails only because of citation IDs. Set to 0 to count these failures against the regular round limit.",
+    "zh-CN": "仅因引用编号错误而失败时，允许额外重试的次数。设为 0 时，这类错误也会占用正常轮次。"
   },
   "Extracted facts, skill matrix, and fragments. Source documents and hand-written overrides stay.": {
     "key": "ui_2be6963b17d0",
@@ -3774,9 +3769,9 @@
     "en": "Fast",
     "zh-CN": "快速"
   },
-  "Faster and cheaper; turn off to run each advisory reviewer separately.": {
+  "Combining reviews saves time and cost. Turn this off to run each advisory reviewer separately.": {
     "key": "ui_e6039c2b1728",
-    "en": "Faster and cheaper; turn off to run each advisory reviewer separately.",
+    "en": "Combining reviews saves time and cost. Turn this off to run each advisory reviewer separately.",
     "zh-CN": "合并评审可减少耗时和费用；关闭后，各项评审将分别运行。"
   },
   "Feishu": {
@@ -3884,9 +3879,9 @@
     "en": "Find a job",
     "zh-CN": "查找职位"
   },
-  "Find publicly verified people who may be relevant to this role, then prepare copy-only drafts.": {
+  "Find people whose identities can be verified through public sources and who may be relevant to this role, then prepare drafts to copy.": {
     "key": "ui_a9c8b1be1107",
-    "en": "Find publicly verified people who may be relevant to this role, then prepare copy-only drafts.",
+    "en": "Find people whose identities can be verified through public sources and who may be relevant to this role, then prepare drafts to copy.",
     "zh-CN": "查找可能与此职位相关、身份可由公开来源核实的联系人，再生成供复制使用的消息草稿。"
   },
   "Find remote healthcare platform roles…": {
@@ -4124,10 +4119,10 @@
     "en": "Generating…",
     "zh-CN": "正在生成…"
   },
-  "Generation is explicit. Existing briefs stay frozen until you regenerate them.": {
+  "Generate a brief when you are ready. Saved briefs stay unchanged until you regenerate them.": {
     "key": "ui_7142ee9ad888",
-    "en": "Generation is explicit. Existing briefs stay frozen until you regenerate them.",
-    "zh-CN": "点击后才会生成。已有提纲在你重新生成前保持不变。"
+    "en": "Generate a brief when you are ready. Saved briefs stay unchanged until you regenerate them.",
+    "zh-CN": "准备好后即可生成提纲。已保存的提纲会保持不变，直到你重新生成。"
   },
   "Generic email draft": {
     "key": "ui_8ed501948b28",
@@ -4279,11 +4274,6 @@
     "en": "Government or regulatory",
     "zh-CN": "政府或监管来源"
   },
-  "Gradually tightens the layout while keeping a readable minimum size.": {
-    "key": "ui_afbe0e6732e7",
-    "en": "Gradually tightens the layout while keeping a readable minimum size.",
-    "zh-CN": "逐步调整排版，字号不会缩小到影响阅读。"
-  },
   "Grant shared": {
     "key": "ui_8245807edf09",
     "en": "Grant shared",
@@ -4379,19 +4369,19 @@
     "en": "House style for tailored bullets. The tailor and reviewers use it.",
     "zh-CN": "定制简历要点的写作规范，供写作和评审助手使用。"
   },
-  "How many write-and-review passes before the best attempt is kept.": {
+  "Maximum number of writing and review rounds. The best version is kept.": {
     "key": "ui_44e46588aba0",
-    "en": "How many write-and-review passes before the best attempt is kept.",
+    "en": "Maximum number of writing and review rounds. The best version is kept.",
     "zh-CN": "最多进行多少轮写作和评审，最后保留效果最好的一版。"
   },
-  "How much each surviving role or project gets to say.": {
+  "How much space each selected role or project can use.": {
     "key": "ui_49fc6abde097",
-    "en": "How much each surviving role or project gets to say.",
+    "en": "How much space each selected role or project can use.",
     "zh-CN": "每段入选的工作或项目经历可占多少篇幅。"
   },
-  "How tailored resumes get written, scored, and sized before they're offered up for approval.": {
+  "Set how tailored resumes are written, scored, and sized before you approve them.": {
     "key": "ui_8e4d8ae03d53",
-    "en": "How tailored resumes get written, scored, and sized before they're offered up for approval.",
+    "en": "Set how tailored resumes are written, scored, and sized before you approve them.",
     "zh-CN": "设置简历提交你批准前的写作、评分和篇幅要求。"
   },
   "How this version was tailored": {
@@ -4659,9 +4649,9 @@
     "en": "Invite could not be created",
     "zh-CN": "邀请创建失败"
   },
-  "Invite new members and set comfortable operating limits for their workspaces.": {
+  "Invite new members and set operating limits for their workspaces.": {
     "key": "ui_408b04c2f6af",
-    "en": "Invite new members and set comfortable operating limits for their workspaces.",
+    "en": "Invite new members and set operating limits for their workspaces.",
     "zh-CN": "邀请新成员，并为其工作区设置合理的操作限额。"
   },
   "Irreversible": {
@@ -5204,9 +5194,9 @@
     "en": "Loading views…",
     "zh-CN": "正在加载视图…"
   },
-  "Loading why this version was tailored this way…": {
+  "Loading the tailoring explanation…": {
     "key": "ui_6fa00198e0be",
-    "en": "Loading why this version was tailored this way…",
+    "en": "Loading the tailoring explanation…",
     "zh-CN": "正在加载此版本的定制说明…"
   },
   "Loading...": {
@@ -5554,9 +5544,9 @@
     "en": "Minimum salary",
     "zh-CN": "最低薪资"
   },
-  "Mint a single-use code for a new member account.": {
+  "Create a single-use invite code for a new member.": {
     "key": "ui_69769c7b1f5f",
-    "en": "Mint a single-use code for a new member account.",
+    "en": "Create a single-use invite code for a new member.",
     "zh-CN": "为新成员账户生成一次性邀请码。"
   },
   "Mission control": {
@@ -5624,9 +5614,9 @@
     "en": "model-id",
     "zh-CN": "模型 ID"
   },
-  "Models are grouped into one block and their immutable versions stay newest-first. Sort any column to rank model groups by the latest version.": {
+  "Model versions are grouped together, with the newest first. Saved versions cannot be changed. Sorting a column orders models by their latest version.": {
     "key": "ui_8576580583aa",
-    "en": "Models are grouped into one block and their immutable versions stay newest-first. Sort any column to rank model groups by the latest version.",
+    "en": "Model versions are grouped together, with the newest first. Saved versions cannot be changed. Sorting a column orders models by their latest version.",
     "zh-CN": "同一模型的版本集中显示，保存后不可修改，最新版本排在前面。按任意列排序时，会根据各模型最新版本的数据排列模型组。"
   },
   "Month spend": {
@@ -6179,9 +6169,9 @@
     "en": "No work or project entries were selected for this version.",
     "zh-CN": "此版本未选用任何工作或项目经历。"
   },
-  "Non-financial workspace limits. Cost allowances are managed in Cost quotas.": {
+  "Manage non-financial workspace limits here. Manage cost allowances in Cost quotas.": {
     "key": "ui_16753a9a8726",
-    "en": "Non-financial workspace limits. Cost allowances are managed in Cost quotas.",
+    "en": "Manage non-financial workspace limits here. Manage cost allowances in Cost quotas.",
     "zh-CN": "设置工作区的职位数、并发数等限制。费用额度请在“费用配额”中管理。"
   },
   "Not built yet": {
@@ -6584,11 +6574,6 @@
     "en": "Page added",
     "zh-CN": "页面已添加"
   },
-  "Page target": {
-    "key": "ui_642e48f708f1",
-    "en": "Page target",
-    "zh-CN": "目标页数"
-  },
   "Password": {
     "key": "ui_e7cf3ef4f17c",
     "en": "Password",
@@ -6809,10 +6794,10 @@
     "en": "Practice realistic questions and review a scored debrief.",
     "zh-CN": "练习真实面试中可能遇到的问题，再查看评分和复盘。"
   },
-  "Practise realistic questions, stay in the moment, and turn the conversation into a scored debrief.": {
+  "Practice interview questions, focus on the conversation, and review a scored debrief afterward.": {
     "key": "ui_95970d4e826b",
-    "en": "Practise realistic questions, stay in the moment, and turn the conversation into a scored debrief.",
-    "zh-CN": "像正式面试一样回答问题，结束后查看评分和复盘建议。"
+    "en": "Practice interview questions, focus on the conversation, and review a scored debrief afterward.",
+    "zh-CN": "练习面试问题，专心回答，并在结束后查看评分和复盘建议。"
   },
   "Premium tier model": {
     "key": "ui_6126831f894f",
@@ -7009,9 +6994,9 @@
     "en": "Pruning",
     "zh-CN": "职位清理"
   },
-  "Public evidence about strategy, recent moves, culture, challenges, and competitive position. Refreshes are always explicit.": {
+  "Public evidence about strategy, recent moves, culture, challenges, and competitive position. Refresh the research to update it.": {
     "key": "ui_d9695a42edca",
-    "en": "Public evidence about strategy, recent moves, culture, challenges, and competitive position. Refreshes are always explicit.",
+    "en": "Public evidence about strategy, recent moves, culture, challenges, and competitive position. Refresh the research to update it.",
     "zh-CN": "汇总公司战略、近期动态、文化、挑战和竞争地位的公开资料。点击刷新后才会更新。"
   },
   "Public source": {
@@ -7224,9 +7209,9 @@
     "en": "Raw",
     "zh-CN": "原始"
   },
-  "Raw and rejected jobs before the shortlist. Archive noise, delete dead-ends, prune in bulk.": {
+  "Review new and rejected jobs before they reach the shortlist. Archive irrelevant jobs, delete those you no longer want, or clean up in bulk.": {
     "key": "ui_25c8871e03b2",
-    "en": "Raw and rejected jobs before the shortlist. Archive noise, delete dead-ends, prune in bulk.",
+    "en": "Review new and rejected jobs before they reach the shortlist. Archive irrelevant jobs, delete those you no longer want, or clean up in bulk.",
     "zh-CN": "处理尚未进入候选清单的新职位和已拒绝职位。可以归档无关项、删除不再考虑的职位，也可以批量清理。"
   },
   "Re-extract criteria & fit score": {
@@ -7579,9 +7564,9 @@
     "en": "Relevance tuning",
     "zh-CN": "相关性调优"
   },
-  "Relevant space was reserved for stronger matches.": {
+  "Limited space was reserved for stronger matches.": {
     "key": "ui_a2458a7fe879",
-    "en": "Relevant space was reserved for stronger matches.",
+    "en": "Limited space was reserved for stronger matches.",
     "zh-CN": "有限篇幅优先留给了更符合职位要求的经历。"
   },
   "Remaining": {
@@ -7669,9 +7654,9 @@
     "en": "Rendered in view",
     "zh-CN": "当前视图已生成"
   },
-  "Rendered PDF preview. Use the Download button to save a copy.": {
+  "Preview of the generated PDF. Use Download to save a copy.": {
     "key": "ui_6bbba9c22c27",
-    "en": "Rendered PDF preview. Use the Download button to save a copy.",
+    "en": "Preview of the generated PDF. Use Download to save a copy.",
     "zh-CN": "已生成的 PDF 预览。点击“下载”按钮保存副本。"
   },
   "Rendered PDFs are stored in your workspace and downloaded from each job's page.": {
@@ -8384,9 +8369,9 @@
     "en": "Rule-based selection",
     "zh-CN": "基于规则的选择"
   },
-  "Run a discover to score jobs and surface the keepers here.": {
+  "Run discovery to score jobs and show promising matches here.": {
     "key": "ui_337ab6eda827",
-    "en": "Run a discover to score jobs and surface the keepers here.",
+    "en": "Run discovery to score jobs and show promising matches here.",
     "zh-CN": "运行职位发现并为职位评分，值得考虑的职位会列在这里。"
   },
   "Run a manual check to fetch historical employer evidence.": {
@@ -8394,9 +8379,9 @@
     "en": "Run a manual check to fetch historical employer evidence.",
     "zh-CN": "手动检查，获取该雇主的历史申报记录。"
   },
-  "Run a pull to bring in jobs, or toggle archived.": {
+  "Pull jobs or show archived jobs.": {
     "key": "ui_7cb50af68ca3",
-    "en": "Run a pull to bring in jobs, or toggle archived.",
+    "en": "Pull jobs or show archived jobs.",
     "zh-CN": "先获取职位，或切换为显示已归档职位。"
   },
   "Run history": {
@@ -8409,9 +8394,9 @@
     "en": "Run research to build a cited company brief.",
     "zh-CN": "开始公司调研，生成附有来源引用的公司简报。"
   },
-  "Run your first pull to fill the funnel with fresh postings.": {
+  "Pull your first jobs to start reviewing new postings.": {
     "key": "ui_c9e0041898fc",
-    "en": "Run your first pull to fill the funnel with fresh postings.",
+    "en": "Pull your first jobs to start reviewing new postings.",
     "zh-CN": "先获取一批最新职位，再开始筛选。"
   },
   "Runs": {
@@ -8499,9 +8484,9 @@
     "en": "Save key",
     "zh-CN": "保存密钥"
   },
-  "Save member change": {
+  "Save member changes": {
     "key": "ui_6300e3cdc372",
-    "en": "Save member change",
+    "en": "Save member changes",
     "zh-CN": "保存成员更改"
   },
   "Save note": {
@@ -8704,9 +8689,9 @@
     "en": "Security and access",
     "zh-CN": "安全与访问"
   },
-  "See the job needs this version emphasizes and the evidence used.": {
+  "See which job requirements this version emphasizes and which evidence it uses.": {
     "key": "ui_0d6a2493b9a7",
-    "en": "See the job needs this version emphasizes and the evidence used.",
+    "en": "See which job requirements this version emphasizes and which evidence it uses.",
     "zh-CN": "查看此版本强调的职位需求及所用证据。"
   },
   "Select {{v0}}": {
@@ -9409,9 +9394,9 @@
     "en": "Standard",
     "zh-CN": "标准"
   },
-  "Standard balances coverage and cost across every supported research axis.": {
+  "Standard research balances coverage and cost across all supported research areas.": {
     "key": "ui_64772a2bacb8",
-    "en": "Standard balances coverage and cost across every supported research axis.",
+    "en": "Standard research balances coverage and cost across all supported research areas.",
     "zh-CN": "标准调研会覆盖所有支持的调研维度，同时兼顾费用。"
   },
   "STAR notes": {
@@ -9909,9 +9894,9 @@
     "en": "The board could not be resolved.",
     "zh-CN": "无法解析该招聘列表。"
   },
-  "The boards, careers pages, and feeds that supply the pull pipeline.": {
+  "Choose the job boards, careers pages, and feeds used to find jobs.": {
     "key": "ui_7b9a27f01019",
-    "en": "The boards, careers pages, and feeds that supply the pull pipeline.",
+    "en": "Choose the job boards, careers pages, and feeds used to find jobs.",
     "zh-CN": "设置用于获取职位的招聘列表、招聘页面和订阅来源。"
   },
   "The check is safe to retry. A failed provider lookup is not treated as a no-match.": {
@@ -9959,9 +9944,9 @@
     "en": "The conversation transcript and recap will be permanently removed. Saved notes are kept in your profile.",
     "zh-CN": "对话记录和摘要将被永久删除，已保存的笔记会保留在个人资料中。"
   },
-  "The cost gate before the premium tailoring step. Approve only the jobs worth the spend.": {
+  "Review jobs before the premium tailoring step. Approve the ones worth the cost.": {
     "key": "ui_53ee498244d0",
-    "en": "The cost gate before the premium tailoring step. Approve only the jobs worth the spend.",
+    "en": "Review jobs before the premium tailoring step. Approve the ones worth the cost.",
     "zh-CN": "定制简历前，先确认哪些职位值得投入费用。"
   },
   "The default weights are calibrated. Change them only when you have a clear reason.": {
@@ -9999,9 +9984,9 @@
     "en": "The interviewer is thinking…",
     "zh-CN": "面试官正在思考…"
   },
-  "The interviewer will stop and your coach will score the questions asked so far.": {
+  "The interviewer will stop, and your coach will score the answers you have given so far.": {
     "key": "ui_b86bc4c9afb3",
-    "en": "The interviewer will stop and your coach will score the questions asked so far.",
+    "en": "The interviewer will stop, and your coach will score the answers you have given so far.",
     "zh-CN": "面试官将停止提问，系统会对你目前的回答评分。"
   },
   "The job, selected documents, company dossier, or interview notes changed after this brief was generated. The saved brief remains unchanged until you regenerate it.": {
@@ -10094,9 +10079,9 @@
     "en": "The transcript and debrief will be permanently removed. This cannot be undone.",
     "zh-CN": "面试记录和复盘将被永久删除，无法撤销。"
   },
-  "The transcript stays available, and no synthetic recap will be added.": {
+  "The transcript stays available, but no automatically generated recap will be added.": {
     "key": "ui_0091ed7376e9",
-    "en": "The transcript stays available, and no synthetic recap will be added.",
+    "en": "The transcript stays available, but no automatically generated recap will be added.",
     "zh-CN": "对话记录会保留，但不会添加自动生成的摘要。"
   },
   "There is not enough forward stage history to show this chart. Repeated and out-of-order entries remain in the timeline without affecting it.": {
@@ -10134,10 +10119,10 @@
     "en": "This account is disabled. Contact your administrator.",
     "zh-CN": "此账户已被禁用，请联系管理员。"
   },
-  "This board is unverified. You can review it and explicitly confirm it if it is correct.": {
+  "This board is unverified. Review it and confirm it only if it is correct.": {
     "key": "ui_ef042eb87a46",
-    "en": "This board is unverified. You can review it and explicitly confirm it if it is correct.",
-    "zh-CN": "这个招聘列表尚未验证。你可以先检查，确认无误后再手动确认。"
+    "en": "This board is unverified. Review it and confirm it only if it is correct.",
+    "zh-CN": "这个招聘列表尚未验证。请先检查，确保正确后再确认。"
   },
   "This bundle will replace:": {
     "key": "ui_ccbdd75e3b7b",
@@ -10244,9 +10229,9 @@
     "en": "This revision also includes {{v0}} fact{{v1}} you added after the original evidence plan.",
     "zh-CN": "这一版还纳入了你在原有证据方案之后补充的 {{v0}} 条真实经历。"
   },
-  "This saved research is past its freshness window. It remains visible until you choose to refresh it.": {
+  "This research is past its freshness window and may be out of date. Saved results stay visible until you refresh them.": {
     "key": "ui_b4aaebe2738b",
-    "en": "This saved research is past its freshness window. It remains visible until you choose to refresh it.",
+    "en": "This research is past its freshness window and may be out of date. Saved results stay visible until you refresh them.",
     "zh-CN": "这份调研已超过更新期限，内容可能过时。你主动刷新前，仍会显示已保存的结果。"
   },
   "This secret pairs with the client ID above. Set both together.": {
@@ -10734,9 +10719,9 @@
     "en": "Use source value",
     "zh-CN": "使用来源中的值"
   },
-  "Use the current profile as a bounded draft reference.": {
+  "Use the current profile as a draft reference, limited to the facts it contains.": {
     "key": "ui_6ec64e418f59",
-    "en": "Use the current profile as a bounded draft reference.",
+    "en": "Use the current profile as a draft reference, limited to the facts it contains.",
     "zh-CN": "以当前个人资料为草稿依据，不补充资料之外的事实。"
   },
   "Use the private invite code from your administrator.": {
@@ -10763,11 +10748,6 @@
     "key": "ui_bb83a14e2ae1",
     "en": "Used by default when tailoring a resume.",
     "zh-CN": "定制简历时默认使用。"
-  },
-  "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims.": {
-    "key": "ui_0183ac1b9046",
-    "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims.",
-    "zh-CN": "写作、修订和建议性评审都会使用这些设置。最低数量以个人资料中的现有依据为限，不会为了凑数而编造经历。"
   },
   "Used when \"Deep review\" is selected while tailoring. It has a separate saved roster.": {
     "key": "ui_dd333618e89e",
@@ -10944,9 +10924,9 @@
     "en": "What discovery looks for.",
     "zh-CN": "设置要搜索的职位。"
   },
-  "What discovery looks for. Tighter role anchors mean fewer wasted fetches.": {
+  "Set the roles to search for. More specific role keywords help reduce irrelevant results.": {
     "key": "ui_80045d57939f",
-    "en": "What discovery looks for. Tighter role anchors mean fewer wasted fetches.",
+    "en": "Set the roles to search for. More specific role keywords help reduce irrelevant results.",
     "zh-CN": "设置要搜索的职位。目标职位关键词越具体，获取的无关职位就越少。"
   },
   "What do you want help with?": {
@@ -11054,9 +11034,9 @@
     "en": "Work policy",
     "zh-CN": "办公方式"
   },
-  "Work through a career question with one verified skill at a time. Every output stays a draft until you decide what to do next.": {
+  "Work through a career question using one verified skill at a time. Outputs remain drafts until you decide what to do next.": {
     "key": "ui_e4c7b9169ea6",
-    "en": "Work through a career question with one verified skill at a time. Every output stays a draft until you decide what to do next.",
+    "en": "Work through a career question using one verified skill at a time. Outputs remain drafts until you decide what to do next.",
     "zh-CN": "围绕一个职业问题，每次使用一项经过验证的技能。生成的内容先保留为草稿，由你决定下一步。"
   },
   "Workable": {
@@ -11439,9 +11419,9 @@
     "en": "Copy application prompt",
     "zh-CN": "复制申请提示词"
   },
-  "Clipboard access is unavailable. Select the text below and copy it manually. Paste it into your browser or computer-use assistant.": {
+  "Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant.": {
     "key": "ui_bc1664cf9193",
-    "en": "Clipboard access is unavailable. Select the text below and copy it manually. Paste it into your browser or computer-use assistant.",
+    "en": "Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant.",
     "zh-CN": "无法使用剪贴板。请选中下方文字并手动复制，再粘贴到支持浏览器操作或电脑操作的 AI 助手中。"
   },
   "English application prompt": {
@@ -11944,9 +11924,9 @@
     "en": "Discarded non-skills",
     "zh-CN": "已排除的非技能条目"
   },
-  "Discards this entry from skill demand and future regrouping. You can restore it from discarded non-skills. Original job descriptions stay intact.": {
+  "Exclude this entry from skill demand and future regrouping. You can restore it from discarded non-skills. Original job descriptions stay intact.": {
     "key": "ui_ed631ab54200",
-    "en": "Discards this entry from skill demand and future regrouping. You can restore it from discarded non-skills. Original job descriptions stay intact.",
+    "en": "Exclude this entry from skill demand and future regrouping. You can restore it from discarded non-skills. Original job descriptions stay intact.",
     "zh-CN": "从技能需求和后续分组中排除此条目。可在“已排除的非技能条目”中恢复，原始职位描述不变。"
   },
   "Next": {
@@ -11964,9 +11944,9 @@
     "en": "Previous",
     "zh-CN": "上一页"
   },
-  "Review degrees, experience durations, and other requirements that are not skills. Discarded entries leave the skill map and future regrouping. Original job descriptions stay intact, and entries can be restored.": {
+  "Review degrees, years of experience, and other requirements that are not skills. Discarded entries no longer appear in the skill map or participate in future regrouping. Original job descriptions stay intact, and entries can be restored.": {
     "key": "ui_0431c35adfcd",
-    "en": "Review degrees, experience durations, and other requirements that are not skills. Discarded entries leave the skill map and future regrouping. Original job descriptions stay intact, and entries can be restored.",
+    "en": "Review degrees, years of experience, and other requirements that are not skills. Discarded entries no longer appear in the skill map or participate in future regrouping. Original job descriptions stay intact, and entries can be restored.",
     "zh-CN": "检查学位、工作年限等不属于技能的要求。排除后，条目不再出现在技能图谱中，也不参与后续分组。原始职位描述不变，条目可以恢复。"
   },
   "Search cleanup entries": {
@@ -12098,5 +12078,370 @@
     "key": "ui_bba01c12929e",
     "en": "Gmail OAuth client (optional)",
     "zh-CN": "Gmail OAuth 客户端（可选）"
+  },
+  "New drafts prioritize experience and projects and omit the summary. Turn off for a detailed resume of up to two pages. Text stays at least 10pt; content that still overflows must be shortened before export.": {
+    "key": "ui_65b0ae1dfcee",
+    "en": "New drafts prioritize experience and projects and omit the summary. Turn off for a detailed resume of up to two pages. Text stays at least 10pt; content that still overflows must be shortened before export.",
+    "zh-CN": "新草稿优先保留工作经历和项目，不写个人简介。关闭后将生成最多两页的详细简历。正文字号不低于 10pt；若仍然超页，需要先精简内容再导出。"
+  },
+  "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Rendering selects one or two pages. One-page drafts use lower bullet limits and preserve space for experience and projects.": {
+    "key": "ui_f9c73ecc40ad",
+    "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Rendering selects one or two pages. One-page drafts use lower bullet limits and preserve space for experience and projects.",
+    "zh-CN": "供撰写、修订和评审使用。最低条目数以档案中的实际证据为限，不会要求编造经历。在“渲染”设置中选择一页或两页；单页草稿会降低要点数量上限，为工作经历和项目保留空间。"
+  },
+  "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.": {
+    "key": "ui_3a7fc08f84fa",
+    "en": "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.",
+    "zh-CN": "这是目标数量，并非硬性上限。技能按类别以逗号紧凑排列，较长名称可能换行。优先保留有证据支持的必备技能；先删除冗余的辅助条目，再考虑精简工作和项目证据。"
+  },
+  "Add alternate email": {
+    "key": "ui_0b2705b52fa9",
+    "en": "Add alternate email",
+    "zh-CN": "添加备用邮箱"
+  },
+  "Add country eligibility": {
+    "key": "ui_813ba2058333",
+    "en": "Add country eligibility",
+    "zh-CN": "添加国家工作资格"
+  },
+  "Add employer answer": {
+    "key": "ui_7c3131720eda",
+    "en": "Add employer answer",
+    "zh-CN": "添加雇主问答"
+  },
+  "Add experience range": {
+    "key": "ui_66a0e0891711",
+    "en": "Add experience range",
+    "zh-CN": "添加工作年限范围"
+  },
+  "Address country": {
+    "key": "ui_7bba20cd8ac7",
+    "en": "Address country",
+    "zh-CN": "地址所在国家"
+  },
+  "Address line 1": {
+    "key": "ui_ee760b6e81b9",
+    "en": "Address line 1",
+    "zh-CN": "地址第一行"
+  },
+  "Address line 2": {
+    "key": "ui_350b2b85c4af",
+    "en": "Address line 2",
+    "zh-CN": "地址第二行"
+  },
+  "AI matching preference confirmation date": {
+    "key": "ui_9b5a68b616df",
+    "en": "AI matching preference confirmation date",
+    "zh-CN": "AI 匹配偏好确认日期"
+  },
+  "AI-assisted candidate matching": {
+    "key": "ui_3752884b75a1",
+    "en": "AI-assisted candidate matching",
+    "zh-CN": "AI 辅助候选人匹配"
+  },
+  "Alternate application emails": {
+    "key": "ui_e207839edd66",
+    "en": "Alternate application emails",
+    "zh-CN": "申请备用邮箱"
+  },
+  "Alternate email": {
+    "key": "ui_0510dcdda6d3",
+    "en": "Alternate email",
+    "zh-CN": "备用电子邮箱"
+  },
+  "Answer category": {
+    "key": "ui_311bff4f8a0c",
+    "en": "Answer category",
+    "zh-CN": "答案类别"
+  },
+  "Applicable timeframe": {
+    "key": "ui_cbd75871dac1",
+    "en": "Applicable timeframe",
+    "zh-CN": "适用时间范围"
+  },
+  "Application defaults": {
+    "key": "ui_40571adf9ff5",
+    "en": "Application defaults",
+    "zh-CN": "申请默认偏好"
+  },
+  "Application history": {
+    "key": "ui_f1118649b2e2",
+    "en": "Application history",
+    "zh-CN": "申请记录"
+  },
+  "Ask each time": {
+    "key": "ui_3be0feca7417",
+    "en": "Ask each time",
+    "zh-CN": "每次询问"
+  },
+  "Can verify legal right to work": {
+    "key": "ui_46a75c3cf443",
+    "en": "Can verify legal right to work",
+    "zh-CN": "是否可提供合法工作资格证明"
+  },
+  "Confirmation date": {
+    "key": "ui_2aeb534907a5",
+    "en": "Confirmation date",
+    "zh-CN": "确认日期"
+  },
+  "Confirmed answer (blank means unknown)": {
+    "key": "ui_4d5b60e466d5",
+    "en": "Confirmed answer (blank means unknown)",
+    "zh-CN": "已确认的答案（留空表示未知）"
+  },
+  "Contractor history": {
+    "key": "ui_7d56e93b4057",
+    "en": "Contractor history",
+    "zh-CN": "承包／派遣工作记录"
+  },
+  "Country scope": {
+    "key": "ui_32eed489c06d",
+    "en": "Country scope",
+    "zh-CN": "适用国家"
+  },
+  "Currently on OPT": {
+    "key": "ui_489d8f09fdf9",
+    "en": "Currently on OPT",
+    "zh-CN": "目前是否处于 OPT 期间"
+  },
+  "Dated experience ranges": {
+    "key": "ui_894e7a835f55",
+    "en": "Dated experience ranges",
+    "zh-CN": "注明日期的工作年限范围"
+  },
+  "Degree dropdown mapping": {
+    "key": "ui_98302fad03a7",
+    "en": "Degree dropdown mapping",
+    "zh-CN": "学位下拉选项映射"
+  },
+  "Eligible for a STEM OPT extension": {
+    "key": "ui_ef7422f7a34f",
+    "en": "Eligible for a STEM OPT extension",
+    "zh-CN": "是否符合 STEM OPT 延期资格"
+  },
+  "Employer": {
+    "key": "ui_54a3b64c67dd",
+    "en": "Employer",
+    "zh-CN": "雇主"
+  },
+  "Employer (blank means all employers)": {
+    "key": "ui_281c68d27361",
+    "en": "Employer (blank means all employers)",
+    "zh-CN": "雇主（留空表示适用于所有雇主）"
+  },
+  "Employer relationships": {
+    "key": "ui_99f676cc95ff",
+    "en": "Employer relationships",
+    "zh-CN": "与雇主员工的关系"
+  },
+  "Employment history": {
+    "key": "ui_2a07354779a5",
+    "en": "Employment history",
+    "zh-CN": "雇佣记录"
+  },
+  "Exact question / degree mapping context": {
+    "key": "ui_4b9edbdf5004",
+    "en": "Exact question / degree mapping context",
+    "zh-CN": "问题原文／学位映射背景"
+  },
+  "Experience specialty": {
+    "key": "ui_6c14f37e0d9c",
+    "en": "Experience specialty",
+    "zh-CN": "工作经验领域"
+  },
+  "Family name": {
+    "key": "ui_e19218baf899",
+    "en": "Family name",
+    "zh-CN": "姓"
+  },
+  "General screening": {
+    "key": "ui_5f991d2ef8b8",
+    "en": "General screening",
+    "zh-CN": "一般筛选问题"
+  },
+  "Given name": {
+    "key": "ui_71e454fe8395",
+    "en": "Given name",
+    "zh-CN": "名"
+  },
+  "Immigration status": {
+    "key": "ui_a744e5211553",
+    "en": "Immigration status",
+    "zh-CN": "移民身份"
+  },
+  "Keep the primary email above. An alternate can be used only with explicit permission and a matching employer, requisition, and country scope.": {
+    "key": "ui_39880901e0ce",
+    "en": "Keep the primary email above. An alternate can be used only with explicit permission and a matching employer, requisition, and country scope.",
+    "zh-CN": "上方主邮箱保持不变。只有明确允许且雇主、招聘编号和适用国家均匹配时，才可使用备用邮箱。"
+  },
+  "Legal name": {
+    "key": "ui_07f883c3b610",
+    "en": "Legal name",
+    "zh-CN": "法定姓名"
+  },
+  "Legally authorized to work": {
+    "key": "ui_8ea3c20d9d2d",
+    "en": "Legally authorized to work",
+    "zh-CN": "是否具有合法工作资格"
+  },
+  "Maximum years": {
+    "key": "ui_bf1920efaffe",
+    "en": "Maximum years",
+    "zh-CN": "最多年数"
+  },
+  "May use for applications": {
+    "key": "ui_eb7623e4d775",
+    "en": "May use for applications",
+    "zh-CN": "是否允许用于申请"
+  },
+  "Middle name": {
+    "key": "ui_11453ca9f34a",
+    "en": "Middle name",
+    "zh-CN": "中间名"
+  },
+  "Minimum years": {
+    "key": "ui_fc6bd3792add",
+    "en": "Minimum years",
+    "zh-CN": "最少年数"
+  },
+  "Name suffix": {
+    "key": "ui_17c6ad3032d0",
+    "en": "Name suffix",
+    "zh-CN": "姓名后缀"
+  },
+  "Needs sponsorship in the future": {
+    "key": "ui_ffe8bdb1012a",
+    "en": "Needs sponsorship in the future",
+    "zh-CN": "将来是否需要工作签证担保"
+  },
+  "Needs sponsorship now": {
+    "key": "ui_60bc06695b08",
+    "en": "Needs sponsorship now",
+    "zh-CN": "目前是否需要工作签证担保"
+  },
+  "No": {
+    "key": "ui_1ea442a134b2",
+    "en": "No",
+    "zh-CN": "否"
+  },
+  "Opt in": {
+    "key": "ui_3385ffd3d0dd",
+    "en": "Opt in",
+    "zh-CN": "选择加入"
+  },
+  "Opt out": {
+    "key": "ui_a647d32b2852",
+    "en": "Opt out",
+    "zh-CN": "选择不加入"
+  },
+  "Postal code": {
+    "key": "ui_ae53cea8228b",
+    "en": "Postal code",
+    "zh-CN": "邮政编码"
+  },
+  "Preferred name parts": {
+    "key": "ui_fa6738fa5820",
+    "en": "Preferred name parts",
+    "zh-CN": "常用姓名各部分"
+  },
+  "Record each country separately. Unknown is different from No. Immigration status, authorization, sponsorship, OPT, and STEM eligibility are independent answers.": {
+    "key": "ui_a3bc91d14b33",
+    "en": "Record each country separately. Unknown is different from No. Immigration status, authorization, sponsorship, OPT, and STEM eligibility are independent answers.",
+    "zh-CN": "分别记录各国情况。“未知”与“否”不同。移民身份、工作资格、签证担保、OPT 和 STEM 资格均需独立回答。"
+  },
+  "Referral source": {
+    "key": "ui_b0a22931a275",
+    "en": "Referral source",
+    "zh-CN": "职位来源"
+  },
+  "Remove alternate email": {
+    "key": "ui_a75e4dd861d7",
+    "en": "Remove alternate email",
+    "zh-CN": "移除备用邮箱"
+  },
+  "Remove country eligibility": {
+    "key": "ui_87c4cb35df7f",
+    "en": "Remove country eligibility",
+    "zh-CN": "移除国家工作资格"
+  },
+  "Remove employer answer": {
+    "key": "ui_edfad4c11d95",
+    "en": "Remove employer answer",
+    "zh-CN": "移除雇主问答"
+  },
+  "Remove experience range": {
+    "key": "ui_eb44483c1475",
+    "en": "Remove experience range",
+    "zh-CN": "移除工作年限范围"
+  },
+  "Requisition / role ID": {
+    "key": "ui_7149c273ff0b",
+    "en": "Requisition / role ID",
+    "zh-CN": "招聘／职位编号"
+  },
+  "Role requirements": {
+    "key": "ui_92cdefb08331",
+    "en": "Role requirements",
+    "zh-CN": "职位要求"
+  },
+  "Save exact wording and scope for employer questions, degree dropdown mappings, and role-specific answers. A blank requisition applies across that employer. Keep the actual degree unchanged. Existing employer notes remain below.": {
+    "key": "ui_fd725d59e930",
+    "en": "Save exact wording and scope for employer questions, degree dropdown mappings, and role-specific answers. A blank requisition applies across that employer. Keep the actual degree unchanged. Existing employer notes remain below.",
+    "zh-CN": "保存雇主问题、学位下拉选项映射和特定职位答案的原文及适用范围。招聘编号留空表示适用于该雇主所有职位。实际所获学位保持不变，下方现有雇主备注会保留。"
+  },
+  "Save name and address parts exactly as you want them entered. Blank parts remain unknown; existing contact notes are preserved.": {
+    "key": "ui_075a97d30de7",
+    "en": "Save name and address parts exactly as you want them entered. Blank parts remain unknown; existing contact notes are preserved.",
+    "zh-CN": "按申请表中需要填写的内容保存姓名和地址各部分。留空表示未知，现有联系信息备注会保留。"
+  },
+  "Scoped employer answer records": {
+    "key": "ui_85a66b425139",
+    "en": "Scoped employer answer records",
+    "zh-CN": "限定范围的雇主问答记录"
+  },
+  "Sex (optional self-identification)": {
+    "key": "ui_62bad0efbe01",
+    "en": "Sex (optional self-identification)",
+    "zh-CN": "生理性别（自愿披露）"
+  },
+  "Sex and gender are separate optional disclosures. AI matching preferences apply to optional matching; agreements and submission still require application-specific confirmation.": {
+    "key": "ui_87f55f73d14c",
+    "en": "Sex and gender are separate optional disclosures. AI matching preferences apply to optional matching; agreements and submission still require application-specific confirmation.",
+    "zh-CN": "生理性别和性别认同是两项独立的自愿披露。AI 匹配偏好仅适用于可选匹配；接受协议和提交申请仍需针对具体申请确认。"
+  },
+  "Sex answer confirmation date": {
+    "key": "ui_4b8a74f7f716",
+    "en": "Sex answer confirmation date",
+    "zh-CN": "生理性别答案确认日期"
+  },
+  "State / province / region": {
+    "key": "ui_1654657e7b58",
+    "en": "State / province / region",
+    "zh-CN": "州／省／地区"
+  },
+  "Structured names and mailing address": {
+    "key": "ui_75b02472a7d3",
+    "en": "Structured names and mailing address",
+    "zh-CN": "结构化姓名和邮寄地址"
+  },
+  "Use self-reported experience for a named specialty. Enter both bounds or leave both unknown. Ranges never supply an exact count or update automatically with time.": {
+    "key": "ui_47e3466e1d82",
+    "en": "Use self-reported experience for a named specialty. Enter both bounds or leave both unknown. Ranges never supply an exact count or update automatically with time.",
+    "zh-CN": "填写本人确认的特定领域工作年限。上下限需同时填写或同时留空。范围不能作为确切年数，也不会随时间自动增加。"
+  },
+  "Valid until (optional)": {
+    "key": "ui_a04b090e55d0",
+    "en": "Valid until (optional)",
+    "zh-CN": "有效截止日期（可选）"
+  },
+  "Work eligibility by country": {
+    "key": "ui_759bdca61695",
+    "en": "Work eligibility by country",
+    "zh-CN": "各国工作资格"
+  },
+  "Yes": {
+    "key": "ui_85a39ab345d6",
+    "en": "Yes",
+    "zh-CN": "是"
   }
 }

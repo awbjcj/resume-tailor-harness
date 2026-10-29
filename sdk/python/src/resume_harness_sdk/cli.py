@@ -21,6 +21,13 @@ from .client import (
 )
 
 
+def _read_object(path: Path) -> dict:
+    body = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(body, dict):
+        raise ValueError("Input must be a JSON object")
+    return body
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="resume-harness")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -42,6 +49,7 @@ def main() -> int:
         "update-application-profile",
         "record-application-question",
         "answer-application-question",
+        "record-application-event",
     ):
         sub = commands.add_parser(name)
         sub.add_argument(
@@ -49,6 +57,8 @@ def main() -> int:
         )
         if name == "answer-application-question":
             sub.add_argument("question_id", type=int)
+        elif name == "record-application-event":
+            sub.add_argument("job_id", type=int)
     jobs = commands.add_parser("jobs")
     jobs.add_argument(
         "--board", choices=["triage", "shortlist", "pipeline"], default="triage"
@@ -65,9 +75,16 @@ def main() -> int:
         "tailor",
         "application-context",
         "application-prompt",
+        "approve",
+        "cover-letter",
+        "application-events",
     ):
         sub = commands.add_parser(name)
         sub.add_argument("job_id", type=int)
+    for name in ("select-resume", "select-cover-letter"):
+        sub = commands.add_parser(name)
+        sub.add_argument("job_id", type=int)
+        sub.add_argument("artifact_id", type=int)
     for name in ("validate", "submit"):
         sub = commands.add_parser(name)
         sub.add_argument("job_id", type=int)
@@ -120,6 +137,16 @@ def main() -> int:
                 elif command == "application-prompt":
                     print(client.application_prompt(args.job_id), end="")
                     return 0
+                elif command == "application-events":
+                    result = client.list_application_events(args.job_id)
+                elif command == "record-application-event":
+                    result = client.record_application_event(
+                        args.job_id, _read_object(args.input)
+                    )
+                elif command == "select-resume":
+                    result = client.select_resume(args.job_id, args.artifact_id)
+                elif command == "select-cover-letter":
+                    result = client.select_cover_letter(args.job_id, args.artifact_id)
                 elif command == "application-profile":
                     result = client.get_application_profile()
                 elif command == "application-question":
@@ -136,9 +163,7 @@ def main() -> int:
                     "record-application-question",
                     "answer-application-question",
                 }:
-                    body = json.loads(args.input.read_text(encoding="utf-8-sig"))
-                    if not isinstance(body, dict):
-                        raise ValueError("Input must be a JSON object")
+                    body = _read_object(args.input)
                     # Pass the full body through the public validation boundary;
                     # unknown fields must not be silently dropped by the CLI.
                     if command == "update-application-profile":
@@ -174,12 +199,16 @@ def main() -> int:
                     result = client.discover_jobs()
                 elif command == "job":
                     result = client.get_job(args.job_id)
+                elif command == "approve":
+                    result = client.approve_job(args.job_id)
                 elif command == "context":
                     result = client.authoring_context(args.job_id)
                 elif command == "tailor":
                     result = client.tailor([args.job_id])
+                elif command == "cover-letter":
+                    result = client.generate_cover_letters([args.job_id])
                 elif command in {"validate", "submit"}:
-                    content = json.loads(args.draft.read_text(encoding="utf-8"))
+                    content = _read_object(args.draft)
                     if command == "validate":
                         result = client.validate_resume(
                             args.job_id, content, context_revision=args.revision

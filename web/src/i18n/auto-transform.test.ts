@@ -99,7 +99,7 @@ describe("automatic i18n build transform", () => {
         const className = "block text-sm";
         const options = [{
           value: "blocked",
-          label: "A gated reviewer blocks the round before scoring. Its weight and score bands are disabled.",
+          label: "If a gated reviewer fails, the round fails regardless of its score. Gate reviewers do not contribute a score, so their weight and score bands are disabled.",
         }];
       `,
       {

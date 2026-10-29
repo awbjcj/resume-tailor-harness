@@ -116,7 +116,7 @@ export function TriageContainer() {
       <PageHeader
         kicker="Intake"
         title="Triage Desk"
-        sub="Raw and rejected jobs before the shortlist. Archive noise, delete dead-ends, prune in bulk."
+        sub="Review new and rejected jobs before they reach the shortlist. Archive irrelevant jobs, delete those you no longer want, or clean up in bulk."
       />
       <MetricRow
         items={[
@@ -135,7 +135,7 @@ export function TriageContainer() {
       {!rows.length ? (
         <EmptyState
           title="Nothing to triage"
-          body="Run a pull to bring in jobs, or toggle archived."
+          body="Pull jobs or show archived jobs."
         />
       ) : (
         <>

@@ -1,4 +1,6 @@
 import json
+import re
+import time
 
 import httpx
 import pytest
@@ -10,7 +12,6 @@ from resume_harness_sdk import (
     RunFailed,
     RunTimeout,
 )
-from resume_harness_sdk import client as module
 from resume_harness_sdk.cli import main
 
 
@@ -115,8 +116,8 @@ def test_terminal_states(state):
 
 def test_wait_timeout_does_not_cancel(monkeypatch):
     ticks = iter([0, 0, 2, 2])
-    monkeypatch.setattr(module.time, "monotonic", lambda: next(ticks))
-    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+    monkeypatch.setattr(time, "monotonic", lambda: next(ticks))
+    monkeypatch.setattr(time, "sleep", lambda _: None)
     seen = []
 
     def handle(request):
@@ -156,6 +157,20 @@ def test_install_skills_without_credentials_and_preserve_existing(
     assert main() == 1
     assert reference.read_text() == "user-edited"
     capsys.readouterr()
+
+
+def test_installed_skills_include_resolvable_workflow_references(tmp_path, monkeypatch):
+    root = tmp_path / "skills"
+    monkeypatch.setattr(
+        "sys.argv", ["resume-harness", "install-skills", "--directory", str(root)]
+    )
+    assert main() == 0
+    for document in root.rglob("*.md"):
+        for target in re.findall(
+            r"\[[^\]]+\]\(([^)]+)\)", document.read_text(encoding="utf-8")
+        ):
+            if not target.startswith(("http:", "https:", "#")):
+                assert (document.parent / target.split("#")[0]).is_file(), target
 
 
 def question_response():
@@ -262,6 +277,52 @@ def test_application_sdk_write_payloads_and_cover_letter_download():
     assert requests[3].headers["authorization"] == "Bearer rat_test"
 
 
+@pytest.mark.parametrize("opt_answer", [None, False, True])
+def test_sdk_keeps_structured_answers_and_nullable_booleans(opt_answer):
+    profile = {
+        "legalName": {"givenName": "Ada", "familyName": "Lovelace"},
+        "mailingAddress": {"postalCode": "00123"},
+        "workEligibility": [
+            {"country": "US", "currentlyOnOpt": opt_answer, "confirmedOn": "2026-10-20"}
+        ],
+        "experienceRanges": [
+            {
+                "specialty": "Software",
+                "minimumYears": 3,
+                "maximumYears": 6,
+                "confirmedOn": "2026-10-20",
+            }
+        ],
+        "employerAnswers": [
+            {
+                "employer": "Acme",
+                "question": "Worked here?",
+                "answer": None,
+                "confirmedOn": "2026-10-20",
+            }
+        ],
+        "sex": "Female",
+        "aiMatchingPreference": "opt_in",
+    }
+    with client(
+        lambda _: httpx.Response(200, json={"profile": profile, "revision": "rev"})
+    ) as sdk:
+        assert sdk.get_application_profile()["profile"] == profile
+
+
+def test_sdk_rejects_a_string_in_a_structured_boolean_answer():
+    profile = {
+        "workEligibility": [
+            {"country": "US", "currentlyOnOpt": "false", "confirmedOn": "2026-10-20"}
+        ]
+    }
+    with client(
+        lambda _: httpx.Response(200, json={"profile": profile, "revision": "rev"})
+    ) as sdk:
+        with pytest.raises(ResponseValidationError):
+            sdk.get_application_profile()
+
+
 def test_cli_application_prompt_is_markdown(monkeypatch, capsys):
     payload = {
         "job": {
@@ -324,4 +385,83 @@ def test_cli_application_writes_forward_exact_json_body(
         args.append("7")
     monkeypatch.setattr("sys.argv", args)
     assert main() == 1
+    assert "VALIDATION_ERROR" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "args,method,path,body",
+    [
+        (["approve", "42"], "PATCH", "/api/jobs/42", {"status": "approved"}),
+        (
+            ["cover-letter", "42"],
+            "POST",
+            "/api/cover-letters",
+            {"jobIds": [42], "approved": False},
+        ),
+        (["select-resume", "42", "81"], "POST", "/api/jobs/42/select-resume/81", None),
+        (
+            ["select-cover-letter", "42", "12"],
+            "POST",
+            "/api/jobs/42/select-cover-letter/12",
+            None,
+        ),
+        (["application-events", "42"], "GET", "/api/jobs/42/events", None),
+    ],
+)
+def test_cli_interactive_preparation_commands(
+    monkeypatch, capsys, args, method, path, body
+):
+    def handle(request):
+        assert request.method == method and request.url.path == path
+        assert request.headers["authorization"] == "Bearer rat_test"
+        assert (json.loads(request.content) if request.content else None) == body
+        if args[0] == "application-events":
+            payload = []
+        elif args[0].startswith("select-"):
+            payload = {
+                "id": 1,
+                "jobId": 42,
+                "resumeVersionId": 81,
+                "coverLetterId": 12,
+                "status": "ready",
+                "notes": None,
+                "submittedAt": None,
+                "updatedAt": "2026-10-29T18:05:00Z",
+                "future": "preserved",
+            }
+        else:
+            payload = {"runId": "test"}
+        return httpx.Response(200, json=payload)
+
+    monkeypatch.setattr(ResumeHarness, "from_env", lambda: client(handle))
+    monkeypatch.setattr("sys.argv", ["resume-harness", *args])
+    assert main() == 0
+    result = json.loads(capsys.readouterr().out)
+    if args[0].startswith("select-"):
+        assert result["future"] == "preserved"
+
+
+def test_cli_event_write_forwards_body_and_surfaces_api_error(
+    tmp_path, monkeypatch, capsys
+):
+    body = {"kind": "application_submitted", "occurredAt": "without-offset"}
+    path = tmp_path / "event.json"
+    path.write_text(json.dumps(body), encoding="utf-8-sig")
+    seen = []
+
+    def handle(request):
+        seen.append(request)
+        assert request.method == "POST" and request.url.path == "/api/jobs/42/events"
+        assert json.loads(request.content) == body
+        return httpx.Response(
+            422, json={"error": {"code": "VALIDATION_ERROR", "message": "Invalid time"}}
+        )
+
+    monkeypatch.setattr(ResumeHarness, "from_env", lambda: client(handle))
+    monkeypatch.setattr(
+        "sys.argv",
+        ["resume-harness", "record-application-event", "42", "--input", str(path)],
+    )
+    assert main() == 1
+    assert len(seen) == 1
     assert "VALIDATION_ERROR" in capsys.readouterr().err

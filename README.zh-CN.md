@@ -549,6 +549,8 @@ uv run resume-tailor-harness cover-letter --job-id 7
 
 通过 Typst 模板将已保存的简历版本（按 ID）渲染到 `output/`。每个版本的文件名唯一，因此重新渲染不会覆盖较早的 PDF。
 
+在 **设置 → 渲染** 中可选择八种内置布局：经典、现代、技术、高管、毕业生、学术、简约和紧凑。单页选项也会约束新的简历定制：优先保留工作经历和项目，不写个人简介，并减少要点数量。关闭后可生成最多两页的详细简历。正文字号不低于 10pt；若仍然无法容纳，系统会提示精简，而不会导出超页文件。参见[模板目录与设计来源](templates/README.md)。
+
 ```bash
 uv run resume-tailor-harness render 12 [--config config/render.yaml]
 ```
@@ -630,7 +632,7 @@ PREMIUM_MODEL=claude-opus-5             # 不带前缀时由 Anthropic 承担简
 | `search.yaml`          | 关键词、职位、地点和**硬性筛选**（薪资、工作年限、远程政策、担保）。                                                                                                                                                                                    |
 | `connectors.yaml`      | `pull` 运行的招聘网站连接器及其参数：Greenhouse 看板 token、Lever slug、Adzuna 国家/地区、RemoteOK、LinkedIn 开关，以及用于直接 ATS 或门户 URL 的 `companies.urls`。它可检测 Greenhouse、Lever、Ashby、Workday、Tesla 和 Google；密钥保留在 `.env` 中。 |
 | `review.yaml`          | 评审名单、权重/模型档位、`max_rounds`、`score_threshold`、可选的 `length_budget` 单页指导和 `style_guide_path`。                                                                                                                                        |
-| `render.yaml`          | Typst `template_path` 和 PDF `output_dir`。                                                                                                                                                                                                             |
+| `render.yaml`          | `template` 模板选择和 `fit_one_page` 页数模式；CLI 兼容旧 `template_path` 和 `output_dir`。                                                                                                                                                                                                             |
 | `style_guide.md`       | 附加到简历定制循环的可选文风说明。它决定如何写，不决定可以声称什么；文件缺失或为空时不作改变。                                                                                                                                                          |
 
 每个 `*.yaml.example` 都带有注释。复制后再编辑。

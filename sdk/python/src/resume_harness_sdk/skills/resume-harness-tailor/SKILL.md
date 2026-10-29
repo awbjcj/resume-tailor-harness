@@ -65,7 +65,18 @@ resume-harness render VERSION_ID
 resume-harness download VERSION_ID --output resume.pdf
 ```
 
+Rendering uses the workspace's configured Typst template and page-fit settings.
+Do not invent a per-render template flag or change workspace settings to get
+around `resume_page_overflow`; shorten the draft within the actual length budget
+and run its normal validation/review again. The SDK reads UTF-8 draft files,
+including PowerShell UTF-8 BOM files.
+
 Report the saved version, review outcome, and output path, with remaining gaps
 if any. Submission appends a version; it does not apply for a job. A PDF existing
 does not independently prove its claims. Keep the server's verdict with the
 deliverable and distinguish preflight, saved review, and rendered output.
+
+When authoring is part of an application request, return to
+[resume-harness-apply](../resume-harness-apply/SKILL.md): re-fetch the application's
+eligible attachments, select/download the accepted version, and continue the
+live form and user interaction. Do not end an application task at PDF generation.

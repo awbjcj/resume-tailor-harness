@@ -4,6 +4,15 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 
 ### Fact-lock
 
+The selected rendering length resolves the effective authoring budget through
+`services/resume_shape.py`. `LengthBudget.for_pages(1)` bounds legacy two-page
+ceilings to a realistic one-page envelope, including achievable depth floors.
+Native one-page drafts remove summary + summary provenance **before** review;
+work/project entries and their claims are untouched. Apply that policy to both
+the initial draft and every revision, sync and async. Work/project selection
+reserves a project slot when both evidence kinds exist. The saved review roster
+remains unchanged so detailed mode retains its larger ceilings.
+
 Every bullet on a tailored resume must trace back to a fact in
 `data/profile/facts.json`. The `fact-check` reviewer in `review.yaml` is a
 **hard gate** (not scored) — any unsupported claim fails the round. Agents

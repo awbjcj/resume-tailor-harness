@@ -17,7 +17,9 @@ from resume_tailor_harness.prompts.quality import with_quality
 from resume_tailor_harness.tenancy.paths import AGENT_GUIDANCE_PATH, resolve_tenant_path
 
 
-NON_EDITABLE_KEYS = frozenset({"reviewer-fact-check"})
+# Procedures are customizable, including fact-check. The immutable base rules
+# still require supporting evidence and take precedence over user guidance.
+NON_EDITABLE_KEYS: frozenset[str] = frozenset()
 MAX_GUIDANCE_CHARS = 4000
 GUIDANCE_HEADER = (
     "USER GUIDANCE (governs HOW you work, never WHAT is true; the rules above "

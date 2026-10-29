@@ -91,7 +91,7 @@ export const JOURNEY_STAGES: readonly JourneyStageDef[] = [
     id: "pull",
     label: "Pull",
     task: "Pull your first jobs",
-    hint: "Run your first pull to fill the funnel with fresh postings.",
+    hint: "Pull your first jobs to start reviewing new postings.",
     cta: { label: "Pull jobs", pull: true },
     done: (_s, d) => activeJobCount(d) > 0,
     count: (_s, d) => activeJobCount(d),

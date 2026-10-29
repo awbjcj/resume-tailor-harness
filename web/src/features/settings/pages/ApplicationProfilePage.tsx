@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,12 @@ import { ResetSectionButton } from "../ResetSectionButton";
 import { SaveBar } from "../SaveBar";
 import { useConfig, useSaveConfig } from "../use-config";
 import { useDraft } from "../use-draft";
+import { StructuredApplicationProfile } from "./StructuredApplicationProfile";
 
 type Profile = components["schemas"]["ApplicationProfileDoc"];
+type TextKey = { [K in keyof Profile]-?: Profile[K] extends string | undefined ? K : never }[keyof Profile];
 type AnswerField = {
-  key: keyof Profile;
+  key: TextKey;
   label: string;
   placeholder?: string;
   multiline?: boolean;
@@ -113,6 +115,7 @@ function getGroups(): { title: string; description?: string; fields: AnswerField
 
 export function ApplicationProfilePage() {
   useTranslation();
+  const form = useRef<HTMLFormElement>(null);
   const { data, error, refetch } = useConfig("/api/config/application-profile");
   const save = useSaveConfig("/api/config/application-profile");
   const { draft, setDraft, dirty, reset } = useDraft(data);
@@ -126,7 +129,7 @@ export function ApplicationProfilePage() {
   if (!draft) return <Skeleton className="h-64 w-full" />;
 
   return (
-    <div className="flex flex-col gap-6">
+    <form ref={form} className="flex flex-col gap-6" onSubmit={(event) => event.preventDefault()}>
       <header className="space-y-1">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold">Application profile</h1>
@@ -170,15 +173,19 @@ export function ApplicationProfilePage() {
                 })}
               </div>
             </FieldSet>
+            {index === 0 && <StructuredApplicationProfile profile={draft}
+              onChange={(changes) => setDraft((current) => current ? { ...current, ...changes } : current)} />}
           </Fragment>
         ))}
       </FieldGroup>
       <SaveBar
         dirty={dirty}
         saving={save.isPending}
-        onSave={() => save.mutate(draft, { onSuccess: (saved) => setDraft(saved) })}
+        onSave={() => {
+          if (form.current?.reportValidity()) save.mutate(draft, { onSuccess: (saved) => setDraft(saved) });
+        }}
         onDiscard={reset}
       />
-    </div>
+    </form>
   );
 }

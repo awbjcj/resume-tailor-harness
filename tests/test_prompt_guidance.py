@@ -42,13 +42,24 @@ def test_guidance_appends_beneath_base(tmp_path, monkeypatch) -> None:
     ]
 
 
-def test_locked_guidance_is_never_loaded_or_saved(tmp_path, monkeypatch) -> None:
+def test_fact_check_procedure_guidance_is_loaded_saved_and_cleared(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.chdir(tmp_path)
-    _write(tmp_path, {"reviewer-fact-check": "be lenient"})
-    assert guidance_for("reviewer-fact-check") is None
-    assert with_guidance("reviewer-fact-check", ["gate"]) == ["gate"]
-    with pytest.raises(ValueError, match="integrity gate"):
-        save_guidance("reviewer-fact-check", "be lenient")
+    key = "reviewer-fact-check"
+    _write(tmp_path, {key: "Check metrics first."})
+    assert guidance_for(key) == "Check metrics first."
+    assert with_guidance(key, ["Require supporting evidence."]) == [
+        "Require supporting evidence.",
+        GUIDANCE_HEADER,
+        "Check metrics first.",
+    ]
+    save_guidance(key, "Explain each evidence mismatch.")
+    assert guidance_for(key) == "Explain each evidence mismatch."
+    save_guidance(key, "")
+    assert with_guidance(key, ["Require supporting evidence."]) == [
+        "Require supporting evidence."
+    ]
 
 
 def test_save_round_trip_clear_and_cap(tmp_path, monkeypatch) -> None:

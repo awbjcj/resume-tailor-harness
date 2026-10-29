@@ -53,9 +53,22 @@ export function localizeRunPhase(phase: string, language: string | null | undefi
   return translateTemplate(zhCN.runPhases, phase) ?? zhCN.fallbacks.working;
 }
 
+const EN_RUN_ERRORS: Record<string, string> = {
+  "GmailApiError: A Gmail sync is already running for this workspace.": "A Gmail sync is already running for this workspace.",
+  "GmailApiError: Gmail did not return a mailbox identity and sync cursor.": "Gmail did not return a mailbox identity and sync cursor.",
+  "GmailApiError: Gmail repeated a page cursor. Saved progress is retained; try again later.": "Gmail repeated a page cursor. Saved progress is retained; try again later.",
+  "GmailNotConnected: Connect Gmail again in Settings to resume syncing.": "Reconnect Gmail in Settings to resume syncing.",
+  "GmailScopeMissing: Reconnect Gmail in Settings and approve Gmail read access.": "Reconnect Gmail in Settings and grant Gmail read access.",
+  "GmailApiError: Gmail could not refresh its connection. Try syncing again later.": "Gmail could not refresh its connection. Try syncing again later.",
+  "GmailApiError: Google is temporarily unreachable. Try syncing again later.": "Google is temporarily unreachable. Try syncing again later.",
+  "GmailApiError: Gmail could not complete the scan after retries. Try syncing again later.": "Gmail could not complete the scan after retries. Try syncing again later.",
+  "GmailNotConnected: Gmail is not connected for this workspace": "Gmail is not connected for this workspace.",
+  "GmailNotConnected: Connect Gmail in Settings to save drafts": "Connect Gmail in Settings to save drafts.",
+};
+
 export function localizeRunError(error: string | null | undefined, language: string | null | undefined): string | null {
   if (!error) return null;
-  if (!isChinese(language)) return error;
+  if (!isChinese(language)) return EN_RUN_ERRORS[error] ?? error;
   return zhCN.runErrors[error as keyof typeof zhCN.runErrors]
     ?? (error.startsWith("GmailNotConnected:")
       ? zhCN.runErrors["GmailNotConnected: Gmail is not connected for this workspace"]

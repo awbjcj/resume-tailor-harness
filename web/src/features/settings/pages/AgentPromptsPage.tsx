@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CircleAlert, LockKeyhole } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import {
   Accordion,
@@ -14,6 +15,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import promptLabelsZh from "@/i18n/agent-prompt-zh-CN.json";
 
 import { ResetSectionButton } from "../ResetSectionButton";
 import {
@@ -32,32 +34,46 @@ const STAGES = [
   ["email", "Email"],
 ] as const;
 
+function instructionsForDisplay(item: AgentPromptItem): string[] {
+  if (item.key !== "email-writer") return item.instructions;
+  const firstWholeInstruction = item.instructions.findIndex((instruction) => instruction.length !== 1);
+  const prefixLength = firstWholeInstruction === -1 ? item.instructions.length : firstWholeInstruction;
+  if (prefixLength < 2) return item.instructions;
+  return [item.instructions.slice(0, prefixLength).join(""), ...item.instructions.slice(prefixLength)];
+}
+
 function PromptRow({ item }: { item: AgentPromptItem }) {
   const save = useSaveGuidance();
   const [guidance, setGuidance] = useState(item.guidance ?? "");
+  const { i18n } = useTranslation();
+  const labels = promptLabelsZh as Record<string, string>;
+  const chinese = i18n.resolvedLanguage?.startsWith("zh") ?? false;
+  const title = chinese ? labels[item.title] ?? item.title : item.title;
+  const description = chinese ? labels[item.description] ?? item.description : item.description;
+  const instructions = instructionsForDisplay(item);
 
   const guidanceId = `guidance-${item.key}`;
   return (
     <AccordionItem value={item.key}>
       <AccordionTrigger>
         <span className="flex min-w-0 flex-col gap-0.5 pr-3">
-          <span>{item.title}</span>
+          <span>{title}</span>
           <span className="text-xs font-normal text-muted-foreground">
-            {item.description}
+            {description}
           </span>
         </span>
       </AccordionTrigger>
       <AccordionContent className="flex flex-col gap-4">
         <div className="rounded-lg bg-muted/45 p-4 ring-1 ring-foreground/8">
           <ol className="flex list-decimal flex-col gap-2 pl-5 font-mono text-xs leading-relaxed text-muted-foreground">
-            {item.instructions.map((instruction, index) => (
+            {instructions.map((instruction, index) => (
               <li key={`${item.key}-${index}`}>{instruction}</li>
             ))}
           </ol>
         </div>
         {item.editable ? (
           <Field>
-            <FieldLabel htmlFor={guidanceId}>Your guidance for {item.title}</FieldLabel>
+            <FieldLabel htmlFor={guidanceId}>Your guidance for {title}</FieldLabel>
             <Textarea
               id={guidanceId}
               maxLength={4000}
@@ -101,6 +117,7 @@ function PromptRow({ item }: { item: AgentPromptItem }) {
 
 export function AgentPromptsPage() {
   const prompts = usePrompts();
+  const { t } = useTranslation();
 
   if (prompts.isPending) {
     return <Skeleton className="h-80 w-full" aria-label="Loading agent prompts" />;
@@ -124,6 +141,7 @@ export function AgentPromptsPage() {
             Review each built-in prompt and add supporting guidance. Guidance can
             shape tone, emphasis, and process. It cannot change facts or integrity rules.
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("agentPrompts.originalLanguage")}</p>
         </div>
         <ResetSectionButton sectionId="agent_guidance" label="Agent prompts" />
       </header>

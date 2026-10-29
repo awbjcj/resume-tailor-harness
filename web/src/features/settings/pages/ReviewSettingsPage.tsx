@@ -110,7 +110,7 @@ export function ReviewSettingsPage() {
         <div className="min-w-0">
           <h1 className="text-lg font-semibold">Review panel</h1>
           <p className="text-sm text-muted-foreground">
-            How tailored resumes get written, scored, and sized before they're offered up for approval.
+            Set how tailored resumes are written, scored, and sized before you approve them.
           </p>
         </div>
         <ResetSectionButton sectionId="review" label="Review panel" onReset={() => setResetVersion((version) => version + 1)} />
@@ -344,7 +344,7 @@ function ReviewRosterForm({
             id="maxRounds"
             label="Max rounds"
             min={1}
-            description="How many write-and-review passes before the best attempt is kept."
+            description="Maximum number of writing and review rounds. The best version is kept."
             value={draft.maxRounds}
             onChange={(v) => setDraft({ ...draft, maxRounds: v })}
           />
@@ -363,7 +363,7 @@ function ReviewRosterForm({
         <SwitchField
           id="merged-advisory"
           label="Merge advisory reviews into one call"
-          description="Faster and cheaper; turn off to run each advisory reviewer separately."
+          description="Combining reviews saves time and cost. Turn this off to run each advisory reviewer separately."
           checked={draft.mergedAdvisory}
           onChange={(v) => setDraft({ ...draft, mergedAdvisory: v })}
         />
@@ -393,8 +393,7 @@ function ReviewRosterForm({
       <FieldSet>
         <FieldLegend>Reviewers</FieldLegend>
         <FieldDescription>
-          A gated reviewer blocks the round before scoring. Its weight and score
-          bands are disabled.
+          If a gated reviewer fails, the round fails regardless of its score. Gate reviewers do not contribute a score, so their weight and score bands are disabled.
         </FieldDescription>
         <Table>
           <TableHeader>
@@ -481,16 +480,13 @@ function ReviewRosterForm({
         <FieldDescription>
           Used by the writer, reviser, and advisory panel. Minimums stay within
           the evidence in your profile, so they do not require invented claims.
+          Rendering selects one or two pages. One-page drafts use lower bullet
+          limits and preserve space for experience and projects.
         </FieldDescription>
 
         <FieldSet className="gap-3">
           <FieldLegend variant="label">Length</FieldLegend>
           <div className={GRID}>
-            <NumberField
-              id="pageTarget" label="Page target" min={1}
-              value={budget.pageTarget}
-              onChange={(v) => setBudget({ pageTarget: v })}
-            />
             <NumberField
               id="maxExperiences" label="Max experiences"
               value={budget.maxExperiences}
@@ -517,7 +513,7 @@ function ReviewRosterForm({
         <FieldSet className="gap-3">
           <FieldLegend variant="label">Depth</FieldLegend>
           <FieldDescription>
-            How much each surviving role or project gets to say.
+            How much space each selected role or project can use.
           </FieldDescription>
           <div className={GRID}>
             <NumberField
@@ -553,9 +549,9 @@ function ReviewRosterForm({
           <FieldLegend variant="label">Skills</FieldLegend>
           <FieldDescription>
             Aim for this number. It is not a hard cap. The skills section renders
-            one comma-separated line per category. About 40 entries use roughly
-            five lines, so trimming them saves little space and can reduce
-            keyword coverage.
+            compact comma-separated categories; long names can wrap. Preserve
+            evidenced must-have skills and remove redundant supporting entries
+            before cutting work or project evidence.
           </FieldDescription>
           <div className={GRID}>
             <NumberField
@@ -593,7 +589,7 @@ function ReviewRosterForm({
             <NumberField
               id="provenanceRetryBudget"
               label="Provenance retry budget"
-              description="Extra rounds granted when a round failed only on citation ids. 0 makes a citation slip cost a full round."
+              description="Allow extra retries when a round fails only because of citation IDs. Set to 0 to count these failures against the regular round limit."
               value={draft.provenanceRetryBudget}
               onChange={(v) => setDraft({ ...draft, provenanceRetryBudget: v })}
             />

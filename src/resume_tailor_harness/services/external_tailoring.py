@@ -15,6 +15,7 @@ from resume_tailor_harness.models.review import ReviewCritique
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.progress import ProgressReporter
 from resume_tailor_harness.services.agents import build_reviewers
+from resume_tailor_harness.services.resume_shape import for_rendering
 from resume_tailor_harness.tailor.numeric_evidence import numeric_evidence_critique
 from resume_tailor_harness.tailor.panel import run_panel
 from resume_tailor_harness.tailor.provenance import (
@@ -63,7 +64,7 @@ def load_context(
 
 def authoring_context(session: Session, job_id: int, facts_path: Path) -> dict:
     job, facts, revision = load_context(session, job_id, facts_path)
-    config = load_review_config(REVIEW_PATH)
+    config = for_rendering(load_review_config(REVIEW_PATH))
     return {
         "jobId": job_id,
         "company": job.company,
@@ -136,7 +137,7 @@ def submit_draft(
             "CONTEXT_STALE", "Fetch fresh context and rebase the draft"
         )
     critiques = deterministic_checks(content, facts)
-    config = load_review_config(REVIEW_PATH)
+    config = for_rendering(load_review_config(REVIEW_PATH))
     if not any(r.name == "fact-check" and r.gate for r in config.reviewers):
         raise ExternalTailoringError(
             "REVIEW_REQUIRED",

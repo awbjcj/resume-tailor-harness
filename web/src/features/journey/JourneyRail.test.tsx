@@ -60,7 +60,7 @@ describe("JourneyRail", () => {
       complete: true,
     });
     renderRail();
-    expect(screen.getByText(/running the full loop/i)).toBeInTheDocument();
+    expect(screen.getByText(/completed the getting-started steps/i)).toBeInTheDocument();
     // no call-to-action once complete
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });

@@ -1,5 +1,8 @@
-# Rendering: choose a template id and whether to shrink toward one page.
-# Bundled template: classic. Uploaded templates use custom:<name>.
+# Rendering: choose a template id and the authoring/export length.
+# Bundled: classic, modern, technical, executive, graduate, academic, minimal, compact.
+# Uploaded templates use custom:<name>. Design sources: templates/README.md.
+# true: concise one-page drafts, no summary. false: detailed, up to two pages.
+# Fitting keeps bundled body text >=10pt and never publishes an overflow.
 # Legacy template_path/output_dir keys remain supported for existing CLI files.
 template: classic
 fit_one_page: true

@@ -52,7 +52,7 @@ def test_list_templates_is_bundled_then_sorted_custom(tmp_path, monkeypatch) -> 
     for name in ("b.typ", "a.typ", "ignored.txt"):
         (custom / name).write_text("x", encoding="utf-8")
     assert [item.id for item in list_templates()] == [
-        "classic",
+        *BUNDLED,
         "custom:a",
         "custom:b",
     ]
