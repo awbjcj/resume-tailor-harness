@@ -20,6 +20,7 @@ from resume_tailor_harness.api.schemas.jobs import (
     ResumeVersionOut,
 )
 from resume_tailor_harness.render.export import resume_download_name
+from resume_tailor_harness.render.renderer import PageFitError
 from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.services.board import (
@@ -114,7 +115,10 @@ def preview_pdf(
 def render_endpoint(
     version_id: int, request: Request, session: Session = Depends(get_session)
 ):
-    path = render_resume_version(session, version_id)
+    try:
+        path = render_resume_version(session, version_id)
+    except PageFitError as exc:
+        raise ApiException(422, "resume_page_overflow", str(exc)) from exc
     if path is None:
         raise ApiException(404, "NOT_FOUND", f"Resume version #{version_id} not found")
     version = get_resume_version(session, version_id)

@@ -954,11 +954,6 @@
     "en": "AI-generated voice",
     "zh-CN": "AI 生成语音"
   },
-  "Aim for this number. It is not a hard cap. The skills section renders one comma-separated line per category. About 40 entries use roughly five lines, so trimming them saves little space and can reduce keyword coverage.": {
-    "key": "ui_866df9a2c91e",
-    "en": "Aim for this number. It is not a hard cap. The skills section renders one comma-separated line per category. About 40 entries use roughly five lines, so trimming them saves little space and can reduce keyword coverage.",
-    "zh-CN": "这是建议数量，不是硬性上限。技能按类别各占一行，用逗号分隔。40 项技能大约只占五行，删减省不了多少空间，还可能漏掉职位关键词。"
-  },
   "All": {
     "key": "ui_a52ace420f21",
     "en": "All",
@@ -4279,11 +4274,6 @@
     "en": "Government or regulatory",
     "zh-CN": "政府或监管来源"
   },
-  "Gradually tightens the layout while keeping a readable minimum size.": {
-    "key": "ui_afbe0e6732e7",
-    "en": "Gradually tightens the layout while keeping a readable minimum size.",
-    "zh-CN": "逐步调整排版，字号不会缩小到影响阅读。"
-  },
   "Grant shared": {
     "key": "ui_8245807edf09",
     "en": "Grant shared",
@@ -6583,11 +6573,6 @@
     "key": "ui_01e6af2b8c90",
     "en": "Page added",
     "zh-CN": "页面已添加"
-  },
-  "Page target": {
-    "key": "ui_642e48f708f1",
-    "en": "Page target",
-    "zh-CN": "目标页数"
   },
   "Password": {
     "key": "ui_e7cf3ef4f17c",
@@ -10764,11 +10749,6 @@
     "en": "Used by default when tailoring a resume.",
     "zh-CN": "定制简历时默认使用。"
   },
-  "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims.": {
-    "key": "ui_0183ac1b9046",
-    "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims.",
-    "zh-CN": "写作、修订和建议性评审都会使用这些设置。最低数量以个人资料中的现有依据为限，不会为了凑数而编造经历。"
-  },
   "Used when \"Deep review\" is selected while tailoring. It has a separate saved roster.": {
     "key": "ui_dd333618e89e",
     "en": "Used when \"Deep review\" is selected while tailoring. It has a separate saved roster.",
@@ -12098,5 +12078,20 @@
     "key": "ui_bba01c12929e",
     "en": "Gmail OAuth client (optional)",
     "zh-CN": "Gmail OAuth 客户端（可选）"
+  },
+  "New drafts prioritize experience and projects and omit the summary. Turn off for a detailed resume of up to two pages. Text stays at least 10pt; content that still overflows must be shortened before export.": {
+    "key": "ui_65b0ae1dfcee",
+    "en": "New drafts prioritize experience and projects and omit the summary. Turn off for a detailed resume of up to two pages. Text stays at least 10pt; content that still overflows must be shortened before export.",
+    "zh-CN": "新草稿优先保留工作经历和项目，不写个人简介。关闭后将生成最多两页的详细简历。正文字号不低于 10pt；若仍然超页，需要先精简内容再导出。"
+  },
+  "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Rendering selects one or two pages. One-page drafts use lower bullet limits and preserve space for experience and projects.": {
+    "key": "ui_f9c73ecc40ad",
+    "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Rendering selects one or two pages. One-page drafts use lower bullet limits and preserve space for experience and projects.",
+    "zh-CN": "供撰写、修订和评审使用。最低条目数以档案中的实际证据为限，不会要求编造经历。在“渲染”设置中选择一页或两页；单页草稿会降低要点数量上限，为工作经历和项目保留空间。"
+  },
+  "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.": {
+    "key": "ui_3a7fc08f84fa",
+    "en": "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.",
+    "zh-CN": "这是目标数量，并非硬性上限。技能按类别以逗号紧凑排列，较长名称可能换行。优先保留有证据支持的必备技能；先删除冗余的辅助条目，再考虑精简工作和项目证据。"
   }
 }
