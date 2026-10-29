@@ -44,3 +44,31 @@ disability_status: ""
 education_notes: ""
 experience_notes: ""
 additional_answers: ""
+# Structured answers are additive; existing notes above are never parsed or discarded.
+legal_name:
+  given_name: ""
+  middle_name: ""
+  family_name: ""
+  suffix: ""
+preferred_name_parts:
+  given_name: ""
+  middle_name: ""
+  family_name: ""
+  suffix: ""
+mailing_address:
+  line1: ""
+  line2: ""
+  city: ""
+  region: ""
+  postal_code: ""
+  country: ""
+# Each repeated record requires confirmed_on: YYYY-MM-DD.
+# Nullable booleans: null = unknown, false = No, true = Yes.
+alternate_emails: []
+work_eligibility: []
+experience_ranges: []
+employer_answers: []
+sex: ""
+sex_confirmed_on: null
+ai_matching_preference: unknown  # unknown | opt_in | opt_out | ask
+ai_matching_confirmed_on: null

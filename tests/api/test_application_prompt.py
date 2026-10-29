@@ -2,6 +2,7 @@ import io
 import tarfile
 
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as SystemSession
 
@@ -143,7 +144,11 @@ def test_missing_profile_and_search_defaults_are_not_application_answers(app_cli
 def test_answers_persist_can_be_cleared_and_validate_lengths(app_client):
     client, _, tmp_path = app_client
     route = "/api/config/application-profile"
-    assert all(value == "" for value in client.get(route).json().values())
+    empty = client.get(route).json()
+    assert empty["phone"] == "" and empty["sex"] == ""
+    assert empty["workEligibility"] == [] and empty["employerAnswers"] == []
+    assert empty["aiMatchingPreference"] == "unknown"
+    assert empty["sexConfirmedOn"] is None
     assert (
         client.put(route, json={"veteranStatus": "No", "phone": "123"}).status_code
         == 200
@@ -154,6 +159,240 @@ def test_answers_persist_can_be_cleared_and_validate_lengths(app_client):
     assert client.get(route).json()["phone"] == "123"
     assert client.put(route, json={}).status_code == 200
     assert client.get(route).json()["veteranStatus"] == ""
+
+
+def test_structured_answers_keep_scope_dates_unknowns_and_actual_degrees(app_client):
+    client, job_id, tmp_path = app_client
+    save_facts(
+        ProfileFacts(
+            contact=Contact(name="Ada"),
+            education=[Education(institution="Example University", degree="MEng")],
+        ),
+        tmp_path / "data/profile/facts.json",
+    )
+    response = client.put(
+        "/api/config/application-profile",
+        json={
+            "fullName": "Ada Existing",
+            "previousEmployment": "Acme: No; Other: Yes",
+            "legalName": {"givenName": " Ada ", "familyName": "Lovelace"},
+            "mailingAddress": {
+                "line1": "1 Example Street",
+                "postalCode": "00123",
+                "country": "US",
+            },
+            "alternateEmails": [
+                {
+                    "email": "ada@acme.example",
+                    "employer": "Acme",
+                    "permitted": True,
+                    "confirmedOn": "2026-10-20",
+                },
+                {
+                    "email": "hidden@other.example",
+                    "employer": "Other",
+                    "permitted": True,
+                    "confirmedOn": "2026-10-20",
+                },
+            ],
+            "workEligibility": [
+                {
+                    "country": "US",
+                    "immigrationStatus": " H-1B ",
+                    "authorizedToWork": True,
+                    "sponsorshipNow": True,
+                    "sponsorshipFuture": None,
+                    "currentlyOnOpt": False,
+                    "stemOptExtensionEligible": False,
+                    "confirmedOn": "2026-10-20",
+                },
+                {
+                    "country": "IN",
+                    "authorizedToWork": False,
+                    "confirmedOn": "2026-10-21",
+                },
+            ],
+            "experienceRanges": [
+                {
+                    "specialty": "Software and AI",
+                    "minimumYears": 3,
+                    "maximumYears": 6,
+                    "confirmedOn": "2026-10-20",
+                }
+            ],
+            "sex": "Male",
+            "sexConfirmedOn": "2026-10-20",
+            "gender": "Self-described gender",
+            "aiMatchingPreference": "opt_in",
+            "aiMatchingConfirmedOn": "2026-10-20",
+            "employerAnswers": [
+                {
+                    "employer": " acme ",
+                    "requisition": "REQ-42",
+                    "country": "US",
+                    "category": "degree_category",
+                    "question": "Category for MEng at Example University?",
+                    "answer": "Master of Science category only",
+                    "confirmedOn": "2026-10-20",
+                    "timeframe": "This application",
+                },
+                {
+                    "employer": "Acme",
+                    "question": "Contractor here in the last 12 months?",
+                    "answer": None,
+                    "confirmedOn": "2026-10-20",
+                },
+                {
+                    "employer": "Other",
+                    "question": "Other employer secret",
+                    "answer": "Hidden",
+                    "confirmedOn": "2026-10-20",
+                },
+                {
+                    "employer": "Acme",
+                    "question": "Old rolling count?",
+                    "answer": "1",
+                    "confirmedOn": "2000-01-01",
+                    "validUntil": "2000-02-01",
+                },
+            ],
+        },
+    )
+    assert response.status_code == 200, response.text
+    profile = client.get("/api/config/application-profile").json()
+    assert profile["legalName"]["givenName"] == "Ada"
+    assert profile["legalName"]["middleName"] == ""
+    assert profile["mailingAddress"]["postalCode"] == "00123"
+    assert profile["workEligibility"][0]["currentlyOnOpt"] is False
+    assert profile["workEligibility"][0]["sponsorshipFuture"] is None
+    prompt = prompt_from(client.get(f"/api/jobs/{job_id}/application-prompt"))
+    assert "- Legal given name: Ada" in prompt
+    assert "- Postal code: 00123" in prompt
+    assert "ada@acme.example" in prompt and "hidden@other.example" not in prompt
+    assert "### US\n- Immigration status: H-1B" in prompt
+    assert "- Currently on OPT: No" in prompt
+    assert "- Needs sponsorship in the future: Unknown" in prompt
+    assert "### IN\n- Legally authorized to work: No" in prompt
+    assert (
+        "- Relevant professional experience: 3–6 years\n- Confirmed on: 2026-10-20"
+        in prompt
+    )
+    assert "- Sex (optional self-identification): Male" in prompt
+    assert "- Gender: Self-described gender" in prompt
+    assert "- AI-assisted candidate matching: Opt in" in prompt
+    assert "- Requisition (must match): REQ-42" in prompt
+    assert "- Applicable timeframe: This application" in prompt
+    assert "- Answer: Unknown — ask if required" in prompt
+    assert "Other employer secret" not in prompt
+    assert "- Reuse: Expired — ask again" in prompt
+    assert "### MEng — Example University" in prompt
+    assert "Master of Science category only" in prompt
+    assert "Never advance totals with time" in prompt
+    assert "Saved answers never authorize accepting terms" in prompt
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        {
+            "workEligibility": [
+                {"country": "US", "confirmedOn": "2026-10-20", "currentlyOnOpt": "no"}
+            ]
+        },
+        {"workEligibility": [{"country": "US", "confirmedOn": "not-a-date"}]},
+        {"workEligibility": [{"country": " ", "confirmedOn": "2026-10-20"}]},
+        {"workEligibility": [{"country": "US"}]},
+        {
+            "experienceRanges": [
+                {
+                    "specialty": "AI",
+                    "minimumYears": 6,
+                    "maximumYears": 3,
+                    "confirmedOn": "2026-10-20",
+                }
+            ]
+        },
+        {
+            "experienceRanges": [
+                {"specialty": "AI", "minimumYears": 3, "confirmedOn": "2026-10-20"}
+            ]
+        },
+        {"alternateEmails": [{"email": "invalid", "confirmedOn": "2026-10-20"}]},
+        {
+            "alternateEmails": [
+                {
+                    "email": "ada@example.com",
+                    "requisition": "42",
+                    "confirmedOn": "2026-10-20",
+                }
+            ]
+        },
+        {
+            "employerAnswers": [
+                {
+                    "employer": "Acme",
+                    "question": "Question?",
+                    "answer": "x" * 4001,
+                    "confirmedOn": "2026-10-20",
+                }
+            ]
+        },
+        {
+            "employerAnswers": [
+                {
+                    "employer": "Acme",
+                    "question": "Question?",
+                    "confirmedOn": "2026-10-20",
+                    "validUntil": "2026-10-19",
+                }
+            ]
+        },
+        {"legalName": {"guessedName": "Ada"}},
+        {"aiMatchingPreference": "yes"},
+    ],
+)
+def test_invalid_structured_answers_do_not_replace_saved_profile(app_client, invalid):
+    client, _, _ = app_client
+    route = "/api/config/application-profile"
+    client.put(route, json={"fullName": "Existing answer"})
+    assert client.put(route, json=invalid).status_code == 422
+    assert client.get(route).json()["fullName"] == "Existing answer"
+
+
+def test_legacy_notes_are_preserved_without_guessing_structured_answers(app_client):
+    client, _, tmp_path = app_client
+    path = tmp_path / "config/application_profile.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "full_name": "Ada Example",
+                "gender": "Female",
+                "additional_answers": "US: visa notes; AI matching: yes for Acme only",
+                "employer_screening_answers": "Acme / REQ-42: role requirements Yes",
+                "runtime_key": "preserve me",
+            }
+        ),
+        encoding="utf-8",
+    )
+    response = client.get("/api/config/application-profile")
+    assert response.status_code == 200
+    profile = response.json()
+    assert profile["legalName"]["givenName"] == ""
+    assert profile["sex"] == "" and profile["workEligibility"] == []
+    assert profile["aiMatchingPreference"] == "unknown"
+    assert profile["employerAnswers"] == []
+    saved = client.put(
+        "/api/config/application-profile", json={**profile, "phone": "123"}
+    )
+    assert saved.status_code == 200
+    assert saved.json()["additionalAnswers"] == profile["additionalAnswers"]
+    assert (
+        saved.json()["employerScreeningAnswers"] == profile["employerScreeningAnswers"]
+    )
+    assert (
+        yaml.safe_load(path.read_text(encoding="utf-8"))["runtime_key"] == "preserve me"
+    )
 
 
 def test_prompt_reads_current_search_preferences_without_copying_them_to_profile(
@@ -292,7 +531,25 @@ def test_hosted_profiles_jobs_and_facts_are_isolated_and_resettable(mu_app, mu_c
     assert (
         mu_client.put(
             route,
-            json={"fullName": "Private Owner", "disabilityStatus": "Owner answer"},
+            json={
+                "fullName": "Private Owner",
+                "disabilityStatus": "Owner answer",
+                "workEligibility": [
+                    {
+                        "country": "US",
+                        "authorizedToWork": False,
+                        "confirmedOn": "2026-10-20",
+                    }
+                ],
+                "employerAnswers": [
+                    {
+                        "employer": "Private Co",
+                        "question": "Private question?",
+                        "answer": "Private answer",
+                        "confirmedOn": "2026-10-20",
+                    }
+                ],
+            },
         ).status_code
         == 200
     )
@@ -323,6 +580,8 @@ def test_hosted_profiles_jobs_and_facts_are_isolated_and_resettable(mu_app, mu_c
         == 200
     )
     assert mu_client.get(route).json()["fullName"] == ""
+    assert mu_client.get(route).json()["employerAnswers"] == []
+    assert mu_client.get(route).json()["workEligibility"] == []
     assert mu_client.get(f"/api/jobs/{owner_job}/application-prompt").status_code == 404
     alice_job = mu_client.post(
         "/api/jobs", json={"jdText": "Alice job", "title": "Alice role"}
@@ -345,6 +604,7 @@ def test_hosted_profiles_jobs_and_facts_are_isolated_and_resettable(mu_app, mu_c
         == 200
     )
     assert mu_client.get(route).json()["disabilityStatus"] == ""
+    assert mu_client.get(route).json()["employerAnswers"] == []
     assert (
         mu_client.post(
             "/api/settings/bundle?confirm=APPLY",
@@ -353,3 +613,7 @@ def test_hosted_profiles_jobs_and_facts_are_isolated_and_resettable(mu_app, mu_c
         == 200
     )
     assert mu_client.get(route).json()["fullName"] == "Private Owner"
+    restored = mu_client.get(route).json()
+    assert restored["workEligibility"][0]["authorizedToWork"] is False
+    assert restored["workEligibility"][0]["confirmedOn"] == "2026-10-20"
+    assert restored["employerAnswers"][0]["answer"] == "Private answer"

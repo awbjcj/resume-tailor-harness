@@ -1,4 +1,5 @@
 import json
+import time
 
 import httpx
 import pytest
@@ -10,7 +11,6 @@ from resume_harness_sdk import (
     RunFailed,
     RunTimeout,
 )
-from resume_harness_sdk import client as module
 from resume_harness_sdk.cli import main
 
 
@@ -115,8 +115,8 @@ def test_terminal_states(state):
 
 def test_wait_timeout_does_not_cancel(monkeypatch):
     ticks = iter([0, 0, 2, 2])
-    monkeypatch.setattr(module.time, "monotonic", lambda: next(ticks))
-    monkeypatch.setattr(module.time, "sleep", lambda _: None)
+    monkeypatch.setattr(time, "monotonic", lambda: next(ticks))
+    monkeypatch.setattr(time, "sleep", lambda _: None)
     seen = []
 
     def handle(request):
@@ -260,6 +260,52 @@ def test_application_sdk_write_payloads_and_cover_letter_download():
     }
     assert requests[3].url.path == "/api/cover-letters/5/pdf"
     assert requests[3].headers["authorization"] == "Bearer rat_test"
+
+
+@pytest.mark.parametrize("opt_answer", [None, False, True])
+def test_sdk_keeps_structured_answers_and_nullable_booleans(opt_answer):
+    profile = {
+        "legalName": {"givenName": "Ada", "familyName": "Lovelace"},
+        "mailingAddress": {"postalCode": "00123"},
+        "workEligibility": [
+            {"country": "US", "currentlyOnOpt": opt_answer, "confirmedOn": "2026-10-20"}
+        ],
+        "experienceRanges": [
+            {
+                "specialty": "Software",
+                "minimumYears": 3,
+                "maximumYears": 6,
+                "confirmedOn": "2026-10-20",
+            }
+        ],
+        "employerAnswers": [
+            {
+                "employer": "Acme",
+                "question": "Worked here?",
+                "answer": None,
+                "confirmedOn": "2026-10-20",
+            }
+        ],
+        "sex": "Female",
+        "aiMatchingPreference": "opt_in",
+    }
+    with client(
+        lambda _: httpx.Response(200, json={"profile": profile, "revision": "rev"})
+    ) as sdk:
+        assert sdk.get_application_profile()["profile"] == profile
+
+
+def test_sdk_rejects_a_string_in_a_structured_boolean_answer():
+    profile = {
+        "workEligibility": [
+            {"country": "US", "currentlyOnOpt": "false", "confirmedOn": "2026-10-20"}
+        ]
+    }
+    with client(
+        lambda _: httpx.Response(200, json={"profile": profile, "revision": "rev"})
+    ) as sdk:
+        with pytest.raises(ResponseValidationError):
+            sdk.get_application_profile()
 
 
 def test_cli_application_prompt_is_markdown(monkeypatch, capsys):

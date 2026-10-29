@@ -39,7 +39,7 @@ retrieved from a secret manager and an optional HTTPX transport for offline test
 | `application_context(job_id)` | Full job, readable prompt, personal `profile`, `profileRevision`, questions, attachments and `submissionPolicy` |
 | `application_prompt(job_id)` | Full Markdown prompt including job description and personal information |
 | `get_application_profile()` | `profile` and current `revision` |
-| `update_application_profile(changes, revision=..., user_confirmed=True)` | Partial update of confirmed personal fields; camelCase keys, empty string clears |
+| `update_application_profile(changes, revision=..., user_confirmed=True)` | Partial update of confirmed personal fields; camelCase keys. Name/address parts merge; lists replace in full (`[]` clears); empty strings clear text, nullable answers use null for unknown. |
 | `list_application_questions(job_id=None, status=None, page=1, page_size=50)` | Paginated questions; job filter also includes reusable profile questions |
 | `iter_application_questions(job_id=None, status=None, page_size=50)` | Iterates matching questions across pages |
 | `record_application_question(question, job_id=None, scope="job", context="")` | Idempotently records an unanswered question; job scope requires job ID |

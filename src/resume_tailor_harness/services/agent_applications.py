@@ -126,6 +126,19 @@ def read_profile(store: ConfigStore) -> ApplicationProfileOut:
     return ApplicationProfileOut(profile=profile, revision=_revision(profile))
 
 
+def _merge_profile(current: dict, changes: dict) -> dict:
+    """PATCH merges named parts; lists replace so deletions stay explicit."""
+    result = dict(current)
+    for key, value in changes.items():
+        old = result.get(key)
+        result[key] = (
+            _merge_profile(old, value)
+            if isinstance(old, dict) and isinstance(value, dict)
+            else value
+        )
+    return result
+
+
 def update_profile(
     store: MutableConfigStore, body: ApplicationProfileUpdate
 ) -> ApplicationProfileOut:
@@ -135,10 +148,9 @@ def update_profile(
                 "PROFILE_STALE", "Read the profile again before updating it"
             )
         return ApplicationProfileDoc.model_validate(
-            {
-                **current.model_dump(),
-                **body.profile.model_dump(exclude_unset=True),
-            }
+            _merge_profile(
+                current.model_dump(), body.profile.model_dump(exclude_unset=True)
+            )
         )
 
     saved = cast(ApplicationProfileDoc, store.update("application_profile", transform))

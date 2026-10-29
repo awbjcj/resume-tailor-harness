@@ -7,10 +7,20 @@ serves these values, and the TUI/CLI keep reading the same YAML.
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal
+from datetime import date
+from typing import Any, Literal
 
 from pydantic import Field, field_validator, model_validator
 
+from resume_tailor_harness.api.schemas.application_profile import (
+    AlternateEmail,
+    ApplicationAnswer,
+    ApplicationName,
+    EmployerAnswer,
+    ExperienceRange,
+    MailingAddress,
+    WorkEligibility,
+)
 from resume_tailor_harness.api.schemas.base import CamelModel
 from resume_tailor_harness.models.review import FACT_CHECK_REVIEWER
 from resume_tailor_harness.tailor.review_config import (
@@ -261,9 +271,6 @@ class ProfileConfigDoc(CamelModel):
     github_repo_limit: int = Field(default=20, ge=1, le=100)
 
 
-ApplicationAnswer = Annotated[str, Field(max_length=4000)]
-
-
 class ApplicationProfileDoc(CamelModel):
     """Optional, explicitly supplied answers; blank never means no."""
 
@@ -305,6 +312,24 @@ class ApplicationProfileDoc(CamelModel):
     education_notes: ApplicationAnswer = ""
     experience_notes: ApplicationAnswer = ""
     additional_answers: ApplicationAnswer = ""
+
+    # Additive defaults keep old YAML and clients readable without guessing facts
+    # from prose. Existing notes remain available until explicitly edited/cleared.
+    legal_name: ApplicationName = Field(default_factory=ApplicationName)
+    preferred_name_parts: ApplicationName = Field(default_factory=ApplicationName)
+    mailing_address: MailingAddress = Field(default_factory=MailingAddress)
+    alternate_emails: list[AlternateEmail] = Field(default_factory=list, max_length=100)
+    work_eligibility: list[WorkEligibility] = Field(
+        default_factory=list, max_length=100
+    )
+    experience_ranges: list[ExperienceRange] = Field(
+        default_factory=list, max_length=100
+    )
+    employer_answers: list[EmployerAnswer] = Field(default_factory=list, max_length=100)
+    sex: ApplicationAnswer = ""
+    sex_confirmed_on: date | None = None
+    ai_matching_preference: Literal["unknown", "opt_in", "opt_out", "ask"] = "unknown"
+    ai_matching_confirmed_on: date | None = None
 
     @field_validator("*", mode="before")
     @classmethod

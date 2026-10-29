@@ -198,6 +198,67 @@ def test_profile_compare_and_swap_across_store_instances(tmp_path):
     assert sorted(results) == ["PROFILE_STALE", "saved"]
 
 
+def test_structured_patch_merges_name_parts_replaces_lists_and_preserves_notes(
+    app_client,
+):
+    app, client = app_client
+    job_id = seed_job(app, status="approved")
+    route = "/api/config/application-profile"
+    original = {
+        "fullName": "Original full name",
+        "legalName": {"givenName": "Ada", "familyName": "Lovelace"},
+        "mailingAddress": {"city": "Example City", "postalCode": "00123"},
+        "additionalAnswers": "Existing scoped notes remain unchanged",
+        "workEligibility": [
+            {"country": "US", "authorizedToWork": True, "confirmedOn": "2026-10-20"}
+        ],
+        "employerAnswers": [
+            {
+                "employer": "Example",
+                "question": "Worked here?",
+                "answer": "  ",
+                "confirmedOn": "2026-10-20",
+            }
+        ],
+    }
+    assert client.put(route, json=original).status_code == 200
+    snapshot = client.get("/api/application-profile").json()
+    assert snapshot["profile"]["employerAnswers"][0]["answer"] is None
+    response = client.patch(
+        "/api/application-profile",
+        json={
+            "revision": snapshot["revision"],
+            "userConfirmed": True,
+            "profile": {
+                "legalName": {"middleName": "Byron"},
+                "mailingAddress": {"line1": "1 Example Road"},
+                "workEligibility": [],
+                "aiMatchingPreference": "opt_out",
+                "aiMatchingConfirmedOn": "2026-10-21",
+            },
+        },
+    )
+    assert response.status_code == 200, response.text
+    updated = response.json()["profile"]
+    assert updated["legalName"] == {
+        "givenName": "Ada",
+        "middleName": "Byron",
+        "familyName": "Lovelace",
+        "suffix": "",
+    }
+    assert updated["mailingAddress"]["city"] == "Example City"
+    assert updated["mailingAddress"]["postalCode"] == "00123"
+    assert updated["workEligibility"] == []
+    assert updated["additionalAnswers"] == original["additionalAnswers"]
+    assert updated["fullName"] == original["fullName"]
+    assert updated["employerAnswers"] == snapshot["profile"]["employerAnswers"]
+    context = client.get(f"/api/jobs/{job_id}/application-context").json()
+    assert context["profile"] == updated
+    assert "AI-assisted candidate matching: Opt out" in context["prompt"]
+    assert "Answer: Unknown — ask if required" in context["prompt"]
+    assert response.json()["revision"] != snapshot["revision"]
+
+
 def test_questions_are_idempotent_scoped_and_confirmed_with_revision(app_client):
     app, client = app_client
     one = seed_job(app, status="approved")

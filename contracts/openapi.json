@@ -557,6 +557,58 @@
         "title": "AliasIn",
         "type": "object"
       },
+      "AlternateEmail": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmedOn": {
+            "format": "date",
+            "title": "Confirmedon",
+            "type": "string"
+          },
+          "country": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Country",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+            "title": "Email",
+            "type": "string"
+          },
+          "employer": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Employer",
+            "type": "string"
+          },
+          "permitted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permitted"
+          },
+          "requisition": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Requisition",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmedOn",
+          "email"
+        ],
+        "title": "AlternateEmail",
+        "type": "object"
+      },
       "AnalyticsOut": {
         "properties": {
           "byBand": {
@@ -1519,6 +1571,37 @@
         "title": "ApplicationJobOut",
         "type": "object"
       },
+      "ApplicationName": {
+        "additionalProperties": false,
+        "properties": {
+          "familyName": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Familyname",
+            "type": "string"
+          },
+          "givenName": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Givenname",
+            "type": "string"
+          },
+          "middleName": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Middlename",
+            "type": "string"
+          },
+          "suffix": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Suffix",
+            "type": "string"
+          }
+        },
+        "title": "ApplicationName",
+        "type": "object"
+      },
       "ApplicationOut": {
         "properties": {
           "coverLetterId": {
@@ -1610,6 +1693,37 @@
             "title": "Address",
             "type": "string"
           },
+          "aiMatchingConfirmedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aimatchingconfirmedon"
+          },
+          "aiMatchingPreference": {
+            "default": "unknown",
+            "enum": [
+              "unknown",
+              "opt_in",
+              "opt_out",
+              "ask"
+            ],
+            "title": "Aimatchingpreference",
+            "type": "string"
+          },
+          "alternateEmails": {
+            "items": {
+              "$ref": "#/components/schemas/AlternateEmail"
+            },
+            "maxItems": 100,
+            "title": "Alternateemails",
+            "type": "array"
+          },
           "atLeast18": {
             "default": "",
             "maxLength": 4000,
@@ -1652,6 +1766,14 @@
             "title": "Email",
             "type": "string"
           },
+          "employerAnswers": {
+            "items": {
+              "$ref": "#/components/schemas/EmployerAnswer"
+            },
+            "maxItems": 100,
+            "title": "Employeranswers",
+            "type": "array"
+          },
           "employerRelationships": {
             "default": "",
             "maxLength": 4000,
@@ -1681,6 +1803,14 @@
             "maxLength": 4000,
             "title": "Experiencenotes",
             "type": "string"
+          },
+          "experienceRanges": {
+            "items": {
+              "$ref": "#/components/schemas/ExperienceRange"
+            },
+            "maxItems": 100,
+            "title": "Experienceranges",
+            "type": "array"
           },
           "exportControlCitizenship": {
             "default": "",
@@ -1712,11 +1842,17 @@
             "title": "Industryexperience",
             "type": "string"
           },
+          "legalName": {
+            "$ref": "#/components/schemas/ApplicationName"
+          },
           "linkedinUrl": {
             "default": "",
             "maxLength": 4000,
             "title": "Linkedinurl",
             "type": "string"
+          },
+          "mailingAddress": {
+            "$ref": "#/components/schemas/MailingAddress"
           },
           "officeAttendance": {
             "default": "",
@@ -1747,6 +1883,9 @@
             "maxLength": 4000,
             "title": "Preferredname",
             "type": "string"
+          },
+          "preferredNameParts": {
+            "$ref": "#/components/schemas/ApplicationName"
           },
           "previousApplications": {
             "default": "",
@@ -1783,6 +1922,24 @@
             "maxLength": 4000,
             "title": "Remotepreference",
             "type": "string"
+          },
+          "sex": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Sex",
+            "type": "string"
+          },
+          "sexConfirmedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sexconfirmedon"
           },
           "sponsorshipNeeded": {
             "default": "",
@@ -1825,6 +1982,14 @@
             "maxLength": 4000,
             "title": "Workauthorizationverification",
             "type": "string"
+          },
+          "workEligibility": {
+            "items": {
+              "$ref": "#/components/schemas/WorkEligibility"
+            },
+            "maxItems": 100,
+            "title": "Workeligibility",
+            "type": "array"
           }
         },
         "title": "ApplicationProfileDoc",
@@ -1863,6 +2028,37 @@
             "title": "Address",
             "type": "string"
           },
+          "aiMatchingConfirmedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aimatchingconfirmedon"
+          },
+          "aiMatchingPreference": {
+            "default": "unknown",
+            "enum": [
+              "unknown",
+              "opt_in",
+              "opt_out",
+              "ask"
+            ],
+            "title": "Aimatchingpreference",
+            "type": "string"
+          },
+          "alternateEmails": {
+            "items": {
+              "$ref": "#/components/schemas/AlternateEmail"
+            },
+            "maxItems": 100,
+            "title": "Alternateemails",
+            "type": "array"
+          },
           "atLeast18": {
             "default": "",
             "maxLength": 4000,
@@ -1905,6 +2101,14 @@
             "title": "Email",
             "type": "string"
           },
+          "employerAnswers": {
+            "items": {
+              "$ref": "#/components/schemas/EmployerAnswer"
+            },
+            "maxItems": 100,
+            "title": "Employeranswers",
+            "type": "array"
+          },
           "employerRelationships": {
             "default": "",
             "maxLength": 4000,
@@ -1934,6 +2138,14 @@
             "maxLength": 4000,
             "title": "Experiencenotes",
             "type": "string"
+          },
+          "experienceRanges": {
+            "items": {
+              "$ref": "#/components/schemas/ExperienceRange"
+            },
+            "maxItems": 100,
+            "title": "Experienceranges",
+            "type": "array"
           },
           "exportControlCitizenship": {
             "default": "",
@@ -1965,11 +2177,17 @@
             "title": "Industryexperience",
             "type": "string"
           },
+          "legalName": {
+            "$ref": "#/components/schemas/ApplicationName"
+          },
           "linkedinUrl": {
             "default": "",
             "maxLength": 4000,
             "title": "Linkedinurl",
             "type": "string"
+          },
+          "mailingAddress": {
+            "$ref": "#/components/schemas/MailingAddress"
           },
           "officeAttendance": {
             "default": "",
@@ -2000,6 +2218,9 @@
             "maxLength": 4000,
             "title": "Preferredname",
             "type": "string"
+          },
+          "preferredNameParts": {
+            "$ref": "#/components/schemas/ApplicationName"
           },
           "previousApplications": {
             "default": "",
@@ -2036,6 +2257,24 @@
             "maxLength": 4000,
             "title": "Remotepreference",
             "type": "string"
+          },
+          "sex": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Sex",
+            "type": "string"
+          },
+          "sexConfirmedOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sexconfirmedon"
           },
           "sponsorshipNeeded": {
             "default": "",
@@ -2078,6 +2317,14 @@
             "maxLength": 4000,
             "title": "Workauthorizationverification",
             "type": "string"
+          },
+          "workEligibility": {
+            "items": {
+              "$ref": "#/components/schemas/WorkEligibility"
+            },
+            "maxItems": 100,
+            "title": "Workeligibility",
+            "type": "array"
           }
         },
         "title": "ApplicationProfilePatch",
@@ -6413,6 +6660,92 @@
         "title": "EmailNotificationUpdate",
         "type": "object"
       },
+      "EmployerAnswer": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "category": {
+            "default": "general",
+            "enum": [
+              "general",
+              "referral",
+              "employment",
+              "contractor",
+              "relationship",
+              "previous_application",
+              "degree_category",
+              "role_requirement"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "confirmedOn": {
+            "format": "date",
+            "title": "Confirmedon",
+            "type": "string"
+          },
+          "country": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Country",
+            "type": "string"
+          },
+          "employer": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Employer",
+            "type": "string"
+          },
+          "question": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "requisition": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Requisition",
+            "type": "string"
+          },
+          "timeframe": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Timeframe",
+            "type": "string"
+          },
+          "validUntil": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validuntil"
+          }
+        },
+        "required": [
+          "confirmedOn",
+          "employer",
+          "question"
+        ],
+        "title": "EmployerAnswer",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -6730,6 +7063,54 @@
           "status"
         ],
         "title": "EvidencePortfolioOut",
+        "type": "object"
+      },
+      "ExperienceRange": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmedOn": {
+            "format": "date",
+            "title": "Confirmedon",
+            "type": "string"
+          },
+          "maximumYears": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximumyears"
+          },
+          "minimumYears": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimumyears"
+          },
+          "specialty": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Specialty",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmedOn",
+          "specialty"
+        ],
+        "title": "ExperienceRange",
         "type": "object"
       },
       "ExternalDraftIn": {
@@ -9643,6 +10024,49 @@
           "password"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "MailingAddress": {
+        "additionalProperties": false,
+        "properties": {
+          "city": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "City",
+            "type": "string"
+          },
+          "country": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Country",
+            "type": "string"
+          },
+          "line1": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Line1",
+            "type": "string"
+          },
+          "line2": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Line2",
+            "type": "string"
+          },
+          "postalCode": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Postalcode",
+            "type": "string"
+          },
+          "region": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Region",
+            "type": "string"
+          }
+        },
+        "title": "MailingAddress",
         "type": "object"
       },
       "ManualEntryOut": {
@@ -18379,6 +18803,100 @@
           "code"
         ],
         "title": "VerifyEmailRequest",
+        "type": "object"
+      },
+      "WorkEligibility": {
+        "additionalProperties": false,
+        "properties": {
+          "authorizedToWork": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorizedtowork"
+          },
+          "canVerifyAuthorization": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canverifyauthorization"
+          },
+          "confirmedOn": {
+            "format": "date",
+            "title": "Confirmedon",
+            "type": "string"
+          },
+          "country": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Country",
+            "type": "string"
+          },
+          "currentlyOnOpt": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentlyonopt"
+          },
+          "immigrationStatus": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Immigrationstatus",
+            "type": "string"
+          },
+          "sponsorshipFuture": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sponsorshipfuture"
+          },
+          "sponsorshipNow": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sponsorshipnow"
+          },
+          "stemOptExtensionEligible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stemoptextensioneligible"
+          }
+        },
+        "required": [
+          "confirmedOn",
+          "country"
+        ],
+        "title": "WorkEligibility",
         "type": "object"
       },
       "resume_tailor_harness__api__schemas__admin_users__ResetPasswordRequest": {

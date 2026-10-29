@@ -13,7 +13,7 @@ for (const width of [1280, 390]) {
     await page.route("**/api/notifications*", (route) => route.fulfill({ json: [] }));
     await page.route("**/api/run-completions*", (route) => route.fulfill({ json: [] }));
     await page.route("**/api/board-views*", (route) => route.fulfill({ json: [] }));
-    let profile: Record<string, string> = { fullName: "Ada", expectedSalary: "", disabilityStatus: "" };
+    let profile: Record<string, unknown> = { fullName: "Ada", expectedSalary: "", disabilityStatus: "" };
     await page.route("**/api/config/application-profile", async (route) => {
       if (route.request().method() === "PUT") profile = route.request().postDataJSON();
       await route.fulfill({ json: profile });
@@ -30,6 +30,30 @@ for (const width of [1280, 390]) {
 
     await page.goto("/settings/application-profile");
     await expect(page.getByRole("heading", { name: "Application profile", exact: true })).toBeVisible();
+    const legal = page.getByRole("group", { name: "Legal name", exact: true });
+    await legal.getByLabel("Given name", { exact: true }).fill("Ada");
+    await legal.getByLabel("Family name", { exact: true }).fill("Lovelace");
+    await page.getByLabel("Postal code", { exact: true }).fill("00123");
+    await page.getByLabel("Sex (optional self-identification)", { exact: true }).fill("Female");
+    await page.getByLabel("AI-assisted candidate matching", { exact: true }).selectOption("opt_in");
+    await page.getByRole("button", { name: "Add country eligibility", exact: true }).click();
+    const eligibility = page.getByRole("group", { name: "Work eligibility by country 1", exact: true });
+    await eligibility.getByLabel(/^Country/).fill("US");
+    await eligibility.getByLabel("Currently on OPT", { exact: true }).selectOption("no");
+    await eligibility.getByLabel(/^Confirmation date/).fill("2026-10-20");
+    await page.getByRole("button", { name: "Add experience range", exact: true }).click();
+    const experience = page.getByRole("group", { name: "Dated experience ranges 1", exact: true });
+    await experience.getByLabel(/^Experience specialty/).fill("Software");
+    await experience.getByLabel("Minimum years", { exact: true }).fill("3");
+    await experience.getByLabel("Maximum years", { exact: true }).fill("6");
+    await experience.getByLabel(/^Confirmation date/).fill("2026-10-20");
+    await page.getByRole("button", { name: "Add employer answer", exact: true }).click();
+    const employer = page.getByRole("group", { name: "Scoped employer answer records 1", exact: true });
+    await employer.getByLabel(/^Employer/).fill("Acme");
+    await employer.getByLabel("Requisition / role ID", { exact: true }).fill("REQ-7");
+    await employer.getByLabel(/^Exact question/).fill("Previously employed here?");
+    await employer.getByLabel("Confirmed answer (blank means unknown)", { exact: true }).fill("No");
+    await employer.getByLabel(/^Confirmation date/).fill("2026-10-20");
     await page.getByLabel("Expected salary", { exact: true }).fill("USD 120,000/year");
     await page.getByLabel("Disability status", { exact: true }).fill("Prefer not to disclose");
     await page.getByLabel("At least 18 years old", { exact: true }).fill("Yes");
@@ -42,10 +66,17 @@ for (const width of [1280, 390]) {
     await expect(page.getByRole("button", { name: "Discard", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Save changes" }).click();
     await expect.poll(() => profile.expectedSalary).toBe("USD 120,000/year");
+    expect(profile.workEligibility).toMatchObject([{ country: "US", currentlyOnOpt: false }]);
+    expect(profile.experienceRanges).toMatchObject([{ specialty: "Software", minimumYears: 3, maximumYears: 6 }]);
+    expect(profile.employerAnswers).toMatchObject([{ employer: "Acme", requisition: "REQ-7", answer: "No" }]);
     await page.reload();
     await expect(page.getByLabel("Disability status", { exact: true })).toHaveValue("Prefer not to disclose");
     await expect(page.getByLabel("U.S. worker category", { exact: true })).toHaveValue("No");
     await expect(page.getByLabel("Previous employment with each employer", { exact: true })).toHaveValue("Acme: No");
+    await expect(page.getByLabel("AI-assisted candidate matching", { exact: true })).toHaveValue("opt_in");
+    await expect(page.getByLabel("Legally authorized to work", { exact: true })).toHaveValue("unknown");
+    await expect(page.getByLabel("Currently on OPT", { exact: true })).toHaveValue("no");
+    await expect(page.getByLabel("Postal code", { exact: true })).toHaveValue("00123");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: `test-results/application-profile-${width}.png`, fullPage: true });
 
@@ -89,6 +120,8 @@ for (const width of [1280, 390]) {
     await expect(page.getByLabel("是否年满 18 岁", { exact: true })).toHaveValue("Yes");
     await expect(page.getByLabel("出口管制所涉国籍／双重国籍", { exact: true })).toHaveValue("Cuba, Iran, North Korea, Syria: No");
     await expect(page.getByLabel("在各雇主处的任职经历", { exact: true })).toHaveValue("Acme: No");
+    await expect(page.getByLabel("AI 辅助候选人匹配", { exact: true })).toHaveValue("opt_in");
+    await expect(page.getByLabel("生理性别（自愿披露）", { exact: true })).toHaveValue("Female");
     await expect(page.getByText("不确定的内容可以留空。自愿填写的问题，请如实回答，也可以填写“不愿透露”。留空的项目不会自动补全。", { exact: true })).toBeVisible();
     await expect(page.locator("html")).toHaveClass(/dark/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

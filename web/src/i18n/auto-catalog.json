@@ -12093,5 +12093,355 @@
     "key": "ui_3a7fc08f84fa",
     "en": "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.",
     "zh-CN": "这是目标数量，并非硬性上限。技能按类别以逗号紧凑排列，较长名称可能换行。优先保留有证据支持的必备技能；先删除冗余的辅助条目，再考虑精简工作和项目证据。"
+  },
+  "Add alternate email": {
+    "key": "ui_0b2705b52fa9",
+    "en": "Add alternate email",
+    "zh-CN": "添加备用邮箱"
+  },
+  "Add country eligibility": {
+    "key": "ui_813ba2058333",
+    "en": "Add country eligibility",
+    "zh-CN": "添加国家工作资格"
+  },
+  "Add employer answer": {
+    "key": "ui_7c3131720eda",
+    "en": "Add employer answer",
+    "zh-CN": "添加雇主问答"
+  },
+  "Add experience range": {
+    "key": "ui_66a0e0891711",
+    "en": "Add experience range",
+    "zh-CN": "添加工作年限范围"
+  },
+  "Address country": {
+    "key": "ui_7bba20cd8ac7",
+    "en": "Address country",
+    "zh-CN": "地址所在国家"
+  },
+  "Address line 1": {
+    "key": "ui_ee760b6e81b9",
+    "en": "Address line 1",
+    "zh-CN": "地址第一行"
+  },
+  "Address line 2": {
+    "key": "ui_350b2b85c4af",
+    "en": "Address line 2",
+    "zh-CN": "地址第二行"
+  },
+  "AI matching preference confirmation date": {
+    "key": "ui_9b5a68b616df",
+    "en": "AI matching preference confirmation date",
+    "zh-CN": "AI 匹配偏好确认日期"
+  },
+  "AI-assisted candidate matching": {
+    "key": "ui_3752884b75a1",
+    "en": "AI-assisted candidate matching",
+    "zh-CN": "AI 辅助候选人匹配"
+  },
+  "Alternate application emails": {
+    "key": "ui_e207839edd66",
+    "en": "Alternate application emails",
+    "zh-CN": "申请备用邮箱"
+  },
+  "Alternate email": {
+    "key": "ui_0510dcdda6d3",
+    "en": "Alternate email",
+    "zh-CN": "备用电子邮箱"
+  },
+  "Answer category": {
+    "key": "ui_311bff4f8a0c",
+    "en": "Answer category",
+    "zh-CN": "答案类别"
+  },
+  "Applicable timeframe": {
+    "key": "ui_cbd75871dac1",
+    "en": "Applicable timeframe",
+    "zh-CN": "适用时间范围"
+  },
+  "Application defaults": {
+    "key": "ui_40571adf9ff5",
+    "en": "Application defaults",
+    "zh-CN": "申请默认偏好"
+  },
+  "Application history": {
+    "key": "ui_f1118649b2e2",
+    "en": "Application history",
+    "zh-CN": "申请记录"
+  },
+  "Ask each time": {
+    "key": "ui_3be0feca7417",
+    "en": "Ask each time",
+    "zh-CN": "每次询问"
+  },
+  "Can verify legal right to work": {
+    "key": "ui_46a75c3cf443",
+    "en": "Can verify legal right to work",
+    "zh-CN": "是否可提供合法工作资格证明"
+  },
+  "Confirmation date": {
+    "key": "ui_2aeb534907a5",
+    "en": "Confirmation date",
+    "zh-CN": "确认日期"
+  },
+  "Confirmed answer (blank means unknown)": {
+    "key": "ui_4d5b60e466d5",
+    "en": "Confirmed answer (blank means unknown)",
+    "zh-CN": "已确认的答案（留空表示未知）"
+  },
+  "Contractor history": {
+    "key": "ui_7d56e93b4057",
+    "en": "Contractor history",
+    "zh-CN": "承包／派遣工作记录"
+  },
+  "Country scope": {
+    "key": "ui_32eed489c06d",
+    "en": "Country scope",
+    "zh-CN": "适用国家"
+  },
+  "Currently on OPT": {
+    "key": "ui_489d8f09fdf9",
+    "en": "Currently on OPT",
+    "zh-CN": "目前是否处于 OPT 期间"
+  },
+  "Dated experience ranges": {
+    "key": "ui_894e7a835f55",
+    "en": "Dated experience ranges",
+    "zh-CN": "注明日期的工作年限范围"
+  },
+  "Degree dropdown mapping": {
+    "key": "ui_98302fad03a7",
+    "en": "Degree dropdown mapping",
+    "zh-CN": "学位下拉选项映射"
+  },
+  "Eligible for a STEM OPT extension": {
+    "key": "ui_ef7422f7a34f",
+    "en": "Eligible for a STEM OPT extension",
+    "zh-CN": "是否符合 STEM OPT 延期资格"
+  },
+  "Employer": {
+    "key": "ui_54a3b64c67dd",
+    "en": "Employer",
+    "zh-CN": "雇主"
+  },
+  "Employer (blank means all employers)": {
+    "key": "ui_281c68d27361",
+    "en": "Employer (blank means all employers)",
+    "zh-CN": "雇主（留空表示适用于所有雇主）"
+  },
+  "Employer relationships": {
+    "key": "ui_99f676cc95ff",
+    "en": "Employer relationships",
+    "zh-CN": "与雇主员工的关系"
+  },
+  "Employment history": {
+    "key": "ui_2a07354779a5",
+    "en": "Employment history",
+    "zh-CN": "雇佣记录"
+  },
+  "Exact question / degree mapping context": {
+    "key": "ui_4b9edbdf5004",
+    "en": "Exact question / degree mapping context",
+    "zh-CN": "问题原文／学位映射背景"
+  },
+  "Experience specialty": {
+    "key": "ui_6c14f37e0d9c",
+    "en": "Experience specialty",
+    "zh-CN": "工作经验领域"
+  },
+  "Family name": {
+    "key": "ui_e19218baf899",
+    "en": "Family name",
+    "zh-CN": "姓"
+  },
+  "General screening": {
+    "key": "ui_5f991d2ef8b8",
+    "en": "General screening",
+    "zh-CN": "一般筛选问题"
+  },
+  "Given name": {
+    "key": "ui_71e454fe8395",
+    "en": "Given name",
+    "zh-CN": "名"
+  },
+  "Immigration status": {
+    "key": "ui_a744e5211553",
+    "en": "Immigration status",
+    "zh-CN": "移民身份"
+  },
+  "Keep the primary email above. An alternate can be used only with explicit permission and a matching employer, requisition, and country scope.": {
+    "key": "ui_39880901e0ce",
+    "en": "Keep the primary email above. An alternate can be used only with explicit permission and a matching employer, requisition, and country scope.",
+    "zh-CN": "上方主邮箱保持不变。只有明确允许且雇主、招聘编号和适用国家均匹配时，才可使用备用邮箱。"
+  },
+  "Legal name": {
+    "key": "ui_07f883c3b610",
+    "en": "Legal name",
+    "zh-CN": "法定姓名"
+  },
+  "Legally authorized to work": {
+    "key": "ui_8ea3c20d9d2d",
+    "en": "Legally authorized to work",
+    "zh-CN": "是否具有合法工作资格"
+  },
+  "Maximum years": {
+    "key": "ui_bf1920efaffe",
+    "en": "Maximum years",
+    "zh-CN": "最多年数"
+  },
+  "May use for applications": {
+    "key": "ui_eb7623e4d775",
+    "en": "May use for applications",
+    "zh-CN": "是否允许用于申请"
+  },
+  "Middle name": {
+    "key": "ui_11453ca9f34a",
+    "en": "Middle name",
+    "zh-CN": "中间名"
+  },
+  "Minimum years": {
+    "key": "ui_fc6bd3792add",
+    "en": "Minimum years",
+    "zh-CN": "最少年数"
+  },
+  "Name suffix": {
+    "key": "ui_17c6ad3032d0",
+    "en": "Name suffix",
+    "zh-CN": "姓名后缀"
+  },
+  "Needs sponsorship in the future": {
+    "key": "ui_ffe8bdb1012a",
+    "en": "Needs sponsorship in the future",
+    "zh-CN": "将来是否需要工作签证担保"
+  },
+  "Needs sponsorship now": {
+    "key": "ui_60bc06695b08",
+    "en": "Needs sponsorship now",
+    "zh-CN": "目前是否需要工作签证担保"
+  },
+  "No": {
+    "key": "ui_1ea442a134b2",
+    "en": "No",
+    "zh-CN": "否"
+  },
+  "Opt in": {
+    "key": "ui_3385ffd3d0dd",
+    "en": "Opt in",
+    "zh-CN": "选择加入"
+  },
+  "Opt out": {
+    "key": "ui_a647d32b2852",
+    "en": "Opt out",
+    "zh-CN": "选择不加入"
+  },
+  "Postal code": {
+    "key": "ui_ae53cea8228b",
+    "en": "Postal code",
+    "zh-CN": "邮政编码"
+  },
+  "Preferred name parts": {
+    "key": "ui_fa6738fa5820",
+    "en": "Preferred name parts",
+    "zh-CN": "常用姓名各部分"
+  },
+  "Record each country separately. Unknown is different from No. Immigration status, authorization, sponsorship, OPT, and STEM eligibility are independent answers.": {
+    "key": "ui_a3bc91d14b33",
+    "en": "Record each country separately. Unknown is different from No. Immigration status, authorization, sponsorship, OPT, and STEM eligibility are independent answers.",
+    "zh-CN": "分别记录各国情况。“未知”与“否”不同。移民身份、工作资格、签证担保、OPT 和 STEM 资格均需独立回答。"
+  },
+  "Referral source": {
+    "key": "ui_b0a22931a275",
+    "en": "Referral source",
+    "zh-CN": "职位来源"
+  },
+  "Remove alternate email": {
+    "key": "ui_a75e4dd861d7",
+    "en": "Remove alternate email",
+    "zh-CN": "移除备用邮箱"
+  },
+  "Remove country eligibility": {
+    "key": "ui_87c4cb35df7f",
+    "en": "Remove country eligibility",
+    "zh-CN": "移除国家工作资格"
+  },
+  "Remove employer answer": {
+    "key": "ui_edfad4c11d95",
+    "en": "Remove employer answer",
+    "zh-CN": "移除雇主问答"
+  },
+  "Remove experience range": {
+    "key": "ui_eb44483c1475",
+    "en": "Remove experience range",
+    "zh-CN": "移除工作年限范围"
+  },
+  "Requisition / role ID": {
+    "key": "ui_7149c273ff0b",
+    "en": "Requisition / role ID",
+    "zh-CN": "招聘／职位编号"
+  },
+  "Role requirements": {
+    "key": "ui_92cdefb08331",
+    "en": "Role requirements",
+    "zh-CN": "职位要求"
+  },
+  "Save exact wording and scope for employer questions, degree dropdown mappings, and role-specific answers. A blank requisition applies across that employer. Keep the actual degree unchanged. Existing employer notes remain below.": {
+    "key": "ui_fd725d59e930",
+    "en": "Save exact wording and scope for employer questions, degree dropdown mappings, and role-specific answers. A blank requisition applies across that employer. Keep the actual degree unchanged. Existing employer notes remain below.",
+    "zh-CN": "保存雇主问题、学位下拉选项映射和特定职位答案的原文及适用范围。招聘编号留空表示适用于该雇主所有职位。实际所获学位保持不变，下方现有雇主备注会保留。"
+  },
+  "Save name and address parts exactly as you want them entered. Blank parts remain unknown; existing contact notes are preserved.": {
+    "key": "ui_075a97d30de7",
+    "en": "Save name and address parts exactly as you want them entered. Blank parts remain unknown; existing contact notes are preserved.",
+    "zh-CN": "按申请表中需要填写的内容保存姓名和地址各部分。留空表示未知，现有联系信息备注会保留。"
+  },
+  "Scoped employer answer records": {
+    "key": "ui_85a66b425139",
+    "en": "Scoped employer answer records",
+    "zh-CN": "限定范围的雇主问答记录"
+  },
+  "Sex (optional self-identification)": {
+    "key": "ui_62bad0efbe01",
+    "en": "Sex (optional self-identification)",
+    "zh-CN": "生理性别（自愿披露）"
+  },
+  "Sex and gender are separate optional disclosures. AI matching preferences apply to optional matching; agreements and submission still require application-specific confirmation.": {
+    "key": "ui_87f55f73d14c",
+    "en": "Sex and gender are separate optional disclosures. AI matching preferences apply to optional matching; agreements and submission still require application-specific confirmation.",
+    "zh-CN": "生理性别和性别认同是两项独立的自愿披露。AI 匹配偏好仅适用于可选匹配；接受协议和提交申请仍需针对具体申请确认。"
+  },
+  "Sex answer confirmation date": {
+    "key": "ui_4b8a74f7f716",
+    "en": "Sex answer confirmation date",
+    "zh-CN": "生理性别答案确认日期"
+  },
+  "State / province / region": {
+    "key": "ui_1654657e7b58",
+    "en": "State / province / region",
+    "zh-CN": "州／省／地区"
+  },
+  "Structured names and mailing address": {
+    "key": "ui_75b02472a7d3",
+    "en": "Structured names and mailing address",
+    "zh-CN": "结构化姓名和邮寄地址"
+  },
+  "Use self-reported experience for a named specialty. Enter both bounds or leave both unknown. Ranges never supply an exact count or update automatically with time.": {
+    "key": "ui_47e3466e1d82",
+    "en": "Use self-reported experience for a named specialty. Enter both bounds or leave both unknown. Ranges never supply an exact count or update automatically with time.",
+    "zh-CN": "填写本人确认的特定领域工作年限。上下限需同时填写或同时留空。范围不能作为确切年数，也不会随时间自动增加。"
+  },
+  "Valid until (optional)": {
+    "key": "ui_a04b090e55d0",
+    "en": "Valid until (optional)",
+    "zh-CN": "有效截止日期（可选）"
+  },
+  "Work eligibility by country": {
+    "key": "ui_759bdca61695",
+    "en": "Work eligibility by country",
+    "zh-CN": "各国工作资格"
+  },
+  "Yes": {
+    "key": "ui_85a39ab345d6",
+    "en": "Yes",
+    "zh-CN": "是"
   }
 }

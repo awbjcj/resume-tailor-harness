@@ -306,15 +306,30 @@ def test_missing_end_date_does_not_claim_current_employment(tmp_path):
     assert "Current role" not in prompt
 
 
-def test_every_saved_application_answer_is_included_in_the_copied_prompt(tmp_path):
+def test_every_saved_free_text_answer_is_included_in_the_copied_prompt(tmp_path):
     """A new settings field must never silently disappear from the handoff."""
     values = {
         name: f"explicit-answer-{name}-end"
-        for name in ApplicationProfileDoc.model_fields
+        for name, field in ApplicationProfileDoc.model_fields.items()
+        if field.annotation is str
+    }
+    # Structured values have scope/date/unknown behavior covered by the API
+    # roundtrip tests. Keep new schema additions visible to this coverage check.
+    assert set(ApplicationProfileDoc.model_fields) - values.keys() == {
+        "legal_name",
+        "preferred_name_parts",
+        "mailing_address",
+        "alternate_emails",
+        "work_eligibility",
+        "experience_ranges",
+        "employer_answers",
+        "sex_confirmed_on",
+        "ai_matching_preference",
+        "ai_matching_confirmed_on",
     }
     prompt = build_application_prompt(
         Job(source="manual", title="Engineer", company="Acme"),
-        ApplicationProfileDoc(**values),
+        ApplicationProfileDoc.model_validate(values),
         tmp_path / "missing.json",
     )
     for name, value in values.items():

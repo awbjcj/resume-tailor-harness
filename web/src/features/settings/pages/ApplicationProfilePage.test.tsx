@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/test/server";
@@ -71,5 +71,67 @@ describe("ApplicationProfilePage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Discard" }));
     expect(citizenship).toHaveValue("");
     expect(writes).toBe(0);
+  });
+
+  it("saves scoped records without converting unknown answers to No and supports removal", async () => {
+    let saved: Record<string, unknown> = { fullName: "Ada", additionalAnswers: "Keep existing notes" };
+    server.use(
+      http.get("/api/config/application-profile", () => HttpResponse.json(saved)),
+      http.put("/api/config/application-profile", async ({ request }) => {
+        saved = await request.json() as Record<string, unknown>;
+        return HttpResponse.json(saved);
+      }),
+    );
+    render(<ApplicationProfilePage />, { wrapper: withQueryClient });
+    expect(await screen.findByLabelText("AI-assisted candidate matching")).toHaveValue("unknown");
+    expect(screen.getByLabelText("Sex (optional self-identification)")).toHaveValue("");
+    fireEvent.change(screen.getByLabelText("Sex (optional self-identification)"), { target: { value: "Male" } });
+    fireEvent.change(screen.getByLabelText("AI-assisted candidate matching"), { target: { value: "opt_in" } });
+    fireEvent.change(screen.getByLabelText("AI matching preference confirmation date"), { target: { value: "2026-10-20" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add country eligibility" }));
+    const country = within(screen.getByRole("group", { name: "Work eligibility by country 1" }));
+    expect(country.getByLabelText("Legally authorized to work")).toHaveValue("unknown");
+    expect(country.getByLabelText("Currently on OPT")).toHaveValue("unknown");
+    fireEvent.change(country.getByLabelText(/^Country/), { target: { value: "US" } });
+    fireEvent.change(country.getByLabelText("Immigration status"), { target: { value: "H-1B" } });
+    fireEvent.change(country.getByLabelText("Currently on OPT"), { target: { value: "no" } });
+    fireEvent.change(country.getByLabelText(/^Confirmation date/), { target: { value: "2026-10-20" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add employer answer" }));
+    const employer = within(screen.getByRole("group", { name: "Scoped employer answer records 1" }));
+    fireEvent.change(employer.getByLabelText(/^Employer/), { target: { value: "Acme" } });
+    fireEvent.change(employer.getByLabelText("Requisition / role ID"), { target: { value: "REQ-42" } });
+    fireEvent.change(employer.getByLabelText(/^Exact question/), { target: { value: "Previously employed here?" } });
+    fireEvent.change(employer.getByLabelText("Applicable timeframe"), { target: { value: "Ever" } });
+    fireEvent.change(employer.getByLabelText(/^Confirmation date/), { target: { value: "2026-10-20" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(saved).toMatchObject({
+      fullName: "Ada", additionalAnswers: "Keep existing notes", sex: "Male", aiMatchingPreference: "opt_in",
+      aiMatchingConfirmedOn: "2026-10-20",
+      workEligibility: [{ country: "US", immigrationStatus: "H-1B", currentlyOnOpt: false, confirmedOn: "2026-10-20" }],
+      employerAnswers: [{ employer: "Acme", requisition: "REQ-42", question: "Previously employed here?", answer: null, timeframe: "Ever" }],
+    }));
+    expect((saved.workEligibility as Record<string, unknown>[])[0].authorizedToWork).toBeUndefined();
+    await waitFor(() => expect(screen.queryByText(/unsaved changes/i)).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Remove country eligibility" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(saved.workEligibility).toEqual([]));
+    expect((saved.employerAnswers as unknown[])).toHaveLength(1);
+  });
+
+  it("requires scope and confirmation dates before saving a new record and can discard it", async () => {
+    let writes = 0;
+    server.use(
+      http.get("/api/config/application-profile", () => HttpResponse.json({ gender: "Saved gender" })),
+      http.put("/api/config/application-profile", () => { writes += 1; return HttpResponse.json({}); }),
+    );
+    render(<ApplicationProfilePage />, { wrapper: withQueryClient });
+    fireEvent.click(await screen.findByRole("button", { name: "Add alternate email" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(writes).toBe(0);
+    expect(screen.getByLabelText(/^Alternate email/)).toBeInvalid();
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(screen.queryByRole("button", { name: "Remove alternate email" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Gender")).toHaveValue("Saved gender");
+    expect(screen.getByLabelText("Sex (optional self-identification)")).toHaveValue("");
   });
 });

@@ -59,7 +59,7 @@ null`; the domain model rejects that outright, so turning the budget off
   explicit. Prompts remain English regardless of UI language, contain no source
   paths, and do not attach files. Render a ready-to-use Markdown prompt with
   populated applicant fields and readable education/work history, never a JSON
-  dump. Omit unknown answers, empty sections, provenance/GitHub metadata, and
+  dump. Omit blank free-text answers, empty sections, provenance/GitHub metadata, and
   redundant employer requirements or job-description text. Application profile
   settings are included in settings bundles, validated on import, and reset
   through the section registry.
@@ -68,11 +68,21 @@ null`; the domain model rejects that outright, so turning the budget off
   and friends/relatives answers must name the employer; citizenship country lists
   and government-employment lookback periods must match the live question.
   Saved answers never authorize terms, attestations, or final submission.
-  Professional screening answers are explicit strings, not values derived from
-  resume dates. Keep experience totals dated, office attendance location-specific,
+  Professional screening answers are explicit text or dated specialty ranges,
+  not values derived from resume dates. Keep experience totals dated, office attendance location-specific,
   and employer screening answers scoped to their role and confirmation date.
   Rolling application counts and calendar start dates need fresh confirmation
   when their scope changes; a relative notice period cannot supply a calendar date.
+  Structured records in `api/schemas/application_profile.py` preserve countries,
+  employer/requisition scope, confirmation dates, and nullable booleans. Unknown
+  is distinct from an explicit No; keep unknown markers inside these records.
+  Never parse legacy notes into structured facts automatically. Name/address
+  PATCHes merge supplied parts; lists replace in full. Filter employer records
+  and scoped email aliases by exact normalized company name in readable prompts,
+  and require live verification of remaining country/requisition/timeframe limits.
+  Keep sex separate from gender, alternate email permission explicit, and optional
+  AI matching preferences separate from agreement/submission consent. Degree
+  category mappings never alter the actual awarded degree in resume evidence.
   External harnesses use `agent_applications.py` for the full JD/context and
   scoped question ledger. The concise copy prompt also includes matching saved
   questions. `YamlConfigStore.update` serializes read/modify/write with a file

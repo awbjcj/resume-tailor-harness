@@ -53,3 +53,22 @@ include it in a prompt, or send it to an employer website.
 Use `application-questions --status unanswered` to review outstanding questions
 across jobs. Use `--job-id JOB_ID` for matching job and reusable profile questions.
 Do not repeat an already answered question unless its meaning or scope changed.
+
+Prefer structured profile fields when saving reusable answers: `legalName`,
+`preferredNameParts`, `mailingAddress`, `alternateEmails`, `workEligibility`,
+`experienceRanges`, `sex`, `aiMatchingPreference`, and `employerAnswers`. Read the
+current schema/context for field names. Repeated records require `confirmedOn`
+dates and exact employer/country/requisition/timeframe scopes. Unknown nullable
+answers are not No. Keep sex separate from gender and sponsorship independent
+from immigration status and authorization. Only use an alternate email when its
+`permitted` flag is true and its scope matches. AI matching preferences cover
+optional matching only, never terms or submission consent.
+
+Name/address PATCH objects merge supplied parts. Lists replace in full, so
+preserve other records when editing one and use `[]` only to clear a list.
+Preserve existing notes unless the user asks to change them. Do not guess
+structured values by parsing those notes. Experience ranges are dated and
+specialty-specific; never infer exact years or update them with elapsed time.
+Employer degree-category mappings never change the actual awarded degree.
+Verify the live question and every scope before reuse, and ask again for expired
+answers or rolling application counts.

@@ -1,9 +1,74 @@
-"""Portable typed JSON contracts. Personal answers are explicit strings, never inferred."""
+"""Portable typed JSON contracts. Personal answers are explicit, never inferred."""
 
 from typing import Generic, Literal, TypeVar
 
 from pydantic import TypeAdapter
-from typing_extensions import TypedDict
+from typing_extensions import Required, TypedDict
+
+
+class ApplicationName(TypedDict, total=False):
+    givenName: str
+    middleName: str
+    familyName: str
+    suffix: str
+
+
+class MailingAddress(TypedDict, total=False):
+    line1: str
+    line2: str
+    city: str
+    region: str
+    postalCode: str
+    country: str
+
+
+class AlternateEmail(TypedDict, total=False):
+    email: Required[str]
+    confirmedOn: Required[str]
+    employer: str
+    requisition: str
+    country: str
+    permitted: bool | None
+
+
+class WorkEligibility(TypedDict, total=False):
+    country: Required[str]
+    confirmedOn: Required[str]
+    immigrationStatus: str
+    authorizedToWork: bool | None
+    sponsorshipNow: bool | None
+    sponsorshipFuture: bool | None
+    canVerifyAuthorization: bool | None
+    currentlyOnOpt: bool | None
+    stemOptExtensionEligible: bool | None
+
+
+class ExperienceRange(TypedDict, total=False):
+    specialty: Required[str]
+    confirmedOn: Required[str]
+    minimumYears: float | None
+    maximumYears: float | None
+
+
+class EmployerAnswer(TypedDict, total=False):
+    employer: Required[str]
+    question: Required[str]
+    confirmedOn: Required[str]
+    requisition: str
+    country: str
+    category: Literal[
+        "general",
+        "referral",
+        "employment",
+        "contractor",
+        "relationship",
+        "previous_application",
+        "degree_category",
+        "role_requirement",
+    ]
+    answer: str | None
+    timeframe: str
+    validUntil: str | None
 
 
 class ApplicationProfile(TypedDict, total=False):
@@ -45,6 +110,17 @@ class ApplicationProfile(TypedDict, total=False):
     educationNotes: str
     experienceNotes: str
     additionalAnswers: str
+    legalName: ApplicationName
+    preferredNameParts: ApplicationName
+    mailingAddress: MailingAddress
+    alternateEmails: list[AlternateEmail]
+    workEligibility: list[WorkEligibility]
+    experienceRanges: list[ExperienceRange]
+    employerAnswers: list[EmployerAnswer]
+    sex: str
+    sexConfirmedOn: str | None
+    aiMatchingPreference: Literal["unknown", "opt_in", "opt_out", "ask"]
+    aiMatchingConfirmedOn: str | None
 
 
 class ApplicationProfileSnapshot(TypedDict):
