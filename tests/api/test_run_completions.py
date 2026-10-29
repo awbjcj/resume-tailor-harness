@@ -186,7 +186,7 @@ def test_terminal_logs_survive_removal_of_transient_run(app_client):
     assert logs[-1]["state"] == "done"
 
 
-def test_clearing_notifications_preserves_message_identity_and_application(app_client):
+def test_clearing_run_history_preserves_pending_application_updates(app_client):
     from resume_tailor_harness.tracking.tables import Application, Job, Notification
 
     app, client = app_client
@@ -213,15 +213,15 @@ def test_clearing_notifications_preserves_message_identity_and_application(app_c
         session.commit()
         notification_id = _persisted_id(notification.id)
         application_id = _persisted_id(application.id)
-    assert client.delete("/api/notifications").json() == {"cleared": 1}
-    assert client.get("/api/notifications").json() == []
+    assert client.delete("/api/notifications").json() == {"cleared": 0}
+    assert len(client.get("/api/notifications").json()) == 1
     with Session(app.state.engine) as session:
         stored_notification = session.get(Notification, notification_id)
         stored_application = session.get(Application, application_id)
         assert stored_notification is not None
         assert stored_application is not None
         assert stored_notification.message_id == "message-1"
-        assert stored_notification.state == "cleared"
+        assert stored_notification.state == "pending"
         assert stored_application.status == "ready"
 
 

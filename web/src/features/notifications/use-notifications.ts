@@ -25,7 +25,12 @@ export function useAcceptNotification() {
           params: { path: { notification_id: id } },
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: async () => {
+      await Promise.all([
+        KEY, ["applications"], ["job"], ["pipeline"],
+        ["dashboard-summary"], ["analytics-timeline"],
+      ].map((queryKey) => qc.invalidateQueries({ queryKey })));
+    },
   });
 }
 
@@ -50,7 +55,8 @@ export function useGmailSync() {
     ),
   );
   const mutation = useMutation({
-    mutationFn: (): Promise<RunOut> => unwrap(api.POST("/api/gmail/sync")),
+    mutationFn: (body: components["schemas"]["GmailSyncIn"] | void): Promise<RunOut> =>
+      unwrap(api.POST("/api/gmail/sync", { body: body ?? undefined })),
     onSuccess: (run) => {
       useRunStore.getState().upsert({
         runId: run.runId,

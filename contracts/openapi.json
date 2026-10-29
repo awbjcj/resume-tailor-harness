@@ -6945,6 +6945,17 @@
         "title": "GmailStatusOut",
         "type": "object"
       },
+      "GmailSyncIn": {
+        "properties": {
+          "reviewCleared": {
+            "default": false,
+            "title": "Reviewcleared",
+            "type": "boolean"
+          }
+        },
+        "title": "GmailSyncIn",
+        "type": "object"
+      },
       "GoogleStartOut": {
         "properties": {
           "authUrl": {
@@ -26030,6 +26041,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/GmailSyncIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "202": {
             "content": {

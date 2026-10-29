@@ -529,6 +529,103 @@ def test_file_lock_protects_separate_workers(tmp_path):
                 pytest.fail("Acquired another worker's lock")
 
 
+@pytest.mark.parametrize("state", ["cleared", "dismissed", "accepted"])
+def test_explicit_review_recovers_only_cleared_latest_proposals_from_cache(tmp_path, state):
+    engine = _seed()
+    service = FakeGmailService([_mail("m1")])
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    with Session(engine) as session:
+        notice = session.exec(select(Notification)).one()
+        notice.state = state
+        notice.message_id = "m1"  # Legacy identities, as in the hosted incident.
+        session.add(notice)
+        session.commit()
+    reads = len(service._messages.gets)
+    assert run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)["pending"] == 0
+    result = run_gmail_sync(
+        engine, _reporter(tmp_path), service=service, llm=None, review_cleared=True
+    )
+    assert result["pending"] == (1 if state == "cleared" else 0)
+    assert result["stats"]["restored"] == (1 if state == "cleared" else 0)
+    assert len(service._messages.gets) == reads
+    assert result["stats"]["ai_calls"] == 0
+    with Session(engine) as session:
+        app = session.get(Application, 1)
+        assert app is not None and app.status == "submitted"
+        notices = session.exec(select(Notification)).all()
+        assert len(notices) == 1
+        if state == "cleared":
+            assert notices[0].state == "pending"
+            assert notices[0].id is not None
+            accept_notification(session, notices[0].id)
+            session.refresh(app)
+            assert app.status == "rejected"
+
+
+def test_review_does_not_resurrect_an_older_cleared_decision(tmp_path):
+    engine = _seed()
+    service = FakeGmailService([_mail("old", decision="interview", date=1000)])
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    with Session(engine) as session:
+        notice = session.exec(select(Notification)).one()
+        notice.state = "cleared"
+        session.add(notice)
+        session.commit()
+    _history(service, [_mail("new", date=2000)])
+    result = run_gmail_sync(
+        engine, _reporter(tmp_path), service=service, llm=None, review_cleared=True
+    )
+    assert result["pending"] == 1
+    with Session(engine) as session:
+        notices = session.exec(select(Notification)).all()
+        assert [(n.proposed_status, n.state) for n in notices] == [
+            ("interview", "cleared"), ("rejected", "pending")
+        ]
+
+
+@pytest.mark.parametrize("guard", ["stale", "other_account", "archived", "closed"])
+def test_cached_recovery_respects_matching_and_status_guards(tmp_path, guard):
+    from resume_tailor_harness.gmail.classify import SyncClassifier
+    from resume_tailor_harness.gmail.processing import MessageProcessor
+    from resume_tailor_harness.tracking.tables import utcnow
+
+    engine = _seed()
+    run_gmail_sync(
+        engine, _reporter(tmp_path), service=FakeGmailService([_mail("m1")]), llm=None
+    )
+    with Session(engine) as session:
+        notice = session.exec(select(Notification)).one()
+        receipt = session.exec(select(GmailReceipt)).one()
+        account = receipt.account
+        notice.state = "cleared"
+        session.add(notice)
+        if guard == "stale":
+            receipt.revision = "old-catalog"
+        elif guard == "other_account":
+            receipt.account = "another-account"
+        elif guard == "archived":
+            job = session.get(Job, 1)
+            assert job is not None
+            job.archived_at = utcnow()
+            session.add(job)
+        else:
+            app = session.get(Application, 1)
+            assert app is not None
+            app.status = "closed"
+            session.add(app)
+        session.add(receipt)
+        session.commit()
+        processor = MessageProcessor(
+            None, session, account, SyncClassifier(None, None, 20, lambda _: None), lambda: None
+        )
+        processor.restore_cleared_proposals()
+        session.flush()
+        session.refresh(notice)
+        assert notice.state == "cleared"
+        assert processor.stats["restored"] == 0
+        assert len(session.exec(select(Notification)).all()) == 1
+
+
 def test_unread_label_changes_do_not_trigger_message_reads(tmp_path):
     engine = _seed()
     service = FakeGmailService([_mail("m1")])

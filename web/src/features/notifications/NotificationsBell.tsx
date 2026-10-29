@@ -96,9 +96,14 @@ export function NotificationsBell() {
             {localizeRunError(sync.error.message, i18n.resolvedLanguage)}
           </p>
         )}
-        <div className="mb-3">
+        <div className="mb-3 space-y-2">
+          <p className="text-xs text-muted-foreground">{t("runHistory.gmailReviewHelp")}</p>
+          <Button size="xs" variant="outline" disabled={sync.isPending}
+            onClick={() => sync.mutate({ reviewCleared: true })}>
+            {t("runHistory.reviewClearedGmail")}
+          </Button>
           <ClearHistoryButton label={t("runHistory.clearNotifications")} pending={clear.isPending}
-            disabled={isLoading || runsLoading || items.length + runItems.length === 0} error={clear.error}
+            disabled={runsLoading || runItems.length === 0} error={clear.error}
             onClear={(onSuccess) => clear.mutate(undefined, { onSuccess })} />
         </div>
         {isLoading || runsLoading ? (

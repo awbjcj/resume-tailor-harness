@@ -390,8 +390,8 @@ Gmail 为 CLI 的 `sync-status` 提供支持；在 API/网页应用中，它还�
 **网页应用 / API 服务器**（Railway 部署使用）：使用通过环境变量配置的 OAuth **Web application** 客户端，而不是文件：
 
 1. 创建 _Web application_ 类型的 OAuth client ID（可以使用上述同一 Cloud 项目）。添加授权重定向 URI `<your-domain>/api/gmail/callback`，例如本地 `resume-tailor-harness serve` 使用 `http://localhost:8000/api/gmail/callback`，云部署则使用 Railway 域名（参见 [Railway 部署](docs/deploy-railway.md#gmail-oauth-optional)）。
-2. 在 `.env` 中（或 Railway 的平台环境变量中）设置 `GOOGLE_OAUTH_CLIENT_ID` 和 `GOOGLE_OAUTH_CLIENT_SECRET`。这是每个工作区默认通过的**平台客户端**；已登录用户也可以在 Settings → Keys 中粘贴自己的 client id/secret，仅对其工作区覆盖平台客户端。
-3. 登录网页应用，打开 **Settings → Keys**，然后在 Gmail 卡片上点击 **Connect Gmail** 启动授权流程。获得的 token 按工作区分别保存，不会在用户之间共享。
+2. 在 `.env` 中（或 Railway 的平台环境变量中）设置 `GOOGLE_OAUTH_CLIENT_ID` 和 `GOOGLE_OAUTH_CLIENT_SECRET`。这是每个工作区默认通过的**平台客户端**；已登录用户也可以在“设置 → 邮件与通知 → 自定义 Gmail OAuth 客户端（可选）”中填写自己的 client id/secret，仅对其工作区覆盖平台客户端。
+3. 登录网页应用，打开 **设置 → 邮件与通知**，然后在 Gmail 卡片上点击 **连接 Gmail** 启动授权流程。获得的 token 按工作区分别保存，不会在用户之间共享。
 
 无论使用哪种方式，如果 OAuth 同意屏幕仍处于 **Testing** 发布状态（默认状态），都需要在 Cloud 控制台中把每个将要连接的 Gmail 地址添加为**测试用户**。Google 将测试应用限制为 100 个用户，不在列表中的人无法登录。
 

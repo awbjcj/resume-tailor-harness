@@ -46,7 +46,9 @@ const ERROR_KEYS = {
   VALIDATION_ERROR: "emailNotifications.errors.validation",
 } as const;
 
-export function EmailNotificationsPage() {
+export function EmailNotificationsPage({ embedded = false }: { embedded?: boolean }) {
+  const HeadingTag = embedded ? "h2" : "h1";
+  const StatusHeadingTag = embedded ? "h3" : "h2";
   const { t, i18n } = useTranslation();
   const { query, save, sendCode, verify } = useEmailNotifications();
   const data = query.data;
@@ -113,9 +115,9 @@ export function EmailNotificationsPage() {
   return (
     <div className="flex flex-col gap-6">
       <header className="space-y-1">
-        <h1 className="text-lg font-semibold">
+        <HeadingTag className="text-lg font-semibold">
           {t("emailNotifications.title")}
-        </h1>
+        </HeadingTag>
         <p className="text-sm text-muted-foreground">
           {t("emailNotifications.description")}
         </p>
@@ -262,9 +264,9 @@ export function EmailNotificationsPage() {
         aria-labelledby="notification-delivery-title"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="notification-delivery-title" className="text-sm font-medium">
+          <StatusHeadingTag id="notification-delivery-title" className="text-sm font-medium">
             {t(needsVerification ? "emailNotifications.verifyTitle" : "emailNotifications.deliveryStatus")}
-          </h2>
+          </StatusHeadingTag>
           {data.enabled && (
             <Button
               type="button"

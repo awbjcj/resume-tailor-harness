@@ -47,12 +47,12 @@ export function SecretsForm({
 
   return (
     <FieldGroup>
-      {statuses.map((s) => {
+      {statuses.map((s, index) => {
         const label = SECRET_LABELS[s.key] ?? s.key;
         const description = SECRET_DESCRIPTIONS[s.key];
         return (
           <div key={s.key} className="flex flex-col gap-4">
-            {s.key === "googleOauthClientId" && (
+            {s.key === "googleOauthClientId" && index > 0 && (
               <FieldSeparator>Gmail OAuth client (optional)</FieldSeparator>
             )}
             <Field>

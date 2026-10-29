@@ -79,16 +79,17 @@ def run_gmail_sync(
     service: Any | None = None,
     llm: Runner | None | _Unset = _UNSET,
     data_dir: Path | None = None,
+    review_cleared: bool = False,
 ) -> dict:
     reporter.checkpoint()
     reporter.begin(1, "Scanning Gmail")
     if service is None:
         service = build_service(data_dir)
     with _sync_lock(engine):
-        return _run_sync(engine, reporter, service, llm)
+        return _run_sync(engine, reporter, service, llm, review_cleared=review_cleared)
 
 
-def _run_sync(engine, reporter, service, llm) -> dict:
+def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -> dict:
     warnings: list[str] = []
 
     def warn(message: str) -> None:
@@ -132,6 +133,10 @@ def _run_sync(engine, reporter, service, llm) -> dict:
                 page + 1,
                 label=f"Processed {processor.stats['processed']} emails; reused {processor.stats['cached']} cached results",
             )
+        if review_cleared:
+            reporter.checkpoint()
+            processor.restore_cleared_proposals()
+            session.commit()
         has_more = any(scanner.has_work(lane) for lane in LANES) or bool(
             processor.stale_ids(1)
         )

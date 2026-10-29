@@ -5,7 +5,7 @@ from datetime import timezone
 from hashlib import sha256
 import json
 
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, update
 from sqlmodel import Session, col, select
 
 from resume_tailor_harness.gmail.classify import SyncClassifier
@@ -76,6 +76,7 @@ class MessageProcessor:
             "matched": 0,
             "unmatched": 0,
             "ambiguous": 0,
+            "restored": 0,
         }
 
     def stale_ids(self, limit: int) -> list[str]:
@@ -268,7 +269,23 @@ class MessageProcessor:
             ).encode()
         ).hexdigest()
 
-    def _propose_latest(self, affected: set[int]) -> None:
+    def restore_cleared_proposals(self) -> None:
+        """Explicitly recover legacy bulk-cleared updates using cached evidence."""
+        affected = set(
+            self.session.exec(
+                select(Notification.application_id)
+                .where(
+                    Notification.state == "cleared",
+                    Notification.proposed_status != "",
+                )
+                .distinct()
+            ).all()
+        )
+        self._propose_latest(affected.intersection(self.apps), restore_cleared=True)
+
+    def _propose_latest(
+        self, affected: set[int], *, restore_cleared: bool = False
+    ) -> None:
         if not affected:
             return
         ranked = (
@@ -363,7 +380,7 @@ class MessageProcessor:
                     notice.proposed_status = corrected
                     notice.evidence = self._evidence(cached)
                     self.session.add(notice)
-        existing = {(n.application_id, self._raw_id(n.message_id)) for n in notices}
+        existing = {(n.application_id, self._raw_id(n.message_id)): n for n in notices}
         for app_id, row in latest.items():
             app = self.apps.get(app_id)
             proposed = _CLASS_TO_STATUS.get(row.label)
@@ -372,8 +389,28 @@ class MessageProcessor:
                 or row.revision != self.revision
                 or not proposed
                 or not _is_forward(app.status, proposed)
-                or (app_id, row.message_id) in existing
             ):
+                continue
+            notice = existing.get((app_id, row.message_id))
+            if notice is not None:
+                if restore_cleared and notice.state == "cleared":
+                    # Claim only a still-cleared row: a concurrent explicit
+                    # dismissal must never be undone by this recovery.
+                    restored = self.session.execute(
+                        update(Notification)
+                        .where(
+                            col(Notification.id) == notice.id,
+                            col(Notification.state) == "cleared",
+                        )
+                        .values(
+                            state="pending",
+                            kind=proposed,
+                            proposed_status=proposed,
+                            evidence=self._evidence(row),
+                        )
+                        .returning(col(Notification.id))
+                    ).first()
+                    self.stats["restored"] += int(restored is not None)
                 continue
             self.session.add(
                 Notification(

@@ -652,9 +652,10 @@ application** client configured through environment variables instead of a file:
 2. Set `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` in `.env` (or
    as platform environment variables on Railway). This is the **platform
    client** every workspace connects through by default; any signed-in user
-   can instead paste their own client id/secret under Settings → Keys, which
+   can instead paste their own client id/secret under Settings → Email &
+   notifications → Custom Gmail OAuth client (optional), which
    overrides the platform client for their workspace only.
-3. Sign in to the web app, open **Settings → Keys**, and click **Connect
+3. Sign in to the web app, open **Settings → Email & notifications**, and click **Connect
    Gmail** on the Gmail card to run the consent flow. The granted token is
    stored per-workspace (never shared across users).
 

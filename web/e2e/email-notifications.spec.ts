@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockEmptyRuns } from "./support";
+import { mockEmptyRuns, mockGmailSettings } from "./support";
 
 for (const width of [1280, 390]) {
   test(`notification preferences and verification at ${width}px`, async ({ page }) => {
@@ -8,6 +8,7 @@ for (const width of [1280, 390]) {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await mockEmptyRuns(page);
+    await mockGmailSettings(page);
     await page.route("**/api/setup/status", (route) => route.fulfill({ json: { complete: true } }));
     await page.route("**/api/notifications*", (route) => route.fulfill({ json: [] }));
     await page.route("**/api/run-completions*", (route) => route.fulfill({ json: [] }));

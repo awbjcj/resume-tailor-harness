@@ -68,7 +68,10 @@ the worker with the configured mail provider.
 
 ## Optional job-search digests
 
-Open **Settings → Email notifications** to enter a recipient address, opt in,
+Gmail connection, manual sync, and optional OAuth client settings share this page.
+Job-search digests do not require a Gmail connection.
+
+Open **Settings → Email & notifications** (`/settings/notifications`) to enter a recipient address, opt in,
 choose **Daily**, **Weekly**, or **Every 30 days**, and select digest topics:
 
 - **Jobs awaiting review:** the active shortlist count and up to ten recent jobs.

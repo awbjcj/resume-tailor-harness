@@ -8,7 +8,7 @@ import { server } from "@/test/server";
 import { useSaveSecrets } from "./use-secrets";
 
 describe("useSaveSecrets", () => {
-  it("invalidates the model catalog after an API key changes", async () => {
+  it("refreshes the model catalog and Gmail connection after credentials change", async () => {
     server.use(
       http.put("/api/secrets", () =>
         HttpResponse.json([{ key: "openaiApiKey", isSet: true, hint: "1234" }]),
@@ -18,6 +18,7 @@ describe("useSaveSecrets", () => {
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
     queryClient.setQueryData(["model-catalog"], [{ provider: "openai", hasKey: false }]);
+    queryClient.setQueryData(["gmail-status"], { connected: false });
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
@@ -28,5 +29,6 @@ describe("useSaveSecrets", () => {
     await waitFor(() =>
       expect(queryClient.getQueryState(["model-catalog"])?.isInvalidated).toBe(true),
     );
+    expect(queryClient.getQueryState(["gmail-status"])?.isInvalidated).toBe(true);
   });
 });

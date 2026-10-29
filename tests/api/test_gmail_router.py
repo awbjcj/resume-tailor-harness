@@ -112,7 +112,7 @@ def test_connect_callback_status_disconnect_cycle(client, monkeypatch):
         f"/api/gmail/callback?code=abc&state={state}", follow_redirects=False
     )
     assert callback.status_code == 307
-    assert "gmail=connected" in callback.headers["location"]
+    assert callback.headers["location"] == "/settings/notifications?gmail=connected"
 
     status = client.get("/api/gmail/status")
     assert status.status_code == 200
@@ -131,7 +131,7 @@ def test_callback_rejects_forged_state(client, monkeypatch):
         "/api/gmail/callback?code=abc&state=forged", follow_redirects=False
     )
     assert response.status_code == 307
-    assert "gmail=invalid" in response.headers["location"]
+    assert response.headers["location"] == "/settings/notifications?gmail=invalid"
 
 
 def test_callback_denied_by_user(client):
@@ -139,7 +139,7 @@ def test_callback_denied_by_user(client):
         "/api/gmail/callback?error=access_denied&state=x", follow_redirects=False
     )
     assert response.status_code == 307
-    assert "gmail=denied" in response.headers["location"]
+    assert response.headers["location"] == "/settings/notifications?gmail=denied"
 
 
 def test_status_refresh_outage_returns_retryable_error(client, monkeypatch):
@@ -156,7 +156,8 @@ def test_status_refresh_outage_returns_retryable_error(client, monkeypatch):
     assert response.json()["error"]["code"] == "GMAIL_API_ERROR"
 
 
-def test_manual_sync_passes_workspace_directory(client, monkeypatch):
+@pytest.mark.parametrize("body", [None, {"reviewCleared": True}])
+def test_manual_sync_passes_workspace_directory(client, monkeypatch, body):
     from unittest.mock import Mock
     from resume_tailor_harness.services import gmail_sync
     from resume_tailor_harness.api.routers import runs
@@ -175,9 +176,10 @@ def test_manual_sync_passes_workspace_directory(client, monkeypatch):
         raise runs.ApiException(409, "TEST_COMPLETE", "Completed inline")
 
     monkeypatch.setattr(runs, "launch", launch_inline)
-    response = client.post("/api/gmail/sync")
+    response = client.post("/api/gmail/sync", json=body)
     assert response.json()["error"]["code"] == "TEST_COMPLETE"
     assert sync.call_args.kwargs["data_dir"] == checked_paths[0]
+    assert sync.call_args.kwargs["review_cleared"] is bool(body)
     assert checked_paths[0] == client.app.state.data_dir
 
 

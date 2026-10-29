@@ -39,8 +39,8 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   the read endpoints mutate only `read_at`. These records are independent from
   Gmail-derived application notifications. `surface=operations|notifications`
   selects independently clearable history. DELETE `/api/run-completions` hides
-  completed operations; DELETE `/api/notifications` hides run notifications and
-  clears application notifications without removing their deduplication identities.
+  completed operations; DELETE `/api/notifications` hides completed run notifications
+  and preserves application actions and their Accept/Dismiss decisions.
   `ClearedRunHistory` tombstones preserve terminal callback idempotency. Progress
   messages (last 200, each bounded to 2000 characters) are retained in
   `RunOperationLog`; GET `/api/run-completions/{id}/logs` reads these from the
