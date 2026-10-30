@@ -158,12 +158,20 @@ def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -
         ).one()
         stats = {**processor.stats, "ai_calls": classifier.calls}
     if has_more:
-        warn(
-            "More emails remain. Progress is saved; the next sync continues where this one stopped."
+        reporter.step(
+            1,
+            label="More emails remain. Progress is saved; the next sync continues where this one stopped.",
         )
     for warning in warnings:
         reporter.step(1, label=warning)
-    reporter.step(1, label="Done with warnings" if warnings else "Done")
+    reporter.step(
+        1,
+        label=(
+            "Done with warnings"
+            if warnings
+            else "Sync complete; more emails remain" if has_more else "Done"
+        ),
+    )
     return {
         "pending": pending,
         "has_more": has_more,

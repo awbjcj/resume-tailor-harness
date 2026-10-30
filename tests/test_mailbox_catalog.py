@@ -166,6 +166,7 @@ def test_page_refresh_keeps_classification_reuse_on_catalog_change():
             session.commit()
             reader.process_emails([email])
             assert reader.stats["classification_cache_hits"] == 1
+            assert reader.stats["cached"] == 1
             assert session.exec(select(GmailReceipt)).one().label == "rejection"
             reader.classifier.classify = old_classifier
     finally:
@@ -246,6 +247,7 @@ def test_catalog_edits_reconcile_cached_decisions_before_chronology(
             assert (
                 classify.call_count == 1
             )  # the existing decision reuses its classification
+            assert reader.stats["cached"] == 1
             assert (
                 session.exec(
                     select(GmailReceipt).where(GmailReceipt.message_id == "first")

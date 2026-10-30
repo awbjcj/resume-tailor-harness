@@ -81,8 +81,12 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 - **Budgets limit each run, not mailbox coverage.** `gmail_max_messages` controls
   page size (max 500), `gmail_sync_max_pages` controls pages per run, and
   `gmail_max_ai_calls` bounds optional AI. The result reports `has_more` plus
-  processed/cached/read/matching counts. After backfill and deferred processing,
-  an unchanged mailbox needs only its profile read, with zero message reads or AI
+  processed/cached/read/matching counts.
+  `cached` includes saved evidence used during rematching/retries as well as
+  current results skipped; it can overlap `processed`. Saved continuation alone
+  is normal completion, not a warning. Preserve actual AI/transport warnings.
+  After backfill and deferred processing, an unchanged mailbox needs only its
+  profile read, with zero message reads or AI
   calls. HTTP batches contain at most
   25 reads; failed parts use the existing bounded retry seam. Batching saves
   connections, not quota. Body transport failures leave the page retryable.

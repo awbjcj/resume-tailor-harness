@@ -49,6 +49,12 @@ describe("dynamic Chinese labels", () => {
     );
   });
 
+  it("distinguishes saved sync continuation from warnings in Chinese", () => {
+    expect(localizeRunPhase("Sync complete; more emails remain", "zh-CN")).toBe(
+      "本次同步已完成；仍有邮件待处理",
+    );
+  });
+
   it("does not leak unrecognized backend phases or errors in Chinese mode", () => {
     expect(localizeRunPhase("Future backend phase", "zh-CN")).toBe("正在处理");
     expect(localizeRunError("Provider unavailable", "zh-CN")).toBe("操作失败。请重试。");

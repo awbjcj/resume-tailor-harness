@@ -136,6 +136,9 @@ class MessageProcessor:
                 email = EmailMessage(**existing[mid].email_json)
                 email.recruiting_candidate |= recruiting
                 emails[mid] = email
+                # Rematching still reuses saved evidence, even when the catalog
+                # revision changed or classification needs another attempt.
+                self.stats["cached"] += 1
             elif metadata.get(mid) is not None:
                 emails[mid] = email_from_payload(
                     mid, metadata[mid] or {}, recruiting=recruiting
@@ -270,13 +273,10 @@ class MessageProcessor:
             if not mid:
                 continue
             receipt = existing.get(mid)
-            if (
-                receipt is not None
-                and receipt.revision == self.catalog.revision
-                and receipt.email_json == asdict(email)
-            ):
+            if receipt is not None and receipt.email_json == asdict(email):
                 self.stats["cached"] += 1
-                continue
+                if receipt.revision == self.catalog.revision:
+                    continue
             receipt = receipt or GmailReceipt(account=self.account, message_id=mid)
             if receipt.application_id is not None:
                 affected.add(receipt.application_id)
@@ -358,6 +358,8 @@ class MessageProcessor:
                 for receipt in receipts:
                     self.checkpoint()
                     attempted_at = receipt.attempted_at
+                    if receipt.email_json:
+                        self.stats["cached"] += 1
                     self._record(
                         receipt,
                         EmailMessage(**receipt.email_json)
