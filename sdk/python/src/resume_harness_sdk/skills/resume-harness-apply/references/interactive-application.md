@@ -137,6 +137,16 @@ user's answer. Never parse legacy notes into structured guesses. Question answer
 can be cleared with null. Question wording, context, and scope are immutable;
 create a separate record if their meaning changes.
 
+## Close the panel write-back loop
+
+Follow [panel write-back](panel-writeback.md) as answers arrive and before each
+handoff, even for blocked or awaiting-review drafts. Save confirmed corrections
+and optional information as well as required answers. Read the profile and
+affected questions back; distinguish verified panel fields from question-only
+saves. Record `complete`, `no_changes`, or `pending` separately from application
+status. Recheck after submission/reconciliation for anything newly learned, using
+direct profile/question reads when application context is no longer eligible.
+
 ## Review and resume after confirmation
 
 A useful review names the live employer/role/requisition and uploaded files,
