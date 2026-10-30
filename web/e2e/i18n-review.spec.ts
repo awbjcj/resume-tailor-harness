@@ -68,7 +68,7 @@ test("renders localized gates, tiers, and reviewer notes without altering model 
   await page.goto("/settings/review");
 
   await expect(page.getByText("硬性门槛", { exact: true })).toBeVisible();
-  await expect(page.getByText(/硬性门槛评审未通过时，本轮直接判为不通过/)).toBeVisible();
+  await expect(page.getByText(/硬性门槛评审未通过时，无论本轮得分如何，本轮都不通过/)).toBeVisible();
   await expect(page.getByText(/真实性要求/)).toBeVisible();
   await expect(page.getByRole("button", { name: "写作模型档位：标准型" })).toBeVisible();
   await expect(page.getByRole("button", { name: "修订模型档位：高级型" })).toBeVisible();
@@ -81,12 +81,53 @@ test("switches settings navigation language while preserving unsaved form input"
   await page.goto("/settings/review");
   await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
   await expect(page.getByRole("heading", { name: "Review panel", exact: true })).toBeVisible();
+  await expect(page.getByText("If a gated reviewer fails, the round fails regardless of its score. Gate reviewers do not contribute a score, so their weight and score bands are disabled.")).toBeVisible();
   await page.locator("#maxRounds").fill("4");
   await page.getByRole("combobox", { name: "Language", exact: true }).selectOption("zh-CN");
   await expect(page.getByRole("link", { name: "备份", exact: true }).last()).toBeVisible();
   await expect(page.getByRole("link", { name: "助手提示词", exact: true }).last()).toBeVisible();
   await expect(page.locator("#maxRounds")).toHaveValue("4");
   await expect(page.getByRole("button", { name: "保存更改", exact: true })).toBeVisible();
+});
+
+test("localizes built-in template labels without changing custom template names or selection", async ({ page }) => {
+  await page.route("**/api/config/render", (route) => route.fulfill({ json: { template: "classic", fitOnePage: true } }));
+  await page.route("**/api/config/render/templates", (route) => route.fulfill({ json: [
+    { id: "classic", title: "Classic", description: "Traditional serif layout for general applications and conservative industries.", kind: "bundled" },
+    { id: "custom:Classic", title: "Classic", description: "Uploaded template", kind: "custom" },
+  ] }));
+  await page.goto("/settings/rendering");
+
+  await expect(page.getByText("经典", { exact: true })).toBeVisible();
+  await expect(page.getByText("Classic", { exact: true })).toBeVisible();
+  await expect(page.getByText("传统衬线字体布局，适合一般求职和风格较保守的行业。")).toBeVisible();
+  await page.getByRole("radio", { name: "使用Classic模板" }).click();
+  await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
+  await expect(page.getByRole("radio", { name: "Use Classic template" })).toHaveCount(2);
+  await expect(page.getByRole("radio", { name: "Use Classic template" }).last()).toBeChecked();
+});
+
+test("localizes built-in agent labels while preserving the original instructions", async ({ page }) => {
+  await page.route("**/api/agents/prompts", (route) => route.fulfill({ json: [
+    {
+      key: "tailor-writer", title: "Resume writer", stage: "tailoring",
+      description: "Writes a targeted resume under the profile fact-lock.",
+      instructions: ["Keep the original instruction."], guidance: null, editable: true,
+    },
+    {
+      key: "email-writer", title: "Email writer", stage: "email",
+      description: "Drafts fact-grounded job-search emails.",
+      instructions: [..."Draft an email.", "Additional quality rules."], guidance: null, editable: true,
+    },
+  ] }));
+  await page.goto("/settings/agent-prompts");
+
+  await expect(page.getByText("依据个人资料中的事实撰写针对职位的简历。")).toBeVisible();
+  await page.getByText("简历写作助手", { exact: true }).click();
+  await expect(page.getByText("内置指令以原文显示。")).toBeVisible();
+  await expect(page.getByText("Keep the original instruction.")).toBeVisible();
+  await page.getByText("邮件写作助手", { exact: true }).click();
+  await expect(page.getByText("Draft an email.", { exact: true })).toBeVisible();
 });
 
 test("localizes interview style values and keeps the answer when switching languages", async ({ page }, testInfo) => {
@@ -108,6 +149,9 @@ test("localizes interview style values and keeps the answer when switching langu
   await expect(page.getByText("平和", { exact: true })).toBeVisible();
   await expect(page.getByText("标准", { exact: true })).toBeVisible();
   await expect(page.getByText("第 1 题，共 4 题", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "结束面试", exact: true }).click();
+  await expect(page.getByText("面试官将停止提问，系统会对你目前的回答评分。")).toBeVisible();
+  await page.getByRole("button", { name: "继续", exact: true }).click();
   const answer = page.locator("textarea").last();
   await answer.fill("保留这段尚未提交的回答");
   await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
@@ -115,6 +159,9 @@ test("localizes interview style values and keeps the answer when switching langu
   await expect(page.getByText("Question 1 of 4", { exact: true })).toBeVisible();
   await expect(page.getByText(/^Question 1 of 4 ·/)).toBeVisible();
   await expect(answer).toHaveValue("保留这段尚未提交的回答");
+  await page.locator('[data-slot="alert-dialog-trigger"]').filter({ hasText: "End interview" }).click();
+  await expect(page.getByText("The interviewer will stop, and your coach will score the answers you have given so far.")).toBeVisible();
+  await page.getByRole("button", { name: "Keep going", exact: true }).click();
   await page.getByRole("combobox", { name: "Language", exact: true }).selectOption("zh-CN");
   await expect(page.getByText("技术面试", { exact: true })).toBeVisible();
   await expect(page.getByText("第 1 题，共 4 题", { exact: true })).toBeVisible();

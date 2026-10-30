@@ -42,7 +42,7 @@ export function AdminPage() {
             Access and capacity
           </h2>
           <p className="text-sm text-muted-foreground">
-            Invite new members and set comfortable operating limits for their workspaces.
+            Invite new members and set operating limits for their workspaces.
           </p>
         </div>
         <div className="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)]">
@@ -76,7 +76,7 @@ export function AdminPage() {
             Members
           </h2>
           <p className="text-sm text-muted-foreground">
-            Authorization is enforced by protected admin endpoints behind every action.
+            Each action requires administrator authorization.
           </p>
         </div>
         <AdminUsersCard currentUsername={me.data.username ?? ""} />

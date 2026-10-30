@@ -110,7 +110,7 @@ export function ReviewSettingsPage() {
         <div className="min-w-0">
           <h1 className="text-lg font-semibold">Review panel</h1>
           <p className="text-sm text-muted-foreground">
-            How tailored resumes get written, scored, and sized before they're offered up for approval.
+            Set how tailored resumes are written, scored, and sized before you approve them.
           </p>
         </div>
         <ResetSectionButton sectionId="review" label="Review panel" onReset={() => setResetVersion((version) => version + 1)} />
@@ -344,7 +344,7 @@ function ReviewRosterForm({
             id="maxRounds"
             label="Max rounds"
             min={1}
-            description="How many write-and-review passes before the best attempt is kept."
+            description="Maximum number of writing and review rounds. The best version is kept."
             value={draft.maxRounds}
             onChange={(v) => setDraft({ ...draft, maxRounds: v })}
           />
@@ -363,7 +363,7 @@ function ReviewRosterForm({
         <SwitchField
           id="merged-advisory"
           label="Merge advisory reviews into one call"
-          description="Faster and cheaper; turn off to run each advisory reviewer separately."
+          description="Combining reviews saves time and cost. Turn this off to run each advisory reviewer separately."
           checked={draft.mergedAdvisory}
           onChange={(v) => setDraft({ ...draft, mergedAdvisory: v })}
         />
@@ -393,8 +393,7 @@ function ReviewRosterForm({
       <FieldSet>
         <FieldLegend>Reviewers</FieldLegend>
         <FieldDescription>
-          A gated reviewer blocks the round before scoring. Its weight and score
-          bands are disabled.
+          If a gated reviewer fails, the round fails regardless of its score. Gate reviewers do not contribute a score, so their weight and score bands are disabled.
         </FieldDescription>
         <Table>
           <TableHeader>
@@ -409,10 +408,10 @@ function ReviewRosterForm({
           <TableBody>
             {reviewers.map((r, i) => (
               <TableRow key={r.name}>
-                <TableCell className="align-top">
+                <TableCell className="w-2/5 min-w-56 align-top whitespace-normal [overflow-wrap:anywhere]">
                   <div className="font-medium">{r.name}</div>
                   {REVIEWER_NOTE_KEYS[r.name] && (
-                    <div className="max-w-[26ch] text-xs leading-snug text-muted-foreground">
+                    <div className="text-xs leading-snug text-muted-foreground">
                       {t(REVIEWER_NOTE_KEYS[r.name])}
                     </div>
                   )}
@@ -514,7 +513,7 @@ function ReviewRosterForm({
         <FieldSet className="gap-3">
           <FieldLegend variant="label">Depth</FieldLegend>
           <FieldDescription>
-            How much each surviving role or project gets to say.
+            How much space each selected role or project can use.
           </FieldDescription>
           <div className={GRID}>
             <NumberField
@@ -590,7 +589,7 @@ function ReviewRosterForm({
             <NumberField
               id="provenanceRetryBudget"
               label="Provenance retry budget"
-              description="Extra rounds granted when a round failed only on citation ids. 0 makes a citation slip cost a full round."
+              description="Allow extra retries when a round fails only because of citation IDs. Set to 0 to count these failures against the regular round limit."
               value={draft.provenanceRetryBudget}
               onChange={(v) => setDraft({ ...draft, provenanceRetryBudget: v })}
             />

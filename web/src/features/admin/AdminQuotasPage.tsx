@@ -586,7 +586,7 @@ function AccountDrawer({
                 }
                 onClick={() => patch.mutate()}
               >
-                {patch.isPending ? "Saving…" : "Save member change"}
+                {patch.isPending ? "Saving…" : "Save member changes"}
               </Button>
             </div>
 
@@ -1573,7 +1573,7 @@ export function AdminQuotasPage() {
       <PageHeader
         kicker="Metering console"
         title="Cost quotas"
-        sub="Control recurring allowances, durable credits, pricing coverage, and auditable balance changes."
+        sub="Manage recurring allowances and credits, check pricing coverage, and view the audit trail for balance changes."
       />
 
       <section aria-labelledby="platform-runway-title" className="overflow-hidden rounded-xl border bg-card shadow-sm">
@@ -1707,7 +1707,7 @@ export function AdminQuotasPage() {
             <Card>
               <CardHeader>
                 <CardTitle><h2 className="text-base">Effective rate cards</h2></CardTitle>
-                <CardDescription>Models are grouped into one block and their immutable versions stay newest-first. Sort any column to rank model groups by the latest version.</CardDescription>
+                <CardDescription>Model versions are grouped together, with the newest first. Saved versions cannot be changed. Sorting a column orders models by their latest version.</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="flex flex-wrap gap-x-4 gap-y-2 border-y bg-muted/15 px-4 py-2.5 text-xs text-muted-foreground" role="group" aria-label="Rate card color legend">

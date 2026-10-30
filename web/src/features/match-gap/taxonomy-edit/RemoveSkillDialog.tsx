@@ -25,9 +25,7 @@ export function RemoveSkillDialog({
         <DialogHeader>
           <DialogTitle>Remove {skill.skill}?</DialogTitle>
           <DialogDescription>
-            Discards this entry from skill demand and future regrouping. You can
-            restore it from discarded non-skills. Original job descriptions stay
-            intact.
+            Exclude this entry from skill demand and future regrouping. You can restore it from discarded non-skills. Original job descriptions stay intact.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

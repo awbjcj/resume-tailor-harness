@@ -65,7 +65,7 @@ export function CopyApplicationPromptButton({ jobId, compact = false }: { jobId:
           <DialogHeader className="pr-6">
             <DialogTitle>Copy application prompt</DialogTitle>
             <DialogDescription>
-              Clipboard access is unavailable. Select the text below and copy it manually. Paste it into your browser or computer-use assistant.
+              Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant.
             </DialogDescription>
           </DialogHeader>
           <Textarea

@@ -20,10 +20,13 @@ const en = {
   },
   billing: billingEn,
   emailNotifications: emailNotificationsEn,
+  agentPrompts: {
+    originalLanguage: "Built-in instructions are shown in their original language.",
+  },
   subscription: {
-    overrideHelp: "Advanced tier assignment below replaces a finite subscription with an indefinitely recurring allowance. Use renewal above for paid extensions.",
+    overrideHelp: "Assigning a tier below replaces a fixed-term subscription with an indefinitely recurring allowance. To extend a paid subscription, use renewal above.",
     ledger: { allowanceGrant: "Cycle allowance granted", activated: "Subscription activated", renewed: "Subscription renewed", expired: "Subscription expired", revoked: "Subscription revoked" },
-    gatewayHelp: "Gateway calls consume member allowances and credits. A provider pinned to subscription fails if its URL or key is missing.",
+    gatewayHelp: "Gateway calls use member allowances and credits. If a provider is set to use the gateway, calls fail when its URL or key is missing.",
     title: "Subscription term",
     help: "Each plan cycle grants its allowance. Renewal extends the term without resetting spent allowance. Unused allowance expires; top-up credits remain.",
     unmanaged: "No finite subscription term. Existing recurring tier settings still apply.",
@@ -51,7 +54,7 @@ const en = {
   },
   model: {
     select: "Select a model",
-    customModelId: "Custom model id…",
+    customModelId: "Custom model ID…",
     customModelPlaceholder: "provider:model-id (e.g. openai:gpt-5.5)",
     noKey: "No key",
     addProviderKey: "Add a {{provider}} API key to use this model",
@@ -76,14 +79,14 @@ const en = {
   review: {
     reviewerNotes: {
       factCheck:
-        "Blocking: any claim not traceable to a profile fact fails the round.",
+        "Blocking: any claim that cannot be traced to a profile fact causes the round to fail.",
       atsKeyword: "Coverage of the job description's stated requirements.",
-      recruiter: "Six-second skim: does the top of the page land?",
+      recruiter: "Can a recruiter understand the top of the resume in a six-second skim?",
       hiringManager:
         "Depth and credibility of the evidence for this specific role.",
       concision: "Concision: remove padding while keeping evidence.",
       mustHaveCoverage:
-        "Share of evidenced must-have requirements rendered.",
+        "How many must-have requirements with supporting evidence appear in the resume.",
     },
   },
   profileBuild: {
@@ -422,7 +425,7 @@ const en = {
       kicker: "Stored evidence only",
       title: "Role comparison",
       description:
-        "Missing values stay explicit; this table does not call a model or guess an answer.",
+        "Missing information is marked. This table does not call a model or guess answers.",
       headers: {
         role: "Role",
         fit: "Fit",
@@ -525,7 +528,7 @@ const en = {
       kicker: "Conversion",
       title: "Analytics / Funnel",
       description:
-        "Which sources and fit-score bands convert. Rates are share of submitted applications.",
+        "Compare interview and offer rates by source and fit-score band. Rates are based on submitted applications.",
     },
     metrics: {
       submitted: "Submitted applications",
@@ -608,7 +611,7 @@ const en = {
     waiting_other: "{{count}} jobs are waiting on you",
     operations: "Operations",
     subtitle:
-      "Pull fresh listings, triage the queue, and ship tailored resumes.",
+      "Fetch new job listings, review them, and create tailored resumes.",
     systemStatus: "System status",
     queue: {
       triage: "Triage",
@@ -621,7 +624,7 @@ const en = {
       applyDetail: "rendered resumes",
     },
     quickAccess: "Quick access",
-    quickAccessHint: "Workspace controls, one click away",
+    quickAccessHint: "Open workspace settings in one click",
     shortcutsLabel: "Workspace shortcuts",
     openShortcut: "Open {{label}}: {{detail}}",
     shortcuts: {
@@ -646,7 +649,7 @@ const en = {
       rendered: "Rendered",
       applied: "Applied",
     },
-    deskHealth: "Desk health",
+    deskHealth: "Workspace status",
     deskReady: "Your workspace is ready. Every setup check passes.",
     resumeSetup: "Resume setup",
     health: {
@@ -677,7 +680,7 @@ const en = {
     resumeCoaching: "Resume profile coaching",
     insights: "Practice & source insights",
     practice: "Interview practice",
-    averageScore: "Average scored session",
+    averageScore: "Average session score",
     completedSessions: "{{count}} sessions completed",
     sinceFirst: "since first score",
     sourceHealth: "Source health",
@@ -782,7 +785,7 @@ const en = {
     completedCount: "{{completed}} of {{total}}",
     dismiss: "Dismiss getting started",
     waiting: "{{count}} waiting",
-    completeTitle: "You're running the full loop.",
+    completeTitle: "You've completed the getting-started steps.",
     completeSummary: "Profile, Sources, Pull, Shortlist, and Tailor are set up.",
     next: "Next:",
     stages: {
@@ -801,7 +804,7 @@ const en = {
       pull: {
         label: "Pull",
         task: "Pull your first jobs",
-        hint: "Run your first pull to fill the funnel with fresh postings.",
+        hint: "Pull your first jobs to start reviewing new postings.",
         cta: "Pull jobs",
       },
       shortlist: {
@@ -857,6 +860,9 @@ const zhCN = {
   },
   billing: billingZh,
   emailNotifications: emailNotificationsZh,
+  agentPrompts: {
+    originalLanguage: "内置指令以原文显示。",
+  },
   auto: autoZhCN,
   app: {
     documentTitle: "求职助手",
@@ -889,7 +895,7 @@ const zhCN = {
     reviewerNotes: {
       factCheck: "真实性要求：每项表述都必须有个人资料中的事实依据，否则本轮不通过。",
       atsKeyword: "简历覆盖了多少职位描述中明确提出的要求。",
-      recruiter: "招聘人员浏览六秒，能否从简历顶部抓住重点？",
+      recruiter: "招聘人员快速浏览六秒，能否看懂简历顶部的重点？",
       hiringManager: "与此职位相关的经历依据是否充分、可信。",
       concision: "删去冗余表达，保留有依据的内容。",
       mustHaveCoverage: "已有依据的必备要求中，有多少实际写进了简历。",
@@ -1511,7 +1517,7 @@ const zhCN = {
     historyHint: "显示最近 50 次操作，每次操作最多保留 200 条进度日志。",
     clearOperations: "清空操作历史",
     clearNotifications: "清空运行历史",
-    gmailReviewHelp: "Gmail 更新需要您审核。点击“接受”后才会更新申请状态。清空运行历史会保留待审核更新；可通过下方按钮恢复此前清除的更新。",
+    gmailReviewHelp: "Gmail 更新需要你审核。点击“接受”后才会更新申请状态。清空运行历史会保留待审核更新；可通过下方按钮恢复此前清除的更新。",
     reviewClearedGmail: "重新审核已清除的 Gmail 更新",
     clearConfirm: "清空此历史记录？职位结果和正在进行的操作将保留。",
     confirmClear: "清空历史",
@@ -1566,7 +1572,7 @@ const zhCN = {
     completedCount: "已完成 {{completed}} / {{total}}",
     dismiss: "关闭开始使用指南",
     waiting: "{{count}} 项待处理",
-    completeTitle: "你已走通完整求职流程。",
+    completeTitle: "你已完成入门步骤。",
     completeSummary: "个人资料、职位来源、职位获取、候选筛选和简历定制均已就绪。",
     next: "下一步：",
     stages: {

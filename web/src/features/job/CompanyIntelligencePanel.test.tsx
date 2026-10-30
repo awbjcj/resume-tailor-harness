@@ -152,7 +152,7 @@ describe("CompanyIntelligencePanel", () => {
     );
 
     expect(screen.getByText("May be outdated")).toBeInTheDocument();
-    expect(screen.getByText(/remains visible until you choose to refresh/i)).toBeInTheDocument();
+    expect(screen.getByText(/saved results stay visible until you refresh/i)).toBeInTheDocument();
     expect(screen.getByText("Acme builds infrastructure software.")).toBeInTheDocument();
   });
 

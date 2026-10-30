@@ -336,7 +336,7 @@ export function SourcesPage() {
         <div>
           <h1 className="text-lg font-semibold">Sources</h1>
           <p className="text-sm text-muted-foreground">
-            The boards, careers pages, and feeds that supply the pull pipeline.
+            Choose the job boards, careers pages, and feeds used to find jobs.
           </p>
         </div>
         <ResetSectionButton sectionId="sources" label="Company sources" />

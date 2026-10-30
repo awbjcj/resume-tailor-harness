@@ -254,7 +254,7 @@ export function CareerLabPage() {
         icon={<Sparkles />}
         eyebrow={active ? "Career Lab" : "Drafting studio"}
         title={active?.title || "Career Lab"}
-        description={active?.goal || "Work through a career question with one verified skill at a time. Every output stays a draft until you decide what to do next."}
+        description={active?.goal || "Work through a career question using one verified skill at a time. Outputs remain drafts until you decide what to do next."}
         meta={
           <>
             <Badge variant={active?.status === "active" ? "secondary" : "outline"}>{active ? (active.status === "active" ? "Session live" : "Session ended") : "Ready to explore"}</Badge>
@@ -267,7 +267,7 @@ export function CareerLabPage() {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>End this Career Lab session?</AlertDialogTitle>
-                <AlertDialogDescription>The transcript stays available, and no synthetic recap will be added.</AlertDialogDescription>
+                <AlertDialogDescription>The transcript stays available, but no automatically generated recap will be added.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Keep working</AlertDialogCancel>

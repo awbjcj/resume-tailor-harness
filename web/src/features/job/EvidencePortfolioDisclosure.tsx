@@ -127,7 +127,7 @@ export function EvidencePortfolioDisclosure({
           <span className="min-w-0">
             <span className="block font-semibold">Why this experience was chosen</span>
             <span className="block text-xs font-normal text-muted-foreground">
-              See the job needs this version emphasizes and the evidence used.
+              See which job requirements this version emphasizes and which evidence it uses.
             </span>
           </span>
         </span>
@@ -151,7 +151,7 @@ export function EvidencePortfolioDisclosure({
               role="status"
             >
               <Spinner data-icon="inline-start" />
-              Loading why this version was tailored this way…
+              Loading the tailoring explanation…
             </p>
           ) : null}
           {portfolio.isError ? (
@@ -322,7 +322,7 @@ export function EvidencePortfolioDisclosure({
                     <div>
                       <h4 className="font-semibold">What was left out</h4>
                       <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                        Relevant space was reserved for stronger matches.
+                        Limited space was reserved for stronger matches.
                       </p>
                       <ul className="mt-2 space-y-2">
                         {visibleOmissions.map((omission) => (

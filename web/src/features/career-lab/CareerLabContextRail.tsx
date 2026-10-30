@@ -257,7 +257,7 @@ export function CareerLabContextRail({
             />
             <span>
               <span className="block font-medium">Include current profile</span>
-              <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">Use the current profile as a bounded draft reference.</span>
+              <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">Use the current profile as a draft reference, limited to the facts it contains.</span>
             </span>
           </label>
 

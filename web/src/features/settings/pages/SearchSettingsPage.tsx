@@ -20,7 +20,7 @@ export function SearchSettingsPage() {
         <div>
           <h1 className="text-lg font-semibold">Search</h1>
           <p className="text-sm text-muted-foreground">
-            What discovery looks for. Tighter role anchors mean fewer wasted fetches.
+            Set the roles to search for. More specific role keywords help reduce irrelevant results.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

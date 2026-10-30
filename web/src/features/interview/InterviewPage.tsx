@@ -148,7 +148,7 @@ export function InterviewPage() {
   if (session.isLoading && displayedSessionId) {
     return (
       <div className={cn("space-y-6", CHAT_PAGE_WIDTH)}>
-        <GuidedWorkspaceHeader tone="interview" icon={<MessagesSquare />} eyebrow="Focused rehearsal" title="Mock Interviews" description="Practise realistic questions, stay in the moment, and turn the conversation into a scored debrief." />
+        <GuidedWorkspaceHeader tone="interview" icon={<MessagesSquare />} eyebrow="Focused rehearsal" title="Mock Interviews" description="Practice interview questions, focus on the conversation, and review a scored debrief afterward." />
         <div className="flex flex-col gap-6">
           <div className="flex min-w-0 flex-col gap-4">
             <Skeleton className="h-16 w-full" />
@@ -275,7 +275,7 @@ export function InterviewPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>End the interview now?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      The interviewer will stop and your coach will score the questions asked so far.
+                      The interviewer will stop, and your coach will score the answers you have given so far.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
