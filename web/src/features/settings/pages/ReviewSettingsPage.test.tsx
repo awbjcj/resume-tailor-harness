@@ -165,13 +165,39 @@ describe("ReviewSettingsPage reviewer roster", () => {
     expect(screen.getByLabelText("ats-keyword weight")).not.toBeDisabled();
   });
 
-  it("keeps fact-check mandatory instead of allowing advisory verification", async () => {
+  it.each([
+    ["Fast roster", "/api/config/review"],
+    ["Deep roster", "/api/config/review-deep"],
+  ])("saves fact-check gate changes in %s", async (roster, endpoint) => {
     render(<ReviewSettingsPage />, { wrapper: withQueryClient });
+    if (roster === "Deep roster") {
+      await userEvent.click(screen.getByRole("button", { name: roster }));
+    }
     const gate = screen.getByRole("switch", { name: "fact-check gate" });
-    expect(gate).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(gate);
+    expect(gate).not.toBeChecked();
+    const weight = screen.getByLabelText("fact-check weight");
+    expect(weight).not.toBeDisabled();
+    await userEvent.clear(weight);
+    await userEvent.type(weight, "2");
+    await userEvent.click(screen.getByRole("switch", { name: "fact-check score bands" }));
+    await saveChanges();
+    expect(save).toHaveBeenLastCalledWith(endpoint, expect.objectContaining({
+      reviewers: expect.arrayContaining([
+        expect.objectContaining({ name: "fact-check", gate: false, weight: 2, scoreBands: true }),
+      ]),
+    }));
+
     await userEvent.click(gate);
     expect(gate).toBeChecked();
-    expect(screen.getByLabelText("fact-check weight")).toBeDisabled();
+    expect(weight).toBeDisabled();
+    expect(weight).toHaveValue(2);
+    await saveChanges();
+    expect(save).toHaveBeenLastCalledWith(endpoint, expect.objectContaining({
+      reviewers: expect.arrayContaining([
+        expect.objectContaining({ name: "fact-check", gate: true, weight: 2, scoreBands: true }),
+      ]),
+    }));
   });
 
   it("preserves configurable gates and weights for advisory reviewers", async () => {

@@ -124,8 +124,10 @@ before changing code near the invariant.
 - **Fact-lock.** Every bullet on a tailored resume must trace back to a fact
   in `data/profile/facts.json`. Three deterministic gates decide this
   in-process before any reviewer opinion is weighed — `provenance`,
-  `skill-naming`, `numeric-evidence` — and the `fact-check` reviewer is a
-  hard, unscored gate on top. Their names are reserved: a `ReviewConfig`
+  `skill-naming`, `numeric-evidence` — and the `fact-check` reviewer defaults
+  to a hard, unscored gate. Users may make that reviewer advisory in Review
+  panel; it still receives supporting evidence and its configured weight
+  then contributes to scoring. The deterministic gate names are reserved: a `ReviewConfig`
   naming one raises. `aggregate` is the only verdict constructor, and any
   failed gate blocks the round regardless of score. Inferred skills are
   evidence pointers — they may guide emphasis but never justify a claim.

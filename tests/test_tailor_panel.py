@@ -207,7 +207,7 @@ def test_run_panel_routes_gate_to_evidence_and_others_to_lean():
 
 @pytest.mark.parametrize("merged", [False, True])
 @pytest.mark.parametrize("asynchronous", [False, True])
-def test_legacy_advisory_fact_check_receives_supporting_facts(merged, asynchronous):
+def test_advisory_fact_check_receives_supporting_facts(merged, asynchronous):
     import asyncio
 
     from resume_tailor_harness.tailor.panel import arun_panel
@@ -459,18 +459,19 @@ def test_merged_advisory_instructions_apply_score_bands_per_reviewer():
     assert _SCORE_BAND_INSTRUCTION not in by_rubric["concision"]
 
 
-def _merged_config() -> ReviewConfig:
+def _merged_config(fact_gate: bool = True) -> ReviewConfig:
     return ReviewConfig(
         merged_advisory=True,
         reviewers=[
-            ReviewerSpec(name="fact-check", gate=True, weight=0),
+            ReviewerSpec(name="fact-check", gate=fact_gate, weight=0),
             ReviewerSpec(name="ats-keyword"),
             ReviewerSpec(name="recruiter"),
         ],
     )
 
 
-def test_run_panel_merged_makes_one_lean_advisory_call():
+@pytest.mark.parametrize("fact_gate", [False, True])
+def test_run_panel_merged_makes_one_lean_advisory_call(fact_gate):
     from resume_tailor_harness.models.review import MergedPanelReview
     from resume_tailor_harness.tailor.panel import MERGED_ADVISORY
 
@@ -490,7 +491,7 @@ def test_run_panel_merged_makes_one_lean_advisory_call():
     }
 
     critiques = run_panel(
-        _content(), _facts(), "Backend role", _merged_config(), reviewers
+        _content(), _facts(), "Backend role", _merged_config(fact_gate), reviewers
     )
 
     assert [critique.reviewer for critique in critiques] == [
@@ -503,7 +504,8 @@ def test_run_panel_merged_makes_one_lean_advisory_call():
     assert "SecretRust" not in merged.received
 
 
-def test_arun_panel_merged_matches_sync_order():
+@pytest.mark.parametrize("fact_gate", [False, True])
+def test_arun_panel_merged_matches_sync_order(fact_gate):
     import asyncio
 
     from resume_tailor_harness.models.review import MergedPanelReview
@@ -528,7 +530,7 @@ def test_arun_panel_merged_matches_sync_order():
             _content(),
             _facts(),
             "jd",
-            _merged_config(),
+            _merged_config(fact_gate),
             reviewers,
             sem=asyncio.Semaphore(8),
         )

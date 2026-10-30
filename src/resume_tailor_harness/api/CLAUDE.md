@@ -77,7 +77,8 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   authenticate them through the normal guarded routes. `authoring-context`
   returns renderable facts and native resume JSON Schema; `external-resume/validate`
   is deterministic preflight, not approval. `services/external_tailoring.py`
-  rechecks the JD/profile revision, requires the configured fact-check gate,
+  rechecks the JD/profile revision, requires a fact-check reviewer and honors
+  its configured gate setting,
   reviews external content, and appends a version only for a passing verdict.
   The outer API uses camelCase; embedded profile/resume domain JSON stays
   snake_case. Never accept client-supplied review verdicts or use preflight as

@@ -139,7 +139,30 @@ def test_panel_failure_does_not_save(external_case, monkeypatch):
     assert not session.exec(select(ResumeVersion)).all()
 
 
-def test_fact_check_cannot_be_disabled(external_case):
+def test_external_submission_honors_advisory_fact_check(external_case, monkeypatch):
+    from resume_tailor_harness.api.schemas.jobs import ResumeVersionOut
+
+    session, job_id, path, content, revision, _, config = external_case
+    config.reviewers[0].gate = False
+    config.reviewers[0].weight = 1
+    monkeypatch.setattr(
+        service,
+        "run_panel",
+        lambda *a: [ReviewCritique(reviewer="fact-check", score=90, passed=False)],
+    )
+    result = service.submit_draft(session, job_id, path, content, revision, "test")
+    assert result["passed"] is True
+    version = session.get(ResumeVersion, result["versionId"])
+    assert version is not None and version.gate_reviewers_json == []
+    assert version.fact_lock_passed is True
+    projected = ResumeVersionOut.model_validate(version)
+    assert projected.fact_check_passed is True
+    assert projected.failed_gates == []
+    projected.apply_gate_names({"fact-check"})
+    assert projected.failed_gates == []  # later settings cannot relabel this round
+
+
+def test_fact_check_reviewer_is_required(external_case):
     session, job_id, path, content, revision, _, config = external_case
     config.reviewers = []
     with pytest.raises(service.ExternalTailoringError) as exc:

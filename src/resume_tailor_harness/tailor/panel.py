@@ -39,7 +39,7 @@ def compose_lean_review_input(
     coverage: str = "",
     depth_plan: str = "",
 ) -> str:
-    """Input for non-gate reviewers: resume + JD + size stats. No raw profile."""
+    """Input for reviewers needing no cited evidence: resume + JD + size stats."""
     return (
         "JOB DESCRIPTION:\n"
         f"{untrusted(jd_text)}"
@@ -55,7 +55,7 @@ def compose_lean_review_input(
 def compose_evidence_review_input(
     content: ResumeContent, jd_text: str, evidence: Mapping[str, Any]
 ) -> str:
-    """Input for gate reviewers: resume + JD + only referenced facts."""
+    """Input for gates and fact-check in either mode: resume + JD + cited facts."""
     return (
         "JOB DESCRIPTION:\n"
         f"{untrusted(jd_text)}\n\n"
@@ -119,7 +119,7 @@ def run_panel(
             expected_reviewer=spec.name,
         )
         for spec in config.reviewers
-        if spec.gate
+        if spec.requires_evidence
     ]
     advisory_names = _advisory_names(config)
     if advisory_names:
@@ -137,7 +137,8 @@ def run_panel(
 
 
 def _advisory_names(config: ReviewConfig) -> list[str]:
-    return [spec.name for spec in config.reviewers if not spec.gate]
+    """Only reviewers that can use lean input join the merged advisory call."""
+    return [spec.name for spec in config.reviewers if not spec.requires_evidence]
 
 
 def _merged_review(result: Any, expected: list[str]) -> list[ReviewCritique]:
@@ -161,7 +162,7 @@ def _panel_inputs(
     stats = resume_stats(content)
     inputs: list[tuple[str, str]] = []
     for spec in config.reviewers:
-        if spec.gate:
+        if spec.requires_evidence:
             text = compose_evidence_review_input(content, jd_text, evidence)
         else:
             text = compose_lean_review_input(
@@ -222,7 +223,7 @@ async def arun_panel(
         return _settled_critiques(outputs)
 
     evidence = resolve_evidence(content, profile_facts)
-    gate_specs = [spec for spec in config.reviewers if spec.gate]
+    evidence_specs = [spec for spec in config.reviewers if spec.requires_evidence]
     advisory_names = _advisory_names(config)
     calls: list[Coroutine[Any, Any, Any]] = [
         areview_one(
@@ -231,7 +232,7 @@ async def arun_panel(
             sem=sem,
             expected_reviewer=spec.name,
         )
-        for spec in gate_specs
+        for spec in evidence_specs
     ]
     if advisory_names:
         calls.append(
@@ -253,7 +254,7 @@ async def arun_panel(
     for index, output in enumerate(outputs):
         if isinstance(output, BaseException):
             first_error = first_error or output
-        elif advisory_names and index == len(gate_specs):
+        elif advisory_names and index == len(evidence_specs):
             try:
                 critiques.extend(_merged_review(output, advisory_names))
             except (TypeError, ValueError) as exc:

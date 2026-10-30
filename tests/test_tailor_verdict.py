@@ -30,13 +30,14 @@ def test_gate_failure_fails_round_even_with_high_scores():
     assert verdict.aggregate_score == 100  # weighted score still computed
 
 
-def test_legacy_advisory_fact_check_failure_cannot_be_outweighed():
-    # Copies and historical rosters may predate config normalization.
-    legacy_spec = ReviewerSpec(name="fact-check").model_copy(
-        update={"gate": False, "weight": 2}
-    )
+@pytest.mark.parametrize("threshold,passed", [(60, True), (85, False)])
+def test_advisory_fact_check_contributes_weight_without_veto(threshold, passed):
     config = ReviewConfig(
-        reviewers=[legacy_spec, ReviewerSpec(name="recruiter", weight=4)]
+        score_threshold=threshold,
+        reviewers=[
+            ReviewerSpec(name="fact-check", gate=False, weight=2),
+            ReviewerSpec(name="recruiter", weight=4),
+        ],
     )
     critiques = [
         ReviewCritique(reviewer="fact-check", score=0, passed=False),
@@ -45,10 +46,26 @@ def test_legacy_advisory_fact_check_failure_cannot_be_outweighed():
 
     verdict = aggregate(critiques, config)
 
-    assert verdict.gate_passed is False
+    assert verdict.gate_passed is True
+    assert verdict.passed is passed
+    assert verdict.aggregate_score == 67
+    assert failing_gate_names(critiques, []) == []
+    assert failing_gate_names(critiques) == ["fact-check"]  # unknown legacy roster
+
+
+@pytest.mark.parametrize(
+    "deterministic_gate", ["provenance", "skill-naming", "numeric-evidence"]
+)
+def test_disabling_fact_gate_keeps_deterministic_gates(deterministic_gate):
+    config = ReviewConfig(reviewers=[ReviewerSpec(name="fact-check", gate=False)])
+    critiques = [
+        ReviewCritique(reviewer=deterministic_gate, score=0, passed=False),
+        ReviewCritique(reviewer="fact-check", score=100, passed=True),
+    ]
+    verdict = aggregate(critiques, config)
     assert verdict.passed is False
-    assert verdict.aggregate_score == 100
-    assert failing_gate_names(critiques, []) == ["fact-check"]
+    assert verdict.gate_passed is False
+    assert failing_gate_names(critiques, []) == [deterministic_gate]
 
 
 def test_gate_pass_but_below_threshold_fails():

@@ -139,10 +139,10 @@ def submit_draft(
         )
     critiques = deterministic_checks(content, facts)
     config = for_rendering(load_review_config(REVIEW_PATH))
-    if not any(r.name == "fact-check" and r.gate for r in config.reviewers):
+    if not any(r.name == "fact-check" for r in config.reviewers):
         raise ExternalTailoringError(
             "REVIEW_REQUIRED",
-            "Enable the fact-check gate before submitting external drafts",
+            "Configure a fact-check reviewer before submitting external drafts",
         )
     if all(c.passed for c in critiques):
         reviewers = build_reviewers(

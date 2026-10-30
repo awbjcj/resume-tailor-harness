@@ -14,16 +14,17 @@ reserves a project slot when both evidence kinds exist. The saved review roster
 remains unchanged so detailed mode retains its larger ceilings.
 
 Every bullet on a tailored resume must trace back to a fact in
-`data/profile/facts.json`. The `fact-check` reviewer in `review.yaml` is a
-**hard gate** (not scored) — any unsupported claim fails the round. Agents
+`data/profile/facts.json`. The `fact-check` reviewer in `review.yaml` defaults to a
+**hard gate** (not scored). Agents
 rewrite and reframe; they never invent.
 
-A configured `fact-check` reviewer is always a blocking gate. Domain and API
-config validation repair legacy `gate: false` values so the reviewer receives
-supporting facts instead of the lean advisory input. A failed fact-check can
-never be outweighed by advisory scores. Legacy passing flags contradicted by a
-failed fact-check are rejected when surfacing resumes, projecting API/export
-metadata, and listing verified application attachments; stored history is retained.
+Users can toggle the fact-check gate in Review panel for either roster. With
+`gate: false`, its score contributes at its configured weight and a failed
+critique does not veto the round. Fact-check always receives supporting facts
+and runs separately from the lean merged advisory call, regardless of its gate
+setting. Deterministic provenance, skill-naming and numeric-evidence gates
+remain mandatory. Stored rounds use their own recorded gate roster, including
+an explicit empty roster; unknown legacy rosters retain the fact-check fallback.
 
 Inferred skills (`Skill.inferred=true`) are evidence pointers: each carries
 `evidence_fact_ids` resolving to literal facts. They may appear as

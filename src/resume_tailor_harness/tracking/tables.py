@@ -115,7 +115,9 @@ class ResumeVersion(SQLModel, table=True):
 
     @property
     def fact_lock_passed(self) -> bool:
-        return self.fact_check_passed and not has_failed_fact_check(self.critique_json)
+        return self.fact_check_passed and not has_failed_fact_check(
+            self.critique_json, self.gate_reviewers_json
+        )
 
 
 class Application(SQLModel, table=True):
