@@ -16,10 +16,9 @@ from resume_tailor_harness.gmail.client import (
     email_from_payload,
     extract_body,
 )
-from resume_tailor_harness.gmail.match import ApplicationMatcher
+from resume_tailor_harness.gmail.catalog import ApplicationCatalog
 from resume_tailor_harness.gmail.propose import _CLASS_TO_STATUS, _is_forward
 from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
-from resume_tailor_harness.tracking.queries import application_job_pairs
 from resume_tailor_harness.tracking.tables import Notification, utcnow
 
 PROCESSING_VERSION = "gmail-decisions-v4"
@@ -53,29 +52,10 @@ class MessageProcessor:
         # not make that identity ambiguous; a second Gmail identity does.
         self.legacy_account = gmail_accounts[0] if len(gmail_accounts) == 1 else None
         self.legacy_ids = source == "gmail" and self.legacy_account == account
-        pairs = application_job_pairs(session)
-        self.by_job = {job.id: app for app, job in pairs}
-        self.apps = {app.id: app for app, _ in pairs}
-        self.matcher = ApplicationMatcher([job for _, job in pairs])
-        catalog = [
-            (
-                app.id,
-                app.submitted_at,
-                job.id,
-                job.company,
-                job.title,
-                job.url,
-                job.source_identity,
-            )
-            for app, job in pairs
-        ]
-        self.revision = sha256(
-            json.dumps(
-                [PROCESSING_VERSION, sorted(catalog), classifier.cache_ai_enabled],
-                default=str,
-                sort_keys=True,
-            ).encode()
-        ).hexdigest()
+        self.catalog = ApplicationCatalog(
+            PROCESSING_VERSION, classifier.cache_ai_enabled
+        )
+        self.catalog.refresh(session)
         self.stats = {
             "processed": 0,
             "cached": 0,
@@ -89,12 +69,13 @@ class MessageProcessor:
         }
 
     def stale_ids(self, limit: int) -> list[str]:
+        self.catalog.refresh(self.session)
         return list(
             self.session.exec(
                 select(GmailReceipt.message_id)
                 .where(
                     GmailReceipt.account == self.account,
-                    GmailReceipt.revision != self.revision,
+                    GmailReceipt.revision != self.catalog.revision,
                 )
                 .order_by(col(GmailReceipt.attempted_at))
                 .limit(limit)
@@ -106,6 +87,7 @@ class MessageProcessor:
     ) -> None:
         if not ids:
             return
+        self.catalog.refresh(self.session)
         existing = {
             row.message_id: row
             for row in self.session.exec(
@@ -133,7 +115,7 @@ class MessageProcessor:
             for mid in ids
             if mid in refresh_ids
             or mid not in existing
-            or existing[mid].revision != self.revision
+            or existing[mid].revision != self.catalog.revision
             or (
                 recruiting
                 and existing[mid].email_json
@@ -167,8 +149,8 @@ class MessageProcessor:
             and email.body is None
             and (
                 email.recruiting_candidate
-                or self.matcher.company_candidates(email)
-                or self.matcher.match(email)
+                or self.catalog.matcher.company_candidates(email)
+                or self.catalog.matcher.match(email)
             )
         ]
         bodies = (
@@ -214,21 +196,23 @@ class MessageProcessor:
         receipt.classification_version = ""
         receipt.application_id = None
         receipt.label = "none"
-        receipt.revision = self.revision
+        receipt.revision = self.catalog.revision
         receipt.attempted_at = utcnow()
         receipt.email_json = asdict(email) if email else {}
         receipt.outcome = "ignored"
         if email is None or not email.incoming:
             return
         receipt.internal_date = email.internal_date
-        job = self.matcher.match(email)
+        job = self.catalog.matcher.match(email)
         if job is None:
             receipt.outcome = (
-                "ambiguous" if self.matcher.company_candidates(email) else "unmatched"
+                "ambiguous"
+                if self.catalog.matcher.company_candidates(email)
+                else "unmatched"
             )
             self.stats[receipt.outcome] += 1
             return
-        app = self.by_job[job.id]
+        app = self.catalog.by_job[job.id]
         if (
             receipt.bound_application_id is not None
             and receipt.bound_application_id != app.id
@@ -268,6 +252,7 @@ class MessageProcessor:
         """Analyze normalized mail from another transport using the same rules."""
         if not emails:
             return
+        self.catalog.refresh(self.session)
         # Delta pages may repeat IDs; keep the last version and one receipt.
         unique = {email.message_id: email for email in emails if email.message_id}
         existing = {
@@ -287,14 +272,12 @@ class MessageProcessor:
             receipt = existing.get(mid)
             if (
                 receipt is not None
-                and receipt.revision == self.revision
+                and receipt.revision == self.catalog.revision
                 and receipt.email_json == asdict(email)
             ):
                 self.stats["cached"] += 1
                 continue
-            receipt = receipt or GmailReceipt(
-                account=self.account, message_id=mid
-            )
+            receipt = receipt or GmailReceipt(account=self.account, message_id=mid)
             if receipt.application_id is not None:
                 affected.add(receipt.application_id)
             self._record(receipt, email)
@@ -321,6 +304,7 @@ class MessageProcessor:
 
     def restore_cleared_proposals(self) -> None:
         """Explicitly recover legacy bulk-cleared updates using cached evidence."""
+        self.catalog.refresh(self.session)
         affected = set(
             self.session.exec(
                 select(Notification.application_id)
@@ -331,13 +315,76 @@ class MessageProcessor:
                 .distinct()
             ).all()
         )
-        self._propose_latest(affected.intersection(self.apps), restore_cleared=True)
+        self._propose_latest(
+            affected.intersection(self.catalog.apps), restore_cleared=True
+        )
+
+    def _refresh_cached_decisions(self, affected: set[int]) -> None:
+        """Re-match stale evidence before comparing decisions across pages/accounts.
+
+        Page refreshes can change the matching revision while earlier receipts
+        still carry the old one. Reuse their classifications and bound identities;
+        removing revision guards would instead trust obsolete associations.
+        Read at most 500 receipts at a time and never fetch message bodies here.
+        """
+        visited: set[int] = set()
+        while targets := affected - visited:
+            visited.update(targets)
+            after: tuple[str, str] | None = None
+            while True:
+                statement = select(GmailReceipt).where(
+                    col(GmailReceipt.application_id).in_(targets),
+                    GmailReceipt.revision != self.catalog.revision,
+                    GmailReceipt.revision
+                    != "",  # deferred classification stays retryable
+                )
+                if after is not None:
+                    statement = statement.where(
+                        or_(
+                            col(GmailReceipt.account) > after[0],
+                            (col(GmailReceipt.account) == after[0])
+                            & (col(GmailReceipt.message_id) > after[1]),
+                        )
+                    )
+                receipts = self.session.exec(
+                    statement.order_by(
+                        col(GmailReceipt.account),
+                        col(GmailReceipt.message_id),
+                    ).limit(500)
+                ).all()
+                if not receipts:
+                    break
+                after = (receipts[-1].account, receipts[-1].message_id)
+                for receipt in receipts:
+                    self.checkpoint()
+                    attempted_at = receipt.attempted_at
+                    self._record(
+                        receipt,
+                        EmailMessage(**receipt.email_json)
+                        if receipt.email_json
+                        else None,
+                    )
+                    if receipt.revision:
+                        # Revalidating old evidence must not win the chronology
+                        # tie-break against a just-arrived message with the same
+                        # provider timestamp. Failed attempts still move back
+                        # in the deferred-work queue.
+                        receipt.attempted_at = attempted_at
+                    if receipt.application_id is not None:
+                        affected.add(receipt.application_id)
+                    self.session.add(receipt)
+                    self.stats["processed"] += 1
+                self.session.flush()
+                if len(receipts) < 500:
+                    break
 
     def _propose_latest(
         self, affected: set[int], *, restore_cleared: bool = False
     ) -> None:
         if not affected:
             return
+        if not restore_cleared:
+            self._refresh_cached_decisions(affected)
         ranked = (
             select(
                 GmailReceipt.account,
@@ -418,14 +465,14 @@ class MessageProcessor:
             if (
                 notice.state == "pending"
                 and cached
-                and cached.revision == self.revision
+                and cached.revision == self.catalog.revision
             ):
                 corrected = _CLASS_TO_STATUS.get(cached.label)
                 if (
                     cached.application_id != notice.application_id
                     or (
                         current
-                        and current.revision == self.revision
+                        and current.revision == self.catalog.revision
                         and (current.account, current.message_id) != identity
                     )
                     or not corrected
@@ -447,11 +494,11 @@ class MessageProcessor:
             # cleared evidence. Normal sync still compares chronology globally.
             if restore_cleared and row.account != self.account:
                 continue
-            app = self.apps.get(app_id)
+            app = self.catalog.apps.get(app_id)
             proposed = _CLASS_TO_STATUS.get(row.label)
             if (
                 not app
-                or row.revision != self.revision
+                or row.revision != self.catalog.revision
                 or not proposed
                 or not _is_forward(app.status, proposed)
             ):

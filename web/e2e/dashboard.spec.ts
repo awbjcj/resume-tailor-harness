@@ -162,7 +162,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByText("No completed operations in your history.")).toBeVisible();
     await page.getByRole("button", { name: /Notifications/ }).click();
     await expect(page.getByText("Discovery succeeded")).toBeVisible();
-    await page.getByRole("button", { name: "Clear notification history" }).click();
+    await page.getByRole("button", { name: "Clear run history", exact: true }).click();
     await page.getByRole("button", { name: "Clear history", exact: true }).click();
     await expect(page.getByText("Nothing pending.")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

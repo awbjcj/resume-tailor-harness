@@ -14,6 +14,7 @@ async function openForm() {
   render(<ManualJobDialog />, { wrapper });
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Add job manually" }));
+  await screen.findByLabelText("Job title *");
   return { user, invalidate };
 }
 

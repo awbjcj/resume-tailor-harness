@@ -16,6 +16,7 @@ export async function loadAutoTranslations(
 }
 
 const en = {
+  deferred: { loading: "Loading…", failed: "This form could not load. Try again.", appFailed: "The workspace could not load. Try again.", retry: "Try again", reload: "Reload page" },
   salary: { hour: "hour", month: "month", week: "week", day: "day" },
   chat: {
     reviseDraft: "Revise the selected draft.\n\n{{feedback}}",
@@ -836,6 +837,7 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  deferred: { loading: "正在加载…", failed: "无法加载此表单，请重试。", appFailed: "无法加载工作区，请重试。", retry: "重试", reload: "重新加载页面" },
   salary: { hour: "小时", month: "月", week: "周", day: "天" },
   chat: {
     reviseDraft: "请修改所选草稿。\n\n{{feedback}}",

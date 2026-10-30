@@ -1,6 +1,7 @@
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from email.message import EmailMessage as MimeMessage
 from unittest.mock import Mock
+from typing import Any
 
 import pytest
 from sqlmodel import Session, select
@@ -63,7 +64,7 @@ def test_private_targets_never_open_socket(monkeypatch, address):
     connect.assert_not_called()
 
 
-def test_cached_page_reads_receipts_with_one_query():
+def test_cached_page_reads_current_catalog_and_receipts_in_two_queries():
     from sqlalchemy import event
     from resume_tailor_harness.gmail.classify import SyncClassifier
     from resume_tailor_harness.gmail.processing import MessageProcessor
@@ -93,7 +94,7 @@ def test_cached_page_reads_receipts_with_one_query():
         finally:
             event.remove(engine, "before_cursor_execute", count)
         assert processor.stats["cached"] == 100
-        assert len(queries) == 1
+        assert len(queries) == 2
 
 
 def test_existing_workspace_gets_cross_account_index_without_losing_receipts():
@@ -326,18 +327,31 @@ class FakeIMAP:
         self.fetches = []
         self.fail = False
 
-    def uid(self, command, *args):
+    def uid(self, command, *args) -> tuple[str, list[Any]]:
         if command == "search":
             low, high = map(int, args[-1].split(":"))
             return "OK", [
                 " ".join(str(i) for i in self.ids if low <= i <= high).encode()
             ]
-        uid = int(args[0])
-        self.fetches.append((uid, args[1]))
+        uids = list(map(int, args[0].split(",")))
+        self.fetches.append((uids, args[1]))
         if self.fail:
             return "NO", [b"private-password"]
-        raw = f"From: hr@employer0.com\r\nSubject: Update\r\n\r\nEmail {uid}".encode()
-        return "OK", [(b'1 (INTERNALDATE "29-Oct-2026 12:00:00 -0400")', raw), b")"]
+        result = []
+        for uid in reversed(uids):
+            raw = (
+                f"From: hr@employer0.com\r\nSubject: Update\r\n\r\nEmail {uid}".encode()
+            )
+            result.append(
+                (
+                    f'1 (UID {uid} INTERNALDATE "29-Oct-2026 12:00:00 -0400")'.encode(),
+                    raw,
+                )
+            )
+        return "OK", result
+
+    def bounded_response(self, checkpoint):
+        return nullcontext()
 
 
 def test_imap_backfill_new_arrivals_and_uidvalidity():
@@ -459,7 +473,7 @@ def test_sync_analyzes_once_resumes_and_never_auto_applies(tmp_path, monkeypatch
     store.write_accounts({"ms": account}, tmp_path)
     calls = []
 
-    def read(account, cursor):
+    def read(account, cursor, **_transport):
         calls.append(cursor)
         return [message()], {"delta": "done"}, False
 
@@ -510,7 +524,7 @@ def test_imap_service_reads_and_analyzes_incoming_mail(tmp_path, monkeypatch):
                 "From: hr@employer0.com\r\nSubject: Application update\r\n\r\n"
                 "For R900000 Senior Engineer: We have decided not to move forward with your application."
             ).encode()
-            return "OK", [(b'1 (INTERNALDATE "29-Oct-2026 12:00:00 -0400")', raw)]
+            return "OK", [(b'1 (UID 1 INTERNALDATE "29-Oct-2026 12:00:00 -0400")', raw)]
         return original_uid(command, *args)
 
     monkeypatch.setattr(client, "uid", uid)
@@ -578,7 +592,7 @@ def test_chronology_across_accounts_suppresses_older_decisions(tmp_path, monkeyp
     }
     store.write_accounts(accounts, tmp_path)
 
-    def read(account, cursor):
+    def read(account, cursor, **_transport):
         return (
             [
                 message(

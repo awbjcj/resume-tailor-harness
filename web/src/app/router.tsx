@@ -1,7 +1,7 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
-import { AppLayout } from "./AppLayout";
+import { DeferredAppLayout } from "./DeferredAppLayout";
 import { BoardSkeleton } from "@/components/skeletons";
 import { SetupGate } from "@/features/setup/SetupGate";
 import { AuthGate } from "@/features/auth/AuthGate";
@@ -154,7 +154,7 @@ export const router = createBrowserRouter([
   { path: "/complete-profile", element: page(<CompleteProfilePage />) },
   {
     path: "/",
-    element: <AuthGate><AppLayout /></AuthGate>,
+    element: <AuthGate><DeferredAppLayout /></AuthGate>,
     children: [
       { index: true, element: <SetupGate>{page(<DashboardPage />)}</SetupGate> },
       { path: "shortlist", element: <SetupGate>{page(<ShortlistPage />)}</SetupGate> },

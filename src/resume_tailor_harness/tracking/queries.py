@@ -7,7 +7,10 @@ from typing import Any, cast
 from sqlalchemy.orm import defer
 from sqlmodel import Session, col, select
 
-from resume_tailor_harness.discovery.connectors.text import clean_job_description_text
+from resume_tailor_harness.job_description import (
+    clean_job_description_text,
+    job_description_preview,
+)
 from resume_tailor_harness.h1b.cache import load_company_evidence
 from resume_tailor_harness.h1b.models import H1BSponsorshipEvidence
 from resume_tailor_harness.models.profile import ProfileFacts
@@ -410,7 +413,7 @@ def project_pipeline_jobs(
                 location=job.location,
                 status=job.status,
                 fit_score=job.fit_score,
-                jd_preview=clean_job_description_text(job.jd_text)[:400],
+                jd_preview=job_description_preview(job.jd_text),
                 # None means "never tailored" (no version); [] means a version
                 # exists but reviewers raised nothing. The board reads them apart.
                 critique_json=(version.critique_json or []) if version else None,

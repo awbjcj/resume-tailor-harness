@@ -95,14 +95,20 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 - **Precision precedes a guessed decision.** Rules require decision phrases,
   discard quoted history, and avoid receipt/marketing/conditional messages.
   AI returns structured labels with confidence >= 0.9 and an exact evidence quote;
-  ungrounded answers are discarded. Company/domain and requisition indexes are
-  built once per pass. A prior message-to-application association cannot transfer
+  ungrounded answers are discarded. `catalog.py` refreshes narrow scalar matching
+  inputs at each page boundary, so committed Job/Application edits are visible
+  without retaining expired ORM rows. Company/domain and requisition indexes
+  rebuild only when matching inputs change; status refreshes do not invalidate
+  classifications. A prior message-to-application association cannot transfer
   silently when another job is archived. Cached unmatched messages are reconsidered
   when the application catalog changes, without rereading available evidence.
 - **Chronology spans runs.** Select the latest cached decision per application,
   using Gmail's receipt timestamp, so later backfill pages cannot resurrect old
   stages. Supersede older pending Gmail proposals; keep accepted/dismissed/cleared
-  identities. Explicit `POST /api/gmail/sync` with `reviewCleared: true` can restore
+  identities. Before normal proposal reconciliation, revalidate stale cached
+  decisions for affected applications in bounded batches, reusing classifications
+  and preserving bound identities and chronology tie-breaks. Explicit
+  `POST /api/gmail/sync` with `reviewCleared: true` can restore
   a legacy cleared proposal from the latest current-revision cached decision;
   accepted/dismissed decisions stay put. Clearing run history preserves proposals.
   Automatically superseded cards become pending again if corrections make them
