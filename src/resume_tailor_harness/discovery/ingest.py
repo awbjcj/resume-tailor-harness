@@ -25,6 +25,7 @@ from resume_tailor_harness.tracking.repository import (
     has_progress,
 )
 from resume_tailor_harness.tracking.tables import Job, JobStatus
+from resume_tailor_harness.models.manual_job import reset_extracted_criteria
 from resume_tailor_harness.taxonomy.location import join_locations
 
 
@@ -168,7 +169,7 @@ def _apply(
             # posting. Reset unprogressed rows so refresh/discovery extracts
             # salary, employment type, and other facts from the richer copy.
             existing.status = JobStatus.raw.value
-            existing.criteria_json = None
+            existing.criteria_json = reset_extracted_criteria(existing.criteria_json)
             existing.analysis_meta_json = None
             existing.fit_score = None
             existing.fit_rationale = None

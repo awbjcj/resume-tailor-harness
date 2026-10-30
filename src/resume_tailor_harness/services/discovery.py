@@ -43,6 +43,8 @@ from resume_tailor_harness.discovery.url_ingest.recovery import (
 from resume_tailor_harness.h1b.cache import load_company_evidence
 from resume_tailor_harness.h1b.models import H1BEnrichmentReport, H1BSponsorshipEvidence
 from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.models.job import JobCriteria
+from resume_tailor_harness.models.manual_job import ManualJobDetails
 from resume_tailor_harness.profile.effective import build_effective_taxonomy
 from resume_tailor_harness.profile.matrix import SkillMatrix, load_matrix
 from resume_tailor_harness.profile.store import load_facts
@@ -264,17 +266,34 @@ def add_job_from_text(
     company: str | None = None,
     title: str | None = None,
     location: str | None = None,
+    posted_at: datetime | None = None,
+    details: ManualJobDetails | None = None,
 ) -> Job | None:
     """Add a manually-supplied job. Returns None when deduped away."""
-    return _save_with_active_job_limit(
+    if details is not None:
+        details = details.model_copy(update={"source_url": url or details.source_url})
+    job = _save_with_active_job_limit(
         session,
         source="manual",
         jd_text=jd_text,
-        url=url,
+        url=(details.application_url if details else None) or url,
         company=company,
         title=title,
         location=location,
+        posted_at=posted_at,
+        commit=False,
     )
+    # Higher-priority manual imports may upgrade only a progressed job's URL.
+    # Never attach new criteria to artifacts based on an older description.
+    if job is not None and job.status == JobStatus.raw.value and details is not None:
+        job.criteria_json = details.apply(
+            JobCriteria.model_validate(job.criteria_json or {})
+        ).model_dump(mode="json")
+        session.add(job)
+    session.commit()
+    if job is not None:
+        session.refresh(job)
+    return job
 
 
 class UrlFetchError(RuntimeError):

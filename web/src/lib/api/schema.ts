@@ -4534,10 +4534,13 @@ export interface components {
         AddJobTextRequest: {
             /** Company */
             company?: string | null;
+            details?: components["schemas"]["ManualJobDetails"] | null;
             /** Jdtext */
             jdText: string;
             /** Location */
             location?: string | null;
+            /** Postedat */
+            postedAt?: string | null;
             /** Title */
             title?: string | null;
             /** Url */
@@ -7114,6 +7117,11 @@ export interface components {
             /** Validuntil */
             validUntil?: string | null;
         };
+        /**
+         * EmploymentType
+         * @enum {string}
+         */
+        EmploymentType: "full_time" | "contract" | "internship" | "part_time";
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -8346,6 +8354,46 @@ export interface components {
             name?: string | null;
             /** Targetskilldisplay */
             targetSkillDisplay?: string | null;
+        };
+        /** ManualJobDetails */
+        ManualJobDetails: {
+            /** Applicationurl */
+            applicationUrl?: string | null;
+            /** Attendance */
+            attendance?: string | null;
+            /** Closesat */
+            closesAt?: string | null;
+            /** Companysize */
+            companySize?: string | null;
+            employmentType?: components["schemas"]["EmploymentType"] | null;
+            /** Industry */
+            industry?: string | null;
+            /** Musthaveskills */
+            mustHaveSkills?: string[];
+            /** Nicetohaveskills */
+            niceToHaveSkills?: string[];
+            /** Postingid */
+            postingId?: string | null;
+            /** Remotepolicy */
+            remotePolicy?: ("remote" | "hybrid" | "onsite") | null;
+            /** Remoterestrictions */
+            remoteRestrictions?: string | null;
+            /** Salarycurrency */
+            salaryCurrency?: string | null;
+            /** Salarymax */
+            salaryMax?: number | null;
+            /** Salarymin */
+            salaryMin?: number | null;
+            /** Salaryperiod */
+            salaryPeriod?: ("year" | "month" | "week" | "day" | "hour") | null;
+            seniority?: components["schemas"]["Seniority"] | null;
+            /** Sourceurl */
+            sourceUrl?: string | null;
+            sponsorshipSignal?: components["schemas"]["SponsorshipSignal"] | null;
+            /** Techstack */
+            techStack?: string[];
+            /** Yoemin */
+            yoeMin?: number | null;
         };
         /** MatchGapOut */
         MatchGapOut: {
@@ -10562,6 +10610,11 @@ export interface components {
             /** Openaiapikey */
             openaiApiKey?: string | null;
         };
+        /**
+         * Seniority
+         * @enum {string}
+         */
+        Seniority: "junior" | "mid" | "senior" | "staff" | "principal";
         /** SetEmailRequest */
         SetEmailRequest: {
             /**
@@ -10820,6 +10873,12 @@ export interface components {
             /** Enabledcount */
             enabledCount: number;
         };
+        /**
+         * SponsorshipSignal
+         * @description What the JD says about visa sponsorship. ``silent`` => uncertain (keep + flag).
+         * @enum {string}
+         */
+        SponsorshipSignal: "offered" | "denied" | "silent";
         /** StyleGuideDoc */
         StyleGuideDoc: {
             /**

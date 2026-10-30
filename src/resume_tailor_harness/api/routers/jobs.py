@@ -535,6 +535,8 @@ def create_manual_job(
             company=body.company,
             title=body.title,
             location=body.location,
+            posted_at=body.posted_at,
+            details=body.details,
         )
     except ActiveJobQuotaError as error:
         raise ApiException(429, error.code, str(error)) from error

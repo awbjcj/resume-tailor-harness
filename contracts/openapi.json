@@ -426,6 +426,7 @@
           "company": {
             "anyOf": [
               {
+                "maxLength": 1000,
                 "type": "string"
               },
               {
@@ -434,13 +435,26 @@
             ],
             "title": "Company"
           },
+          "details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ManualJobDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "jdText": {
+            "maxLength": 2000000,
+            "minLength": 1,
             "title": "Jdtext",
             "type": "string"
           },
           "location": {
             "anyOf": [
               {
+                "maxLength": 4000,
                 "type": "string"
               },
               {
@@ -449,9 +463,22 @@
             ],
             "title": "Location"
           },
+          "postedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postedat"
+          },
           "title": {
             "anyOf": [
               {
+                "maxLength": 1000,
                 "type": "string"
               },
               {
@@ -463,6 +490,7 @@
           "url": {
             "anyOf": [
               {
+                "maxLength": 4096,
                 "type": "string"
               },
               {
@@ -7078,6 +7106,16 @@
         "title": "EmployerAnswer",
         "type": "object"
       },
+      "EmploymentType": {
+        "enum": [
+          "full_time",
+          "contract",
+          "internship",
+          "part_time"
+        ],
+        "title": "EmploymentType",
+        "type": "string"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -10486,6 +10524,252 @@
           "addedAt"
         ],
         "title": "ManualEntryOut",
+        "type": "object"
+      },
+      "ManualJobDetails": {
+        "additionalProperties": false,
+        "properties": {
+          "applicationUrl": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicationurl"
+          },
+          "attendance": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance"
+          },
+          "closesAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closesat"
+          },
+          "companySize": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Companysize"
+          },
+          "employmentType": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "mustHaveSkills": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Musthaveskills",
+            "type": "array"
+          },
+          "niceToHaveSkills": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Nicetohaveskills",
+            "type": "array"
+          },
+          "postingId": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postingid"
+          },
+          "remotePolicy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "remote",
+                  "hybrid",
+                  "onsite"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remotepolicy"
+          },
+          "remoteRestrictions": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remoterestrictions"
+          },
+          "salaryCurrency": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salarycurrency"
+          },
+          "salaryMax": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salarymax"
+          },
+          "salaryMin": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salarymin"
+          },
+          "salaryPeriod": {
+            "anyOf": [
+              {
+                "enum": [
+                  "year",
+                  "month",
+                  "week",
+                  "day",
+                  "hour"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salaryperiod"
+          },
+          "seniority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Seniority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sourceUrl": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceurl"
+          },
+          "sponsorshipSignal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SponsorshipSignal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "techStack": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Techstack",
+            "type": "array"
+          },
+          "yoeMin": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yoemin"
+          }
+        },
+        "title": "ManualJobDetails",
         "type": "object"
       },
       "MatchGapOut": {
@@ -16626,6 +16910,17 @@
         "title": "SecretsUpdate",
         "type": "object"
       },
+      "Seniority": {
+        "enum": [
+          "junior",
+          "mid",
+          "senior",
+          "staff",
+          "principal"
+        ],
+        "title": "Seniority",
+        "type": "string"
+      },
       "SetEmailRequest": {
         "properties": {
           "email": {
@@ -17567,6 +17862,16 @@
         ],
         "title": "SourcesStatus",
         "type": "object"
+      },
+      "SponsorshipSignal": {
+        "description": "What the JD says about visa sponsorship. ``silent`` => uncertain (keep + flag).",
+        "enum": [
+          "offered",
+          "denied",
+          "silent"
+        ],
+        "title": "SponsorshipSignal",
+        "type": "string"
       },
       "StyleGuideDoc": {
         "properties": {
