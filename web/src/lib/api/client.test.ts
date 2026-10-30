@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { getToken, setToken, unwrap, withTokenParam } from "./client";
+import { ApiError, getToken, setToken, unwrap, withTokenParam } from "./client";
 
 describe("token storage", () => {
   beforeEach(() => localStorage.clear());
@@ -26,5 +26,11 @@ describe("unwrap", () => {
   it("throws the error envelope message", async () => {
     const env = { error: { error: { code: "NOT_FOUND", message: "nope" } }, data: undefined };
     await expect(unwrap(Promise.resolve(env))).rejects.toThrow("nope");
+  });
+  it("preserves safe validation details and the machine code", async () => {
+    const error = { code: "VALIDATION_ERROR", message: "Check settings", details: [{ loc: ["body", "imap", "host"], type: "value_error" }] };
+    const failure = await unwrap(Promise.resolve({ error: { error } })).catch((caught: unknown) => caught);
+    expect(failure).toBeInstanceOf(ApiError);
+    expect(failure).toMatchObject(error);
   });
 });
