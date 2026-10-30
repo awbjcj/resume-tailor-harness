@@ -14,6 +14,7 @@ export async function loadAutoTranslations(
 }
 
 const en = {
+  salary: { hour: "hour", month: "month", week: "week", day: "day" },
   chat: {
     reviseDraft: "Revise the selected draft.\n\n{{feedback}}",
     reviseSection: 'Revise the section "{{section}}" in the selected draft.\n\n{{feedback}}',
@@ -830,6 +831,7 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  salary: { hour: "小时", month: "月", week: "周", day: "天" },
   chat: {
     reviseDraft: "请修改所选草稿。\n\n{{feedback}}",
     reviseSection: "请修改所选草稿中的“{{section}}”部分。\n\n{{feedback}}",

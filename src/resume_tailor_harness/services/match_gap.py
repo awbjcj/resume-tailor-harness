@@ -343,11 +343,21 @@ def refresh_clusters(
         # A retired token names no skill.  Dropping it here is what stops the
         # backlog from re-buying the same LLM verdict on every single run.
         existing = snapshot.effective
+        from resume_tailor_harness.profile.matrix import load_overrides
+        from resume_tailor_harness.taxonomy.snapshot import EffectiveTaxonomy
+
+        exclusion_aliases = EffectiveTaxonomy.from_parts(
+            snapshot.generated,
+            corrections=corrections,
+            state=taxonomy_state,
+            overrides=load_overrides(Path(path).with_name("overrides.yaml")),
+        ).cluster_map.aliases
         retired_keys = {
-            existing.aliases.get(token, token) for token in taxonomy_state.retired_skills
+            exclusion_aliases.get(token, token)
+            for token in taxonomy_state.retired_skills
         }
         removed_keys = {
-            existing.aliases.get(token, token) for token in corrections.removed_skills
+            exclusion_aliases.get(token, token) for token in corrections.removed_skills
         }
         demanded = {
             normalize_skill(token) for token in demanded if normalize_skill(token)
@@ -355,7 +365,7 @@ def refresh_clusters(
         demanded = {
             token
             for token in demanded
-            if existing.aliases.get(token, token) not in retired_keys | removed_keys
+            if exclusion_aliases.get(token, token) not in retired_keys | removed_keys
         }
         _, pinned_skills = pinned_domains_and_skills(existing, corrections)
         # Moving one skill pins that skill, not every other generated member
@@ -416,7 +426,8 @@ def refresh_clusters(
                 status := taxonomy_state.grouping_status.get(
                     existing.aliases.get(token, token)
                 )
-            ) is not None
+            )
+            is not None
             and status.escalation_attempts >= settings.taxonomy_max_auto_attempts
         }
         first_pass = {
@@ -511,12 +522,15 @@ def refresh_clusters(
                 if budget.exhausted:
                     break
                 pending = (
-                    _unassigned(after_first, target_raw) - retired - canonical_failed
+                    _unassigned(after_first, target_raw)
+                    - retired
+                    - canonical_failed
                     - set(first.deferred_tokens)
                 )
                 if skill_keys is None:
                     pending = {
-                        token for token in pending
+                        token
+                        for token in pending
                         if recovery_attempts.get(token, 0)
                         < settings.taxonomy_max_auto_attempts
                     }
@@ -686,7 +700,10 @@ def refresh_clusters(
                 canonical = final.aliases.get(
                     normalize_skill(token), normalize_skill(token)
                 )
-                if canonical not in final.domain_of and canonical not in retired_canonicals:
+                if (
+                    canonical not in final.domain_of
+                    and canonical not in retired_canonicals
+                ):
                     statuses[canonical] = GroupingStatus(
                         state=failure_state,
                         reason=failure.message,
@@ -703,7 +720,9 @@ def refresh_clusters(
                         else "no high-confidence existing or coherent new domain"
                     ),
                     # A budget deferral can precede canonicalization itself.
-                    phase="domain" if token in final.aliases.values() else "canonicalize",
+                    phase="domain"
+                    if token in final.aliases.values()
+                    else "canonicalize",
                 ),
             )
 

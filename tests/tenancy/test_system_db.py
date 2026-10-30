@@ -3,12 +3,43 @@ from sqlalchemy.orm import Session
 
 from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.tenancy.system_db import (
+    AccountEmail,
     UsageEvent,
     User,
     init_system_db,
     make_system_engine,
 )
 from resume_tailor_harness.tenancy.migrate_system import migrate_system_db
+
+
+def test_account_email_failure_migration_preserves_pending_notices(tmp_path):
+    engine = make_system_engine(tmp_path)
+    init_system_db(engine)
+    with Session(engine) as session:
+        session.add(
+            AccountEmail(
+                id="pending-notice",
+                user_id="legacy",
+                event="account_created",
+                recipient="legacy@example.com",
+                context_json="{}",
+                payload_json='{"to":"legacy@example.com"}',
+            )
+        )
+        session.commit()
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE account_emails DROP COLUMN failed_at"))
+        connection.execute(
+            text("ALTER TABLE account_emails DROP COLUMN failure_reason")
+        )
+    migrate_system_db(engine)
+    migrate_system_db(engine)
+    with Session(engine) as session:
+        row = session.execute(select(AccountEmail)).scalar_one()
+        assert row.id == "pending-notice"
+        assert row.payload_json == '{"to":"legacy@example.com"}'
+        assert row.failed_at is None and row.failure_reason is None
+    engine.dispose()
 
 
 def test_dashboard_language_is_added_to_existing_accounts_without_data_loss(tmp_path):

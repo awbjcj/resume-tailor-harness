@@ -1,16 +1,23 @@
 // Per-job display formatters shared by the React card and modal.
+import i18n from "@/i18n";
+
+const SALARY_PERIOD_KEYS = { hour: "salary.hour", month: "salary.month", day: "salary.day", week: "salary.week" } as const;
 
 export function salaryLabel(
   min: number | null | undefined,
   max: number | null | undefined,
   currency?: string | null,
+  period?: string | null,
 ): string | null {
   if (min == null && max == null) return null;
   const sym = currencySymbol(currency);
-  const lo = min != null ? `${Math.round(min / 1000)}k` : null;
-  const hi = max != null ? `${Math.round(max / 1000)}k` : null;
-  if (lo && hi) return `${sym}${lo}–${hi}`;
-  return `${sym}${lo ?? hi}`;
+  const amount = (value: number) => Math.abs(value) >= 1000 ? `${Math.round(value / 1000)}k` : String(Math.round(value));
+  const lo = min != null ? amount(min) : null;
+  const hi = max != null ? amount(max) : null;
+  const label = lo && hi ? `${sym}${lo}–${hi}` : `${sym}${lo ?? hi}`;
+  if (!period || period.toLowerCase() === "year") return label;
+  const key = SALARY_PERIOD_KEYS[period.toLowerCase() as keyof typeof SALARY_PERIOD_KEYS];
+  return `${label}/${key ? i18n.t(key, { defaultValue: period }) : period}`;
 }
 
 function currencySymbol(currency?: string | null): string {
@@ -208,13 +215,14 @@ export function metaLine(row: {
   salaryMin?: number | null;
   salaryMax?: number | null;
   salaryCurrency?: string | null;
+  salaryPeriod?: string | null;
   seniority?: string | null;
   employmentType?: string | null;
   industry?: string | null;
   postedAt?: string | null;
 }): string[] {
   return [
-    salaryLabel(row.salaryMin, row.salaryMax, row.salaryCurrency),
+    salaryLabel(row.salaryMin, row.salaryMax, row.salaryCurrency, row.salaryPeriod),
     fieldLabel(row.seniority),
     fieldLabel(row.employmentType),
     fieldLabel(row.industry),

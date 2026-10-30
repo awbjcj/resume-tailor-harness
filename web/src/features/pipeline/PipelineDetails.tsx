@@ -10,6 +10,7 @@ type PipelineDetailsRow = {
   salaryMin?: number | null;
   salaryMax?: number | null;
   salaryCurrency?: string | null;
+  salaryPeriod?: string | null;
   seniority?: string | null;
   employmentType?: string | null;
   remotePolicy?: string | null;
@@ -45,6 +46,7 @@ export function PipelineDetails({ row }: { row: PipelineDetailsRow }) {
         row.salaryMin,
         row.salaryMax,
         row.salaryCurrency ?? undefined,
+        row.salaryPeriod,
       ),
       className: "font-medium text-foreground",
     },

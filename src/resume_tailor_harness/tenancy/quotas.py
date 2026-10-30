@@ -178,7 +178,7 @@ def _new_period(
             amount_micros=period.allowance_micros or 0,
             recurring_micros=period.allowance_micros or 0,
             snapshot_json=json.dumps({"unlimited": period.allowance_micros is None}),
-        )
+        ),
     )
     return period
 
@@ -212,8 +212,19 @@ def _ensure_in_session(
         account.anchor_at = now
         period = _new_period(session, account, tier, now)
     subscription = _subscription(session, user_id)
+    renewed = False
     if subscription is not None and subscription.status == "ACTIVE":
+        expiry = _aware(subscription.expires_at)
+        period.ends_at = min(_aware(period.ends_at), expiry)
+        # Materialize every paid cycle before switching tiers, even when the
+        # member did not read quota or make a call during the entire term.
+        while now >= _aware(period.ends_at) and _aware(period.ends_at) < expiry:
+            period.closed_at = period.ends_at
+            period = _new_period(session, account, tier, _aware(period.ends_at))
+            period.ends_at = min(_aware(period.ends_at), expiry)
+            renewed = True
         if now >= _aware(subscription.expires_at):
+            renewed = False
             period.closed_at = subscription.expires_at
             subscription.status = "EXPIRED"
             account.tier_id = "FREE"
@@ -231,9 +242,8 @@ def _ensure_in_session(
                     period_id=period.id,
                     kind="SUBSCRIPTION_EXPIRED",
                     amount_micros=0,
-                )
+                ),
             )
-    renewed = False
     while now >= _aware(period.ends_at):
         period.closed_at = period.ends_at
         next_start = _aware(period.ends_at)
@@ -243,7 +253,10 @@ def _ensure_in_session(
         period.ends_at = min(_aware(period.ends_at), _aware(subscription.expires_at))
     if renewed:
         enqueue_account_email(
-            session, session.get(User, user_id), "quota_renewed", {
+            session,
+            session.get(User, user_id),
+            "quota_renewed",
+            {
                 "Quota tier": tier.name,
                 "Recurring allowance": money(period.allowance_micros),
                 "Period ends (UTC)": period.ends_at.isoformat(),
@@ -416,7 +429,7 @@ def charge_in_session(
             recurring_micros=recurring,
             credit_micros=credit,
             overage_micros=overage,
-        )
+        ),
     )
     return _snapshot(account, period, tier)
 
@@ -439,7 +452,7 @@ def grant_credit(
                 kind="CREDIT_GRANT",
                 amount_micros=amount_micros,
                 credit_micros=amount_micros,
-            )
+            ),
         )
         session.commit()
         return _snapshot(account, period, tier)
@@ -465,7 +478,7 @@ def debit_credit(
                 kind="CREDIT_DEBIT",
                 amount_micros=-amount_micros,
                 credit_micros=amount_micros,
-            )
+            ),
         )
         session.commit()
         return _snapshot(account, period, tier)
@@ -492,7 +505,7 @@ def reset_current_period(
                 kind="RESET",
                 amount_micros=forgiven,
                 credit_micros=refunded,
-            )
+            ),
         )
         session.commit()
         return _snapshot(account, period, tier)
@@ -537,7 +550,7 @@ def change_tier(
                         "after": {"tierId": tier.id},
                     }
                 ),
-            )
+            ),
         )
         session.commit()
         return _snapshot(account, new_period, tier)
@@ -720,7 +733,7 @@ def execute_operation(
                     actor_user_id=actor_user_id,
                     reason=reason.strip(),
                     snapshot_json=json.dumps({"before": before, "after": after}),
-                )
+                ),
             )
         preview.used_at = moment
         session.commit()

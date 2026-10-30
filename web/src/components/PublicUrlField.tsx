@@ -10,8 +10,11 @@ export const MAX_PUBLIC_URL_LENGTH = 8_192;
 
 export function isPublicHttpUrl(value: string): boolean {
   try {
-    const url = new URL(value.trim());
-    return url.protocol === "http:" || url.protocol === "https:";
+    const raw = value.trim();
+    const authority = /^https?:\/\/([^/?#]+)/i.exec(raw)?.[1];
+    if (!authority || authority.includes("@") || /[\s\\]/.test(raw)) return false;
+    const url = new URL(raw);
+    return Boolean(url.hostname) && (url.protocol === "http:" || url.protocol === "https:");
   } catch {
     return false;
   }

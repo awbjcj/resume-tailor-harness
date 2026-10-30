@@ -28,6 +28,35 @@ def test_pull_jobs_passes_source_ids_to_per_entry_build(monkeypatch):
     assert captured["source_ids"] == ["greenhouse:anthropic"]
 
 
+def test_public_board_jobs_are_included_in_refresh_discovery_scope(monkeypatch):
+    from resume_tailor_harness.discovery.scraper.contracts import (
+        Draft,
+        PullReport as ScrapePullReport,
+    )
+    from resume_tailor_harness.discovery.scraper.tables import ScrapeSourceRow
+    from resume_tailor_harness.services import scrape_review
+
+    monkeypatch.setattr(discovery, "load_search_config", lambda path: SearchConfig())
+    monkeypatch.setattr(discovery, "load_connectors_config", lambda path: object())
+    monkeypatch.setattr(discovery, "build_source_connectors", lambda *a, **kw: [])
+    monkeypatch.setattr(discovery, "run_pull", lambda *a, **kw: PullReport())
+    monkeypatch.setattr(
+        scrape_review,
+        "pull_source",
+        lambda *a, **kw: ScrapePullReport(imported=2, changed_raw_job_ids=[41, 42]),
+    )
+    with _session() as session:
+        draft = Draft(source_id="public-board", url="https://example.com/jobs")
+        session.add(
+            ScrapeSourceRow(
+                id="public-board", url=draft.url, payload=draft.model_dump_json()
+            )
+        )
+        session.commit()
+        report = discovery.pull_jobs(session)
+        assert report.changed_raw_job_ids == [41, 42]
+
+
 def test_pull_jobs_forwards_skip_known(monkeypatch):
     captured = {}
 

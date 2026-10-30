@@ -6,7 +6,10 @@ from resume_tailor_harness.discovery.connectors.dates import parse_iso_datetime
 from resume_tailor_harness.services.discovery import _save_with_active_job_limit
 from resume_tailor_harness.discovery.scraper.contracts import Observation
 from resume_tailor_harness.discovery.scraper.store import ScrapeStore
-from resume_tailor_harness.discovery.scraper.tables import ScrapeObservationRow
+from resume_tailor_harness.discovery.scraper.tables import (
+    ScrapeObservationRow,
+    ScrapeOverrideRow,
+)
 from resume_tailor_harness.models.job import EmploymentType, JobCriteria, SalaryRange
 from resume_tailor_harness.tracking.tables import Job
 
@@ -70,32 +73,74 @@ def project_source_facts(
         )
         .order_by(col(ScrapeObservationRow.observed_at).desc())
     ).first()
+    fields = None
     if row is None:
-        return criteria
+        row = session.exec(
+            select(ScrapeObservationRow)
+            .where(col(ScrapeObservationRow.job_id) == job_id)
+            .order_by(col(ScrapeObservationRow.observed_at).desc())
+        ).first()
+        if row is None:
+            return criteria
+        overrides = session.exec(
+            select(ScrapeOverrideRow).where(
+                ScrapeOverrideRow.job_key == row.job_key,
+                col(ScrapeOverrideRow.removed).is_(False),
+            )
+        ).all()
+        fields = {override.field for override in overrides}
+        if not fields:
+            return criteria
     observation = Observation.model_validate_json(row.payload)
     facts = ScrapeStore(session).effective_facts(observation)
     result = criteria.model_copy(deep=True)
-    result.remote_policy = facts.remote_policy
-    result.location = "; ".join(facts.locations) if facts.locations else None
-    result.employment_type = (
-        EmploymentType(facts.employment_type)
-        if facts.employment_type in {item.value for item in EmploymentType}
-        else None
-    )
-    result.salary_range = None
-    if facts.salary_bands and len(facts.salary_bands) == 1:
-        salary = facts.salary_bands[0]
-        if salary.currency and salary.period:
-            result.salary_range = SalaryRange(
-                minimum=float(salary.minimum) if salary.minimum is not None else None,
-                maximum=float(salary.maximum) if salary.maximum is not None else None,
-                currency=salary.currency,
-                period=salary.period.lower(),
-            )
+    if fields is None or "remote_policy" in fields:
+        result.remote_policy = facts.remote_policy
+    if fields is None or "locations" in fields:
+        result.location = "; ".join(facts.locations) if facts.locations else None
+    if fields is None or "employment_type" in fields:
+        token = (
+            (facts.employment_type or "")
+            .casefold()
+            .replace("-", "")
+            .replace("_", "")
+            .replace(" ", "")
+        )
+        result.employment_type = {
+            "fulltime": EmploymentType.full_time,
+            "parttime": EmploymentType.part_time,
+            "contract": EmploymentType.contract,
+            "contractor": EmploymentType.contract,
+            "intern": EmploymentType.internship,
+            "internship": EmploymentType.internship,
+        }.get(token)
+    if fields is None or "salary_bands" in fields:
+        result.salary_range = None
+        if facts.salary_bands and len(facts.salary_bands) == 1:
+            salary = facts.salary_bands[0]
+            if salary.currency and salary.period:
+                result.salary_range = SalaryRange(
+                    minimum=float(salary.minimum)
+                    if salary.minimum is not None
+                    else None,
+                    maximum=float(salary.maximum)
+                    if salary.maximum is not None
+                    else None,
+                    currency=salary.currency,
+                    period=salary.period.lower(),
+                )
+    source_facts = facts.model_dump(mode="json")
+    if fields is not None:
+        source_facts = {
+            key: value
+            for key, value in source_facts.items()
+            if key in fields or key == "source_url"
+        }
+
     return JobCriteria.model_validate(
         {
             **result.model_dump(mode="json"),
-            "source_facts": facts.model_dump(mode="json"),
+            "source_facts": source_facts,
         }
     )
 

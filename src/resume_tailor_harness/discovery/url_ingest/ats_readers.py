@@ -351,7 +351,9 @@ def _read_ashby(target: AtsTarget, url: str, html: str) -> ExtractedJob | None:
         )
         if item is None:
             return None
-        return _extracted_from_row(parse_ashby({"jobs": [item]}, target.token)[0])
+        return _extracted_from_row(
+            parse_ashby({"jobs": [item]}, target.token)[0]
+        ).model_copy(update={"company": None})
 
     return _prefer(_api(api), _from_json_ld(html, url))
 

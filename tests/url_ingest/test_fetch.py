@@ -9,6 +9,34 @@ def _public(text, url):
     return PublicTextResponse(final_url=url, text=text, content_type="text/html")
 
 
+def test_throttle_blocks_public_origin_instead_of_pinned_ip(monkeypatch):
+    from types import SimpleNamespace
+
+    blocked = []
+    public_url = "https://board.example/jobs/123"
+    request = httpx.Request(
+        "GET", "https://93.184.216.34/jobs/123", extensions={"public_url": public_url}
+    )
+    response = httpx.Response(429, request=request)
+
+    def unavailable(*args, **kwargs):
+        raise httpx.HTTPStatusError("throttled", request=request, response=response)
+
+    def block(url, reason, **kwargs):
+        blocked.append((url, kwargs.get("origin_only", False)))
+        return ValueError("paused")
+
+    monkeypatch.setattr(fetch, "fetch_public_text", unavailable)
+    monkeypatch.setattr(
+        fetch,
+        "default_store",
+        lambda: SimpleNamespace(check=lambda url: None, block=block),
+    )
+    with pytest.raises(ValueError, match="paused"):
+        fetch.fetch_static("https://tracking.example/job")
+    assert blocked == [(public_url, True), ("https://tracking.example/job", False)]
+
+
 def _patch_browser(monkeypatch, marker="<html>browser</html>"):
     calls = {}
     monkeypatch.setattr(fetch, "validate_public_url", lambda _url: None)

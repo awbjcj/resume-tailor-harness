@@ -53,6 +53,7 @@ class ShortlistItem(CamelModel):
     salary_min: float | None
     salary_max: float | None
     salary_currency: str | None
+    salary_period: str | None = None
     remote_policy: str | None
     seniority: str | None
     employment_type: str | None
@@ -83,6 +84,7 @@ class PipelineItem(CamelModel):
     salary_min: float | None
     salary_max: float | None
     salary_currency: str | None = None
+    salary_period: str | None = None
     remote_policy: str | None
     seniority: str | None
     sponsorship_signal: str | None = None
@@ -388,6 +390,7 @@ class JobDetail(CamelModel):
     salary_min: float | None = None
     salary_max: float | None = None
     salary_currency: str | None = None
+    salary_period: str | None = None
     remote_policy: str | None = None
     seniority: str | None = None
     employment_type: str | None = None

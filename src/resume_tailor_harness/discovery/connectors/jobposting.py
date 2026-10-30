@@ -44,7 +44,26 @@ def _identity(url: str) -> str:
         (key, value)
         for key, value in parse_qsl(parsed.query, keep_blank_values=True)
         if not key.lower().startswith("utm_")
-        and key.lower() not in {"trk", "trackingid", "refid", "gclid", "fbclid"}
+        and key.lower()
+        not in {
+            "trk",
+            "trackingid",
+            "refid",
+            "gclid",
+            "fbclid",
+            "source",
+            "src",
+            "sourceid",
+            "source_id",
+            "ref",
+            "referrer",
+            "referral",
+            "referralid",
+            "campaign",
+            "campaignid",
+            "gh_src",
+            "lever-source",
+        }
     )
     return urlunsplit(
         (

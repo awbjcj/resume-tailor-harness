@@ -14,7 +14,11 @@ from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.taxonomy.company_size import snap as snap_size
 from resume_tailor_harness.taxonomy.industries import normalize_company
 from resume_tailor_harness.taxonomy.location import location_instances_from_criteria
-from resume_tailor_harness.taxonomy.skills import canonical_skill, load_aliases, split_skills
+from resume_tailor_harness.taxonomy.skills import (
+    canonical_skill,
+    load_aliases,
+    split_skills,
+)
 from resume_tailor_harness.tenancy.paths import SKILL_ALIASES_PATH
 from resume_tailor_harness.tracking.match_gap import profile_skill_tokens
 from resume_tailor_harness.tracking.repository import (
@@ -72,6 +76,7 @@ class ShortlistRow:
     company_size: str | None
     posted_at: datetime | None
     skills: list[SkillTag]
+    salary_period: str | None = None
     locations: list[dict[str, Any]] = field(default_factory=list)
     location_country: str | None = None
     location_region: str | None = None
@@ -156,6 +161,7 @@ class PipelineRow:
     location_city: str | None
     reject_reason: str | None
     reject_category: str | None
+    salary_period: str | None = None
     has_progress: bool = False
     needs_attention: bool = False
     regressed: bool = False
@@ -246,6 +252,7 @@ def _shortlist_row(
         salary_min=salary.get("minimum"),
         salary_max=salary.get("maximum"),
         salary_currency=salary.get("currency"),
+        salary_period=salary.get("period"),
         remote_policy=criteria.get("remote_policy"),
         seniority=criteria.get("seniority"),
         employment_type=criteria.get("employment_type"),
@@ -415,6 +422,7 @@ def project_pipeline_jobs(
                 salary_min=salary.get("minimum"),
                 salary_max=salary.get("maximum"),
                 salary_currency=salary.get("currency"),
+                salary_period=salary.get("period"),
                 remote_policy=criteria.get("remote_policy"),
                 seniority=criteria.get("seniority"),
                 sponsorship_signal=criteria.get("sponsorship_signal"),

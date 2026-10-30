@@ -186,6 +186,7 @@ def test_ashby_prefers_the_board_api_over_json_ld_for_its_sidebar_facts(monkeypa
     assert "Workplace Type: Hybrid" in extracted.jd_text
     assert "Employment Type: Full time" in extracted.jd_text
     assert "Department: Engineering" in extracted.jd_text
+    assert extracted.company == "Acme"
 
 
 def test_ashby_falls_back_to_board_api_and_matches_by_id(monkeypatch):

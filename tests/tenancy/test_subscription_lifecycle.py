@@ -140,6 +140,41 @@ def test_revoke_then_renew_starts_a_new_term(engine):
     )
 
 
+def test_dormant_subscription_materializes_each_paid_cycle_before_expiring(engine):
+    from resume_tailor_harness.tenancy.system_db import QuotaPeriod
+
+    apply_subscription(
+        engine,
+        USER,
+        actor_user_id="operator",
+        action="ACTIVATE",
+        tier_id="SUBSCRIBER",
+        cycles=3,
+        reason="paid term",
+        idempotency_key="three-cycles",
+        now=NOW,
+    )
+    snapshot = quota_snapshot(engine, USER, now=datetime(2026, 12, 1, tzinfo=UTC))
+    assert snapshot.tier_id == "FREE" and snapshot.subscription_status == "EXPIRED"
+    for _ in range(2):
+        quota_snapshot(engine, USER, now=datetime(2026, 12, 1, tzinfo=UTC))
+    with Session(engine) as session:
+        periods = session.scalars(
+            select(QuotaPeriod)
+            .where(QuotaPeriod.user_id == USER, QuotaPeriod.tier_id == "SUBSCRIBER")
+            .order_by(QuotaPeriod.starts_at)
+        ).all()
+        assert len(periods) == 3
+        grants = session.scalars(
+            select(QuotaLedgerEntry).where(
+                QuotaLedgerEntry.period_id.in_([p.id for p in periods]),
+                QuotaLedgerEntry.kind == "ALLOWANCE_GRANT",
+            )
+        ).all()
+        assert len(grants) == 3
+        assert periods[-1].closed_at == datetime(2026, 11, 30, 12)
+
+
 def test_gateway_calls_consume_allowance_then_credit_and_exhaust(engine, tmp_path):
     ctx = context(
         tmp_path,

@@ -21,4 +21,23 @@ def test_managed_env_omits_empty_and_maps_keys():
     assert env["ANTHROPIC_API_KEY"] == "sk-test"
     assert "GITHUB_TOKEN" not in env  # empty → omitted
     assert env["DB_URL"] == "sqlite:///data/resume_tailor_harness.db"
-    assert "OPENAI_API_KEY" not in env  # never managed
+    assert "OPENAI_API_KEY" not in env  # empty, so an existing key is preserved
+
+
+def test_setup_persists_keys_for_each_selected_provider():
+    state = WizardState(
+        anthropic_api_key="anthropic-test",
+        openai_api_key="openai-test",
+        gemini_api_key="gemini-test",
+        deepseek_api_key="deepseek-test",
+    )
+    assert {
+        key: value
+        for key, value in state.managed_env().items()
+        if key.endswith("API_KEY")
+    } == {
+        "ANTHROPIC_API_KEY": "anthropic-test",
+        "OPENAI_API_KEY": "openai-test",
+        "GEMINI_API_KEY": "gemini-test",
+        "DEEPSEEK_API_KEY": "deepseek-test",
+    }

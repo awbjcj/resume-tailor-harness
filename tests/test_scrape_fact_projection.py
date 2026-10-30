@@ -1,3 +1,4 @@
+import pytest
 from sqlmodel import Session
 
 from resume_tailor_harness.db import init_db, make_engine
@@ -154,3 +155,127 @@ def test_explicit_override_projects_latest_source_facts_for_a_progressed_job():
         assert criteria.remote_policy == "remote"
         assert job.status == JobStatus.tailored.value
         assert job.jd_text == "Build reliable software"
+
+
+def test_override_on_first_observation_of_progressed_canonical_job_is_narrow():
+    from resume_tailor_harness.services.scrape_corrections import set_job_override
+    from resume_tailor_harness.tracking.tables import Job
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        job = Job(
+            source="manual",
+            url="https://example.com/jobs/1",
+            title="Engineer",
+            jd_text="Original approved description",
+            status="tailored",
+        )
+        session.add(job)
+        session.commit()
+        assert job.id is not None and job.url is not None
+        observation = Observation(
+            source_id="board",
+            revision=1,
+            job_key="one",
+            accepted=True,
+            facts=JobFacts(
+                source_url=job.url,
+                title="Engineer",
+                jd_text="Unapproved replacement",
+                remote_policy="hybrid",
+                employment_type="contract",
+            ),
+        )
+        assert ingest_observation(session, observation, ScrapeStore(session)) == job.id
+        set_job_override(
+            session,
+            job.id,
+            "remote_policy",
+            OverridePatch(field="remote_policy", value="remote", expected_revision=0),
+        )
+        original = JobCriteria(location="Boston")
+        corrected = project_source_facts(session, job.id, original)
+        assert corrected.remote_policy == "remote"
+        assert corrected.location == "Boston" and corrected.employment_type is None
+        assert (
+            job.jd_text == "Original approved description" and job.status == "tailored"
+        )
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("FULL_TIME", "full_time"),
+        ("Full-time", "full_time"),
+        ("PartTime", "part_time"),
+        ("Internship", "internship"),
+        ("Temporary", None),
+    ],
+)
+def test_source_employment_type_is_normalized(raw, expected):
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        observation = Observation(
+            source_id="board",
+            revision=1,
+            job_key="one",
+            accepted=True,
+            facts=JobFacts(
+                source_url="https://example.com/1",
+                title="Engineer",
+                jd_text="Build systems",
+                employment_type=raw,
+            ),
+        )
+        job_id = ingest_observation(session, observation, ScrapeStore(session))
+        assert job_id is not None
+        assert (
+            project_source_facts(session, job_id, JobCriteria()).employment_type
+            == expected
+        )
+
+
+def test_clearing_override_removes_obsolete_conflict_from_observation_view():
+    from resume_tailor_harness.services.scrape_corrections import (
+        set_job_override,
+        clear_job_override,
+    )
+    from resume_tailor_harness.services.scrape_queries import job_observations
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        store = ScrapeStore(session)
+        first = Observation(
+            source_id="board",
+            revision=1,
+            job_key="one",
+            accepted=True,
+            facts=JobFacts(
+                source_url="https://example.com/1",
+                title="Engineer",
+                jd_text="Build systems",
+                remote_policy="onsite",
+            ),
+        )
+        job_id = ingest_observation(session, first, store)
+        assert job_id is not None
+        revision = set_job_override(
+            session,
+            job_id,
+            "remote_policy",
+            OverridePatch(field="remote_policy", value="remote", expected_revision=0),
+        )
+        newer = first.model_copy(deep=True, update={"id": "newer"})
+        newer.facts.remote_policy = "hybrid"
+        store.save_observation(newer)
+        assert any(
+            issue.kind == "conflict"
+            for issue in job_observations(session, job_id)[-1].issues
+        )
+        clear_job_override(session, job_id, "remote_policy", revision)
+        view = job_observations(session, job_id)[-1]
+        assert view.effective_facts.remote_policy == "hybrid"
+        assert not any(issue.kind == "conflict" for issue in view.issues)

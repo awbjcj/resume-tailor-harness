@@ -142,8 +142,9 @@ REVIEWER_INSTRUCTIONS: dict[str, list[str]] = {
     "fact-check": [
         "Compare every factual resume claim with SUPPORTING FACTS, which is the complete evidence set "
         "available for the cited provenance ids.",
-        "Contact, education, and languages are carried verbatim by the application and do not use the "
-        "provenance evidence map. Do not flag them solely because SUPPORTING FACTS omits them.",
+        "Education and languages must match their supporting profile records verbatim; their record "
+        "ids are included in SUPPORTING FACTS and checked by the deterministic provenance gate. "
+        "Contact has no provenance id; do not flag it solely because SUPPORTING FACTS omits it.",
         "A claim fails when its provenance id is absent, points to the wrong kind of fact, or the text "
         "adds unsupported scope, ownership, seniority, technology, metric, date, or causality.",
         "Create one blocking issue per distinct unsupported or exaggerated claim, identify its location, "

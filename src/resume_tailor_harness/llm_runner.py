@@ -1887,7 +1887,9 @@ def _compatible_claude_class():
     from agno.models.anthropic import Claude
 
     class CompatibleClaude(StreamLifecycle, Claude):
-        def _parse_provider_response_delta(self, response, response_format=None, **kwargs):
+        def _parse_provider_response_delta(
+            self, response, response_format=None, **kwargs
+        ):
             return anthropic_delta(
                 response,
                 super()._parse_provider_response_delta(
@@ -1939,8 +1941,8 @@ def _anthropic_thinking(
     folded = model.casefold()
     if folded.startswith("claude-sonnet-5-5"):
         # Sonnet 5.5 rejects `disabled`. `between_tools` removes up-front
-        # thinking at the default high effort, but can still think between tools.
-        return {"type": "between_tools"}, None
+        # thinking; low effort bounds the thinking still possible between tools.
+        return {"type": "between_tools"}, {"effort": "low"}
     if folded.startswith(_ANTHROPIC_ALWAYS_THINKING):
         # Opus 5.5, Fable, and Mythos reject disabled thinking.
         return None, None

@@ -181,11 +181,46 @@ def reject_handler(request: httpx.Request) -> httpx.Response:
     )
 
 
-def test_resend_key_alone_configures_mail() -> None:
-    """An HTTPS key is a complete mail setup; no SMTP host is involved."""
+def test_resend_key_and_sender_configure_mail() -> None:
+    """The HTTPS backend needs a key and sender, without an SMTP host."""
     settings = make_resend_settings()
     assert mail_configured(settings) is True
     assert isinstance(build_mailer(settings), ResendMailer)
+
+
+@pytest.mark.parametrize("sender", ["", "  "])
+def test_backend_without_sender_is_not_ready(sender) -> None:
+    assert not mail_configured(make_resend_settings(mail_from=sender))
+    assert not mail_configured(
+        make_settings(mail_from=sender, smtp_from=sender, smtp_username=sender)
+    )
+
+
+@pytest.mark.parametrize(
+    "status,retryable", [(400, False), (403, False), (429, True), (503, True)]
+)
+def test_resend_retries_only_transient_rejections(status, retryable) -> None:
+    mailer = ResendMailer(
+        make_resend_settings(),
+        client=resend_client(lambda request: httpx.Response(status)),
+    )
+    with pytest.raises(MailDeliveryError) as caught:
+        mailer.send(to="user@example.com", subject="Notice", body="message")
+    assert caught.value.retryable is retryable
+
+
+@pytest.mark.parametrize("code,retryable", [(450, True), (535, False)])
+def test_smtp_retries_only_transient_rejections(monkeypatch, code, retryable) -> None:
+    monkeypatch.setattr(
+        smtplib,
+        "SMTP",
+        FakeSMTP(fail_with=smtplib.SMTPResponseException(code, b"rejected")),
+    )
+    with pytest.raises(MailDeliveryError) as caught:
+        SmtpMailer(make_settings()).send(
+            to="user@example.com", subject="Notice", body="message"
+        )
+    assert caught.value.retryable is retryable
 
 
 def test_resend_wins_when_both_backends_are_configured() -> None:

@@ -23,7 +23,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 export function JobMeta({ job }: { job: JobDetail }) {
-  const salary = salaryLabel(job.salaryMin, job.salaryMax, job.salaryCurrency);
+  const salary = salaryLabel(job.salaryMin, job.salaryMax, job.salaryCurrency, job.salaryPeriod);
   const posted = recency(job.postedAt);
   const location = locationLabel(job);
 

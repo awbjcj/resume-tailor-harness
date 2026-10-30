@@ -30,7 +30,7 @@ def test_parse_greenhouse_maps_and_decodes_content():
     assert "payment" in first.jd_text and "<" not in first.jd_text
 
 
-def test_parse_greenhouse_sets_posted_at_from_updated_at():
+def test_parse_greenhouse_does_not_treat_update_time_as_publication():
     payload = {
         "jobs": [
             {
@@ -43,7 +43,11 @@ def test_parse_greenhouse_sets_posted_at_from_updated_at():
         ]
     }
     jobs = parse_greenhouse(payload, "Acme")
-    assert jobs[0].posted_at == datetime(2026, 6, 1, tzinfo=timezone.utc)
+    assert jobs[0].posted_at is None
+    payload["jobs"][0]["first_published"] = "2026-05-01T00:00:00Z"
+    assert parse_greenhouse(payload, "Acme")[0].posted_at == datetime(
+        2026, 5, 1, tzinfo=timezone.utc
+    )
 
 
 def test_parse_greenhouse_posted_at_none_when_absent():

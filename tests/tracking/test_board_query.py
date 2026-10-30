@@ -118,7 +118,17 @@ def _aware(value: datetime) -> datetime:
 
 
 def _salary(row: Any) -> float:
-    return getattr(row, "salary_max", None) or getattr(row, "salary_min", None) or 0
+    from resume_tailor_harness.salary import annual_usd_amount
+
+    amount = getattr(row, "salary_max", None) or getattr(row, "salary_min", None)
+    return (
+        annual_usd_amount(
+            amount,
+            getattr(row, "salary_currency", None),
+            getattr(row, "salary_period", None),
+        )
+        or 0
+    )
 
 
 def _passes(row: Any, board_filter: BoardFilter, exclude: str | None = None) -> bool:
@@ -224,7 +234,7 @@ def _legacy_ids(session, board, board_filter, facts_path):
             reverse=True,
         )
     elif board_filter.sort == "salary":
-        ordered = sorted(rows, key=_salary, reverse=True)
+        ordered = sorted(rows, key=lambda row: (-_salary(row), row.job_id))
     elif board_filter.sort == "recency":
         floor = datetime.min.replace(tzinfo=timezone.utc)
         ordered = sorted(

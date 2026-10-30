@@ -67,7 +67,7 @@ def fetch_static(
                 else 3600
             )
             cooldowns.block(
-                str(exc.request.url),
+                str(exc.request.extensions.get("public_url", url)),
                 f"HTTP {status}",
                 seconds=seconds,
                 origin_only=status in {429, 503},
