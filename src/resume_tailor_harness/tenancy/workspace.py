@@ -18,6 +18,7 @@ _PLATFORM_FIELDS = frozenset(
         "cors_origins",
         "db_url",
         "session_secret",
+        "application_vault_keys",
         "h1b_mcp_enabled",
         "h1b_mcp_transport",
         "h1b_mcp_command",

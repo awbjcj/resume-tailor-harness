@@ -1,5 +1,9 @@
 # Agent application workflow
 
+Employer registration and repeat sign-in use the [password manager](application-password-manager.md)
+and the SDK's trusted host password-field adapter. Saved credentials never enter
+the application context or reusable answer records.
+
 The existing personal access token authenticates Codex, Claude Code, or another
 agent through the standalone Python SDK or CLI. Browser/computer automation runs
 in that agent's environment. The server supplies data and persists confirmed

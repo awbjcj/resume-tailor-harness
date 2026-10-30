@@ -92,7 +92,9 @@ def install_error_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(RequestValidationError)
-    async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:
+    async def _validation(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
         return JSONResponse(
             status_code=422,
             # Validation details can contain submitted personal answers. The
@@ -101,7 +103,10 @@ def install_error_handlers(app: FastAPI) -> None:
             content=_envelope(
                 "VALIDATION_ERROR",
                 "Request validation failed",
-                _validation_details(exc),
+                # Pydantic errors include raw input (including rejected secrets).
+                None
+                if "/application-account" in request.url.path
+                else _validation_details(exc),
             ),
         )
 

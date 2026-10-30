@@ -72,6 +72,8 @@ class Settings(BaseSettings):
     auth_username: str = ""
     auth_password_hash: str = ""
     session_secret: str = ""
+    # Comma-separated Fernet keys, newest first. Kept outside workspace exports.
+    application_vault_keys: str = Field(default="", repr=False)
     secure_cookies: bool = False
     allowed_hosts: str = ""
     disable_api_docs: bool = False

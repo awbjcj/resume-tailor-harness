@@ -115,6 +115,7 @@ route's endpoint.
 | `AUTH_USERNAME` | empty | Bootstrap administrator username in hosted mode. |
 | `AUTH_PASSWORD_HASH` | empty | Bootstrap administrator password hash produced by `resume-tailor-harness hash-password`. |
 | `SESSION_SECRET` | empty | Secret used to sign hosted sessions; use a long random value. |
+| `APPLICATION_VAULT_KEYS` | empty | Dedicated Fernet keys for employer passwords, comma-separated newest first; deployment-owned. Empty disables the password manager. See [setup and rotation](application-password-manager.md). |
 | `AUTH_EMAIL` | empty | Optional verified email assigned to the bootstrap administrator. |
 | `APP_BASE_URL` | empty | Canonical public origin used for OAuth callbacks and email links. Use HTTPS in production. |
 | `ALLOWED_HOSTS` | empty | Comma-separated `Host` header allowlist. |
