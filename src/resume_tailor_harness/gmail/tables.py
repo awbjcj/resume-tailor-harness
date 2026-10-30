@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, cast
 
 from sqlalchemy import JSON, Column, Index
+from sqlalchemy.engine import Engine
 from sqlmodel import Field, SQLModel
 
 from resume_tailor_harness.tracking.tables import utcnow
@@ -23,6 +24,7 @@ class GmailReceipt(SQLModel, table=True):
         Index(
             "ix_gmail_receipt_application", "account", "application_id", "internal_date"
         ),
+        Index("ix_gmail_receipt_global_application", "application_id", "internal_date"),
     )
 
     account: str = Field(primary_key=True)
@@ -39,3 +41,12 @@ class GmailReceipt(SQLModel, table=True):
     classification_version: str = ""
     outcome: str = "unmatched"
     attempted_at: datetime = Field(default_factory=utcnow)
+
+
+def ensure_cross_account_index(engine: Engine) -> None:
+    """create_all does not add indexes to existing tables on workspace upgrades."""
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            "CREATE INDEX IF NOT EXISTS ix_gmail_receipt_global_application "
+            "ON gmail_receipts (application_id, internal_date)"
+        )

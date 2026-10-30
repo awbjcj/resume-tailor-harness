@@ -2586,6 +2586,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mailboxes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Mailboxes */
+        get: operations["list_mailboxes_api_mailboxes_get"];
+        put?: never;
+        /** Connect Mailbox */
+        post: operations["connect_mailbox_api_mailboxes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mailboxes/microsoft/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Microsoft Connect */
+        get: operations["microsoft_connect_api_mailboxes_microsoft_connect_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mailboxes/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect Mailbox */
+        delete: operations["disconnect_mailbox_api_mailboxes__account_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mailboxes/{account_id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync Mailbox */
+        post: operations["sync_mailbox_api_mailboxes__account_id__sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/match-gap": {
         parameters: {
             query?: never;
@@ -8301,6 +8370,126 @@ export interface components {
             identifier: string;
             /** Password */
             password: string;
+        };
+        /** MailProviderOut */
+        MailProviderOut: {
+            /**
+             * Auth
+             * @enum {string}
+             */
+            auth: "oauth" | "password";
+            /**
+             * Available
+             * @default true
+             */
+            available: boolean;
+            /**
+             * Helpurl
+             * @default
+             */
+            helpUrl: string;
+            /** Id */
+            id: string;
+            /**
+             * Imaphost
+             * @default
+             */
+            imapHost: string;
+            /** Name */
+            name: string;
+            /**
+             * Smtphost
+             * @default
+             */
+            smtpHost: string;
+            /**
+             * Smtpport
+             * @default 465
+             */
+            smtpPort: number;
+            /**
+             * Smtpsecurity
+             * @default tls
+             * @enum {string}
+             */
+            smtpSecurity: "tls" | "starttls";
+        };
+        /** MailServer */
+        MailServer: {
+            /** Host */
+            host: string;
+            /**
+             * Password
+             * Format: password
+             */
+            password: string;
+            /** Port */
+            port: number;
+            /**
+             * Security
+             * @default tls
+             * @enum {string}
+             */
+            security: "tls" | "starttls";
+            /** Username */
+            username: string;
+        };
+        /** MailboxAuthOut */
+        MailboxAuthOut: {
+            /** Authurl */
+            authUrl: string;
+        };
+        /** MailboxConnectIn */
+        MailboxConnectIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /**
+             * Folder
+             * @default INBOX
+             */
+            folder: string;
+            imap: components["schemas"]["MailServer"];
+            /**
+             * Provider
+             * @default custom
+             * @enum {string}
+             */
+            provider: "yahoo" | "icloud" | "fastmail" | "custom";
+            smtp?: components["schemas"]["MailServer"] | null;
+        };
+        /** MailboxOut */
+        MailboxOut: {
+            /** Email */
+            email: string;
+            /**
+             * Folder
+             * @default INBOX
+             */
+            folder: string;
+            /** Id */
+            id: string;
+            /**
+             * Needsreconnect
+             * @default false
+             */
+            needsReconnect: boolean;
+            /** Provider */
+            provider: string;
+            /**
+             * Smtpconfigured
+             * @default false
+             */
+            smtpConfigured: boolean;
+        };
+        /** MailboxesOut */
+        MailboxesOut: {
+            /** Accounts */
+            accounts: components["schemas"]["MailboxOut"][];
+            /** Providers */
+            providers: components["schemas"]["MailProviderOut"][];
         };
         /** MailingAddress */
         MailingAddress: {
@@ -18541,6 +18730,302 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_mailboxes_api_mailboxes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailboxesOut"];
+                };
+            };
+            /** @description Mailbox operation conflict or reconnection required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid connection settings or credentials */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid email provider response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Email provider or storage unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    connect_mailbox_api_mailboxes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MailboxConnectIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailboxOut"];
+                };
+            };
+            /** @description Mailbox operation conflict or reconnection required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid connection settings or credentials */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid email provider response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Email provider or storage unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    microsoft_connect_api_mailboxes_microsoft_connect_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MailboxAuthOut"];
+                };
+            };
+            /** @description Mailbox operation conflict or reconnection required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid connection settings or credentials */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid email provider response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Email provider or storage unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    disconnect_mailbox_api_mailboxes__account_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Mailbox operation conflict or reconnection required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid connection settings or credentials */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid email provider response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Email provider or storage unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    sync_mailbox_api_mailboxes__account_id__sync_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Mailbox operation conflict or reconnection required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid connection settings or credentials */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Invalid email provider response */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Email provider or storage unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };

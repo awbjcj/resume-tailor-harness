@@ -53,6 +53,7 @@ from resume_tailor_harness.api.routers import email_drafts as email_drafts_route
 from resume_tailor_harness.api.routers import email_notifications as email_notifications_router
 from resume_tailor_harness.api.routers import errors as errors_router
 from resume_tailor_harness.api.routers import gmail as gmail_router
+from resume_tailor_harness.api.routers import mailboxes as mailboxes_router
 from resume_tailor_harness.api.routers import hiring_contacts as hiring_contacts_router
 from resume_tailor_harness.api.routers import interview as interview_router
 from resume_tailor_harness.api.routers import jobs as jobs_router
@@ -264,6 +265,7 @@ def create_app(
     app.state.mailer = build_mailer(resolved_settings)
     app.state.breach_checker = HibpBreachChecker()
     app.state.gmail_oauth_states = {}
+    app.state.mailbox_oauth_states = {}
     # Falls back to a path under data_dir (not the separate RUNS_ROOT constant) so
     # that overriding data_dir — as most tests do to avoid touching the real repo —
     # also isolates the run manager; otherwise runs launched with no active
@@ -471,6 +473,8 @@ def create_app(
     )
     app.include_router(gmail_router.router, prefix="/api", dependencies=guarded)
     app.include_router(gmail_router.callback_router, prefix="/api")
+    app.include_router(mailboxes_router.router, prefix="/api", dependencies=guarded)
+    app.include_router(mailboxes_router.callback_router, prefix="/api")
     app.include_router(email_drafts_router.router, prefix="/api", dependencies=guarded)
     app.include_router(config_router.router, prefix="/api", dependencies=guarded)
     app.include_router(settings_router.router, prefix="/api", dependencies=guarded)

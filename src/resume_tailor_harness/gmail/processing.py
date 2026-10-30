@@ -33,6 +33,8 @@ class MessageProcessor:
         account: str,
         classifier: SyncClassifier,
         checkpoint,
+        *,
+        source: str = "gmail",
     ):
         self.service, self.session, self.account, self.classifier = (
             service,
@@ -41,9 +43,16 @@ class MessageProcessor:
             classifier,
         )
         self.checkpoint = checkpoint
-        self.legacy_ids = (
-            len(session.exec(select(GmailSyncState.account).limit(2)).all()) == 1
-        )
+        self.source = source
+        gmail_accounts = session.exec(
+            select(GmailSyncState.account)
+            .where(~col(GmailSyncState.account).startswith("mailbox-"))
+            .limit(2)
+        ).all()
+        # Legacy notices use raw Gmail IDs. Additional IMAP/Graph accounts do
+        # not make that identity ambiguous; a second Gmail identity does.
+        self.legacy_account = gmail_accounts[0] if len(gmail_accounts) == 1 else None
+        self.legacy_ids = source == "gmail" and self.legacy_account == account
         pairs = application_job_pairs(session)
         self.by_job = {job.id: app for app, job in pairs}
         self.apps = {app.id: app for app, _ in pairs}
@@ -255,6 +264,47 @@ class MessageProcessor:
             else:
                 receipt.classification_version = classification_key
 
+    def process_emails(self, emails: list[EmailMessage]) -> None:
+        """Analyze normalized mail from another transport using the same rules."""
+        if not emails:
+            return
+        # Delta pages may repeat IDs; keep the last version and one receipt.
+        unique = {email.message_id: email for email in emails if email.message_id}
+        existing = {
+            row.message_id: row
+            for row in self.session.exec(
+                select(GmailReceipt).where(
+                    GmailReceipt.account == self.account,
+                    col(GmailReceipt.message_id).in_(unique),
+                )
+            ).all()
+        }
+        affected: set[int] = set()
+        for mid, email in unique.items():
+            self.checkpoint()
+            if not mid:
+                continue
+            receipt = existing.get(mid)
+            if (
+                receipt is not None
+                and receipt.revision == self.revision
+                and receipt.email_json == asdict(email)
+            ):
+                self.stats["cached"] += 1
+                continue
+            receipt = receipt or GmailReceipt(
+                account=self.account, message_id=mid
+            )
+            if receipt.application_id is not None:
+                affected.add(receipt.application_id)
+            self._record(receipt, email)
+            if receipt.application_id is not None:
+                affected.add(receipt.application_id)
+            self.session.add(receipt)
+            self.stats["processed"] += 1
+        self.session.flush()
+        self._propose_latest(affected)
+
     def _classification_key(self, email: EmailMessage) -> str:
         # Exclude the application catalog: it affects association, not the email's
         # decision. Include actual classifier input, rules version and AI mode.
@@ -290,19 +340,20 @@ class MessageProcessor:
             return
         ranked = (
             select(
+                GmailReceipt.account,
                 GmailReceipt.message_id,
                 func.row_number()
                 .over(
                     partition_by=col(GmailReceipt.application_id),
                     order_by=(
                         col(GmailReceipt.internal_date).desc(),
+                        col(GmailReceipt.attempted_at).desc(),
                         col(GmailReceipt.message_id).desc(),
                     ),
                 )
                 .label("position"),
             )
             .where(
-                GmailReceipt.account == self.account,
                 col(GmailReceipt.application_id).in_(affected),
                 GmailReceipt.label != "none",
             )
@@ -312,17 +363,21 @@ class MessageProcessor:
             select(GmailReceipt)
             .join(
                 ranked,
-                col(GmailReceipt.message_id) == ranked.c.message_id,
+                (col(GmailReceipt.message_id) == ranked.c.message_id)
+                & (col(GmailReceipt.account) == ranked.c.account),
             )
-            .where(GmailReceipt.account == self.account, ranked.c.position == 1)
+            .where(ranked.c.position == 1)
         ).all()
         latest: dict[int, GmailReceipt] = {}
         for row in rows:
             if row.application_id is not None:
                 latest.setdefault(row.application_id, row)
-        latest_ids = [self._notice_key(row.message_id) for row in latest.values()]
-        if self.legacy_ids:
-            latest_ids += [row.message_id for row in latest.values()]
+        latest_ids = [self._receipt_notice_key(row) for row in latest.values()]
+        latest_ids += [
+            row.message_id
+            for row in latest.values()
+            if row.account == self.legacy_account
+        ]
         notices = self.session.exec(
             select(Notification).where(
                 col(Notification.application_id).in_(affected),
@@ -337,15 +392,19 @@ class MessageProcessor:
             mid
             for notice in notices
             if notice.state == "pending"
-            if (mid := self._raw_id(notice.message_id))
+            if (mid := self._notice_identity(notice.message_id))
         ]
         known = (
             {
-                row.message_id: row
+                (row.account, row.message_id): row
                 for row in self.session.exec(
                     select(GmailReceipt).where(
-                        GmailReceipt.account == self.account,
-                        col(GmailReceipt.message_id).in_(pending_ids),
+                        col(GmailReceipt.account).in_(
+                            {account for account, _ in pending_ids}
+                        ),
+                        col(GmailReceipt.message_id).in_(
+                            [mid for _, mid in pending_ids]
+                        ),
                     )
                 ).all()
             }
@@ -354,8 +413,8 @@ class MessageProcessor:
         )
         for notice in notices:
             current = latest.get(notice.application_id)
-            raw_id = self._raw_id(notice.message_id)
-            cached = known.get(raw_id or "")
+            identity = self._notice_identity(notice.message_id)
+            cached = known.get(identity) if identity else None
             if (
                 notice.state == "pending"
                 and cached
@@ -367,7 +426,7 @@ class MessageProcessor:
                     or (
                         current
                         and current.revision == self.revision
-                        and current.message_id != raw_id
+                        and (current.account, current.message_id) != identity
                     )
                     or not corrected
                 ):
@@ -380,8 +439,14 @@ class MessageProcessor:
                     notice.proposed_status = corrected
                     notice.evidence = self._evidence(cached)
                     self.session.add(notice)
-        existing = {(n.application_id, self._raw_id(n.message_id)): n for n in notices}
+        existing = {
+            (n.application_id, self._notice_identity(n.message_id)): n for n in notices
+        }
         for app_id, row in latest.items():
+            # Explicit Gmail recovery may never resurrect another mailbox's
+            # cleared evidence. Normal sync still compares chronology globally.
+            if restore_cleared and row.account != self.account:
+                continue
             app = self.apps.get(app_id)
             proposed = _CLASS_TO_STATUS.get(row.label)
             if (
@@ -391,7 +456,7 @@ class MessageProcessor:
                 or not _is_forward(app.status, proposed)
             ):
                 continue
-            notice = existing.get((app_id, row.message_id))
+            notice = existing.get((app_id, (row.account, row.message_id)))
             if notice is not None:
                 if notice.state == "superseded" or (
                     restore_cleared and notice.state == "cleared"
@@ -421,7 +486,7 @@ class MessageProcessor:
                     kind=proposed,
                     proposed_status=proposed,
                     evidence=self._evidence(row),
-                    message_id=self._notice_key(row.message_id),
+                    message_id=self._receipt_notice_key(row),
                 )
             )
 
@@ -431,10 +496,25 @@ class MessageProcessor:
         return f"{email.subject}\n{authored_text(email.body or email.snippet)[:400]}".strip()
 
     def _notice_key(self, message_id: str) -> str:
-        return f"gmail:{self.account}:{message_id}"
+        return f"{self.source}:{self.account}:{message_id}"
+
+    @staticmethod
+    def _receipt_notice_key(row: GmailReceipt) -> str:
+        source = "mailbox" if row.account.startswith("mailbox-") else "gmail"
+        return f"{source}:{row.account}:{row.message_id}"
+
+    def _notice_identity(self, key: str) -> tuple[str, str] | None:
+        if key.startswith(("gmail:", "mailbox:")):
+            parts = key.split(":", 2)
+            return (parts[1], parts[2]) if len(parts) == 3 else None
+        return (self.legacy_account, key) if self.legacy_account else None
 
     def _raw_id(self, key: str) -> str | None:
-        prefix = f"gmail:{self.account}:"
+        prefix = f"{self.source}:{self.account}:"
         if key.startswith(prefix):
             return key[len(prefix) :]
-        return key if self.legacy_ids and not key.startswith("gmail:") else None
+        return (
+            key
+            if self.legacy_ids and not key.startswith(("gmail:", "mailbox:"))
+            else None
+        )
