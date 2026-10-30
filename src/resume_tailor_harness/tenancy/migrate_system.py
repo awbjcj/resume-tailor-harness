@@ -113,6 +113,12 @@ def migrate_system_db(engine: Engine) -> None:
                 )
             )
         rate_columns = _columns(connection, "llm_rates")
+        email_columns = _columns(connection, "account_emails")
+        for name, ddl in (("failed_at", "DATETIME"), ("failure_reason", "VARCHAR(32)")):
+            if email_columns and name not in email_columns:
+                connection.execute(
+                    text(f"ALTER TABLE account_emails ADD COLUMN {name} {ddl}")
+                )
         for name, ddl in _LLM_RATE_COLUMNS:
             if rate_columns and name not in rate_columns:
                 connection.execute(

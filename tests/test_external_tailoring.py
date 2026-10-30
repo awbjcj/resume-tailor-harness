@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from sqlmodel import Session, select
 
@@ -25,6 +27,15 @@ def external_case(tmp_path, monkeypatch):
     config = ReviewConfig(reviewers=[ReviewerSpec(name="fact-check", gate=True)])
     monkeypatch.setattr(service, "load_review_config", lambda _: config)
     monkeypatch.setattr(service, "build_reviewers", lambda *a, **kw: {})
+    from resume_tailor_harness.render.export import export_job_artifacts
+
+    monkeypatch.setattr(
+        service,
+        "export_job_artifacts",
+        lambda session, job_id: export_job_artifacts(
+            session, job_id, tmp_path / "exports"
+        ),
+    )
     monkeypatch.setattr(
         service,
         "run_panel",
@@ -52,6 +63,12 @@ def test_external_submission_appends_reviewed_version_without_regressing(externa
     version = session.get(ResumeVersion, result["versionId"])
     assert version.origin == "external" and version.fact_check_passed
     assert version.gate_reviewers_json == ["fact-check"]
+    manifest_path = next((path.parent / "exports").glob("*/manifest.json"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert str(version.id) in json.dumps(manifest)
+    assert (
+        manifest_path.parent / f"resume-v{version.id}-external.content.json"
+    ).is_file()
     assert session.get(Job, job_id).status == "rendered"
     again = service.submit_draft(session, job_id, path, content, revision, "pi")
     assert again["versionId"] != result["versionId"]

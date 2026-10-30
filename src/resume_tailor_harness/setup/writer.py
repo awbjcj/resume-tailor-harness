@@ -87,6 +87,19 @@ def load_existing_state(root: str | Path = ".") -> WizardState:
         try:
             env = parse_env(env_path.read_text(encoding="utf-8"))
             state.anthropic_api_key = env.get("ANTHROPIC_API_KEY", "")
+            for provider in ("openai", "gemini", "deepseek"):
+                setattr(
+                    state,
+                    f"{provider}_api_key",
+                    env.get(f"{provider.upper()}_API_KEY", ""),
+                )
+            state.gateway_providers = {
+                provider
+                for provider in ("anthropic", "openai", "gemini", "deepseek")
+                if env.get("SUB2API_BASE_URL")
+                and env.get(f"SUB2API_{provider.upper()}_KEY")
+                and env.get(f"{provider.upper()}_ROUTE_MODE", "auto") != "api"
+            }
             state.github_token = env.get("GITHUB_TOKEN", "")
             state.adzuna_app_id = env.get("ADZUNA_APP_ID", "")
             state.adzuna_app_key = env.get("ADZUNA_APP_KEY", "")

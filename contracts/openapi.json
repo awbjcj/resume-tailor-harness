@@ -9154,6 +9154,17 @@
             ],
             "title": "Salarymin"
           },
+          "salaryPeriod": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salaryperiod"
+          },
           "seniority": {
             "anyOf": [
               {
@@ -11772,6 +11783,17 @@
               }
             ],
             "title": "Salarymin"
+          },
+          "salaryPeriod": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salaryperiod"
           },
           "seniority": {
             "anyOf": [
@@ -16927,6 +16949,17 @@
               }
             ],
             "title": "Salarymin"
+          },
+          "salaryPeriod": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salaryperiod"
           },
           "seniority": {
             "anyOf": [

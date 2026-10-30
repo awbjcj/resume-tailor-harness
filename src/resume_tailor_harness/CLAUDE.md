@@ -277,8 +277,9 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
   text, that truncated large structured outputs into the same unparsed-`str`
   symptom as the Gemini bug. `_anthropic_thinking` therefore sends
   `{"type": "disabled"}` for non-reasoning 4.6+ ids except Sonnet 5.5, which
-  uses `{"type": "between_tools"}` to remove up-front thinking (thinking between
-  tool calls remains possible). It omits the setting on pre-4.6 ids, where
+  uses `{"type": "between_tools"}` with `output_config.effort="low"` to remove
+  up-front thinking and bound effort between tool calls. It omits the setting on
+  pre-4.6 ids, where
   unset already means off, and on Fable/Mythos and Opus 5.5, which reject a
   disabled config. `_anthropic_max_tokens` replaces agno's 8192 default — clamped
   to the SDK's per-model non-streaming ceiling so a custom Opus 4/4.1 id

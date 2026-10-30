@@ -435,6 +435,7 @@ def pull_jobs(
                 search=search_config,
             )
             report.totals[name] = result.imported
+            report.changed_raw_job_ids.extend(result.changed_raw_job_ids)
             report.skipped[name] = result.duplicate + result.filtered
             if result.terminal_reason != "complete":
                 report.failures[name] = {

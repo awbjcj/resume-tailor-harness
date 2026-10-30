@@ -121,7 +121,8 @@ def test_reviewer_prompt_sets_identity_and_respects_reduced_context():
 
     assert "reviewer field to exactly 'fact-check'" in fact_check
     assert "supporting facts" in fact_check
-    assert "do not flag them solely" in fact_check
+    assert "their record ids are included in supporting facts" in fact_check
+    assert "contact has no provenance id; do not flag it solely" in fact_check
     assert "runtime" in recruiter and "aggregate score threshold" in recruiter
     assert "structured content, not a rendered document" in recruiter
 

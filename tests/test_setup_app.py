@@ -55,6 +55,10 @@ async def test_wizard_advances_through_screens_and_assembles_state():
         assert isinstance(app.screen, SecretsScreen)
         app.screen.query_one("#anthropic_key", Input).value = "sk-ant-test"
         await pilot.pause()
+        assert app.screen.query_one("#continue", Button).disabled
+        app.screen.query_one("#openai_key", Input).value = "openai-test"
+        await pilot.pause()
+        assert not app.screen.query_one("#continue", Button).disabled
         _press(app.screen, "continue")  # Secrets -> Profile
         await pilot.pause()
         assert isinstance(app.screen, ProfileSourcesScreen)

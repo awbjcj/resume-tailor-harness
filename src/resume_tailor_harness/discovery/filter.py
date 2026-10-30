@@ -3,6 +3,7 @@ from pydantic import Field
 from resume_tailor_harness.discovery.search_config import SearchConfig
 from resume_tailor_harness.models.base import ExtensibleModel
 from resume_tailor_harness.models.job import JobCriteria, SponsorshipSignal
+from resume_tailor_harness.salary import annual_usd_amount
 
 
 class FilterDecision(ExtensibleModel):
@@ -21,11 +22,16 @@ def apply_filters(criteria: JobCriteria, config: SearchConfig) -> FilterDecision
         if criteria.sponsorship_signal == SponsorshipSignal.silent:
             flags.append("sponsorship_uncertain")
 
+    salary = criteria.salary_range
+    comparable_salary = (
+        annual_usd_amount(salary.maximum, salary.currency, salary.period)
+        if salary is not None
+        else None
+    )
     if (
         config.min_salary is not None
-        and criteria.salary_range is not None
-        and criteria.salary_range.maximum is not None
-        and criteria.salary_range.maximum < config.min_salary
+        and comparable_salary is not None
+        and comparable_salary < config.min_salary
     ):
         return FilterDecision(keep=False, reject_reason="salary below minimum")
 

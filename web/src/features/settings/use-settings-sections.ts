@@ -28,9 +28,12 @@ export function useResetSection() {
           params: { path: { section_id: sectionId } },
         }),
       ) as Promise<SettingsSection>,
-    onSuccess: (section) => {
+    onSuccess: async (section) => {
       // A reset rewrites files other settings pages read, so drop everything
       // rather than trying to name each affected query key.
+      // Clear pre-reset config before a draft can be reseeded. A failed refetch
+      // then has no stale values to present as the newly reset settings.
+      await queryClient.resetQueries({ queryKey: ["config"] });
       void queryClient.invalidateQueries();
       toast.success(`${section.label} reset to defaults`);
     },

@@ -14,7 +14,9 @@ RESEND_ENDPOINT = "https://api.resend.com/emails"
 
 
 class MailDeliveryError(RuntimeError):
-    pass
+    def __init__(self, message: str, *, retryable: bool = True):
+        super().__init__(message)
+        self.retryable = retryable
 
 
 class Mailer(Protocol):
@@ -38,7 +40,18 @@ def sender_address(settings: Settings) -> str:
     ``smtp_from``/``smtp_username`` are the fallbacks so a deploy that predates
     the HTTPS backend keeps its existing sender without renaming a variable.
     """
-    return settings.mail_from or settings.smtp_from or settings.smtp_username
+    return next(
+        (
+            value.strip()
+            for value in (
+                settings.mail_from,
+                settings.smtp_from,
+                settings.smtp_username,
+            )
+            if value.strip()
+        ),
+        "",
+    )
 
 
 class _NotifyBySend:
@@ -140,7 +153,11 @@ class ResendMailer(_NotifyBySend):
                 sender_address(self.settings),
                 detail,
             )
-            raise MailDeliveryError(detail) from error
+            status = failure.status_code if failure is not None else None
+            retryable = (
+                status is None or status >= 500 or status in {408, 409, 425, 429}
+            )
+            raise MailDeliveryError(detail, retryable=retryable) from error
         finally:
             if self._client is None:
                 http.close()
@@ -196,11 +213,21 @@ class SmtpMailer(_NotifyBySend):
                 "on" if self.settings.smtp_username else "off",
                 error,
             )
-            raise MailDeliveryError(str(error)) from error
+            permanent = (
+                isinstance(error, smtplib.SMTPResponseException)
+                and 500 <= error.smtp_code < 600
+            )
+            if isinstance(error, smtplib.SMTPRecipientsRefused):
+                permanent = bool(error.recipients) and all(
+                    500 <= code < 600 for code, _ in error.recipients.values()
+                )
+            raise MailDeliveryError(str(error), retryable=not permanent) from error
 
 
 def mail_configured(settings: Settings) -> bool:
-    return bool(settings.resend_api_key or settings.smtp_host)
+    return bool(
+        sender_address(settings) and (settings.resend_api_key or settings.smtp_host)
+    )
 
 
 def build_mailer(settings: Settings) -> Mailer:

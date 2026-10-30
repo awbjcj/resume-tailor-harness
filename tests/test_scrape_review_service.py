@@ -42,6 +42,33 @@ def ready_draft(store):
     )
 
 
+def test_initial_access_challenge_persists_cooldown(monkeypatch):
+    from types import SimpleNamespace
+    from resume_tailor_harness.services import scrape_review as review
+    from resume_tailor_harness.security.outbound import PublicBytesResponse
+
+    blocks = []
+    gateway = SimpleNamespace(
+        document=lambda url, budget: PublicBytesResponse(
+            200, {}, b"<h1>Access denied</h1>", url
+        ),
+        cooldowns=SimpleNamespace(block=lambda *args: blocks.append(args)),
+    )
+    monkeypatch.setattr(review, "build_gateway", lambda: gateway)
+    monkeypatch.setattr(review, "validate_public_url", lambda url: None)
+    monkeypatch.setattr(review, "build_understand_agent", lambda: None)
+    monkeypatch.setattr(review, "build_extract_agent", lambda: None)
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        result = review.analyze_url(
+            session, "https://example.com/jobs", CrawlLimits(), allow_browser=False
+        )
+        assert result.navigation is not None
+        assert result.navigation.terminal_reason == "blocked"
+    assert blocks == [("https://example.com/jobs", "access challenge")]
+
+
 def test_approval_is_atomic_and_idempotent():
     engine = make_engine("sqlite://")
     init_db(engine)
@@ -85,9 +112,7 @@ def test_static_posting_without_required_content_retries_in_browser(monkeypatch)
         def snapshot(self, url, budget):
             return snapshot_from_html(url, rendered_html)
 
-    plan = BoardPlan(
-        card_selector="body", detail_mode="inline", detail_selector=".jd"
-    )
+    plan = BoardPlan(card_selector="body", detail_mode="inline", detail_selector=".jd")
     monkeypatch.setattr(review, "build_gateway", Gateway)
     monkeypatch.setattr(review, "BrowserWorker", Worker)
     monkeypatch.setattr(review, "build_understand_agent", lambda: object())
@@ -353,6 +378,8 @@ def test_pull_source_keeps_earlier_imports_when_the_active_job_quota_is_reached(
         report = review.pull_source(session, draft.source_id)
 
         assert report.imported == 1
+        imported = session.exec(select(Job).where(Job.title == "Engineer Two")).one()
+        assert report.changed_raw_job_ids == [imported.id]
         assert report.terminal_reason == "partial_limit"
         assert report.messages == ["active job limit reached (2)"]
         assert {job.title for job in session.exec(select(Job)).all()} == {

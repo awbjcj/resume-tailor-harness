@@ -10,6 +10,17 @@ from resume_tailor_harness.discovery.connectors.text import (
 from resume_tailor_harness.discovery.search_config import SearchConfig
 
 
+def test_role_anchor_takes_precedence_over_broad_skill_keywords():
+    assert (
+        primary_search_term(
+            SearchConfig(
+                keywords=["Python"], role_anchors=["Machine Learning Engineer"]
+            )
+        )
+        == "Machine Learning Engineer"
+    )
+
+
 def test_html_to_text_unescapes_and_strips_tags():
     raw = "&lt;p&gt;We use &lt;b&gt;Python&lt;/b&gt; and Kubernetes.&lt;/p&gt;"
     text = html_to_text(raw)

@@ -97,6 +97,7 @@ def test_requires_verification_and_delivers_only_at_selected_interval(engine):
         engine, box, SETTINGS, "owner", now=NOW + timedelta(days=1)
     )
     assert len(box.sent) == 1
+
     assert "List-Unsubscribe-Post" in box.sent[0]["headers"]
 
 
@@ -299,10 +300,33 @@ def test_stale_uncertain_delivery_is_retired_before_provider_idempotency_expires
     service.deliver_due(engine, box, SETTINGS, "owner", now=due)
     box.fail = False
     assert not service.deliver_due(
-        engine, box, SETTINGS, "owner", now=due + timedelta(hours=13)
+        engine, box, SETTINGS, "owner", now=due + timedelta(hours=19)
     )
     assert len(box.sent) == 1
-    assert service.get_preference(engine).pending_payload == ""
+    assert not service.get_preference(engine).pending_payload
+
+
+def test_first_six_hour_retry_is_reachable(engine):
+    box = Mailbox()
+    subscribe(engine, box)
+    due = NOW + timedelta(days=1)
+    box.fail = True
+    for hours in (0, 1, 3, 7):
+        assert not service.deliver_due(
+            engine, box, SETTINGS, "owner", now=due + timedelta(hours=hours)
+        )
+    box.fail = False
+    assert service.deliver_due(
+        engine, box, SETTINGS, "owner", now=due + timedelta(hours=13)
+    )
+    assert len(box.sent) == 5
+
+
+def test_email_readiness_requires_sender():
+    missing_sender = SETTINGS.model_copy(
+        update={"mail_from": "", "smtp_from": "", "smtp_username": ""}
+    )
+    assert not service.delivery_available(missing_sender)
 
 
 def test_workspace_schema_upgrade_is_idempotent(engine):

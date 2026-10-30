@@ -2,6 +2,51 @@ from resume_tailor_harness.discovery.scraper.browser_worker import snapshot_from
 from resume_tailor_harness.discovery.scraper.extract import extract_observation
 
 
+def test_relative_application_link_uses_observed_href_and_base_url():
+    from resume_tailor_harness.discovery.scraper.contracts import (
+        Evidence,
+        JobFacts,
+        Observation,
+    )
+    from resume_tailor_harness.discovery.scraper.validate import validate_evidence
+
+    snapshot = snapshot_from_html(
+        "https://example.com/jobs/123",
+        '<h1>Engineer</h1><p>Build systems</p><a class="apply" href="/apply/123">Apply</a>',
+    )
+    item = Observation(
+        source_id="board",
+        revision=1,
+        job_key="one",
+        facts=JobFacts(
+            source_url=snapshot.final_url,
+            title="Engineer",
+            jd_text="Build systems",
+            application_url="https://example.com/apply/123",
+        ),
+        evidence=[
+            Evidence(
+                field="title", snapshot_id=snapshot.id, quote="Engineer", selector="h1"
+            ),
+            Evidence(
+                field="jd_text",
+                snapshot_id=snapshot.id,
+                quote="Build systems",
+                selector="p",
+            ),
+            Evidence(
+                field="application_url",
+                snapshot_id=snapshot.id,
+                quote="/apply/123",
+                selector=".apply",
+            ),
+        ],
+    )
+    assert validate_evidence(item, [snapshot]).valid
+    item.facts.application_url = "https://example.com/jobs/Apply"
+    assert not validate_evidence(item, [snapshot]).valid
+
+
 def test_real_quote_does_not_validate_an_invented_title():
     from types import SimpleNamespace
     from resume_tailor_harness.discovery.scraper.contracts import (

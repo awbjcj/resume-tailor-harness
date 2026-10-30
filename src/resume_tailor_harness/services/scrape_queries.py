@@ -77,6 +77,16 @@ def job_observations(session: Session, job_id: int) -> list[SourceObservationVie
     result = []
     for row in rows:
         item = Observation.model_validate_json(row.payload)
+        effective = store.effective_facts(item)
+        issues = [
+            issue
+            for issue in item.issues
+            if issue.kind != "conflict"
+            or (
+                issue.field is not None
+                and getattr(item.facts, issue.field) != getattr(effective, issue.field)
+            )
+        ]
         result.append(
             SourceObservationView(
                 id=item.id,
@@ -84,9 +94,9 @@ def job_observations(session: Session, job_id: int) -> list[SourceObservationVie
                 source_id=item.source_id,
                 revision=item.revision,
                 facts=item.facts,
-                effective_facts=store.effective_facts(item),
+                effective_facts=effective,
                 evidence=item.evidence,
-                issues=item.issues,
+                issues=issues,
                 accepted=item.accepted,
             )
         )

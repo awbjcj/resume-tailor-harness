@@ -59,6 +59,9 @@ def test_load_existing_state_round_trips_what_was_written(tmp_path):
     _seed_examples(tmp_path)
     written = WizardState(
         anthropic_api_key="sk-rt",
+        openai_api_key="sk-openai",
+        gemini_api_key="gemini-test",
+        deepseek_api_key="deepseek-test",
         keywords=["go"],
         remote_policy="hybrid",
         greenhouse_enabled=True,
@@ -67,6 +70,9 @@ def test_load_existing_state_round_trips_what_was_written(tmp_path):
     atomic_write_all(written, root=tmp_path)
     reloaded = load_existing_state(root=tmp_path)
     assert reloaded.anthropic_api_key == "sk-rt"
+    assert reloaded.openai_api_key == "sk-openai"
+    assert reloaded.gemini_api_key == "gemini-test"
+    assert reloaded.deepseek_api_key == "deepseek-test"
     assert reloaded.keywords == ["go"]
     assert reloaded.remote_policy == "hybrid"
     assert reloaded.greenhouse_enabled is True
@@ -80,6 +86,17 @@ def test_load_existing_state_restores_custom_models(tmp_path):
     atomic_write_all(WizardState(premium_model="claude-custom-prem"), root=tmp_path)
     reloaded = load_existing_state(root=tmp_path)
     assert reloaded.premium_model == "claude-custom-prem"
+
+
+def test_existing_gateway_keys_respect_direct_api_routing(tmp_path):
+    (tmp_path / ".env").write_text(
+        "SUB2API_BASE_URL=https://gateway.example.com\n"
+        "SUB2API_OPENAI_KEY=gateway-openai\n"
+        "SUB2API_ANTHROPIC_KEY=gateway-anthropic\n"
+        "ANTHROPIC_ROUTE_MODE=api\n",
+        encoding="utf-8",
+    )
+    assert load_existing_state(tmp_path).gateway_providers == {"openai"}
 
 
 def test_missing_example_degrades_to_error_status_not_crash(tmp_path):

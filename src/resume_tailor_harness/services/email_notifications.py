@@ -413,7 +413,7 @@ def deliver_due(
             return False
         # Retire uncertain deliveries before Resend's 24-hour idempotency window
         # expires. Resume on the next normal interval without replaying old mail.
-        if row.pending_since and utc(row.pending_since) <= moment - timedelta(hours=12):
+        if row.pending_since and utc(row.pending_since) <= moment - timedelta(hours=18):
             _clear_delivery(row)
             row.next_send_at = moment + INTERVALS[row.frequency]
             session.add(row)

@@ -16,7 +16,10 @@ from resume_tailor_harness.discovery.connectors.base import (
 from resume_tailor_harness.discovery.connectors.config import GreenhouseBoard
 from resume_tailor_harness.discovery.connectors.dates import parse_iso_datetime
 from resume_tailor_harness.discovery.connectors.harvest import harvest
-from resume_tailor_harness.discovery.connectors.text import html_to_markdown, join_locations
+from resume_tailor_harness.discovery.connectors.text import (
+    html_to_markdown,
+    join_locations,
+)
 from resume_tailor_harness.discovery.search_config import SearchConfig
 from resume_tailor_harness.discovery.url_ingest import fetch as url_fetch
 
@@ -155,7 +158,7 @@ def parse_greenhouse(
                 title=item.get("title"),
                 location=location,
                 jd_text=jd_text,
-                posted_at=parse_iso_datetime(item.get("updated_at")),
+                posted_at=parse_iso_datetime(item.get("first_published")),
                 stale_company=stale_company,
                 company_provenance=company_provenance,
             )

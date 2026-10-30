@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslation } from "react-i18next";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -15,6 +16,7 @@ const components: Components = {
 
 // Tool/reasoning updates must not reparse already-rendered Markdown.
 export const TextPart = memo(function TextPart({ text, caret = false }: { text: string; caret?: boolean }) {
+  useTranslation();
   return (
     <div data-testid="chat-part-text" className="chat-markdown text-base leading-7">
       <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>{text}</ReactMarkdown>
@@ -22,7 +24,7 @@ export const TextPart = memo(function TextPart({ text, caret = false }: { text: 
         <span
           aria-hidden="true"
           data-testid="chat-stream-caret"
-          className="ml-0.5 inline-block h-4 w-0.5 bg-foreground align-text-bottom motion-safe:animate-pulse"
+          className="chat-stream-caret ml-0.5 inline-block h-4 w-0.5 bg-foreground align-text-bottom motion-safe:animate-pulse"
         />
       ) : null}
     </div>

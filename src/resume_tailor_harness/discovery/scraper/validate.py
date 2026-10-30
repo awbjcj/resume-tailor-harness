@@ -1,6 +1,7 @@
 """Observable checks separate schema validity from extraction correctness."""
 
 import json
+from urllib.parse import urljoin
 from typing import cast
 
 from bs4 import BeautifulSoup
@@ -71,8 +72,14 @@ def validate_evidence(
             item.snapshot_id in by_id
             and " ".join(item.quote.split())
             in " ".join(evidence_text(item, by_id[item.snapshot_id]).split())
-            and _supports_value(
-                field, value, evidence_text(item, by_id[item.snapshot_id])
+            and (
+                _supports_value(
+                    field, value, evidence_text(item, by_id[item.snapshot_id])
+                )
+                or (
+                    field == "application_url"
+                    and _supports_relative_url(item, by_id[item.snapshot_id], value)
+                )
             )
             for item in candidates
         ):
@@ -97,6 +104,27 @@ def validate_evidence(
                 )
             )
     return ValidationResult(valid=not issues, issues=issues)
+
+
+def _supports_relative_url(evidence: Evidence, snapshot: Snapshot, value) -> bool:
+    if evidence.selector:
+        try:
+            nodes = BeautifulSoup(snapshot.html, "html.parser").select(
+                evidence.selector
+            )
+        except SelectorSyntaxError:
+            return False
+        urls = [
+            node.get(attribute) for node in nodes for attribute in ("href", "content")
+        ]
+    elif evidence.json_path:
+        urls = [evidence_text(evidence, snapshot)]
+    else:
+        return False
+    return any(
+        isinstance(url, str) and urljoin(snapshot.final_url, url.strip()) == value
+        for url in urls
+    )
 
 
 def _supports_value(field: str, value, text: str) -> bool:

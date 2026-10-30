@@ -44,6 +44,7 @@ USER = "alice0000000"
 SETTINGS = Settings(
     _env_file=None,  # type: ignore[call-arg]
     resend_api_key="test",
+    mail_from="sender@example.com",
     app_base_url="https://app.example.com",
 )
 
@@ -175,6 +176,35 @@ def test_failure_survives_new_session_and_retries_identical_payload(engine):
         == 1
     )
     assert mailbox.messages[0] == mailbox.messages[1]
+
+
+@pytest.mark.parametrize("permanent", [True, False])
+def test_permanent_or_exhausted_deliveries_are_terminal(engine, permanent):
+    from resume_tailor_harness.mail.account_notifications import MAX_DELIVERY_ATTEMPTS
+
+    row_id = enqueue(engine)
+
+    class FailingMailbox(Mailbox):
+        calls = 0
+
+        def send(self, **message):
+            self.calls += 1
+            raise MailDeliveryError("rejected", retryable=not permanent)
+
+    mailbox = FailingMailbox()
+    now = datetime.now(UTC) + timedelta(seconds=1)
+    for attempt in range(MAX_DELIVERY_ATTEMPTS + 2):
+        deliver_account_emails(
+            engine, mailbox, SETTINGS, now=now + timedelta(hours=6 * attempt)
+        )
+    assert mailbox.calls == (1 if permanent else MAX_DELIVERY_ATTEMPTS)
+    with Session(engine) as session:
+        row = session.get(AccountEmail, row_id)
+        assert row is not None
+        assert row.failed_at is not None and row.sent_at is None
+        assert row.failure_reason == (
+            "permanent_delivery_error" if permanent else "retry_exhausted"
+        )
 
 
 def test_worker_lease_prevents_concurrent_delivery_without_holding_writer_lock(engine):

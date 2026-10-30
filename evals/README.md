@@ -32,7 +32,9 @@ must be rejected. Passing `tests/eval` does not measure agent quality.
 1. An API key in `.env` for whichever provider your tiers name
    (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`).
 2. `CHEAP_MODEL` / `MID_MODEL` / `PREMIUM_MODEL` set, or accept the defaults in
-   `config.py` (`claude-haiku-4-5` / `claude-sonnet-5` / `claude-opus-5`).
+   `config.py` (`claude-haiku-5-5` / `openai:gpt-6.1-terra` / `claude-opus-5`).
+   Pass `--model` explicitly when comparing paid eval runs so a default-model
+   update does not change the model being measured.
 3. A review config. `config/review.yaml` is gitignored, so `run_eval` falls back
    to `config/review.yaml.example` automatically when it is absent.
 

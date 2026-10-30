@@ -20,6 +20,10 @@ class WizardState:
 
     # secrets (→ .env)
     anthropic_api_key: str = ""
+    openai_api_key: str = ""
+    gemini_api_key: str = ""
+    deepseek_api_key: str = ""
+    gateway_providers: set[str] = field(default_factory=set)
     github_token: str = ""
     adzuna_app_id: str = ""
     adzuna_app_key: str = ""
@@ -55,11 +59,13 @@ class WizardState:
     def managed_env(self) -> dict[str, str]:
         """Map state secrets to .env keys, dropping empty values.
 
-        Note: ``openai_api_key`` and ``linkedin_user_data_dir`` are deliberately
-        NOT managed here — they are preserved by ``merge_env`` if already set.
+        Empty credentials and unmanaged routing settings remain preserved by merge_env.
         """
         candidates = {
             "ANTHROPIC_API_KEY": self.anthropic_api_key,
+            "OPENAI_API_KEY": self.openai_api_key,
+            "GEMINI_API_KEY": self.gemini_api_key,
+            "DEEPSEEK_API_KEY": self.deepseek_api_key,
             "GITHUB_TOKEN": self.github_token,
             "ADZUNA_APP_ID": self.adzuna_app_id,
             "ADZUNA_APP_KEY": self.adzuna_app_key,

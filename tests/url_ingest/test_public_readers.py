@@ -54,6 +54,42 @@ def posting(url=None):
 
 
 @pytest.mark.parametrize(
+    "query,matched",
+    [("source=email", True), ("utm_campaign=jobs", True), ("job_id=other", False)],
+)
+def test_tracking_query_differences_do_not_change_posting_identity(query, matched):
+    url = "https://example.com/jobs/123"
+    assert (
+        jobposting_json_ld(markup(posting(url)), f"{url}?{query}") is not None
+    ) is matched
+
+
+def test_complete_short_schema_beats_a_truncated_visible_preview():
+    url = "https://www.linkedin.com/jobs/view/123"
+    schema = posting(url)
+    schema["description"] = (
+        "Join our engineering team and build reliable software for customers. Work with product designers and developers to improve our services."
+    )
+    item = read_public_posting(
+        markup(schema)
+        + '<h1>Engineer</h1><div class="description__text">Short preview only.</div>',
+        url,
+    )
+    assert item is not None and "improve our services" in item.jd_text
+
+
+def test_legitimate_challenge_named_job_and_embedded_signin_prompt_are_readable():
+    from resume_tailor_harness.discovery.url_ingest.public_readers import access_blocked
+
+    assert not access_blocked(
+        "<title>CAPTCHA Engineer at Example</title><h1>CAPTCHA Engineer</h1><h2>Sign in to continue</h2>"
+    )
+    assert access_blocked(
+        "<title>Access denied | Example</title><h1>Verify you are human</h1>"
+    )
+
+
+@pytest.mark.parametrize(
     "url",
     [
         "https://www.indeed.com/viewjob?jk=abc",
@@ -180,7 +216,9 @@ def test_microdata_content_attributes_supply_text_fields():
     result = read_public_posting(html, "https://careers.example.com/jobs/1")
     assert result is not None
     assert (result.title, result.company, result.location) == (
-        "Engineer", "Example", "Toronto"
+        "Engineer",
+        "Example",
+        "Toronto",
     )
     assert "Build systems." in result.jd_text
 

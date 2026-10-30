@@ -147,11 +147,16 @@ class SecretsScreen(Screen[None]):
                 with Vertical(id="panel"):
                     yield Static("API keys and credentials", id="heading")
 
-                    yield Static("Required", classes="section")
+                    yield Static(
+                        "Provider keys for your selected model tiers", classes="section"
+                    )
                     yield Label("Anthropic API key", classes="hint")
                     yield Input(
                         id="anthropic_key", placeholder="sk-ant-api03-…", password=True
                     )
+                    for provider in ("openai", "gemini", "deepseek"):
+                        yield Label(f"{provider.title()} API key", classes="hint")
+                        yield Input(id=f"{provider}_key", password=True)
 
                     yield Static("GitHub (optional)", classes="section")
                     yield Label(
@@ -181,7 +186,7 @@ class SecretsScreen(Screen[None]):
 
             with Horizontal(classes="nav"):
                 yield Button("Back", id="back")
-                yield Button("Validate key", id="validate")
+                yield Button("Validate Anthropic key", id="validate")
                 yield Button(
                     "Continue", id="continue", variant="primary", disabled=True
                 )
@@ -191,6 +196,10 @@ class SecretsScreen(Screen[None]):
         app: SetupApp = self.app  # type: ignore[assignment]
         s = app.state
         self.query_one("#anthropic_key", Input).value = s.anthropic_api_key
+        for provider in ("openai", "gemini", "deepseek"):
+            self.query_one(f"#{provider}_key", Input).value = getattr(
+                s, f"{provider}_api_key"
+            )
         self.query_one("#github_token", Input).value = s.github_token
         self.query_one("#adzuna_app_id", Input).value = s.adzuna_app_id
         self.query_one("#adzuna_app_key", Input).value = s.adzuna_app_key
@@ -204,11 +213,22 @@ class SecretsScreen(Screen[None]):
     def _ready_to_continue(self) -> bool:
         """True when the minimum required input is present.
 
-        Policy: ANTHROPIC_API_KEY must be non-empty. Validation is encouraged
-        via the "Validate key" button but is not blocking — the wizard should
-        not require a network round-trip to advance.
+        Every selected provider needs a direct key or an existing gateway key.
+        Network validation remains optional.
         """
-        return bool(self.query_one("#anthropic_key", Input).value.strip())
+        state = self.app.state  # type: ignore[attr-defined]
+        providers = {
+            model.split(":", 1)[0] if ":" in model else "anthropic"
+            for model in (state.cheap_model, state.mid_model, state.premium_model)
+        }
+        return all(
+            provider in state.gateway_providers
+            or (
+                provider in {"anthropic", "openai", "gemini", "deepseek"}
+                and bool(self.query_one(f"#{provider}_key", Input).value.strip())
+            )
+            for provider in providers
+        )
 
     def _refresh_continue(self) -> None:
         self.query_one("#continue", Button).disabled = not self._ready_to_continue()
@@ -217,6 +237,12 @@ class SecretsScreen(Screen[None]):
         app: SetupApp = self.app  # type: ignore[assignment]
         s = app.state
         s.anthropic_api_key = self.query_one("#anthropic_key", Input).value.strip()
+        for provider in ("openai", "gemini", "deepseek"):
+            setattr(
+                s,
+                f"{provider}_api_key",
+                self.query_one(f"#{provider}_key", Input).value.strip(),
+            )
         s.github_token = self.query_one("#github_token", Input).value.strip()
         s.adzuna_app_id = self.query_one("#adzuna_app_id", Input).value.strip()
         s.adzuna_app_key = self.query_one("#adzuna_app_key", Input).value.strip()

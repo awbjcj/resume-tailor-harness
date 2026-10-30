@@ -70,7 +70,11 @@ def test_verified_subscription_and_public_unsubscribe_are_separate_from_account_
 ):
     # Replace only test configuration; the injected mailbox never hits a network.
     mu_app.state.settings = mu_app.state.settings.model_copy(
-        update={"resend_api_key": "test", "app_base_url": "https://testserver"}
+        update={
+            "mail_from": "sender@example.com",
+            "resend_api_key": "test",
+            "app_base_url": "https://testserver",
+        }
     )
     login(mu_client)
     mu_client.put(
@@ -142,7 +146,11 @@ def test_scheduler_isolates_recipients_skips_disabled_accounts_and_respects_loca
     moment = datetime.now(timezone.utc)
     state = mu_app.state
     state.settings = state.settings.model_copy(
-        update={"resend_api_key": "test", "app_base_url": "https://testserver"}
+        update={
+            "mail_from": "sender@example.com",
+            "resend_api_key": "test",
+            "app_base_url": "https://testserver",
+        }
     )
     contexts = {}
     with Session(state.system_engine) as session:
@@ -215,7 +223,11 @@ def test_scheduler_isolates_recipients_skips_disabled_accounts_and_respects_loca
 
 def test_cooldown_does_not_consume_send_allowance(mu_app, mu_client):
     mu_app.state.settings = mu_app.state.settings.model_copy(
-        update={"resend_api_key": "test", "app_base_url": "https://testserver"}
+        update={
+            "mail_from": "sender@example.com",
+            "resend_api_key": "test",
+            "app_base_url": "https://testserver",
+        }
     )
     login(mu_client)
     mu_client.put(
@@ -241,7 +253,11 @@ def test_cooldown_requests_still_consume_abuse_budget(mu_app, mu_client):
     from resume_tailor_harness.api import attempts
 
     mu_app.state.settings = mu_app.state.settings.model_copy(
-        update={"resend_api_key": "test", "app_base_url": "https://testserver"}
+        update={
+            "mail_from": "sender@example.com",
+            "resend_api_key": "test",
+            "app_base_url": "https://testserver",
+        }
     )
     login(mu_client)
     mu_client.put(

@@ -1,9 +1,18 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { TextPart } from "./TextPart";
+import { changeLanguage } from "@/i18n";
 
 describe("TextPart", () => {
+  it("updates existing memoized Markdown labels when language changes", async () => {
+    await changeLanguage("en");
+    render(<TextPart text={'| Role | Fit |\n| --- | --- |\n| Engineer | Strong |\n\n```ts\nconst next = 1;\n```'} />);
+    expect(screen.getByRole("region", { name: "Table" })).toBeVisible();
+    await act(() => changeLanguage("zh-CN"));
+    expect(screen.getByRole("region", { name: "表格" })).toBeVisible();
+    expect(screen.getByLabelText("代码块")).toHaveTextContent("const next = 1;");
+  });
   it("renders structured Markdown with accessible overflow surfaces", () => {
     render(<TextPart text={'## Plan\n\n1. Review **evidence**\n2. Prepare `notes`\n\n| Role | Fit |\n| --- | --- |\n| Engineer | Strong |\n\n```ts\nconst next = "review";\n```'} />);
     expect(screen.getByRole("heading", { level: 2, name: "Plan" })).toBeVisible();

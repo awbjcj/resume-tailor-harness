@@ -99,7 +99,7 @@
    carried by the icon and the text, never by the border alone. */
 @layer components {
   .tone-panel {
-    --tone: var(--muted-foreground);
+    --tone: var(--stage-neutral);
     border: 1px solid color-mix(in oklab, var(--tone), var(--card) 50%);
     background-color: color-mix(in oklab, var(--tone), var(--card) 92%);
     color: var(--card-foreground);
@@ -454,7 +454,7 @@
 .chat-markdown { min-width: 0; overflow-wrap: anywhere; }
 .chat-markdown :where(p, ul, ol, blockquote, pre, .chat-markdown-scroll, hr) { margin-block: 0.85em; }
 .chat-markdown > :first-child { margin-top: 0; }
-.chat-markdown > :last-child { margin-bottom: 0; }
+.chat-markdown > :nth-last-child(1 of :not(.chat-stream-caret)) { margin-bottom: 0; }
 .chat-markdown :where(h1, h2, h3, h4, h5, h6) {
   margin-block: 1.25em 0.5em;
   font-weight: 650;

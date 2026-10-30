@@ -237,7 +237,7 @@ def fetch_public_text(
                 "GET",
                 pinned_url,
                 headers=request_headers,
-                extensions={"sni_hostname": host},
+                extensions={"sni_hostname": host, "public_url": current},
             )
             response = http.send(request, stream=True, follow_redirects=False)
             try:

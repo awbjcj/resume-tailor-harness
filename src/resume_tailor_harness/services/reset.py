@@ -16,10 +16,12 @@ from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 from resume_tailor_harness.tracking.tables import (
     Application,
     CoverLetter,
+    ClearedRunHistory,
     Job,
     Notification,
     ResumeVersion,
     RunCompletion,
+    RunOperationLog,
     SavedBoardView,
     SkillSuggestion,
 )
@@ -34,6 +36,8 @@ class ResetScope(StrEnum):
 _PIPELINE_TABLES: tuple[type[SQLModel], ...] = (
     GmailReceipt,
     GmailSyncState,
+    RunOperationLog,
+    ClearedRunHistory,
     RunCompletion,
     SavedBoardView,
     Notification,

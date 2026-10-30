@@ -136,8 +136,11 @@ def test_recovery_usage_does_not_explode_into_repeated_singletons(tmp_path):
         return []
 
     first = refresh_clusters(
-        None, path=path, demanded_tokens=tokens,
-        canonicalizer=_AsyncCanonicalizer(), themer=_AsyncThemer(uncertain),
+        None,
+        path=path,
+        demanded_tokens=tokens,
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=_AsyncThemer(uncertain),
     )
     assert len(sizes) <= 30
     assert min(sizes) >= 10
@@ -146,8 +149,11 @@ def test_recovery_usage_does_not_explode_into_repeated_singletons(tmp_path):
     before = load_taxonomy_state(path)
     sizes.clear()
     second = refresh_clusters(
-        None, path=path, demanded_tokens=tokens,
-        canonicalizer=_AsyncCanonicalizer(), themer=_AsyncThemer(uncertain),
+        None,
+        path=path,
+        demanded_tokens=tokens,
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=_AsyncThemer(uncertain),
     )
     assert sizes == []
     assert second["deferredSkills"] == 300
@@ -155,7 +161,8 @@ def test_recovery_usage_does_not_explode_into_repeated_singletons(tmp_path):
 
 
 def test_recovery_call_budget_saves_success_and_preserves_unattempted_history(
-    tmp_path, monkeypatch,
+    tmp_path,
+    monkeypatch,
 ):
     from resume_tailor_harness.config import env_settings
 
@@ -168,8 +175,12 @@ def test_recovery_call_budget_saves_success_and_preserves_unattempted_history(
     themer = _AsyncThemer()
     try:
         result = refresh_clusters(
-            None, path=path, demanded_tokens=tokens,
-            canonicalizer=_AsyncCanonicalizer(), themer=themer, concurrency=8,
+            None,
+            path=path,
+            demanded_tokens=tokens,
+            canonicalizer=_AsyncCanonicalizer(),
+            themer=themer,
+            concurrency=8,
         )
     finally:
         env_settings.cache_clear()
@@ -187,7 +198,8 @@ def test_recovery_call_budget_saves_success_and_preserves_unattempted_history(
 
 
 def test_prompt_budget_defers_without_inventing_a_canonical_or_placement(
-    tmp_path, monkeypatch,
+    tmp_path,
+    monkeypatch,
 ):
     from resume_tailor_harness.config import env_settings
 
@@ -197,8 +209,11 @@ def test_prompt_budget_defers_without_inventing_a_canonical_or_placement(
     canonicalizer, themer = _AsyncCanonicalizer(), _AsyncThemer()
     try:
         result = refresh_clusters(
-            None, path=path, demanded_tokens={"rust"},
-            canonicalizer=canonicalizer, themer=themer,
+            None,
+            path=path,
+            demanded_tokens={"rust"},
+            canonicalizer=canonicalizer,
+            themer=themer,
         )
     finally:
         env_settings.cache_clear()
@@ -215,13 +230,20 @@ def test_explicit_skill_retry_can_revisit_automatic_retry_limit(tmp_path):
     _seed_domain_backlog(path, {"rust"}, attempts=3)
     automatic = _AsyncThemer()
     refresh_clusters(
-        None, path=path, demanded_tokens={"rust"},
-        canonicalizer=_AsyncCanonicalizer(), themer=automatic,
+        None,
+        path=path,
+        demanded_tokens={"rust"},
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=automatic,
     )
     assert automatic.calls == 0
     result = refresh_clusters(
-        None, path=path, demanded_tokens={"rust"}, skill_keys={"rust"},
-        canonicalizer=_AsyncCanonicalizer(), themer=_AsyncThemer(),
+        None,
+        path=path,
+        demanded_tokens={"rust"},
+        skill_keys={"rust"},
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=_AsyncThemer(),
     )
     assert result["confirmedSkills"] == 1
     assert load_cluster_map(path).domain_of["rust"] == "languages"
@@ -237,8 +259,11 @@ def test_usage_budget_is_shared_with_canonical_repairs(tmp_path, monkeypatch):
     themer = _AsyncThemer()
     try:
         result = refresh_clusters(
-            None, path=path, demanded_tokens={f"unknown {i}" for i in range(20)},
-            canonicalizer=canonicalizer, themer=themer,
+            None,
+            path=path,
+            demanded_tokens={f"unknown {i}" for i in range(20)},
+            canonicalizer=canonicalizer,
+            themer=themer,
         )
     finally:
         env_settings.cache_clear()
@@ -249,7 +274,9 @@ def test_usage_budget_is_shared_with_canonical_repairs(tmp_path, monkeypatch):
     assert load_cluster_map(path).aliases == {}
 
 
-def test_usage_budget_keeps_canonicals_when_domain_pass_is_deferred(tmp_path, monkeypatch):
+def test_usage_budget_keeps_canonicals_when_domain_pass_is_deferred(
+    tmp_path, monkeypatch
+):
     from resume_tailor_harness.config import env_settings
 
     monkeypatch.setenv("TAXONOMY_MAX_MODEL_CALLS", "2")
@@ -258,8 +285,11 @@ def test_usage_budget_keeps_canonicals_when_domain_pass_is_deferred(tmp_path, mo
     canonicalizer, themer = _AsyncCanonicalizer(), _AsyncThemer()
     try:
         result = refresh_clusters(
-            None, path=path, demanded_tokens={"rust"},
-            canonicalizer=canonicalizer, themer=themer,
+            None,
+            path=path,
+            demanded_tokens={"rust"},
+            canonicalizer=canonicalizer,
+            themer=themer,
         )
     finally:
         env_settings.cache_clear()
@@ -272,7 +302,8 @@ def test_usage_budget_keeps_canonicals_when_domain_pass_is_deferred(tmp_path, mo
 
 
 def test_prompt_budget_counts_cumulative_payloads_across_concurrent_calls(
-    tmp_path, monkeypatch,
+    tmp_path,
+    monkeypatch,
 ):
     from resume_tailor_harness.config import env_settings
 
@@ -290,8 +321,12 @@ def test_prompt_budget_counts_cumulative_payloads_across_concurrent_calls(
 
     try:
         result = refresh_clusters(
-            None, path=path, demanded_tokens=tokens, concurrency=8,
-            canonicalizer=_AsyncCanonicalizer(), themer=RecordingThemer(),
+            None,
+            path=path,
+            demanded_tokens=tokens,
+            concurrency=8,
+            canonicalizer=_AsyncCanonicalizer(),
+            themer=RecordingThemer(),
         )
     finally:
         env_settings.cache_clear()
@@ -523,7 +558,8 @@ def test_refresh_cleans_stale_resolved_history_outside_requested_scope(tmp_path)
             domain_of={"python": "languages", "rust": "general-languages"},
             domain_label={"languages": "Languages", "general-languages": "General"},
             category_of={"languages": "languages", "general-languages": "languages"},
-        ), path,
+        ),
+        path,
     )
     save_taxonomy_state(
         TaxonomyState(
@@ -532,12 +568,17 @@ def test_refresh_cleans_stale_resolved_history_outside_requested_scope(tmp_path)
                 for token in ("python", "py", "old phrase", "rust", "inactive")
             },
             retired_skills={"fragment": RetiredSkill(reason="not a skill")},
-        ), path,
+        ),
+        path,
     )
     themer = _AsyncThemer()
     refresh_clusters(
-        None, path=path, demanded_tokens={"python"}, skill_keys={"python"},
-        canonicalizer=_AsyncCanonicalizer(), themer=themer,
+        None,
+        path=path,
+        demanded_tokens={"python"},
+        skill_keys={"python"},
+        canonicalizer=_AsyncCanonicalizer(),
+        themer=themer,
     )
     statuses = load_taxonomy_state(path).grouping_status
     assert set(statuses) == {"rust", "inactive"}
@@ -559,7 +600,9 @@ def test_recovery_receives_source_context_from_active_jobs(tmp_path):
 
     with get_session(engine) as session:
         result = refresh_clusters(
-            session, path=path, canonicalizer=_AsyncCanonicalizer(),
+            session,
+            path=path,
+            canonicalizer=_AsyncCanonicalizer(),
             themer=ContextThemer(),
         )
     assert result["confirmedSkills"] == 1
@@ -1034,7 +1077,9 @@ def _languages(new, _categories):
     return [
         IncrementalDomainGroup(
             confidence="high",
-            new_label="Languages", new_category="languages", skills=list(new)
+            new_label="Languages",
+            new_category="languages",
+            skills=list(new),
         )
     ]
 
@@ -1084,20 +1129,53 @@ def test_a_token_naming_no_skill_is_retired_and_leaves_the_backlog(tmp_path):
 def test_manual_discard_stays_out_of_regroup_through_aliases(tmp_path):
     from resume_tailor_harness.services.taxonomy import discard_skills
 
-    engine = _engine_with_target_skills("Python", "Five years experience", "5 years of experience")
+    engine = _engine_with_target_skills(
+        "Python", "Five years experience", "5 years of experience"
+    )
     path = tmp_path / "cluster_map.json"
-    save_cluster_map(ClusterMap(aliases={"five years experience": "5 years of experience"}), path)
+    save_cluster_map(
+        ClusterMap(aliases={"five years experience": "5 years of experience"}), path
+    )
     discard_skills(
-        tmp_path / "taxonomy_corrections.json", path, ["Five years experience"],
+        tmp_path / "taxonomy_corrections.json",
+        path,
+        ["Five years experience"],
     )
     canonicalizer = _AsyncCanonicalizer()
     themer = _AsyncThemer(_languages)
     with get_session(engine) as session:
-        result = refresh_clusters(session, canonicalizer=canonicalizer, themer=themer, path=path)
-        repeat = refresh_clusters(session, canonicalizer=canonicalizer, themer=themer, path=path)
+        result = refresh_clusters(
+            session, canonicalizer=canonicalizer, themer=themer, path=path
+        )
+        repeat = refresh_clusters(
+            session, canonicalizer=canonicalizer, themer=themer, path=path
+        )
     assert result["processedSkillKeys"] == ["python"]
     assert repeat["processedSkillKeys"] == []
     assert "5 years of experience" in load_taxonomy_state(path).retired_skills
+
+
+def test_override_only_alias_of_retired_skill_is_never_reclassified(tmp_path):
+    from resume_tailor_harness.services.taxonomy import discard_skills
+
+    engine = _engine_with_target_skills("JS")
+    path = tmp_path / "cluster_map.json"
+    save_cluster_map(ClusterMap(), path)
+    (tmp_path / "overrides.yaml").write_text(
+        "alias:\n  js: javascript\n", encoding="utf-8"
+    )
+    discard_skills(tmp_path / "taxonomy_corrections.json", path, ["javascript"])
+    canonicalizer, themer = _AsyncCanonicalizer(), _AsyncThemer(_languages)
+    with get_session(engine) as session:
+        result = refresh_clusters(
+            session,
+            canonicalizer=canonicalizer,
+            themer=themer,
+            path=path,
+            extra_tokens={"js"},
+        )
+    assert result["processedSkillKeys"] == []
+    assert canonicalizer.calls == 0 and themer.calls == 0
 
 
 def test_a_retired_skill_can_be_restored_to_the_backlog(tmp_path):
