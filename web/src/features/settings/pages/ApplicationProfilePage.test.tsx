@@ -97,7 +97,7 @@ describe("ApplicationProfilePage", () => {
     fireEvent.change(country.getByLabelText("Currently on OPT"), { target: { value: "no" } });
     fireEvent.change(country.getByLabelText(/^Confirmation date/), { target: { value: "2026-10-20" } });
     fireEvent.click(screen.getByRole("button", { name: "Add employer answer" }));
-    const employer = within(screen.getByRole("group", { name: "Scoped employer answer records 1" }));
+    const employer = within(screen.getByRole("group", { name: "Employer answers 1" }));
     fireEvent.change(employer.getByLabelText(/^Employer/), { target: { value: "Acme" } });
     fireEvent.change(employer.getByLabelText("Requisition / role ID"), { target: { value: "REQ-42" } });
     fireEvent.change(employer.getByLabelText(/^Exact question/), { target: { value: "Previously employed here?" } });

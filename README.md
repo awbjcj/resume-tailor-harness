@@ -626,9 +626,10 @@ for the full variable list and recommended production posture.
 
 ### Gmail setup (for `sync-status`, sync, reminders, and email drafts)
 
-The web app also supports Outlook/Microsoft 365 sign-in, Yahoo/iCloud/Fastmail
-presets, and custom IMAP accounts with optional SMTP verification. See
-[Email provider connections](docs/mailbox-connections.md) for setup and scope.
+In the web app, you can also connect Outlook/Microsoft 365 through Microsoft sign-in, use server
+presets for Yahoo/iCloud/Fastmail, or add a custom IMAP account. SMTP verification
+is optional. See [Email provider connections](docs/mailbox-connections.md) for
+setup instructions and supported features.
 
 Gmail powers the CLI's `sync-status`, plus (in the API/web app) scheduled
 background inbox sync, stale-application follow-up reminders, and the
@@ -864,10 +865,10 @@ an earlier PDF.
 
 **Settings → Rendering** offers eight bundled layouts: Classic, Modern,
 Technical, Executive, Graduate, Academic, Minimal, and Compact. The one-page
-option also guides new tailoring: preserve experience and projects, omit the
-summary, and use a smaller bullet budget. Turn it off for a detailed resume of
-up to two pages. Body text stays at least 10pt; an impossible fit returns a
-shortening hint instead of publishing an overflow. See the
+option also guides new drafts: keep experience and projects, omit the
+summary, and use fewer bullets. Turn it off for a detailed resume of up to two
+pages. Body text stays at least 10pt. If the content still cannot fit, rendering
+asks you to shorten it before a PDF can be exported. See the
 [layout catalog and design sources](templates/README.md).
 
 ```bash

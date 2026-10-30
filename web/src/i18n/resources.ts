@@ -86,7 +86,7 @@ const en = {
   review: {
     reviewerNotes: {
       factCheck:
-        "Checks claims against profile evidence. With Gate on, a failed check blocks the round; with Gate off, its score contributes according to its weight.",
+        "Checks claims against profile evidence. With Gate on, a failed check blocks the round. With Gate off, the score counts toward the result at the configured weight.",
       atsKeyword: "Coverage of the job description's stated requirements.",
       recruiter: "Can a recruiter understand the top of the resume in a six-second skim?",
       hiringManager:
@@ -905,7 +905,7 @@ const zhCN = {
   },
   review: {
     reviewerNotes: {
-      factCheck: "真实性要求：根据个人资料中的事实依据核查表述。启用硬性门槛时，核查未通过会阻断本轮；关闭后，按权重计入评分。",
+      factCheck: "核查表述是否有个人资料中的事实支持。启用硬性门槛时，核查未通过则本轮不通过；关闭后，核查分数按设定权重计入总分。",
       atsKeyword: "简历覆盖了多少职位描述中明确提出的要求。",
       recruiter: "招聘人员快速浏览六秒，能否看懂简历顶部的重点？",
       hiringManager: "与此职位相关的经历依据是否充分、可信。",

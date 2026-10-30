@@ -46,7 +46,7 @@ describe("PasswordManagerPage", () => {
     expect(screen.getByText(/This does not delete your account/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Remove saved login" }));
     await waitFor(() => expect(deleted).toBe(true));
-    await screen.findByText(/No employer accounts yet/);
+    await screen.findByText(/No saved employer logins/);
   });
 
   it("enables registration explicitly and localizes the controls", async () => {
