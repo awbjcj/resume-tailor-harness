@@ -1,6 +1,7 @@
 import { emailNotificationsEn, emailNotificationsZh } from "./email-notifications";
 import autoEn from "./auto-en.json";
 import { billingEn, billingZh } from "./billing";
+import { passwordManagerEn, passwordManagerZh } from "./password-manager";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -20,6 +21,7 @@ const en = {
   },
   billing: billingEn,
   emailNotifications: emailNotificationsEn,
+  passwordManager: passwordManagerEn,
   agentPrompts: {
     originalLanguage: "Built-in instructions are shown in their original language.",
   },
@@ -860,6 +862,7 @@ const zhCN = {
   },
   billing: billingZh,
   emailNotifications: emailNotificationsZh,
+  passwordManager: passwordManagerZh,
   agentPrompts: {
     originalLanguage: "内置指令以原文显示。",
   },

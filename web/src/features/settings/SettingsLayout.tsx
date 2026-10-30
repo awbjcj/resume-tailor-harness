@@ -5,6 +5,7 @@ import {
   Mail,
   Bot,
   FileKey2,
+  KeyRound,
   FileText,
   Paintbrush,
   PanelsTopLeft,
@@ -22,6 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import i18n from "@/i18n";
 
 type SettingsNavItem = { to: string; label: string; icon: LucideIcon };
 
@@ -48,6 +50,7 @@ export function getSettingsNavigation() {
       label: "Applications",
       items: [
         { to: "/settings/application-profile", label: "Application profile", icon: FileText },
+        { to: "/settings/password-manager", label: i18n.t("passwordManager.title"), icon: KeyRound },
         { to: "/settings/notifications", label: "Email & notifications", icon: Mail },
       ],
     },
