@@ -57,6 +57,7 @@ from resume_tailor_harness.services.scrape_ingest import (
     find_observed_job,
 )
 from resume_tailor_harness.tenancy.context import current_context
+from resume_tailor_harness.tracking.tables import Job
 
 
 def build_gateway() -> BrowserGateway:
@@ -103,6 +104,10 @@ def analyze_url(
     learner = build_understand_agent()
     extractor = build_extract_agent()
     understanding = understand(listing, learner)
+    if understanding.kind == "blocked":
+        cooldowns = getattr(gateway, "cooldowns", None)
+        if cooldowns is not None:
+            cooldowns.block(listing.final_url, "access challenge")
     static_sample = (
         extract_observation(listing, draft.source_id, 0, extractor)
         if understanding.kind == "posting"
@@ -354,6 +359,13 @@ def pull_source(
                 report.messages.append(str(exc))
             continue
         if job_id is not None:
+            job = session.get(Job, job_id)
+            if (
+                job is not None
+                and job.status == "raw"
+                and job_id not in report.changed_raw_job_ids
+            ):
+                report.changed_raw_job_ids.append(job_id)
             if existing is None:
                 report.imported += 1
             else:

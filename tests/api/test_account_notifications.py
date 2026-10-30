@@ -129,7 +129,9 @@ def test_delete_notice_survives_workspace_removal_and_failure_is_silent(
 
     def fail_cleanup(path):
         # A dispatcher cannot send the held deletion notice mid-cleanup.
-        settings = mu_app.state.settings.model_copy(update={"resend_api_key": "test"})
+        settings = mu_app.state.settings.model_copy(
+            update={"mail_from": "sender@example.com", "resend_api_key": "test"}
+        )
         assert (
             deliver_account_emails(
                 mu_app.state.system_engine, mu_app.state.mailer, settings
@@ -237,7 +239,7 @@ def test_scheduler_sends_to_disabled_and_deleted_accounts_without_digest_opt_in(
         mu_client.delete(f"/api/admin/users/{member}?confirm=DELETE").status_code == 200
     )
     mu_app.state.settings = mu_app.state.settings.model_copy(
-        update={"resend_api_key": "test"}
+        update={"mail_from": "sender@example.com", "resend_api_key": "test"}
     )
     assert email_notification_tick(mu_app.state) == 2
     assert {message[0] for message in mu_app.state.mailer.sent} == {"alice@example.com"}

@@ -23,6 +23,29 @@ def _anonymous_card_key(source_id: str, card: Any) -> str:
     return sha256(f"{source_id}\ncard:{card}".encode()).hexdigest()
 
 
+def _card_identity(draft: Draft, listing, card: Any) -> str | None:
+    plan = draft.plan
+    if plan is None:
+        return None
+    link = card.select_one(plan.link_selector) if plan.link_selector else None
+    url = (
+        urljoin(listing.final_url, str(link.get("href")))
+        if link and link.get("href")
+        else None
+    )
+    if draft.page_kind == "posting" and plan.detail_mode == "inline":
+        url = listing.final_url
+    posting_id = card.get("data-job-id")
+    identity = observed_job_key(
+        draft.source_id, str(posting_id) if posting_id else None, url
+    )
+    return identity or (
+        _anonymous_card_key(draft.source_id, card)
+        if plan.detail_mode != "link"
+        else None
+    )
+
+
 def _layout_signature(card: Any) -> tuple[tuple[str, tuple[str, ...]], ...]:
     """Describe visible card structure without using its job-specific text."""
     return tuple(
@@ -84,7 +107,15 @@ def replay(
             card_entries = list(enumerate(cards))
             if preview:
                 report.discovered += len(cards)
-                card_entries = _preview_cards(cards, max(0, 3 - report.inspected))
+                candidates = [
+                    (index, card)
+                    for index, card in card_entries
+                    if _card_identity(draft, listing, card) not in seen
+                ]
+                sample = _preview_cards(
+                    [card for _, card in candidates], max(0, 3 - report.inspected)
+                )
+                card_entries = [(candidates[index][0], card) for index, card in sample]
             for index, card in card_entries:
                 link = (
                     card.select_one(plan.link_selector) if plan.link_selector else None
@@ -298,6 +329,10 @@ def replay(
                             budget,
                         )
             if preview and report.inspected >= 3:
+                if plan.pagination == "none" and all(
+                    _card_identity(draft, listing, card) in seen for card in cards
+                ):
+                    break
                 report.terminal_reason = "partial_limit"
                 return report
             if not cards:

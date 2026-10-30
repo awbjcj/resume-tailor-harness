@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { fieldLabel, formatLocationText, locationLabel } from "./format";
+import { fieldLabel, formatLocationText, locationLabel, salaryLabel } from "./format";
+import { changeLanguage } from "@/i18n";
+
+it("keeps hourly salary amounts and periods readable in both languages", async () => {
+  await changeLanguage("en");
+  expect(salaryLabel(100, null, "USD", "hour")).toBe("$100/hour");
+  expect(salaryLabel(150000, null, "USD", "year")).toBe("$150k");
+  await changeLanguage("zh-CN");
+  expect(salaryLabel(100, null, "USD", "hour")).toBe("$100/小时");
+});
 
 describe("location display formatting", () => {
   it("normalizes all-caps place names and country codes in raw locations", () => {

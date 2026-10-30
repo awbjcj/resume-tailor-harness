@@ -6,6 +6,7 @@ type ShortlistDetailsRow = {
   salaryMin?: number | null;
   salaryMax?: number | null;
   salaryCurrency?: string | null;
+  salaryPeriod?: string | null;
   industry?: string | null;
   postedAt?: string | null;
 };
@@ -14,7 +15,7 @@ export function ShortlistDetails({ row }: { row: ShortlistDetailsRow }) {
   const details = [
     {
       label: "Compensation",
-      value: salaryLabel(row.salaryMin, row.salaryMax, row.salaryCurrency),
+      value: salaryLabel(row.salaryMin, row.salaryMax, row.salaryCurrency, row.salaryPeriod),
       className: "font-medium text-success",
     },
     {

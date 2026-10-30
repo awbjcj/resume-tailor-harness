@@ -121,6 +121,8 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
             "scrape_drafts": 0,
             "gmail_receipts": 1,
             "gmail_sync_state": 1,
+            "runoperationlog": 0,
+            "clearedrunhistory": 0,
             "run_completions": 0,
             "saved_board_views": 0,
             "notifications": 0,

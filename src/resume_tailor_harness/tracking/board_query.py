@@ -21,7 +21,11 @@ from sqlalchemy.sql.elements import ColumnElement
 from sqlmodel import Session, select
 
 from resume_tailor_harness.taxonomy.company_size import snap as snap_company_size
-from resume_tailor_harness.taxonomy.skills import canonical_skill, load_aliases, split_skills
+from resume_tailor_harness.taxonomy.skills import (
+    canonical_skill,
+    load_aliases,
+    split_skills,
+)
 from resume_tailor_harness.tenancy.paths import SKILL_ALIASES_PATH
 from resume_tailor_harness.tracking.match_gap import normalize_skill
 from resume_tailor_harness.tracking.tables import Job, JobStatus
@@ -333,13 +337,28 @@ def _search_columns(board: BoardName) -> tuple[ColumnElement[Any], ...]:
 
 
 def _salary_value(board: BoardName) -> ColumnElement[float | None]:
+    from resume_tailor_harness.salary import ANNUAL_FACTORS
+
     if board == "triage":
         return cast(ColumnElement[float | None], func.nullif(0, 0))
     maximum = _json_number("salary_range", "maximum")
     minimum = _json_number("salary_range", "minimum")
+    raw = func.coalesce(func.nullif(maximum, 0), func.nullif(minimum, 0))
+    currency = func.upper(
+        func.trim(
+            func.coalesce(
+                func.nullif(_json_text("salary_range", "currency"), ""), "USD"
+            )
+        )
+    )
+    period = func.lower(
+        func.trim(
+            func.coalesce(func.nullif(_json_text("salary_range", "period"), ""), "year")
+        )
+    )
+    factor = case(ANNUAL_FACTORS, value=period, else_=None)
     return cast(
-        ColumnElement[float | None],
-        func.coalesce(func.nullif(maximum, 0), func.nullif(minimum, 0)),
+        ColumnElement[float | None], case((currency == "USD", raw * factor), else_=None)
     )
 
 

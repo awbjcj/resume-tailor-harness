@@ -16,10 +16,15 @@ from .models import ExtractedJob
 
 def access_blocked(html: str) -> bool:
     soup = BeautifulSoup(html, "html.parser")
-    headings = " ".join(
-        node.get_text(" ", strip=True).casefold()
-        for node in soup.select("title, h1, h2")
-    )
+    import re
+
+    primary = soup.select("title, h1") or soup.select("h2")[:1]
+    headings = [
+        re.split(r"\s+[|–—-]\s+", node.get_text(" ", strip=True).casefold())[0].strip(
+            " .!…:"
+        )
+        for node in primary
+    ]
     return any(
         phrase in headings
         for phrase in (
@@ -28,6 +33,8 @@ def access_blocked(html: str) -> bool:
             "security verification",
             "just a moment",
             "captcha",
+            "captcha verification",
+            "complete the captcha",
             "sign in to continue",
             "robot check",
         )
@@ -129,7 +136,10 @@ def read_public_posting(html: str, url: str) -> ExtractedJob | None:
     schema_description = posting.get("description") if posting else None
     if isinstance(schema_description, str):
         schema_body = html_to_markdown(schema_description)
-        if is_materially_richer(schema_body, description):
+        if is_materially_richer(schema_body, description) or (
+            len(description.split()) < 45
+            and len(schema_body.split()) > len(description.split())
+        ):
             description = schema_body
     lines = []
     location = text(selected[3]) or (structured.location if structured else None)

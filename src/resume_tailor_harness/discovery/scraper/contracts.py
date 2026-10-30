@@ -210,6 +210,7 @@ class OverridePatch(Contract):
 
 
 class PullReport(Contract):
+    changed_raw_job_ids: list[int] = Field(default_factory=list)
     repair_draft_id: str | None = None
     terminal_reason: TerminalReason = "complete"
     discovered: int = 0

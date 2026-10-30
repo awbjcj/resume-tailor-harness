@@ -382,7 +382,7 @@ def anthropic_delta(event, parsed):
             args = (args + value(value(event, "delta"), "partial_json", ""))[:160]
             state.blocks[index] = (call_id, name, args)
             attach(parsed, ToolStarted(call_id, name, preview(args)))
-    elif kind == "content_block_stop" and block_type in {
+    elif kind == "content_block_start" and block_type in {
         "web_search_tool_result",
         "web_fetch_tool_result",
     }:
@@ -432,9 +432,7 @@ def gemini_delta(event, parsed):
                     state.anonymous_tools.setdefault(name, []).append(call_id)
                 attach(
                     parsed,
-                    ToolStarted(
-                        call_id, name, preview(value(tool, "args") or "")
-                    ),
+                    ToolStarted(call_id, name, preview(value(tool, "args") or "")),
                 )
             if result is not None:
                 tool_type = value(result, "tool_type")

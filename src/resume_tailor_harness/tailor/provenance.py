@@ -52,6 +52,9 @@ def _referenced_uses(content: ResumeContent) -> list[tuple[str, ProvenanceUse]]:
     # "entity" use, so the inferred-skill branch below rejects an inferred
     # pointer in the summary exactly as it does for a bullet.
     uses.extend((fact_id, "entity") for fact_id in content.summary_provenance)
+    uses.extend(
+        (record.id, "entity") for record in (*content.education, *content.languages)
+    )
     for exp in content.experience:
         uses.append((exp.provenance, "entity"))
         uses.extend((bullet.provenance, "bullet") for bullet in exp.bullets)
@@ -134,6 +137,13 @@ def check_provenance(content: ResumeContent, facts: ProfileFacts) -> ProvenanceR
         fact_id for fact_id in referenced_ids(content) if fact_id not in index
     )
     invalid: set[str] = set()
+    for section in ("education", "languages"):
+        originals = {record.id: record for record in getattr(facts, section)}
+        for record in getattr(content, section):
+            if record != originals.get(record.id):
+                invalid.add(
+                    f"{section}:{record.id}: must match a verified profile entry verbatim"
+                )
     if content.summary and not content.summary_provenance:
         invalid.add("summary: nonempty summary has no summary_provenance ids")
     for fact_id, usage in _referenced_uses(content):

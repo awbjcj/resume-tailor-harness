@@ -3,7 +3,12 @@
 from fastapi import APIRouter, Depends, Request
 from sqlmodel import Session
 
-from resume_tailor_harness.api.deps import get_engine, get_run_manager, get_session
+from resume_tailor_harness.api.deps import (
+    get_engine,
+    get_run_manager,
+    get_session,
+    get_config_store,
+)
 from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.runs.launch import launch, session_work
 from resume_tailor_harness.api.schemas.runs import RunOut
@@ -24,6 +29,7 @@ from resume_tailor_harness.api.schemas.scrape import (
 )
 from resume_tailor_harness.discovery.scraper.contracts import FieldName, OverridePatch
 from resume_tailor_harness.discovery.scraper.store import RevisionConflict
+from resume_tailor_harness.discovery.search_config import SearchConfig
 from resume_tailor_harness.services import (
     scrape_corrections,
     scrape_queries,
@@ -116,7 +122,9 @@ def approve(draft_id: str, body: ApproveIn, session: Session = Depends(get_sessi
 
 @router.get("/scrape/sources", response_model=list[DraftOut])
 def sources(session: Session = Depends(get_session)):
-    return [DraftOut.model_validate(item) for item in scrape_review.list_sources(session)]
+    return [
+        DraftOut.model_validate(item) for item in scrape_review.list_sources(session)
+    ]
 
 
 @router.get("/scrape/sources/{source_id}/revisions", response_model=list[DraftOut])
@@ -137,7 +145,13 @@ def pull(
     def work(session, reporter):
         reporter.begin(1, "Checking public job board")
         result = scrape_review.pull_source(
-            session, source_id, checkpoint=reporter.checkpoint, refresh=refresh
+            session,
+            source_id,
+            checkpoint=reporter.checkpoint,
+            refresh=refresh,
+            search=SearchConfig.model_validate(
+                get_config_store(request).get("search").model_dump()
+            ),
         )
         reporter.step(1)
         return result.model_dump(mode="json", by_alias=True)
@@ -176,9 +190,7 @@ def rollback(source_id: str, body: RollbackIn, session: Session = Depends(get_se
     )
 
 
-@router.get(
-    "/jobs/{job_id}/source-observations", response_model=list[ObservationOut]
-)
+@router.get("/jobs/{job_id}/source-observations", response_model=list[ObservationOut])
 def observations(job_id: int, session: Session = Depends(get_session)):
     return [
         ObservationOut.model_validate(item)

@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "web/src/index.css"
+        ],
+        "createdAt": "2026-10-30T01:30:23.817Z",
+        "reason": "Agent review: existing pipeline stage header cue matches semantic badge colors in PipelineStageSection.tsx; unchanged in base f714f38f."
+      }
+    ]
+  }
+}

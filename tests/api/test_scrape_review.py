@@ -8,6 +8,52 @@ from resume_tailor_harness.discovery.scraper.contracts import Draft
 from resume_tailor_harness.discovery.scraper.store import ScrapeStore
 
 
+def test_source_repull_uses_the_authenticated_workspace_search_filters(
+    mu_app, mu_client, monkeypatch
+):
+    import time
+
+    from resume_tailor_harness.discovery.scraper.contracts import PullReport
+    from resume_tailor_harness.services import scrape_review
+
+    captured = []
+
+    def pull(session, source_id, *, search, **kwargs):
+        captured.append((source_id, search))
+        return PullReport()
+
+    monkeypatch.setattr(scrape_review, "pull_source", pull)
+    assert (
+        mu_client.post(
+            "/api/auth/login",
+            json={"identifier": "owner", "password": "owner-password"},
+        ).status_code
+        == 200
+    )
+    assert (
+        mu_client.put(
+            "/api/config/search",
+            json={"minSalary": 170_000, "remotePolicy": ["remote"]},
+        ).status_code
+        == 200
+    )
+    response = mu_client.post("/api/scrape/sources/board/pull")
+    assert response.status_code == 202, response.text
+    run_id = response.json()["runId"]
+    run = None
+    for _ in range(100):
+        run = mu_client.get(f"/api/runs/{run_id}").json()
+        if run["state"] in {"done", "error"}:
+            break
+        time.sleep(0.02)
+    assert run is not None
+    assert run["state"] == "done", run
+    assert len(captured) == 1
+    source_id, search = captured[0]
+    assert source_id == "board"
+    assert search.min_salary == 170_000 and search.remote_policy == ["remote"]
+
+
 def test_review_route_hides_missing_drafts_and_checks_revisions(tmp_path):
     engine = make_engine("sqlite://")
     init_db(engine)
@@ -232,9 +278,7 @@ def test_source_override_updates_the_canonical_job_and_invalidates_derived_state
             params={"expected_revision": 1},
         )
         assert response.status_code == 200
-        observations = client.get(
-            f"/api/jobs/{job_id}/source-observations"
-        ).json()
+        observations = client.get(f"/api/jobs/{job_id}/source-observations").json()
         assert observations[0]["facts"]["company"] == "Example"
         assert observations[0]["effectiveFacts"]["company"] == "Reviewed Example"
 

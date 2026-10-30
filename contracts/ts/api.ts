@@ -7908,6 +7908,8 @@ export interface components {
             salaryMax?: number | null;
             /** Salarymin */
             salaryMin?: number | null;
+            /** Salaryperiod */
+            salaryPeriod?: string | null;
             /** Seniority */
             seniority?: string | null;
             /** Skills */
@@ -8784,6 +8786,8 @@ export interface components {
             salaryMax: number | null;
             /** Salarymin */
             salaryMin: number | null;
+            /** Salaryperiod */
+            salaryPeriod?: string | null;
             /** Seniority */
             seniority: string | null;
             /** Source */
@@ -10638,6 +10642,8 @@ export interface components {
             salaryMax: number | null;
             /** Salarymin */
             salaryMin: number | null;
+            /** Salaryperiod */
+            salaryPeriod?: string | null;
             /** Seniority */
             seniority: string | null;
             /** Skills */

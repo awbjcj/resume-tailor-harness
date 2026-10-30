@@ -30,6 +30,7 @@ from resume_tailor_harness.tenancy.system_db import (
 from resume_tailor_harness.tenancy.workspace import workspace_paths
 
 logger = logging.getLogger(__name__)
+MAX_DELIVERY_ATTEMPTS = 8
 
 EVENTS = {
     "account_created": ("Your account was created", "Your account is ready to use."),
@@ -267,6 +268,7 @@ def deliver_account_emails(
                 .where(
                     AccountEmail.ready.is_(True),
                     AccountEmail.sent_at.is_(None),
+                    AccountEmail.failed_at.is_(None),
                     AccountEmail.next_attempt_at <= moment,
                     or_(
                         AccountEmail.lease_until.is_(None),
@@ -287,7 +289,9 @@ def deliver_account_emails(
                         pass
                 context = json.loads(row.context_json)
                 owner = session.get(User, row.user_id)
-                language = owner.dashboard_language if owner else context.get("language", "en")
+                language = (
+                    owner.dashboard_language if owner else context.get("language", "en")
+                )
                 context.pop("language", None)
                 body, html = render_email(
                     "account_event",
@@ -311,10 +315,12 @@ def deliver_account_emails(
             row_id, attempts = row.id, row.attempts
             session.commit()
         delivered = False
+        retryable = True
         try:
             mailer.send(**payload)
             delivered = True
-        except Exception:
+        except Exception as error:
+            retryable = getattr(error, "retryable", True)
             # Do not log the rendered payload, account details or credentials.
             logger.warning("Account email %s failed on attempt %s", row_id, attempts)
         with Session(engine) as session:
@@ -325,6 +331,13 @@ def deliver_account_emails(
                 if delivered:
                     row.sent_at = moment
                     sent += 1
+                elif not retryable or attempts >= MAX_DELIVERY_ATTEMPTS:
+                    row.failed_at = moment
+                    row.failure_reason = (
+                        "permanent_delivery_error"
+                        if not retryable
+                        else "retry_exhausted"
+                    )
                 else:
                     row.next_attempt_at = moment + timedelta(
                         minutes=min(360, 2 ** min(attempts, 9))

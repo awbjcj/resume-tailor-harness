@@ -14,6 +14,7 @@ from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import ReviewCritique
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.progress import ProgressReporter
+from resume_tailor_harness.render.export import export_job_artifacts
 from resume_tailor_harness.services.agents import build_reviewers
 from resume_tailor_harness.services.resume_shape import for_rendering
 from resume_tailor_harness.tailor.numeric_evidence import numeric_evidence_critique
@@ -183,5 +184,6 @@ def submit_draft(
     session.add(version)
     session.commit()
     session.refresh(version)
+    export_job_artifacts(session, job_id)
     result["versionId"] = version.id
     return result

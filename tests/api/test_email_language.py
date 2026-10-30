@@ -72,7 +72,11 @@ def test_saved_language_reaches_verification_and_scheduled_digest(
 ):
     login(mu_client)
     mu_app.state.settings = mu_app.state.settings.model_copy(
-        update={"resend_api_key": "test", "app_base_url": "https://app.example.com"}
+        update={
+            "resend_api_key": "test",
+            "mail_from": "sender@example.com",
+            "app_base_url": "https://app.example.com",
+        }
     )
     mu_app.state.mailer = mailbox = Mailbox()
     mu_client.put("/api/config/language", json={"language": "zh-CN"})
@@ -156,7 +160,9 @@ def test_account_notices_use_recipient_language_and_keep_it_after_deletion(
         )
         session.commit()
     mailbox = Mailbox()
-    settings = mu_app.state.settings.model_copy(update={"resend_api_key": "test"})
+    settings = mu_app.state.settings.model_copy(
+        update={"resend_api_key": "test", "mail_from": "sender@example.com"}
+    )
     assert deliver_account_emails(mu_app.state.system_engine, mailbox, settings) == 1
     assert mailbox.sent[-1]["subject"].startswith("账户设置已更新")
     assert "管理员 → 成员" in mailbox.sent[-1]["body"]
@@ -209,7 +215,9 @@ def test_queued_notice_uses_latest_dashboard_language_at_first_delivery(
 ):
     login(mu_client)
     owner_id = mu_app.state.default_context.user_id
-    settings = mu_app.state.settings.model_copy(update={"resend_api_key": "test"})
+    settings = mu_app.state.settings.model_copy(
+        update={"resend_api_key": "test", "mail_from": "sender@example.com"}
+    )
     mailbox = Mailbox()
     for selected, expected in [
         ("zh-CN", "账户设置已更新"),

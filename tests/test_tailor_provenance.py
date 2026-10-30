@@ -1,9 +1,13 @@
 from typing import Literal
 
+import pytest
+
 from resume_tailor_harness.models.profile import (
     Bullet,
     Contact,
+    Education,
     Experience,
+    Language,
     ProfileFacts,
     Project,
     Skill,
@@ -62,6 +66,29 @@ def _content(bullet_prov="b1", skill_prov="s1") -> ResumeContent:
 def test_index_facts_collects_every_id():
     idx = index_facts(_facts())
     assert set(idx) == {"e1", "b1", "p1", "s1"}
+
+
+@pytest.mark.parametrize(
+    "section,record",
+    [
+        (
+            "education",
+            Education(id="edu1", institution="Verified University", degree="BS"),
+        ),
+        ("languages", Language(id="lang1", language="English", proficiency="fluent")),
+    ],
+)
+def test_carried_sections_require_verified_ids_and_unchanged_values(section, record):
+    facts, content = _facts(), _content()
+    setattr(content, section, [record])
+    report = check_provenance(content, facts)
+    assert not report.ok and record.id in report.missing
+    setattr(facts, section, [record.model_copy(deep=True)])
+    assert check_provenance(content, facts).ok
+    assert record.id in resolve_evidence(content, facts)
+    field = "degree" if section == "education" else "proficiency"
+    setattr(content, section, [record.model_copy(update={field: "invented"})])
+    assert not check_provenance(content, facts).ok
 
 
 def test_project_highlights_are_individually_fact_locked():

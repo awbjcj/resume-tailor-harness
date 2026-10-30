@@ -40,6 +40,50 @@ class FixtureWorker:
         return self.snapshot("https://example.com/jobs", budget)
 
 
+@pytest.mark.parametrize("sticky", [False, True])
+def test_preview_inspects_three_distinct_jobs_and_reports_actual_coverage(sticky):
+    class Worker(FixtureWorker):
+        page = 0
+
+        def snapshot(self, url, budget):
+            if url.endswith("/jobs"):
+                numbers = [1, 2] if sticky and self.page == 0 else [1, 2, 3]
+                return snapshot_from_html(
+                    url,
+                    "".join(
+                        f'<article><a href="/jobs/{n}">Job {n}</a></article>'
+                        for n in numbers
+                    )
+                    + '<button class="next">Next</button>',
+                )
+            return super().snapshot(url, budget)
+
+        def act(self, action, budget):
+            if action.kind == "next":
+                self.page += 1
+                return self.snapshot("https://example.com/jobs", budget)
+            return super().act(action, budget)
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        draft = Draft(
+            source_id="board",
+            url="https://example.com/jobs",
+            plan=BoardPlan(
+                card_selector="article",
+                link_selector="a",
+                detail_selector=".jd",
+                pagination="next" if sticky else "none",
+                control_selector=".next" if sticky else None,
+            ),
+        )
+        report = replay(draft, Worker(), ScrapeStore(session), None, preview=True)
+        assert report.inspected == 3
+        assert len({o.job_key for o in report.observations}) == 3
+        assert report.terminal_reason == ("partial_limit" if sticky else "complete")
+
+
 def test_replay_stops_detail_budget_with_partial_outcome():
     engine = make_engine("sqlite://")
     init_db(engine)
@@ -167,9 +211,7 @@ def test_preview_prefers_distinct_visible_card_layouts(monkeypatch):
                 card_selector="article", link_selector="a", detail_selector=".jd"
             ),
         )
-        report = replay(
-            draft, LayoutWorker(), ScrapeStore(session), None, preview=True
-        )
+        report = replay(draft, LayoutWorker(), ScrapeStore(session), None, preview=True)
 
     assert inspected == [
         "https://example.com/jobs/1",
