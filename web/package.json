@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run i18n:check && tsc -b && vite build",
+    "build": "npm run i18n:check && tsc -b && vite build && npm run perf:check",
+    "perf:check": "node scripts/check-bundle-budget.mjs",
     "lint": "eslint .",
     "i18n:check": "node scripts/i18n-catalog.mjs",
     "i18n:generate": "node scripts/i18n-catalog.mjs --write-runtime",

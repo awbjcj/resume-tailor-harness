@@ -3,6 +3,7 @@
 import imaplib
 import re
 import smtplib
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from email import policy
@@ -23,6 +24,8 @@ from resume_tailor_harness.mailboxes.models import (
     MailServer,
 )
 from resume_tailor_harness.security.mail_transport import (
+    IMAP_BATCH_SIZE,
+    IMAP_LITERAL_LIMIT,
     PublicIMAP,
     PublicIMAPSSL,
     PublicSMTP,
@@ -31,7 +34,7 @@ from resume_tailor_harness.security.mail_transport import (
     tls_context,
 )
 
-MAX_MESSAGE_BYTES = 128 * 1024
+MAX_MESSAGE_BYTES = IMAP_LITERAL_LIMIT
 UID_WINDOW = 2000
 
 
@@ -156,6 +159,71 @@ def mailbox_bounds(client) -> tuple[int, int]:
     return _number(client, "UIDVALIDITY"), _number(client, "UIDNEXT") - 1
 
 
+def _fetch_message_records(payload) -> Iterator[tuple[bytes, bytes]]:
+    """Join imaplib's literal prefix/trailer without treating body bytes as metadata."""
+    parts: list[bytes] = []
+    body: bytes | None = None
+    for item in payload:
+        if isinstance(item, tuple):
+            prefix, literal = item
+            if not re.match(rb"[0-9]+ \(", prefix):
+                raise MailboxError(
+                    "IMAP returned an invalid message batch. Retry sync."
+                )
+            if body is not None:
+                yield b"".join(parts), body
+            parts, body = [prefix], literal
+        elif isinstance(item, bytes):
+            if re.match(rb"[0-9]+ \(", item):
+                # A separate FETCH response (e.g. an unsolicited FLAGS update).
+                if body is not None:
+                    yield b"".join(parts), body
+                parts, body = [], None
+            elif body is not None:
+                # UID and INTERNALDATE may follow the body literal.
+                parts.append(item)
+    if body is not None:
+        yield b"".join(parts), body
+
+
+def _fetch_attributes(envelope: bytes) -> tuple[int, bytes | None]:
+    """Read top-level attributes, excluding quoted strings and nested FLAGS lists."""
+    tokens: list[bytes] = []
+    depth = end = 0
+    for match in re.finditer(rb'"(?:[^"\\]|\\.)*"|[()]|[^()"\s]+', envelope):
+        if envelope[end : match.start()].strip():
+            raise MailboxError("IMAP returned invalid message metadata. Retry sync.")
+        end = match.end()
+        token = match[0]
+        if token == b"(":
+            depth += 1
+        elif token == b")":
+            depth -= 1
+            if depth < 0:
+                raise MailboxError(
+                    "IMAP returned invalid message metadata. Retry sync."
+                )
+        elif depth == 1:
+            tokens.append(token)
+    if depth or envelope[end:].strip():
+        raise MailboxError("IMAP returned incomplete message metadata. Retry sync.")
+    values = {
+        name: [
+            tokens[index + 1]
+            for index, token in enumerate(tokens[:-1])
+            if token.upper() == name
+        ]
+        for name in (b"UID", b"INTERNALDATE")
+    }
+    ids, dates = values[b"UID"], values[b"INTERNALDATE"]
+    if len(ids) != 1 or not ids[0].isdigit() or len(dates) > 1:
+        raise MailboxError("IMAP returned invalid message metadata. Retry sync.")
+    date = dates[0] if dates else None
+    if date is not None and not (date.startswith(b'"') and date.endswith(b'"')):
+        raise MailboxError("IMAP returned an invalid receipt date. Retry sync.")
+    return int(ids[0]), date[1:-1] if date is not None else None
+
+
 def read_page(
     client, cursor: dict, limit: int, checkpoint, *, bounds: tuple[int, int]
 ) -> tuple[list[EmailMessage], dict, bool]:
@@ -182,21 +250,28 @@ def read_page(
     )
     selected = ids[:limit]
     emails = []
-    for uid in selected:
+    for offset in range(0, len(selected), IMAP_BATCH_SIZE):
+        batch = selected[offset : offset + IMAP_BATCH_SIZE]
         checkpoint()
-        status, payload = client.uid(
-            "fetch", str(uid), f"(INTERNALDATE BODY.PEEK[]<0.{MAX_MESSAGE_BYTES}>)"
-        )
+        with client.bounded_response(checkpoint):
+            status, payload = client.uid(
+                "fetch",
+                ",".join(map(str, batch)),
+                f"(UID INTERNALDATE BODY.PEEK[]<0.{MAX_MESSAGE_BYTES}>)",
+            )
         if status != "OK":
             raise MailboxError("An IMAP message could not be read. Retry sync.")
-        for item in payload:
-            if not isinstance(item, tuple):
-                continue  # Expunged between search and fetch: no content to analyze.
-            envelope, raw = item
-            match = re.search(rb'INTERNALDATE "([^"]+)"', envelope)
-            if match:
+        found = {}
+        for envelope, raw in _fetch_message_records(payload):
+            checkpoint()
+            uid, received_at = _fetch_attributes(envelope)
+            if uid not in batch or uid in found or len(raw) > MAX_MESSAGE_BYTES:
+                raise MailboxError(
+                    "IMAP returned an invalid message batch. Retry sync."
+                )
+            if received_at is not None:
                 received = datetime.strptime(
-                    match[1].decode("ascii"), "%d-%b-%Y %H:%M:%S %z"
+                    received_at.decode("ascii"), "%d-%b-%Y %H:%M:%S %z"
                 )
             else:
                 header = BytesParser(policy=policy.default).parsebytes(
@@ -208,11 +283,11 @@ def read_page(
                     raise MailboxError(
                         "An IMAP message has no valid receipt date."
                     ) from None
-            emails.append(
-                parse_message(
-                    raw, f"{validity}:{uid}", int(received.timestamp() * 1000)
-                )
+            found[uid] = parse_message(
+                raw, f"{validity}:{uid}", int(received.timestamp() * 1000)
             )
+        # Servers may return messages in any order; cursor order is ours.
+        emails.extend(found[uid] for uid in batch if uid in found)
     if new:
         state["high"] = selected[-1] if len(ids) > limit else high
     else:

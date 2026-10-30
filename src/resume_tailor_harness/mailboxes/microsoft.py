@@ -1,6 +1,7 @@
 """Microsoft delegated Mail.Read only. Fixed origins; no token-bearing redirects."""
 
 import base64
+from contextlib import nullcontext
 import json
 import re
 import time
@@ -139,12 +140,17 @@ def _validate_graph_url(url: str) -> None:
         )
 
 
-def graph_get(url: str, access_token: str) -> dict:
+def open_mailbox() -> httpx.Client:
+    """Own one credential-free connection pool for a single account pass."""
+    return httpx.Client(timeout=30, trust_env=False, follow_redirects=False)
+
+
+def graph_get(
+    url: str, access_token: str, *, client: httpx.Client | None = None
+) -> dict:
     _validate_graph_url(url)
     try:
-        with httpx.Client(
-            timeout=30, trust_env=False, follow_redirects=False
-        ) as client:
+        with nullcontext(client) if client is not None else open_mailbox() as client:
             with client.stream(
                 "GET",
                 url,
@@ -248,7 +254,12 @@ def refresh(account: dict, settings: Settings) -> bool:
     return True
 
 
-def read_page(account: dict, cursor: dict) -> tuple[list[EmailMessage], dict, bool]:
+def read_page(
+    account: dict,
+    cursor: dict,
+    *,
+    client: httpx.Client | None = None,
+) -> tuple[list[EmailMessage], dict, bool]:
     initial = (
         DELTA
         + "?"
@@ -259,10 +270,11 @@ def read_page(account: dict, cursor: dict) -> tuple[list[EmailMessage], dict, bo
         )
     )
     url = cursor.get("next") or cursor.get("delta") or initial
+    transport = {"client": client} if client is not None else {}
     try:
-        page = graph_get(url, account["token"]["access_token"])
+        page = graph_get(url, account["token"]["access_token"], **transport)
     except DeltaExpired:
-        page = graph_get(initial, account["token"]["access_token"])
+        page = graph_get(initial, account["token"]["access_token"], **transport)
     try:
         validated = DeltaPayload.model_validate(page)
     except ValidationError:

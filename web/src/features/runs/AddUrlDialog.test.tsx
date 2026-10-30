@@ -11,7 +11,7 @@ describe("add job URL dialog", () => {
     render(<AddUrlDialog />, { wrapper: withQueryClient });
 
     await user.click(screen.getByRole("button", { name: "Add job URL" }));
-    const input = screen.getByLabelText("Job posting URL");
+    const input = await screen.findByLabelText("Job posting URL");
     expect(input).toHaveAttribute("maxlength", "8192");
 
     await user.type(input, "company.com/jobs/role");

@@ -1,7 +1,9 @@
 """Connection management and resumable analysis, shared by API and scheduler."""
 
-from contextlib import nullcontext
 from pathlib import Path
+from typing import cast
+
+from httpx import Client
 
 from sqlalchemy import func
 from sqlmodel import col, select
@@ -160,7 +162,7 @@ def _analyze(engine, reporter, account, settings, warnings) -> dict:
     account_key = "mailbox-" + account["id"]
     is_microsoft = account["provider"] == "microsoft"
     connection = (
-        nullcontext(None)
+        microsoft.open_mailbox()
         if is_microsoft
         else imap.open_mailbox(
             MailboxConnectIn.model_validate(account).imap, account["folder"]
@@ -199,7 +201,9 @@ def _analyze(engine, reporter, account, settings, warnings) -> dict:
         for page in range(settings.gmail_sync_max_pages):
             reporter.checkpoint()
             if is_microsoft:
-                emails, cursor, has_more = microsoft.read_page(account, row.cursors)
+                emails, cursor, has_more = microsoft.read_page(
+                    account, row.cursors, client=cast(Client, client)
+                )
             else:
                 assert bounds is not None
                 emails, cursor, has_more = imap.read_page(
