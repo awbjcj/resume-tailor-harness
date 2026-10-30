@@ -408,10 +408,10 @@ function ReviewRosterForm({
           <TableBody>
             {reviewers.map((r, i) => (
               <TableRow key={r.name}>
-                <TableCell className="align-top">
+                <TableCell className="w-2/5 min-w-56 align-top whitespace-normal [overflow-wrap:anywhere]">
                   <div className="font-medium">{r.name}</div>
                   {REVIEWER_NOTE_KEYS[r.name] && (
-                    <div className="max-w-[26ch] text-xs leading-snug text-muted-foreground">
+                    <div className="text-xs leading-snug text-muted-foreground">
                       {t(REVIEWER_NOTE_KEYS[r.name])}
                     </div>
                   )}
