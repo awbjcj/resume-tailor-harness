@@ -41,7 +41,13 @@ def _guard(request: Request, response: Response) -> None:
     origin = request.headers.get("origin")
     base = request.app.state.settings.app_base_url or str(request.base_url)
     parsed = urlsplit(base)
-    expected = f"{parsed.scheme}://{parsed.netloc}"
+    host = parsed.hostname or ""
+    if ":" in host:
+        host = f"[{host}]"
+    port = parsed.port
+    default_port = 443 if parsed.scheme == "https" else 80
+    authority = host if port in (None, default_port) else f"{host}:{port}"
+    expected = f"{parsed.scheme}://{authority}"
     if (origin is not None and origin != expected) or (
         request.cookies and not request.headers.get("authorization") and origin is None
     ):
