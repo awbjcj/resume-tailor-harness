@@ -151,12 +151,16 @@ def test_oauth_pkce_browser_binding_and_single_use(client, monkeypatch):
     assert query["code_challenge_method"] == ["S256"]
     assert "Mail.Read" in query["scope"][0] and "Mail.Send" not in query["scope"][0]
     assert "HttpOnly" in start.headers["set-cookie"]
+    assert "Path=/api/mailboxes/microsoft/callback" in start.headers["set-cookie"]
+    assert "SameSite=lax" in start.headers["set-cookie"]
     params = {"state": query["state"][0], "code": "valid"}
     response = client.get(
         "/api/mailboxes/microsoft/callback", params=params, follow_redirects=False
     )
     assert response.headers["location"].endswith("mailbox=connected")
     assert exchange.call_args.args[-1] != query["code_challenge"][0]
+    assert exchange.call_args.args[-1] not in start.headers["set-cookie"]
+    assert query["state"][0] not in start.headers["set-cookie"]
     response = client.get(
         "/api/mailboxes/microsoft/callback", params=params, follow_redirects=False
     )
@@ -219,7 +223,7 @@ def test_hosted_oauth_writes_only_signed_owners_workspace(mu_app, monkeypatch):
     from resume_tailor_harness.mailboxes.store import FILENAME
 
     monkeypatch.setattr(microsoft, "connect", fake_connect)
-    with TestClient(mu_app) as client:
+    with TestClient(mu_app, base_url="https://testserver") as client:
         enable_microsoft(mu_app)
         assert (
             client.post(
@@ -229,6 +233,7 @@ def test_hosted_oauth_writes_only_signed_owners_workspace(mu_app, monkeypatch):
             == 200
         )
         start = client.get("/api/mailboxes/microsoft/connect")
+        assert "Secure" in start.headers["set-cookie"]
         state = parse_qs(urlsplit(start.json()["authUrl"]).query)["state"][0]
         result = client.get(
             "/api/mailboxes/microsoft/callback",

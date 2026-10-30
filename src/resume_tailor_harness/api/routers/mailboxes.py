@@ -2,6 +2,7 @@
 
 import secrets
 import time
+from hashlib import sha256
 from pathlib import Path
 
 from fastapi import APIRouter, Request, Response
@@ -131,10 +132,12 @@ def microsoft_connect(request: Request, response: Response):
         # opaque cookie, and PKCE verifier bind this one-time state to its owner.
         state = f"local:{context.user_id}:{secrets.token_urlsafe(24)}"
     engine = request.app.state.system_engine
+    # The browser receives a one-way derived lookup key. Keep all OAuth
+    # state/verifier material behind that key in the server-side flow store.
+    cookie = sha256(secrets.token_bytes(32)).hexdigest()
     if engine is not None:
-        cookie = _store_oauth_flow(engine, state=state, verifier=verifier)
+        _store_oauth_flow(engine, state=state, verifier=verifier, flow_cookie=cookie)
     else:
-        cookie = secrets.token_urlsafe(32)
         flows = request.app.state.mailbox_oauth_states
         now = time.time()
         for key in list(flows):
@@ -143,14 +146,13 @@ def microsoft_connect(request: Request, response: Response):
         if len(flows) >= 100:
             raise MailboxError("Too many pending connections. Try again later.")
         flows[cookie] = (state, verifier, now + 600)
-    response.set_cookie(
-        COOKIE,
-        cookie,
-        max_age=600,
-        httponly=True,
-        samesite="lax",
-        secure=settings.secure_cookies or request.url.scheme == "https",
-        path=CALLBACK,
+    auth.set_oauth_flow_cookie(
+        request,
+        response,
+        flow_cookie=cookie,
+        cookie_name=COOKIE,
+        cookie_path=CALLBACK,
+        require_secure=request.app.state.app_mode == "hosted",
     )
     response.headers["Cache-Control"] = "no-store"
     return MailboxAuthOut(
