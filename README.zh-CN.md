@@ -1,6 +1,7 @@
 # Résumé Tailor Harness
 
 [![CI](https://github.com/awbjcj/resume-tailor-harness/actions/workflows/ci-main.yml/badge.svg)](https://github.com/awbjcj/resume-tailor-harness/actions/workflows/ci-main.yml)
+[![版本](https://img.shields.io/github/v/release/awbjcj/resume-tailor-harness)](https://github.com/awbjcj/resume-tailor-harness/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/)
 

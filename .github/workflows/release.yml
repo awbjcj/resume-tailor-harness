@@ -1,0 +1,53 @@
+name: Batched semantic releases
+
+# The default branch is dev. Run the automation there, but always tag main.
+on:
+  schedule:
+    - cron: "23 14 * * 1"
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump (auto batches changes with a seven-day minimum)
+        type: choice
+        options: [auto, major, minor, patch]
+        default: auto
+      publish:
+        description: Publish the tag and release (unchecked previews only)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: application-releases
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test release planning and publication guards
+        run: python3 -m unittest discover -s tests -p test_release_automation.py -v
+      - name: Plan or publish the next main release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_EVENT: ${{ github.event_name }}
+          RELEASE_BUMP: ${{ inputs.bump || 'auto' }}
+          RELEASE_PUBLISH: ${{ inputs.publish }}
+        run: |
+          args=(release --bump "$RELEASE_BUMP")
+          if [[ "$RELEASE_EVENT" == schedule || "$RELEASE_PUBLISH" == true ]]; then
+            args+=(--publish)
+          fi
+          python3 scripts/release.py "${args[@]}"
