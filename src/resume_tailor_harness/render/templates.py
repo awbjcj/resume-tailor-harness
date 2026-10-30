@@ -44,14 +44,14 @@ BUNDLED = {
         id="technical",
         title="Technical",
         kind="bundled",
-        description="Experience and projects lead a precise engineering-focused layout.",
+        description="Layout for engineering roles, with experience and projects first.",
         path=_REPOSITORY_ROOT / "templates" / "technical.typ",
     ),
     "executive": TemplateInfo(
         id="executive",
         title="Executive",
         kind="bundled",
-        description="Restrained navy headings and strong role hierarchy for senior professionals.",
+        description="Navy headings and clear role hierarchy for senior professionals.",
         path=_REPOSITORY_ROOT / "templates" / "executive.typ",
     ),
     "graduate": TemplateInfo(
@@ -72,7 +72,7 @@ BUNDLED = {
         id="minimal",
         title="Minimal",
         kind="bundled",
-        description="Quiet monochrome styling with generous whitespace for a simple professional resume.",
+        description="Monochrome layout with generous whitespace for a simple professional resume.",
         path=_REPOSITORY_ROOT / "templates" / "minimal.typ",
     ),
     "compact": TemplateInfo(

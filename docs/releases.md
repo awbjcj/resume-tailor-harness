@@ -2,8 +2,8 @@
 
 Application versions are Git tags in **vMAJOR.MINOR.PATCH** format. The latest
 GitHub release appears in both README version badges. Package metadata and the
-Python SDK keep their own package versions; an application milestone does not
-publish a package or attest that a deployment completed.
+Python SDK keep their own package versions. An application release does not
+publish a package or confirm that a deployment completed.
 
 ## Automatic releases
 
@@ -53,8 +53,8 @@ exception, or package registry credential is needed.
 
 The curated `.github/release-history.json` covers all existing `main` history,
 from the first June 8, 2026 scaffold to the October 29, 2026 promotion. Five
-monthly tags identify snapshots, and just three consolidated GitHub releases
-present that history:
+monthly tags identify snapshots, and three consolidated GitHub releases cover
+that history:
 
 | Tag | Snapshot | GitHub release coverage |
 | --- | --- | --- |
@@ -64,9 +64,10 @@ present that history:
 | v0.4.0 | September 30 | Tag only; included in v0.5.0 notes |
 | v0.5.0 | October 29 | September and October; latest |
 
-These are retrospective development milestones under major zero, not inferred
-historical promises of API compatibility. Notes preserve the snapshot dates
-and identify the releases as retrospective; publication timestamps are current.
+These tags mark retrospective development milestones under major zero. They do
+not establish historical API compatibility guarantees. Notes preserve the
+snapshot dates and identify the releases as retrospective; publication
+timestamps are current.
 Old snapshots predate today's CI gate and are explicitly historical. Future
 releases always require current CI evidence.
 

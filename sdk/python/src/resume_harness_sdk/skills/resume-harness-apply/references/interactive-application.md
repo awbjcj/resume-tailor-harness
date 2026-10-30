@@ -13,9 +13,9 @@ resume-harness application-context 42
 resume-harness application-events 42
 ```
 
-Use the requested job, not automatically the first row. If its raw/shortlisted
-stage needs approval and the user requested preparation, inspect `job 42`, then
-`approve 42`. Do not approve again after it is tailored/rendered.
+Choose the job the user requested. If it is raw or shortlisted and the user
+requested preparation, inspect `job 42`, then use `approve 42`. Do not approve
+it again after it is tailored or rendered.
 
 If context contains eligible resume #81 without a PDF:
 
@@ -87,9 +87,9 @@ with ResumeHarness.from_env() as harness:
     fresh_context = harness.application_context(42)
 ```
 
-If a question already existed with an answer, match its scope before asking.
-If two saved answers conflict, state the conflict and ask which applies. Blank
-profile fields and unanswered questions carry no implied answer.
+If a saved question has an answer, check whether it applies before asking again.
+If two saved answers conflict, explain the conflict and ask which applies. Leave
+blank profile fields and unanswered questions unknown.
 
 Equivalent CLI writes:
 
@@ -149,9 +149,10 @@ direct profile/question reads when application context is no longer eligible.
 
 ## Review and resume after confirmation
 
-A useful review names the live employer/role/requisition and uploaded files,
-summarizes material screening answers, and identifies the exact consent or
-attestation still required. Ask for the specific final action, for example:
+A useful review names the employer, role, requisition, and uploaded files shown
+in the live form. It summarizes the material screening answers and identifies
+any consent or attestation still required. Ask for the specific final action,
+for example:
 
 “The Example Co ENG-42 form is ready with resume v81. The saved authorization
 answer and your three-day office answer are entered. The last checkbox certifies

@@ -69,7 +69,7 @@ test("renders localized gates, tiers, and reviewer notes without altering model 
 
   await expect(page.getByText("硬性门槛", { exact: true })).toBeVisible();
   await expect(page.getByText(/硬性门槛评审未通过时，无论本轮得分如何，本轮都不通过/)).toBeVisible();
-  await expect(page.getByText(/真实性要求/)).toBeVisible();
+  await expect(page.getByText(/核查表述是否有个人资料中的事实支持/)).toBeVisible();
   await expect(page.getByRole("button", { name: "写作模型档位：标准型" })).toBeVisible();
   await expect(page.getByRole("button", { name: "修订模型档位：高级型" })).toBeVisible();
   await expect(page.getByText("mid", { exact: true })).toHaveCount(0);

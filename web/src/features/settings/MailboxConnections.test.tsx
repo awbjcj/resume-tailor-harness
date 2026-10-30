@@ -133,7 +133,7 @@ describe("MailboxConnections", () => {
     await user.type(screen.getByLabelText("Mailbox email address"), "new@example.com");
     expect(screen.getByLabelText("Mailbox email address")).toHaveValue("new@example.com");
     expect(screen.getByRole("button", { name: "Test & connect" })).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent("An email operation is running.");
+    expect(screen.getByRole("status")).toHaveTextContent("Another email operation is running.");
   });
 
   it("disconnects the selected account", async () => {

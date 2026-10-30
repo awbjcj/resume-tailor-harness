@@ -42,13 +42,13 @@ for (const width of [1280, 390]) {
     await eligibility.getByLabel("Currently on OPT", { exact: true }).selectOption("no");
     await eligibility.getByLabel(/^Confirmation date/).fill("2026-10-20");
     await page.getByRole("button", { name: "Add experience range", exact: true }).click();
-    const experience = page.getByRole("group", { name: "Dated experience ranges 1", exact: true });
-    await experience.getByLabel(/^Experience specialty/).fill("Software");
+    const experience = page.getByRole("group", { name: "Experience by specialty 1", exact: true });
+    await experience.getByLabel(/^Area of experience/).fill("Software");
     await experience.getByLabel("Minimum years", { exact: true }).fill("3");
     await experience.getByLabel("Maximum years", { exact: true }).fill("6");
     await experience.getByLabel(/^Confirmation date/).fill("2026-10-20");
     await page.getByRole("button", { name: "Add employer answer", exact: true }).click();
-    const employer = page.getByRole("group", { name: "Scoped employer answer records 1", exact: true });
+    const employer = page.getByRole("group", { name: "Employer answers 1", exact: true });
     await employer.getByLabel(/^Employer/).fill("Acme");
     await employer.getByLabel("Requisition / role ID", { exact: true }).fill("REQ-7");
     await employer.getByLabel(/^Exact question/).fill("Previously employed here?");

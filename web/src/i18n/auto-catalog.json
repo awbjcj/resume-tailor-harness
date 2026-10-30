@@ -12089,11 +12089,6 @@
     "en": "New drafts prioritize experience and projects and omit the summary. Turn off for a detailed resume of up to two pages. Text stays at least 10pt; content that still overflows must be shortened before export.",
     "zh-CN": "新草稿优先保留工作经历和项目，不写个人简介。关闭后将生成最多两页的详细简历。正文字号不低于 10pt；若仍然超页，需要先精简内容再导出。"
   },
-  "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Rendering selects one or two pages. One-page drafts use lower bullet limits and preserve space for experience and projects.": {
-    "key": "ui_f9c73ecc40ad",
-    "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Rendering selects one or two pages. One-page drafts use lower bullet limits and preserve space for experience and projects.",
-    "zh-CN": "供撰写、修订和评审使用。最低条目数以档案中的实际证据为限，不会要求编造经历。在“渲染”设置中选择一页或两页；单页草稿会降低要点数量上限，为工作经历和项目保留空间。"
-  },
   "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.": {
     "key": "ui_3a7fc08f84fa",
     "en": "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.",
@@ -12199,20 +12194,10 @@
     "en": "Contractor history",
     "zh-CN": "承包／派遣工作记录"
   },
-  "Country scope": {
-    "key": "ui_32eed489c06d",
-    "en": "Country scope",
-    "zh-CN": "适用国家"
-  },
   "Currently on OPT": {
     "key": "ui_489d8f09fdf9",
     "en": "Currently on OPT",
     "zh-CN": "目前是否处于 OPT 期间"
-  },
-  "Dated experience ranges": {
-    "key": "ui_894e7a835f55",
-    "en": "Dated experience ranges",
-    "zh-CN": "注明日期的工作年限范围"
   },
   "Degree dropdown mapping": {
     "key": "ui_98302fad03a7",
@@ -12244,16 +12229,6 @@
     "en": "Employment history",
     "zh-CN": "雇佣记录"
   },
-  "Exact question / degree mapping context": {
-    "key": "ui_4b9edbdf5004",
-    "en": "Exact question / degree mapping context",
-    "zh-CN": "问题原文／学位映射背景"
-  },
-  "Experience specialty": {
-    "key": "ui_6c14f37e0d9c",
-    "en": "Experience specialty",
-    "zh-CN": "工作经验领域"
-  },
   "Family name": {
     "key": "ui_e19218baf899",
     "en": "Family name",
@@ -12273,11 +12248,6 @@
     "key": "ui_a744e5211553",
     "en": "Immigration status",
     "zh-CN": "移民身份"
-  },
-  "Keep the primary email above. An alternate can be used only with explicit permission and a matching employer, requisition, and country scope.": {
-    "key": "ui_39880901e0ce",
-    "en": "Keep the primary email above. An alternate can be used only with explicit permission and a matching employer, requisition, and country scope.",
-    "zh-CN": "上方主邮箱保持不变。只有明确允许且雇主、招聘编号和适用国家均匹配时，才可使用备用邮箱。"
   },
   "Legal name": {
     "key": "ui_07f883c3b610",
@@ -12344,16 +12314,6 @@
     "en": "Postal code",
     "zh-CN": "邮政编码"
   },
-  "Preferred name parts": {
-    "key": "ui_fa6738fa5820",
-    "en": "Preferred name parts",
-    "zh-CN": "常用姓名各部分"
-  },
-  "Record each country separately. Unknown is different from No. Immigration status, authorization, sponsorship, OPT, and STEM eligibility are independent answers.": {
-    "key": "ui_a3bc91d14b33",
-    "en": "Record each country separately. Unknown is different from No. Immigration status, authorization, sponsorship, OPT, and STEM eligibility are independent answers.",
-    "zh-CN": "分别记录各国情况。“未知”与“否”不同。移民身份、工作资格、签证担保、OPT 和 STEM 资格均需独立回答。"
-  },
   "Referral source": {
     "key": "ui_b0a22931a275",
     "en": "Referral source",
@@ -12389,30 +12349,10 @@
     "en": "Role requirements",
     "zh-CN": "职位要求"
   },
-  "Save exact wording and scope for employer questions, degree dropdown mappings, and role-specific answers. A blank requisition applies across that employer. Keep the actual degree unchanged. Existing employer notes remain below.": {
-    "key": "ui_fd725d59e930",
-    "en": "Save exact wording and scope for employer questions, degree dropdown mappings, and role-specific answers. A blank requisition applies across that employer. Keep the actual degree unchanged. Existing employer notes remain below.",
-    "zh-CN": "保存雇主问题、学位下拉选项映射和特定职位答案的原文及适用范围。招聘编号留空表示适用于该雇主所有职位。实际所获学位保持不变，下方现有雇主备注会保留。"
-  },
-  "Save name and address parts exactly as you want them entered. Blank parts remain unknown; existing contact notes are preserved.": {
-    "key": "ui_075a97d30de7",
-    "en": "Save name and address parts exactly as you want them entered. Blank parts remain unknown; existing contact notes are preserved.",
-    "zh-CN": "按申请表中需要填写的内容保存姓名和地址各部分。留空表示未知，现有联系信息备注会保留。"
-  },
-  "Scoped employer answer records": {
-    "key": "ui_85a66b425139",
-    "en": "Scoped employer answer records",
-    "zh-CN": "限定范围的雇主问答记录"
-  },
   "Sex (optional self-identification)": {
     "key": "ui_62bad0efbe01",
     "en": "Sex (optional self-identification)",
     "zh-CN": "生理性别（自愿披露）"
-  },
-  "Sex and gender are separate optional disclosures. AI matching preferences apply to optional matching; agreements and submission still require application-specific confirmation.": {
-    "key": "ui_87f55f73d14c",
-    "en": "Sex and gender are separate optional disclosures. AI matching preferences apply to optional matching; agreements and submission still require application-specific confirmation.",
-    "zh-CN": "生理性别和性别认同是两项独立的自愿披露。AI 匹配偏好仅适用于可选匹配；接受协议和提交申请仍需针对具体申请确认。"
   },
   "Sex answer confirmation date": {
     "key": "ui_4b8a74f7f716",
@@ -12423,16 +12363,6 @@
     "key": "ui_1654657e7b58",
     "en": "State / province / region",
     "zh-CN": "州／省／地区"
-  },
-  "Structured names and mailing address": {
-    "key": "ui_75b02472a7d3",
-    "en": "Structured names and mailing address",
-    "zh-CN": "结构化姓名和邮寄地址"
-  },
-  "Use self-reported experience for a named specialty. Enter both bounds or leave both unknown. Ranges never supply an exact count or update automatically with time.": {
-    "key": "ui_47e3466e1d82",
-    "en": "Use self-reported experience for a named specialty. Enter both bounds or leave both unknown. Ranges never supply an exact count or update automatically with time.",
-    "zh-CN": "填写本人确认的特定领域工作年限。上下限需同时填写或同时留空。范围不能作为确切年数，也不会随时间自动增加。"
   },
   "Valid until (optional)": {
     "key": "ui_a04b090e55d0",
@@ -12448,5 +12378,70 @@
     "key": "ui_85a39ab345d6",
     "en": "Yes",
     "zh-CN": "是"
+  },
+  "Applicable country": {
+    "key": "ui_3cb76c28c21e",
+    "en": "Applicable country",
+    "zh-CN": "适用国家"
+  },
+  "Area of experience": {
+    "key": "ui_8ed14aa70d0f",
+    "en": "Area of experience",
+    "zh-CN": "工作经验领域"
+  },
+  "Exact question or degree option details": {
+    "key": "ui_35a90de290ff",
+    "en": "Exact question or degree option details",
+    "zh-CN": "问题原文或学位选项说明"
+  },
+  "Names and mailing address": {
+    "key": "ui_aa6fd57724cd",
+    "en": "Names and mailing address",
+    "zh-CN": "姓名与邮寄地址"
+  },
+  "Enter each part of your name and address as it should appear on applications. Blank fields stay unknown; your existing contact notes are kept.": {
+    "key": "ui_f580f7aea800",
+    "en": "Enter each part of your name and address as it should appear on applications. Blank fields stay unknown; your existing contact notes are kept.",
+    "zh-CN": "分别填写申请时要使用的姓名和地址各部分。留空表示未知，现有的联系信息备注会保留。"
+  },
+  "Keep your primary email above. Use an alternate only with explicit permission and when its employer, requisition, and country limits match the application.": {
+    "key": "ui_2cfbd61fa436",
+    "en": "Keep your primary email above. Use an alternate only with explicit permission and when its employer, requisition, and country limits match the application.",
+    "zh-CN": "上方保留主邮箱。只有明确允许，且雇主、招聘编号和适用国家与当前申请相符时，才可使用备用邮箱。"
+  },
+  "Record each country separately. Unknown does not mean No. Answer immigration status, work authorization, sponsorship, OPT, and STEM eligibility separately.": {
+    "key": "ui_25d6c5689a77",
+    "en": "Record each country separately. Unknown does not mean No. Answer immigration status, work authorization, sponsorship, OPT, and STEM eligibility separately.",
+    "zh-CN": "分别记录各国情况。“未知”不代表“否”。移民身份、工作资格、签证担保、OPT 和 STEM 资格请分别回答。"
+  },
+  "Experience by specialty": {
+    "key": "ui_547dfcbb0a91",
+    "en": "Experience by specialty",
+    "zh-CN": "各领域工作年限"
+  },
+  "Enter your own experience range for each specialty. Fill in both the minimum and maximum, or leave both blank. A range cannot stand in for an exact number of years and does not increase automatically over time.": {
+    "key": "ui_4225b4aefde1",
+    "en": "Enter your own experience range for each specialty. Fill in both the minimum and maximum, or leave both blank. A range cannot stand in for an exact number of years and does not increase automatically over time.",
+    "zh-CN": "填写本人确认的各领域工作年限范围。最少和最多工作年数需同时填写，或同时留空。范围不能用作确切年数，也不会随时间自动增加。"
+  },
+  "Sex and gender are separate, optional disclosures. The AI preference covers optional candidate matching only. Confirm agreements and submission separately for each application.": {
+    "key": "ui_d5c7acb0553d",
+    "en": "Sex and gender are separate, optional disclosures. The AI preference covers optional candidate matching only. Confirm agreements and submission separately for each application.",
+    "zh-CN": "生理性别和性别认同是两项独立的自愿披露。AI 偏好仅适用于可选的候选人匹配；接受协议和提交申请仍需针对每份申请分别确认。"
+  },
+  "Employer answers": {
+    "key": "ui_3c91ab267146",
+    "en": "Employer answers",
+    "zh-CN": "雇主问答"
+  },
+  "Save the exact wording and where each answer applies, including degree dropdown choices and role-specific answers. Leave the requisition blank to cover all roles at that employer. Keep your actual degree unchanged. Existing employer notes are below.": {
+    "key": "ui_c50859590876",
+    "en": "Save the exact wording and where each answer applies, including degree dropdown choices and role-specific answers. Leave the requisition blank to cover all roles at that employer. Keep your actual degree unchanged. Existing employer notes are below.",
+    "zh-CN": "保存问题、答案的原文及适用范围，包括学位下拉选项和特定职位的答案。招聘编号留空表示适用于该雇主的所有职位。请保留实际所获学位，现有的雇主备注仍在下方。"
+  },
+  "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Choose one or two pages in Rendering. One-page drafts use lower bullet limits and preserve space for experience and projects.": {
+    "key": "ui_401cbdd3064b",
+    "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Choose one or two pages in Rendering. One-page drafts use lower bullet limits and preserve space for experience and projects.",
+    "zh-CN": "供撰写助手、修改助手和评分评审参考。最低要求以个人资料中的事实为限，不要求编造内容。请在“渲染”中选择一页或两页。单页草稿的要点上限较低，会为工作经历和项目留出空间。"
   }
 }
