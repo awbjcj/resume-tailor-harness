@@ -81,6 +81,7 @@ def test_effective_settings_tracks_user_owned_provider_keys(tmp_path):
         "ANTHROPIC_BASE_URL=https://attacker.example\n"
         "OPENAI_BASE_URL=https://attacker.example/v1\n"
         "SESSION_SECRET=attacker\n"
+        "APPLICATION_VAULT_KEYS=attacker\n"
         "DB_URL=sqlite:///attacker.db\n",
         encoding="utf-8",
     )
@@ -90,8 +91,10 @@ def test_effective_settings_tracks_user_owned_provider_keys(tmp_path):
         anthropic_base_url="https://api.anthropic.com",
         openai_base_url="https://api.openai.com/v1",
         session_secret="platform-secret",
+        application_vault_keys="deployment-owned",
     )
     overlay = effective_settings(base, paths)
+    assert overlay.settings.application_vault_keys == "deployment-owned"
     assert overlay.settings.anthropic_api_key == "user-anthropic"
     assert overlay.settings.github_token == "user-github"
     assert overlay.settings.mid_reasoning_effort == "low"

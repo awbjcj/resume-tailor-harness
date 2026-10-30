@@ -39,6 +39,10 @@ retrieved from a secret manager and an optional HTTPX transport for offline test
 | `download_resume(version_id)` | PDF bytes; caller chooses file destination |
 | `list_application_jobs(page=1, page_size=50)` / `iter_application_jobs(page_size=50)` | Approved/tailored/rendered, unarchived jobs without submission history |
 | `application_context(job_id)` | Full job, readable prompt, personal `profile`, `profileRevision`, questions, attachments and `submissionPolicy` |
+| `list_application_accounts()` | Vault availability, registration preference, revision, and account metadata; no passwords |
+| `prepare_application_account(job_id, browser_url=..., username=None, password_length=24, password_symbols="!@#$%*-_")` | Selects a matching login or durably generates a pending account when enabled; no browser action |
+| `fill_application_account(job_id, account, form=PasswordForm(...))` | Sends credentials to verified host password fields; returns metadata only; never clicks Submit |
+| `record_application_account_outcome(job_id, account, browser_url=..., outcome=...)` | Records observed `authenticated`, `verification_required`, or explicit `failed`; never infers site success |
 | `application_prompt(job_id)` | Full Markdown prompt including job description and personal information |
 | `get_application_profile()` | `profile` and current `revision` |
 | `update_application_profile(changes, revision=..., user_confirmed=True)` | Partial update of confirmed personal fields; camelCase keys. Name/address parts merge; lists replace in full (`[]` clears); empty strings clear text, nullable answers use null for unknown. |

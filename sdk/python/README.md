@@ -1,5 +1,12 @@
 # Resume Harness SDK
 
+Version 0.4 adds an encrypted employer-account workflow. Use
+`list_application_accounts`, `prepare_application_account`, and
+`fill_application_account(..., form=PasswordForm(...))` in the trusted
+computer-use runtime, then record the observed authentication outcome. Normal
+CLI responses contain metadata only. See the [password-manager guide](src/resume_harness_sdk/skills/resume-harness-apply/references/password-manager.md)
+for registration, reuse, interruptions, and host adapter requirements.
+
 Use your Resume Tailor Harness workspace from Python or any agent that can run
 shell commands, including Codex, Claude Code, and pi. The client is independent
 of those agents and installs without the server, a browser, or model SDKs.

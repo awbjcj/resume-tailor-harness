@@ -11,6 +11,7 @@ import httpx
 from pydantic import TypeAdapter, ValidationError
 
 from . import applications
+from . import accounts
 
 JSON = dict[str, Any]
 T = TypeVar("T")
@@ -111,7 +112,7 @@ class ResumeHarness:
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Accept": "application/json",
-                "User-Agent": "resume-harness-sdk/0.3.0",
+                "User-Agent": "resume-harness-sdk/0.4.0",
             },
             follow_redirects=False,
         )
@@ -127,6 +128,84 @@ class ResumeHarness:
 
     def close(self) -> None:
         self._client.close()
+
+    def list_application_accounts(self) -> accounts.AccountVault:
+        return _validated(self._request("GET", "application-accounts"), accounts.VAULT)
+
+    def prepare_application_account(
+        self,
+        job_id: int,
+        *,
+        browser_url: str,
+        username: str | None = None,
+        password_length: int = 24,
+        password_symbols: str = "!@#$%*-_",
+    ) -> accounts.PreparedAccount:
+        """Save/reuse an account, returning metadata only. No browser action."""
+        body: JSON = {
+            "browserUrl": browser_url,
+            "passwordLength": password_length,
+            "passwordSymbols": password_symbols,
+        }
+        if username is not None:
+            body["username"] = username
+        return _validated(
+            self._request(
+                "POST", f"jobs/{_id(job_id)}/application-account/prepare", json=body
+            ),
+            accounts.PREPARED,
+        )
+
+    def fill_application_account(
+        self,
+        job_id: int,
+        account: accounts.ApplicationAccount,
+        *,
+        form: accounts.PasswordForm,
+    ) -> accounts.ApplicationAccount:
+        """Fill in the trusted host runtime; return metadata, never the password.
+
+        A browser integration must bind PasswordForm to verified locators on a
+        single page/frame. No secret-printing CLI command is provided.
+        """
+        form.check(account["origin"])
+        response = self._request(
+            "POST",
+            f"jobs/{_id(job_id)}/application-accounts/{quote(account['id'], safe='')}/secret",
+            json={"browserUrl": form.current_url(), "revision": account["revision"]},
+        )
+        try:
+            payload = accounts._SecretPayload.model_validate_json(response.content)
+        except (ValueError, ValidationError):
+            raise ResponseValidationError("Invalid password-manager response") from None
+        if payload.account != account:
+            raise ResponseValidationError(
+                "Password-manager account changed; prepare again"
+            )
+        form.apply(payload.account, payload.password)
+        return payload.account
+
+    def record_application_account_outcome(
+        self,
+        job_id: int,
+        account: accounts.ApplicationAccount,
+        *,
+        browser_url: str,
+        outcome: Literal["authenticated", "verification_required", "failed"],
+    ) -> accounts.ApplicationAccount:
+        """Record an observed site outcome; a click alone is not authentication."""
+        return _validated(
+            self._request(
+                "POST",
+                f"jobs/{_id(job_id)}/application-accounts/{quote(account['id'], safe='')}/outcome",
+                json={
+                    "browserUrl": browser_url,
+                    "revision": account["revision"],
+                    "outcome": outcome,
+                },
+            ),
+            accounts.ACCOUNT,
+        )
 
     def __enter__(self) -> ResumeHarness:
         return self

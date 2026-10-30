@@ -35,6 +35,13 @@ def main() -> int:
     commands.add_parser("sources")
     commands.add_parser("runs")
     commands.add_parser("application-profile")
+    commands.add_parser("application-accounts")
+    account_prepare = commands.add_parser("prepare-application-account")
+    account_prepare.add_argument("job_id", type=int)
+    account_prepare.add_argument("--browser-url", required=True)
+    account_prepare.add_argument("--username")
+    account_prepare.add_argument("--password-length", type=int, default=24)
+    account_prepare.add_argument("--password-symbols", default="!@#$%*-_")
     application_question = commands.add_parser("application-question")
     application_question.add_argument("question_id", type=int)
     application_jobs = commands.add_parser("application-jobs")
@@ -134,6 +141,16 @@ def main() -> int:
                     )
                 elif command == "application-context":
                     result = client.application_context(args.job_id)
+                elif command == "application-accounts":
+                    result = client.list_application_accounts()
+                elif command == "prepare-application-account":
+                    result = client.prepare_application_account(
+                        args.job_id,
+                        browser_url=args.browser_url,
+                        username=args.username,
+                        password_length=args.password_length,
+                        password_symbols=args.password_symbols,
+                    )
                 elif command == "application-prompt":
                     print(client.application_prompt(args.job_id), end="")
                     return 0
