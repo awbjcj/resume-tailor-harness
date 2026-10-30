@@ -420,14 +420,15 @@ def test_context_is_complete_read_only_and_lists_only_safe_attachments(
         assert job is not None and job.status == "approved"
 
 
-def test_context_rejects_a_passing_flag_with_a_failed_fact_review(app_client):
+@pytest.mark.parametrize("gate_names", [None, ["fact-check"], []])
+def test_context_respects_the_recorded_fact_check_gate(app_client, gate_names):
     app, client = app_client
     job_id = seed_job(app, status="tailored")
     with Session(app.state.engine) as session:
         version = ResumeVersion(
             job_id=job_id,
             fact_check_passed=True,
-            gate_reviewers_json=[],
+            gate_reviewers_json=gate_names,
             critique_json=[{"reviewer": "fact-check", "score": 0, "passed": False}],
         )
         session.add(version)
@@ -435,11 +436,14 @@ def test_context_rejects_a_passing_flag_with_a_failed_fact_review(app_client):
 
     context = client.get(f"/api/jobs/{job_id}/application-context")
     assert context.status_code == 200, context.text
-    assert context.json()["attachments"] == []
+    gated = gate_names is None or "fact-check" in gate_names
+    assert len(context.json()["attachments"]) == (0 if gated else 1)
     detail = client.get(f"/api/jobs/{job_id}").json()
-    assert detail["resumeVersions"][0]["factCheckPassed"] is False
-    assert detail["resumeVersions"][0]["failedGates"] == ["fact-check"]
-    assert detail["needsAttention"] is True
+    assert detail["resumeVersions"][0]["factCheckPassed"] is (not gated)
+    assert detail["resumeVersions"][0]["failedGates"] == (
+        ["fact-check"] if gated else []
+    )
+    assert detail["needsAttention"] is gated
 
 
 def test_sdk_pat_workflow_and_tenant_isolation(mu_app, mu_client):

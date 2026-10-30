@@ -35,11 +35,15 @@ class _ContentAgent:
 
 
 class _FactCheck:
-    def __init__(self):
+    def __init__(self, passed=True, score=100):
         self.closed = False
+        self.passed = passed
+        self.score = score
 
     def run(self, prompt):
-        return _Result(ReviewCritique(reviewer="fact-check", score=100, passed=True))
+        return _Result(
+            ReviewCritique(reviewer="fact-check", score=self.score, passed=self.passed)
+        )
 
     async def arun(self, prompt):
         return self.run(prompt)
@@ -59,14 +63,15 @@ def _require_id(value: int | None) -> int:
     return value
 
 
-def test_tailor_job_persists_versions_and_marks_tailored():
+@pytest.mark.parametrize("fact_gate", [False, True])
+def test_tailor_job_persists_versions_and_marks_tailored(fact_gate):
     config = ReviewConfig(
         max_rounds=1,
         score_threshold=50,
-        reviewers=[ReviewerSpec(name="fact-check", gate=True, weight=0)],
+        reviewers=[ReviewerSpec(name="fact-check", gate=fact_gate, weight=1)],
     )
     tailor_agent = _ContentAgent()
-    reviewer = _FactCheck()
+    reviewer = _FactCheck(passed=fact_gate, score=100 if fact_gate else 90)
     reviser_agent = _ContentAgent()
     taxonomy = EffectiveTaxonomy.from_parts(ClusterMap(aliases={"js": "javascript"}))
     with _session() as s:
@@ -97,12 +102,14 @@ def test_tailor_job_persists_versions_and_marks_tailored():
         assert versions[0].content_json["contact"]["name"] == "Ada"
         # Recorded from THIS round's config, not read back from current
         # settings later - see test_apply_gate_names_does_not_relabel_*.
-        assert versions[0].gate_reviewers_json == ["fact-check"]
+        assert versions[0].gate_reviewers_json == (["fact-check"] if fact_gate else [])
+        assert versions[0].fact_lock_passed is True
         assert versions[0].taxonomy_revision == taxonomy.semantic_revision
         assert versions[0].taxonomy_manifest_json == asdict(taxonomy.manifest)
 
         stored = resume_versions_for_job(s, _require_id(job.id))
         assert len(stored) == 1
+        assert stored[0].fact_lock_passed is True
         assert job.status == JobStatus.tailored.value
     assert tailor_agent.closed is True
     assert reviewer.closed is True

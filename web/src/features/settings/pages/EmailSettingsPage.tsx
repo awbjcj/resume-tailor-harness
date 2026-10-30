@@ -4,12 +4,15 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { GmailCard } from "../GmailCard";
+import { MailboxConnections } from "../MailboxConnections";
+import { useTranslation } from "react-i18next";
 import { SecretsForm } from "../forms/SecretsForm";
 import { useGmailConnectOutcome } from "../use-gmail";
 import { useSaveSecrets, useSecrets } from "../use-secrets";
 import { EmailNotificationsPage } from "./EmailNotificationsPage";
 
 export function EmailSettingsPage() {
+  const { t } = useTranslation();
   const secrets = useSecrets();
   const saveSecrets = useSaveSecrets();
   useGmailConnectOutcome();
@@ -19,11 +22,12 @@ export function EmailSettingsPage() {
       <header className="space-y-1">
         <h1 className="text-lg font-semibold">Email & notifications</h1>
         <p className="text-sm text-muted-foreground">
-          Connect Gmail, sync application updates, and choose the email notifications you receive.
+          {t("mailboxes.description")}
         </p>
       </header>
       <div className="flex min-w-0 flex-col gap-4">
         <GmailCard />
+        <MailboxConnections />
         <details className="rounded-lg border px-4">
           <summary className="min-h-11 cursor-pointer rounded-md py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Custom Gmail OAuth client (optional)

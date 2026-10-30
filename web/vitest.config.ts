@@ -1,4 +1,5 @@
 import path from "node:path";
+import { availableParallelism } from "node:os";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { i18nTransform } from "./i18n-vite-plugin";
@@ -8,6 +9,13 @@ export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
   test: {
     environment: "jsdom",
+    // jsdom startup accounted for 38% of the full run. Reuse its imports in
+    // each worker while keeping a fresh VM context and window for every file.
+    pool: "vmThreads",
+    isolate: true,
+    maxWorkers: Math.min(4, availableParallelism()),
+    // Recycle VM workers so retained module contexts do not grow indefinitely.
+    vmMemoryLimit: "512MB",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     css: false,

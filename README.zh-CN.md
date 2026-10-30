@@ -380,6 +380,10 @@ SESSION_SECRET=<long random value>
 
 ### Gmail 设置（用于 `sync-status`、同步、提醒和邮件草稿）
 
+Web 应用还支持 Outlook/Microsoft 365 登录、Yahoo/iCloud/Fastmail 服务器预设，
+以及自定义 IMAP 邮箱和可选的 SMTP 验证。配置步骤和功能范围见
+[邮箱服务商连接说明](docs/mailbox-connections.md)。
+
 Gmail 为 CLI 的 `sync-status` 提供支持；在 API/网页应用中，它还支持定时后台收件箱同步、长时间未更新申请的跟进提醒和邮件草稿撰写。它只会**读取**邮件（readonly scope）和**创建草稿**（compose scope），绝不会发送邮件。`.env` 中不保存密码；系统通过 Google OAuth 客户端认证，客户端类型取决于你的运行方式。
 
 **CLI，单机：**将 OAuth **Desktop app** 客户端保存为文件：
@@ -685,12 +689,16 @@ PREMIUM_MODEL=claude-opus-5             # 不带前缀时由 Anthropic 承担简
 ## 开发
 
 ```bash
-uv run pytest              # 运行完整测试套件
-uv run pytest -k scraper   # 运行部分测试
+uv run pytest                  # 最多四个隔离进程运行完整测试套件
+uv run pytest -n 0 -k scraper   # 小范围测试，避免启动多个工作进程的开销
 ruff check                 # 代码检查
 ```
 
 测试是纯离线的。智能体和浏览器都由替身实现，因此测试套件不需要 API 密钥或网络。连接器后端使用从真实响应中保存的固定 JSON 数据进行测试。
+
+完整 Python 测试默认使用有限数量的并行进程，并显示最慢的十个测试阶段。
+串行调试或运行少量测试时使用 `-n 0`，排查耗时时可添加 `--durations=40`。
+测量结果和隔离规则见[测试性能说明](docs/test-performance.md)。
 
 异步定制流程通过 `gather_isolated` 并行处理职位和评审调用，在实际模型调用时获取并发许可。同步流程仍可使用。共享服务和数据保存的边界见[架构蓝图](Project_Architecture_Blueprint.md)。
 

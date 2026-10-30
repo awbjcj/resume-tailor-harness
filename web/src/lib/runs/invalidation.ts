@@ -23,6 +23,7 @@ const BY_KIND: Record<string, readonly string[]> = {
   "profile-build": ["profile-sources", "match-gap", "setup-status"],
   "github-sync": ["profile-sources"],
   gmailSync: ["notifications", "gmail-status"],
+  mailboxSync: ["notifications", "mailboxes", "gmail-status"],
   // Reload recovery has no chat mutation callback to refresh sessions.
   "career-lab-turn": ["career-lab-sessions", "career-lab-session"],
   "career-lab-end": ["career-lab-sessions", "career-lab-session"],

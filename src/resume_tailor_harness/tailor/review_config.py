@@ -40,13 +40,10 @@ class ReviewerSpec(ExtensibleModel):
     model_tier: str = "mid"  # cheap | mid | premium
     score_bands: bool = False
 
-    @model_validator(mode="after")
-    def _require_fact_check_gate(self) -> "ReviewerSpec":
-        # Heal old YAML instead of making the workspace unloadable. Fact-check
-        # must receive evidence and cannot become a weighted advisory review.
-        if self.name == FACT_CHECK_REVIEWER:
-            self.gate = True
-        return self
+    @property
+    def requires_evidence(self) -> bool:
+        """Fact-check needs cited facts even when its verdict is advisory."""
+        return self.gate or self.name == FACT_CHECK_REVIEWER
 
 
 class LengthBudget(ExtensibleModel):

@@ -19,7 +19,10 @@ from resume_tailor_harness.career_skills.models import (
     CoverLetterSkillName,
     ResumeAuthoringSkillName,
 )
-from resume_tailor_harness.career_skills.registry import CareerSkillRegistry, VerifiedSkill
+from resume_tailor_harness.career_skills.registry import (
+    CareerSkillRegistry,
+    VerifiedSkill,
+)
 from resume_tailor_harness.discovery.extract import build_extract_agent
 from resume_tailor_harness.discovery.fit import build_fit_agent
 from resume_tailor_harness.discovery.industry import build_industry_classifier
@@ -35,7 +38,9 @@ from resume_tailor_harness.tailor.agents import (
     model_for_tier,
 )
 from resume_tailor_harness.tailor.match_plan import build_match_plan_agent
-from resume_tailor_harness.tailor.portfolio_planner import build_evidence_portfolio_agent
+from resume_tailor_harness.tailor.portfolio_planner import (
+    build_evidence_portfolio_agent,
+)
 from resume_tailor_harness.tailor.panel import MERGED_ADVISORY
 from resume_tailor_harness.tracking.canonicalize import build_skill_canonicalizer
 from resume_tailor_harness.tracking.match_gap import Canonicalizer
@@ -105,7 +110,7 @@ def build_reviewers(
     reviewers = {}
     merged = bool(getattr(config, "merged_advisory", False))
     for spec in config.reviewers:
-        if merged and not spec.gate:
+        if merged and not spec.requires_evidence:
             continue
         kwargs = {
             "style_guide": style_guide,
@@ -125,7 +130,9 @@ def build_reviewers(
             spec.name, model_for_tier(spec.model_tier), **kwargs
         )
     if merged:
-        advisory_specs = [spec for spec in config.reviewers if not spec.gate]
+        advisory_specs = [
+            spec for spec in config.reviewers if not spec.requires_evidence
+        ]
         if advisory_specs:
             reviewers[MERGED_ADVISORY] = build_merged_advisory_agent(
                 [spec.name for spec in advisory_specs],

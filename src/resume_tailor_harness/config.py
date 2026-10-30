@@ -199,6 +199,8 @@ class Settings(BaseSettings):
     # via their workspace secrets.env — str fields join the overlay for free).
     google_oauth_client_id: str = ""
     google_oauth_client_secret: str = ""
+    microsoft_oauth_client_id: str = ""
+    microsoft_oauth_client_secret: str = Field(default="", repr=False)
     gmail_sync_interval_hours: int = Field(default=6, ge=0)  # 0 = scheduler off
     follow_up_days: int = Field(default=14, ge=0)  # 0 = reminders off
     # The short lead belongs to exported calendar VALARMs; these are the

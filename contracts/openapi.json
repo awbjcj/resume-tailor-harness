@@ -426,6 +426,7 @@
           "company": {
             "anyOf": [
               {
+                "maxLength": 1000,
                 "type": "string"
               },
               {
@@ -434,13 +435,26 @@
             ],
             "title": "Company"
           },
+          "details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ManualJobDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "jdText": {
+            "maxLength": 2000000,
+            "minLength": 1,
             "title": "Jdtext",
             "type": "string"
           },
           "location": {
             "anyOf": [
               {
+                "maxLength": 4000,
                 "type": "string"
               },
               {
@@ -449,9 +463,22 @@
             ],
             "title": "Location"
           },
+          "postedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postedat"
+          },
           "title": {
             "anyOf": [
               {
+                "maxLength": 1000,
                 "type": "string"
               },
               {
@@ -463,6 +490,7 @@
           "url": {
             "anyOf": [
               {
+                "maxLength": 4096,
                 "type": "string"
               },
               {
@@ -7078,6 +7106,16 @@
         "title": "EmployerAnswer",
         "type": "object"
       },
+      "EmploymentType": {
+        "enum": [
+          "full_time",
+          "contract",
+          "internship",
+          "part_time"
+        ],
+        "title": "EmploymentType",
+        "type": "string"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -10369,6 +10407,235 @@
         "title": "LoginRequest",
         "type": "object"
       },
+      "MailProviderOut": {
+        "properties": {
+          "auth": {
+            "enum": [
+              "oauth",
+              "password"
+            ],
+            "title": "Auth",
+            "type": "string"
+          },
+          "available": {
+            "default": true,
+            "title": "Available",
+            "type": "boolean"
+          },
+          "helpUrl": {
+            "default": "",
+            "title": "Helpurl",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "imapHost": {
+            "default": "",
+            "title": "Imaphost",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "smtpHost": {
+            "default": "",
+            "title": "Smtphost",
+            "type": "string"
+          },
+          "smtpPort": {
+            "default": 465,
+            "title": "Smtpport",
+            "type": "integer"
+          },
+          "smtpSecurity": {
+            "default": "tls",
+            "enum": [
+              "tls",
+              "starttls"
+            ],
+            "title": "Smtpsecurity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "auth"
+        ],
+        "title": "MailProviderOut",
+        "type": "object"
+      },
+      "MailServer": {
+        "properties": {
+          "host": {
+            "maxLength": 253,
+            "minLength": 1,
+            "title": "Host",
+            "type": "string"
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "port": {
+            "maximum": 65535.0,
+            "minimum": 1.0,
+            "title": "Port",
+            "type": "integer"
+          },
+          "security": {
+            "default": "tls",
+            "enum": [
+              "tls",
+              "starttls"
+            ],
+            "title": "Security",
+            "type": "string"
+          },
+          "username": {
+            "maxLength": 254,
+            "minLength": 1,
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "host",
+          "port",
+          "username",
+          "password"
+        ],
+        "title": "MailServer",
+        "type": "object"
+      },
+      "MailboxAuthOut": {
+        "properties": {
+          "authUrl": {
+            "title": "Authurl",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authUrl"
+        ],
+        "title": "MailboxAuthOut",
+        "type": "object"
+      },
+      "MailboxConnectIn": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "folder": {
+            "default": "INBOX",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Folder",
+            "type": "string"
+          },
+          "imap": {
+            "$ref": "#/components/schemas/MailServer"
+          },
+          "provider": {
+            "default": "custom",
+            "enum": [
+              "yahoo",
+              "icloud",
+              "fastmail",
+              "custom"
+            ],
+            "title": "Provider",
+            "type": "string"
+          },
+          "smtp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MailServer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "imap"
+        ],
+        "title": "MailboxConnectIn",
+        "type": "object"
+      },
+      "MailboxOut": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "folder": {
+            "default": "INBOX",
+            "title": "Folder",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "needsReconnect": {
+            "default": false,
+            "title": "Needsreconnect",
+            "type": "boolean"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "smtpConfigured": {
+            "default": false,
+            "title": "Smtpconfigured",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "email"
+        ],
+        "title": "MailboxOut",
+        "type": "object"
+      },
+      "MailboxesOut": {
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/MailboxOut"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/MailProviderOut"
+            },
+            "title": "Providers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "providers",
+          "accounts"
+        ],
+        "title": "MailboxesOut",
+        "type": "object"
+      },
       "MailingAddress": {
         "additionalProperties": false,
         "properties": {
@@ -10486,6 +10753,252 @@
           "addedAt"
         ],
         "title": "ManualEntryOut",
+        "type": "object"
+      },
+      "ManualJobDetails": {
+        "additionalProperties": false,
+        "properties": {
+          "applicationUrl": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicationurl"
+          },
+          "attendance": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance"
+          },
+          "closesAt": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closesat"
+          },
+          "companySize": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Companysize"
+          },
+          "employmentType": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "industry": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Industry"
+          },
+          "mustHaveSkills": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Musthaveskills",
+            "type": "array"
+          },
+          "niceToHaveSkills": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Nicetohaveskills",
+            "type": "array"
+          },
+          "postingId": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postingid"
+          },
+          "remotePolicy": {
+            "anyOf": [
+              {
+                "enum": [
+                  "remote",
+                  "hybrid",
+                  "onsite"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remotepolicy"
+          },
+          "remoteRestrictions": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remoterestrictions"
+          },
+          "salaryCurrency": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Z]{3}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salarycurrency"
+          },
+          "salaryMax": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salarymax"
+          },
+          "salaryMin": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salarymin"
+          },
+          "salaryPeriod": {
+            "anyOf": [
+              {
+                "enum": [
+                  "year",
+                  "month",
+                  "week",
+                  "day",
+                  "hour"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salaryperiod"
+          },
+          "seniority": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Seniority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sourceUrl": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceurl"
+          },
+          "sponsorshipSignal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SponsorshipSignal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "techStack": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 200,
+            "title": "Techstack",
+            "type": "array"
+          },
+          "yoeMin": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yoemin"
+          }
+        },
+        "title": "ManualJobDetails",
         "type": "object"
       },
       "MatchGapOut": {
@@ -16626,6 +17139,17 @@
         "title": "SecretsUpdate",
         "type": "object"
       },
+      "Seniority": {
+        "enum": [
+          "junior",
+          "mid",
+          "senior",
+          "staff",
+          "principal"
+        ],
+        "title": "Seniority",
+        "type": "string"
+      },
       "SetEmailRequest": {
         "properties": {
           "email": {
@@ -17567,6 +18091,16 @@
         ],
         "title": "SourcesStatus",
         "type": "object"
+      },
+      "SponsorshipSignal": {
+        "description": "What the JD says about visa sponsorship. ``silent`` => uncertain (keep + flag).",
+        "enum": [
+          "offered",
+          "denied",
+          "silent"
+        ],
+        "title": "SponsorshipSignal",
+        "type": "string"
       },
       "StyleGuideDoc": {
         "properties": {
@@ -30986,6 +31520,420 @@
           }
         },
         "summary": "Set Override"
+      }
+    },
+    "/api/mailboxes": {
+      "get": {
+        "operationId": "list_mailboxes_api_mailboxes_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MailboxesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mailbox operation conflict or reconnection required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid connection settings or credentials"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email provider response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email provider or storage unavailable"
+          }
+        },
+        "summary": "List Mailboxes",
+        "tags": [
+          "mailboxes"
+        ]
+      },
+      "post": {
+        "operationId": "connect_mailbox_api_mailboxes_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MailboxConnectIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MailboxOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mailbox operation conflict or reconnection required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid connection settings or credentials"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email provider response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email provider or storage unavailable"
+          }
+        },
+        "summary": "Connect Mailbox",
+        "tags": [
+          "mailboxes"
+        ]
+      }
+    },
+    "/api/mailboxes/microsoft/connect": {
+      "get": {
+        "operationId": "microsoft_connect_api_mailboxes_microsoft_connect_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MailboxAuthOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mailbox operation conflict or reconnection required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid connection settings or credentials"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email provider response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email provider or storage unavailable"
+          }
+        },
+        "summary": "Microsoft Connect",
+        "tags": [
+          "mailboxes"
+        ]
+      }
+    },
+    "/api/mailboxes/{account_id}": {
+      "delete": {
+        "operationId": "disconnect_mailbox_api_mailboxes__account_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mailbox operation conflict or reconnection required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid connection settings or credentials"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email provider response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email provider or storage unavailable"
+          }
+        },
+        "summary": "Disconnect Mailbox",
+        "tags": [
+          "mailboxes"
+        ]
+      }
+    },
+    "/api/mailboxes/{account_id}/sync": {
+      "post": {
+        "operationId": "sync_mailbox_api_mailboxes__account_id__sync_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mailbox operation conflict or reconnection required"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid connection settings or credentials"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid email provider response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Email provider or storage unavailable"
+          }
+        },
+        "summary": "Sync Mailbox",
+        "tags": [
+          "mailboxes"
+        ]
       }
     },
     "/api/match-gap": {

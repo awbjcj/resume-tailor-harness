@@ -51,7 +51,7 @@ export function useGmailSync() {
   const qc = useQueryClient();
   const isRunning = useRunStore((state) =>
     Object.values(state.runs).some((run) =>
-      run.kind === "gmailSync" && ["queued", "running", "cancelling"].includes(run.status),
+      ["gmailSync", "mailboxSync"].includes(run.kind) && ["queued", "running", "cancelling"].includes(run.status),
     ),
   );
   const mutation = useMutation({

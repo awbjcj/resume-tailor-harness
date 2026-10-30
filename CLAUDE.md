@@ -40,7 +40,11 @@ jobs (`python-quality`, `web-quality`, `security-audit`) behind a `full` input;
 `.github/workflows/ci-main.yml` calls it with `full: true` (including the web
 production build and the pip-audit/npm-audit dependency scan) on pushes/PRs to
 `main`. Python quality includes Ruff, Pyright (the Pylance type-checking engine),
-and offline pytest. Dependency audits read the committed lockfiles and fail CI
+and offline pytest. Pyright checks application code, tests, the Python SDK,
+evaluation tools, maintenance scripts, and the diagram generator so editor
+diagnostics in those directories are also covered by CI.
+Both type errors and warnings fail the type-check step. Dependency audits read
+the committed lockfiles and fail CI
 on Python vulnerabilities or high/critical npm vulnerabilities.
 `.github/workflows/public-browser.yml` also runs only for matching PRs
 to `main`. CodeQL uses GitHub's default code scanning setup, which creates its
@@ -60,8 +64,12 @@ for manual previews, early releases, and the sparse historical backfill.
 ## Commands
 
 ```bash
-# Test (offline — no API key, no network needed)
+# Test (offline, up to four isolated workers)
+uv sync --frozen
 .venv/Scripts/python.exe -m pytest
+
+# Small selections / debugging (avoid worker startup overhead)
+.venv/Scripts/python.exe -m pytest -n 0 tests/api/test_app_health.py
 
 # Lint
 ruff check
@@ -124,8 +132,10 @@ before changing code near the invariant.
 - **Fact-lock.** Every bullet on a tailored resume must trace back to a fact
   in `data/profile/facts.json`. Three deterministic gates decide this
   in-process before any reviewer opinion is weighed — `provenance`,
-  `skill-naming`, `numeric-evidence` — and the `fact-check` reviewer is a
-  hard, unscored gate on top. Their names are reserved: a `ReviewConfig`
+  `skill-naming`, `numeric-evidence` — and the `fact-check` reviewer defaults
+  to a hard, unscored gate. Users may make that reviewer advisory in Review
+  panel; it still receives supporting evidence and its configured weight
+  then contributes to scoring. The deterministic gate names are reserved: a `ReviewConfig`
   naming one raises. `aggregate` is the only verdict constructor, and any
   failed gate blocks the round regardless of score. Inferred skills are
   evidence pointers — they may guide emphasis but never justify a claim.

@@ -2,6 +2,8 @@ import { emailNotificationsEn, emailNotificationsZh } from "./email-notification
 import autoEn from "./auto-en.json";
 import { billingEn, billingZh } from "./billing";
 import { passwordManagerEn, passwordManagerZh } from "./password-manager";
+import { manualJobEn, manualJobZh } from "./manual-job";
+import { mailboxesEn, mailboxesZh } from "./mailboxes";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -23,6 +25,8 @@ const en = {
   billing: billingEn,
   emailNotifications: emailNotificationsEn,
   passwordManager: passwordManagerEn,
+  manualJob: manualJobEn,
+  mailboxes: mailboxesEn,
   agentPrompts: {
     originalLanguage: "Built-in instructions are shown in their original language.",
   },
@@ -82,7 +86,7 @@ const en = {
   review: {
     reviewerNotes: {
       factCheck:
-        "Blocking: any claim that cannot be traced to a profile fact causes the round to fail.",
+        "Checks claims against profile evidence. With Gate on, a failed check blocks the round; with Gate off, its score contributes according to its weight.",
       atsKeyword: "Coverage of the job description's stated requirements.",
       recruiter: "Can a recruiter understand the top of the resume in a six-second skim?",
       hiringManager:
@@ -764,6 +768,7 @@ const en = {
       discovery: "Discovery",
       emailDraftGeneration: "Email-draft generation",
       gmailSync: "Gmail sync",
+      mailboxSync: "Email sync",
       githubSync: "GitHub sync",
       h1bSponsorshipCheck: "H-1B sponsorship check",
       linkedinImport: "LinkedIn import",
@@ -865,6 +870,8 @@ const zhCN = {
   billing: billingZh,
   emailNotifications: emailNotificationsZh,
   passwordManager: passwordManagerZh,
+  manualJob: manualJobZh,
+  mailboxes: mailboxesZh,
   agentPrompts: {
     originalLanguage: "内置指令以原文显示。",
   },
@@ -898,7 +905,7 @@ const zhCN = {
   },
   review: {
     reviewerNotes: {
-      factCheck: "真实性要求：每项表述都必须有个人资料中的事实依据，否则本轮不通过。",
+      factCheck: "真实性要求：根据个人资料中的事实依据核查表述。启用硬性门槛时，核查未通过会阻断本轮；关闭后，按权重计入评分。",
       atsKeyword: "简历覆盖了多少职位描述中明确提出的要求。",
       recruiter: "招聘人员快速浏览六秒，能否看懂简历顶部的重点？",
       hiringManager: "与此职位相关的经历依据是否充分、可信。",
@@ -1553,6 +1560,7 @@ const zhCN = {
       discovery: "职位发现",
       emailDraftGeneration: "邮件草稿生成",
       gmailSync: "Gmail 同步",
+      mailboxSync: "邮件同步",
       githubSync: "GitHub 同步",
       h1bSponsorshipCheck: "H-1B 担保核查",
       linkedinImport: "LinkedIn 导入",

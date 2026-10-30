@@ -9,7 +9,7 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   beneath immutable rules by `prompts/guidance.py:with_guidance`; it may steer
   tone, emphasis, or process, never facts. `reviewer-fact-check` also accepts
   procedure guidance; its evidence requirements remain immutable and its
-  verdict remains a blocking, unscored gate. API: `GET /api/agents/prompts` and
+  verdict follows the gate and weight chosen in Review panel. API: `GET /api/agents/prompts` and
   `PUT /api/agents/prompts/{key}`.
 - **Task quality is application-owned.** `quality.py` adds versioned, bounded,
   task-specific rules via `with_guidance`; the registry uses `with_quality`

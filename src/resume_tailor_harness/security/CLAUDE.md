@@ -4,6 +4,13 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 
 ### Public network trust boundary (ADR-0008)
 
+Custom mailbox sockets use `security/mail_transport.py`: reuse
+`outbound.resolve_public_url`'s public-address validation, connect to the
+validated IP, and verify TLS with the original server hostname. IMAP/SMTP
+never authenticate before TLS; IMAP literals are size-limited. Microsoft Graph
+mailbox continuations are limited to the fixed Graph origin and inbox delta
+path, with redirects disabled so bearer tokens cannot follow another origin.
+
 A source-based threat model (`resume-tailor-harness-threat-model.md`,
 `security_best_practices_report.md`, repo root) drove mandatory chokepoints
 that every future user-influenced fetch, download, render, or archive import

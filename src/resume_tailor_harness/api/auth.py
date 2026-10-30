@@ -274,19 +274,22 @@ def set_oauth_flow_cookie(
     response: Response,
     *,
     flow_cookie: str,
+    cookie_name: str = OAUTH_FLOW_COOKIE,
+    cookie_path: str = OAUTH_COOKIE_PATH,
+    require_secure: bool = False,
 ) -> None:
     settings = request.app.state.settings
     if not _valid_oauth_flow_cookie_value(flow_cookie):
         raise ValueError("invalid OAuth flow cookie")
     # This is an opaque, random handle. The state and PKCE verifier stay server-side.
     response.set_cookie(
-        OAUTH_FLOW_COOKIE,
+        cookie_name,
         flow_cookie,
         max_age=OAUTH_STATE_TTL_SECONDS,
         httponly=True,
-        secure=settings.secure_cookies or request.url.scheme == "https",
+        secure=require_secure or settings.secure_cookies or request.url.scheme == "https",
         samesite="lax",
-        path=OAUTH_COOKIE_PATH,
+        path=cookie_path,
     )
 
 

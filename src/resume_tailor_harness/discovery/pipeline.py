@@ -37,6 +37,10 @@ from resume_tailor_harness.discovery.relevance import (  # noqa: F401
 from resume_tailor_harness.discovery.search_config import SearchConfig
 from resume_tailor_harness.llm_runner import run_with_cleanup
 from resume_tailor_harness.models.job import JobCriteria
+from resume_tailor_harness.models.manual_job import (
+    preserve_manual_details,
+    reset_extracted_criteria,
+)
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.profile.matrix import SkillMatrix, build_skill_match_context
 from resume_tailor_harness.progress import ProgressReporter
@@ -160,6 +164,7 @@ def run_extract(
                 if job.id is not None
                 else res.value
             )
+            criteria = preserve_manual_details(job.criteria_json, criteria)
             job.criteria_json = criteria.model_dump(mode="json")
             _record_job_agent_meta(job, "criteria", agent)
             advance(job, JobStatus.extracted.value, never_regress=scope.never_regress)
@@ -615,7 +620,7 @@ def reprocess(
         job.reject_category = None
         job.fit_score = None
         job.fit_rationale = None
-        job.criteria_json = None
+        job.criteria_json = reset_extracted_criteria(job.criteria_json)
         session.add(job)
     session.commit()
     return discover(

@@ -420,7 +420,6 @@ function ReviewRosterForm({
                   <Switch
                     aria-label={`${r.name} gate`}
                     checked={r.gate}
-                    disabled={r.name === "fact-check"}
                     onCheckedChange={(v: boolean) => setReviewer(i, { gate: v })}
                   />
                 </TableCell>

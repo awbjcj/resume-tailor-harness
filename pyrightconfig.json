@@ -1,5 +1,5 @@
 {
-  "include": ["src", "tests", "sdk/python/src"],
+  "include": ["src", "tests", "sdk/python/src", "evals", "scripts", "docs/diagrams"],
   "exclude": [".venv"],
   "venvPath": ".",
   "venv": ".venv",

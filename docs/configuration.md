@@ -219,6 +219,8 @@ for supported prices, customer portal configuration and signed webhooks.
 | --- | --- | --- |
 | `GOOGLE_OAUTH_CLIENT_ID` | empty | Platform Google OAuth Web application client used by web sign-in and Gmail. |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | empty | Platform Google OAuth Web application secret. |
+| `MICROSOFT_OAUTH_CLIENT_ID` | empty | Server-side Microsoft OAuth app client ID for Outlook and Microsoft 365 mailbox connections. See [email provider setup](mailbox-connections.md#microsoft-administrator-setup). |
+| `MICROSOFT_OAUTH_CLIENT_SECRET` | empty | Server-side Microsoft OAuth app client secret for mailbox connections. |
 | `GMAIL_SYNC_INTERVAL_HOURS` | `6` | Hosted Gmail scheduler interval; non-negative integer, with `0` disabling the scheduler. |
 | `FOLLOW_UP_DAYS` | `14` | Age at which stale-application reminders are proposed; non-negative integer, with `0` disabling reminders. |
 | `INTERVIEW_REMINDER_HOURS` | `24` | Lead time for upcoming-interview reminders; non-negative integer, with `0` disabling these reminders. |

@@ -30,7 +30,7 @@ jobs:
       - name: Lint (ruff)
         run: uv run ruff check src tests evals sdk/python/src
       - name: Type check (Pyright / Pylance)
-        run: uv run pyright
+        run: uv run pyright --warnings
       - name: Test (pytest, offline)
         run: uv run pytest tests
 

@@ -39,12 +39,10 @@ def failing_gate_names(
     defaults to `DEFAULT_GATE_REVIEWERS` only when the caller has no config to
     consult. Deterministic gates are always gates, not configured reviewers.
     """
-    # Fact verification is mandatory even when an old round recorded it as
-    # advisory. Other configured gate names retain their historical meaning.
-    gates = (
-        DETERMINISTIC_GATES
-        | {FACT_CHECK_REVIEWER}
-        | (frozenset(gate_names) if gate_names is not None else DEFAULT_GATE_REVIEWERS)
+    # Explicit round rosters are authoritative, including an empty roster.
+    # Unknown legacy rosters retain the shipped fact-check gate fallback.
+    gates = DETERMINISTIC_GATES | (
+        frozenset(gate_names) if gate_names is not None else DEFAULT_GATE_REVIEWERS
     )
     return [
         critique.reviewer
@@ -79,7 +77,7 @@ def aggregate(critiques: list[ReviewCritique], config: ReviewConfig) -> PanelVer
     ]
     by_name = {c.reviewer: c for c in decision_critiques}
 
-    config_gates = {r.name for r in config.reviewers if r.gate} | {FACT_CHECK_REVIEWER}
+    config_gates = {r.name for r in config.reviewers if r.gate}
     gate_passed = all(
         c.passed
         for c in decision_critiques
@@ -89,10 +87,7 @@ def aggregate(critiques: list[ReviewCritique], config: ReviewConfig) -> PanelVer
     weighted = [
         (r.weight, by_name[r.name].score)
         for r in config.reviewers
-        if not r.gate
-        and r.name != FACT_CHECK_REVIEWER
-        and r.weight > 0
-        and r.name in by_name
+        if not r.gate and r.weight > 0 and r.name in by_name
     ]
     total_weight = sum(weight for weight, _ in weighted)
     # No weighted critique means the advisory panel never produced a score. That

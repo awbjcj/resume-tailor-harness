@@ -1,7 +1,9 @@
 import json
 from typing import Any
 
-from sqlmodel import Session, SQLModel, create_engine, select
+from sqlmodel import Session, select
+
+from resume_tailor_harness.db import init_db, make_engine
 
 from resume_tailor_harness.discovery.fit import FitLocation, FitScore
 from resume_tailor_harness.discovery.industry import (
@@ -36,8 +38,10 @@ from resume_tailor_harness.tracking.tables import Job, JobStatus
 
 
 def _session() -> Session:
-    engine = create_engine("sqlite://")
-    SQLModel.metadata.create_all(engine)
+    # Register every table, including scrape observations, even when this test
+    # module runs without API/service tests importing their models first.
+    engine = make_engine("sqlite://")
+    init_db(engine)
     return Session(engine)
 
 

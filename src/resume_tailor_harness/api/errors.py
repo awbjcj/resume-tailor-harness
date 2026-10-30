@@ -58,12 +58,21 @@ def _validation_details(exc: RequestValidationError) -> list[dict[str, Any]]:
 
 
 def install_error_handlers(app: FastAPI) -> None:
+    from resume_tailor_harness.mailboxes.models import MailboxError
     from resume_tailor_harness.gmail.errors import GmailApiError
     from resume_tailor_harness.tenancy.limits import CostRateUnavailableError
     from resume_tailor_harness.tenancy.quotas import (
         CostQuotaExceededError,
         GlobalCostQuotaExceededError,
     )
+
+    @app.exception_handler(MailboxError)
+    async def _mailbox_unavailable(_: Request, exc: MailboxError) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=_envelope(exc.code, str(exc), exc.details),
+            headers={"Cache-Control": "no-store"},
+        )
 
     @app.exception_handler(GmailApiError)
     async def _gmail_unavailable(_: Request, exc: GmailApiError) -> JSONResponse:
@@ -106,6 +115,11 @@ def install_error_handlers(app: FastAPI) -> None:
                 # Pydantic errors include raw input (including rejected secrets).
                 None
                 if "/application-account" in request.url.path
+                else [
+                    {"loc": error["loc"], "type": error["type"]}
+                    for error in exc.errors()
+                ]
+                if "/mailboxes" in request.url.path
                 else _validation_details(exc),
             ),
         )

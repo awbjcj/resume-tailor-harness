@@ -98,6 +98,7 @@ def make_engine(url: str | None = None) -> Engine:
 
 def init_db(engine: Engine) -> None:
     SQLModel.metadata.create_all(engine)
+    gmail_tables.ensure_cross_account_index(engine)
     ensure_dedup_key_column(engine)
     ensure_posted_at_column(engine)
     ensure_archived_at_column(engine)

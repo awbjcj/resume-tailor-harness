@@ -1,3 +1,5 @@
+import pytest
+
 from resume_tailor_harness.services import agents
 from resume_tailor_harness.tailor.review_config import ReviewConfig, ReviewerSpec
 
@@ -182,7 +184,8 @@ def test_tailor_bundle_threads_writer_tiers(monkeypatch):
     assert seen == {"tailor": "model:mid", "reviser": "model:cheap"}
 
 
-def test_tailor_bundle_builds_one_merged_advisory_agent(monkeypatch):
+@pytest.mark.parametrize("fact_gate", [False, True])
+def test_tailor_bundle_builds_one_merged_advisory_agent(monkeypatch, fact_gate):
     from resume_tailor_harness.tailor.panel import MERGED_ADVISORY
 
     monkeypatch.setattr(agents, "build_tailor_agent", lambda **kwargs: object())
@@ -201,7 +204,7 @@ def test_tailor_bundle_builds_one_merged_advisory_agent(monkeypatch):
         ReviewConfig(
             merged_advisory=True,
             reviewers=[
-                ReviewerSpec(name="fact-check", gate=True),
+                ReviewerSpec(name="fact-check", gate=fact_gate),
                 ReviewerSpec(name="ats-keyword"),
                 ReviewerSpec(name="recruiter"),
             ],
