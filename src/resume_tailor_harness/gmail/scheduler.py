@@ -1,9 +1,9 @@
-"""Background Gmail sync: one asyncio task, one serial pass per tick.
+"""Background email sync: one asyncio task, one serial pass per tick.
 
 Each user's pass is isolated — a revoked token or quota error never
 aborts the loop. Runs are submitted through the RunManager so scheduled
 syncs appear on the Runs page and share the per-user gmailSync singleton
-with the manual endpoint.
+with both Gmail and additional-mailbox manual endpoints.
 """
 
 from __future__ import annotations
@@ -16,7 +16,8 @@ from sqlalchemy import select
 
 from resume_tailor_harness.api.runs.models import ACTIVE_RUN_STATES
 from resume_tailor_harness.gmail.auth import token_path
-from resume_tailor_harness.services.gmail_sync import run_gmail_sync
+from resume_tailor_harness.services.mailboxes import run_connected_email_sync
+from resume_tailor_harness.mailboxes.store import FILENAME
 from resume_tailor_harness.tenancy.context import use_context
 from resume_tailor_harness.tenancy.workspace import workspace_paths
 
@@ -41,7 +42,7 @@ def _submit(
         return work(engine, reporter, data_dir=state.data_dir)
 
     return state.run_manager.submit(
-        "gmailSync",
+        "mailboxSync" if work is run_connected_email_sync else "gmailSync",
         run,
         singleton_key="gmailSync",
         user_id=user_id,
@@ -50,12 +51,12 @@ def _submit(
 
 
 async def tick(
-    state: Any, *, work: Callable[..., dict] = run_gmail_sync
+    state: Any, *, work: Callable[..., dict] = run_connected_email_sync
 ) -> dict[str, str]:
     """One serial pass over every connected owner. Never raises per-user errors."""
     results: dict[str, str] = {}
     if state.system_engine is None:
-        if token_path(state.data_dir).is_file():
+        if token_path(state.data_dir).is_file() or (state.data_dir / FILENAME).is_file():
             try:
                 run_id = _submit(state, state.engine, work, user_id=None)
                 results["local"] = run_id
@@ -80,7 +81,7 @@ async def tick(
             session.expunge(user)
     for user in users:
         paths = workspace_paths(state.data_dir, user.id)
-        if not paths.gmail_token.is_file():
+        if not paths.gmail_token.is_file() and not (paths.root / FILENAME).is_file():
             continue
         try:
             context = build_context(

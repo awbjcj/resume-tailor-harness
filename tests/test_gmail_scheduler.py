@@ -38,6 +38,20 @@ def test_tick_skips_when_no_token(tmp_path):
     assert result == {}
 
 
+def test_tick_includes_custom_mailbox_without_gmail_token(tmp_path):
+    state = _state(tmp_path)
+    (tmp_path / "mailbox_connections.json").write_text("{}", encoding="utf-8")
+    calls = []
+
+    def work(engine, reporter, **kwargs):
+        reporter.begin(1, "fake")
+        calls.append(engine)
+        return {"pending": 0}
+
+    result = asyncio.run(tick(state, work=work))
+    assert "local" in result and calls == [state.engine]
+
+
 def test_tick_runs_local_sync_when_token_exists(tmp_path):
     state = _state(tmp_path)
     (tmp_path / "gmail_token.json").write_text("{}", encoding="utf-8")
