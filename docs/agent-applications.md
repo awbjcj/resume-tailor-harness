@@ -88,6 +88,25 @@ available. New question records live in the workspace database and travel with
 workspace backups; application settings retain their existing bundle/reset
 behavior. Questions do not modify resume evidence or bypass fact checking.
 
+### Write confirmed information back after each session
+
+Save newly confirmed information, answers, and corrections to matching
+application-profile fields and scoped question records as they arrive, then
+check for missing saves before every handoff or outcome. This includes blocked,
+awaiting-review, and user-submitted applications. Preserve unrelated notes and
+list entries, exact employer/country/time scopes, and the user's retention limits.
+Read profile values and affected questions back before reporting write-back as
+complete. Refresh eligible application context; submitted jobs use direct
+profile/question reads and ordinary job/events instead.
+
+Report panel write-back as `complete`, `no_changes`, or `pending` independently
+of employer submission and timeline tracking. After a partial or ambiguous save,
+reconcile current state and retry only missing writes. Load the verified records
+on the next application to avoid repeating matching answered questions; recheck
+time-sensitive answers. Consent and submission permission remain application-specific.
+See the bundled [panel write-back procedure](../sdk/python/src/resume_harness_sdk/skills/resume-harness-apply/references/panel-writeback.md)
+for destination mapping, readback, and conflict recovery.
+
 The application profile includes optional professional screening answers for
 self-reported industry experience, preferred coding time, technical domain, and
 office attendance. Keep experience totals dated and attendance tied to the

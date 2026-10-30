@@ -1,6 +1,6 @@
 ---
 name: resume-harness-apply
-description: Interactively apply for a job using Resume Harness data and documents with the agent's browser or computer tools. Fill live forms, ask for missing answers, remember confirmed answers, resume after user input, and track verified submission.
+description: Interactively apply for a job using Resume Harness data and documents with the agent's browser or computer tools. Fill live forms, ask for missing answers, write newly confirmed facts and answers back to the harness panel for future applications, resume after user input, and track verified submission.
 ---
 
 # Apply with Resume Harness
@@ -130,6 +130,40 @@ location/days. Keep self-reported experience dated. A notice period is not a
 calendar start date; employer application counts need a fresh rolling-window
 check. Saved answers never provide reusable consent or attestations.
 
+## Write new information and answers back to the panel
+
+Save newly confirmed facts, answers, and corrections as they arrive. Before every
+handoff or per-job outcome, check for anything still unsaved, including paused,
+blocked, awaiting-review, and user-submitted applications. Use existing write-back
+authorization and honor exclusions or scope limits; a direct user answer needs
+no second confirmation solely to save it.
+
+- Compare discoveries with fresh profile and question records. Write to matching
+  fields in **Settings > Application profile** through the revision-protected
+  SDK/API. Use structured scoped records or explicitly scoped notes for employer,
+  country, requisition, and time-specific answers. Save unfamiliar form Q&A with
+  exact wording/options in the question bank, job-scoped by default. Broader reuse
+  requires the user's intent; a job-specific answer never becomes a general one.
+- Preserve unrelated values, list entries, and notes; reconcile stale revisions
+  and ambiguous writes before retrying. Follow the destination mapping and
+  recovery procedure in [panel write-back](references/panel-writeback.md).
+- Leave unknown questions unanswered. Never save guesses, model-selected routine
+  choices, or unconfirmed employer autofill as user-confirmed facts. Keep consent,
+  signatures, submission permission, and navigation observations application-specific
+  in the private working record. Answers do not modify resume evidence.
+- Read profile values and affected questions back to verify the saves and scope.
+  Refresh application context while eligible; after submission use direct profile,
+  question, job, and event reads. With the UI fallback, reopen the saved panel;
+  a toast alone does not verify persistence.
+- Record changed field names, question IDs/revisions, and successful readbacks in
+  the private working record. Mark panel write-back `complete`, `no_changes`, or
+  `pending`, with missing writes and errors. Recover only missing saves, keeping
+  this outcome separate from the employer submission and tracking outcome.
+
+At the next session, load fresh saved context and reuse matching verified answers,
+rechecking time-sensitive ones. Keep personal data out of installed skill files;
+the saved panel and question records improve subsequent application contexts.
+
 ## Employer registration and saved sign-in
 
 Use the [password-manager workflow](references/password-manager.md) when the live
@@ -194,7 +228,9 @@ without repeating the employer submission.
 
 Report the exact state: prepared and awaiting confirmation, blocked on a named
 question/action, submission uncertain, or submitted with supporting evidence and
-tracking outcome. Include the current form page and file paths where relevant.
+tracking outcome. Include the current form page and file paths where relevant,
+plus panel write-back status and what was saved or remains pending. Run the
+write-back check after submission/reconciliation for anything newly learned.
 
 On `PROFILE_STALE` / `QUESTION_STALE`, read and reconcile the user's actual edit
 before writing; never attach a new revision to an old payload blindly. On
