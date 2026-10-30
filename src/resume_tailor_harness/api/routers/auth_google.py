@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hmac
 import logging
+import secrets
 import shutil
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 from typing import Any
 from urllib.parse import urlencode
 
@@ -79,14 +81,18 @@ def _build_flow(
     )
 
 
-def _store_oauth_flow(engine: Any, *, state: str, verifier: str) -> str:
+def _store_oauth_flow(
+    engine: Any, *, state: str, verifier: str, flow_cookie: str | None = None
+) -> str:
     """Persist the PKCE verifier behind a one-time, browser-bound opaque handle."""
     if engine is None:
         raise ApiException(503, "OAUTH_UNAVAILABLE", "Google sign-in is unavailable")
     if not auth._valid_oauth_pkce_verifier(verifier):
         raise ValueError("invalid OAuth PKCE verifier")
     now = datetime.now(timezone.utc)
-    flow_cookie = auth.issue_oauth_flow_cookie()
+    flow_cookie = flow_cookie or sha256(secrets.token_bytes(32)).hexdigest()
+    if not auth._valid_oauth_flow_cookie_value(flow_cookie):
+        raise ValueError("invalid OAuth flow cookie")
     with Session(engine) as session:
         # One writer transaction makes consume-once semantics work across workers.
         session.execute(text("BEGIN IMMEDIATE"))
