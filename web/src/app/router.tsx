@@ -51,6 +51,9 @@ const SettingsLayout = lazy(() =>
 const ApplicationProfilePage = lazy(() =>
   import("@/features/settings/pages/ApplicationProfilePage").then((m) => ({ default: m.ApplicationProfilePage })),
 );
+const PasswordManagerPage = lazy(() =>
+  import("@/features/settings/pages/PasswordManagerPage").then((m) => ({ default: m.PasswordManagerPage })),
+);
 const SearchSettingsPage = lazy(() =>
   import("@/features/settings/pages/SearchSettingsPage").then((m) => ({
     default: m.SearchSettingsPage,
@@ -180,6 +183,7 @@ export const router = createBrowserRouter([
           { path: "notifications", element: page(<EmailSettingsPage />) },
           { path: "search", element: page(<SearchSettingsPage />) },
           { path: "application-profile", element: page(<ApplicationProfilePage />) },
+          { path: "password-manager", element: page(<PasswordManagerPage />) },
           { path: "sources", element: page(<SourcesPage />) },
           { path: "keys", element: page(<KeysSettingsPage />) },
           { path: "review", element: page(<ReviewSettingsPage />) },
