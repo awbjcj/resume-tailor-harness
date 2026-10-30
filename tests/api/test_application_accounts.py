@@ -225,6 +225,30 @@ def test_concurrent_registration_reuses_one_pending_password(setup):
     assert len(passwords) == 1
 
 
+@pytest.mark.parametrize(
+    ("base_url", "origin"),
+    [
+        ("https://Harness.Example.com:443/", "https://harness.example.com"),
+        ("http://localhost:80/", "http://localhost"),
+        ("http://[::1]:4173/", "http://[::1]:4173"),
+    ],
+)
+def test_browser_origin_matches_canonical_deployment_url(setup, base_url, origin):
+    app, client = setup
+    app.state.settings.app_base_url = base_url
+    client.cookies.set("session", "example")
+    body = {"autoRegister": True, "revision": 0, "userConfirmed": True}
+    response = client.patch(
+        "/api/application-accounts/policy", json=body, headers={"Origin": origin}
+    )
+    assert response.status_code == 200, response.text
+    response = client.patch(
+        "/api/application-accounts/policy", json={**body, "revision": 1},
+        headers={"Origin": "https://other.example.com"},
+    )
+    assert response.status_code == 403
+
+
 def test_vault_tenant_binding_key_rotation_and_corruption_fail_closed(tmp_path):
     old, new = Fernet.generate_key().decode(), Fernet.generate_key().decode()
     vault = AccountVault(tmp_path, "owner-a", old)
