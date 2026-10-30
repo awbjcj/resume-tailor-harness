@@ -48,6 +48,15 @@ own workflow and scans the default and protected branches plus relevant PRs.
 The repository is public, so its standard hosted runners do not consume the
 account's included Actions minutes.
 
+## Versions and releases
+
+Application tags use `vMAJOR.MINOR.PATCH`. The weekly release workflow runs
+from the default branch but targets only CI-verified `main`, batches changes,
+and waits at least seven days between automatic publications. Breaking
+Conventional Commits bump major, features bump minor, fixes/dependencies bump
+patch; maintenance alone waits. See [`docs/releases.md`](docs/releases.md)
+for manual previews, early releases, and the sparse historical backfill.
+
 ## Commands
 
 ```bash
