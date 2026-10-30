@@ -1,5 +1,8 @@
 """Lightweight remote client; no server or model-provider dependencies."""
 
+from .accounts import PasswordForm
+from .browser_accounts import playwright_password_form
+
 from .client import (
     APIError,
     ResponseValidationError,
@@ -9,6 +12,8 @@ from .client import (
 )
 
 __all__ = [
+    "PasswordForm",
+    "playwright_password_form",
     "APIError",
     "ResponseValidationError",
     "ResumeHarness",

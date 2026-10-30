@@ -24,6 +24,7 @@ dependencies = [
     "pydantic-settings>=2.14.2",
     "email-validator>=2.2.0",
     "filelock>=3.20.0,<5",
+    "cryptography>=50.0.0,<51",
     "pypdf>=6.15.0",
     "python-multipart>=0.0.9",
     "pyyaml>=6.0.3",

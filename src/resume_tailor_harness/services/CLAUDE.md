@@ -89,3 +89,11 @@ null`; the domain model rejects that outright, so turning the budget off
   lock shared by ordinary PUT; profile revision checks happen inside that lock.
   Application questions live in the workspace database, separate from the
   settings bundle. They do not become resume evidence.
+
+- **Employer passwords belong only to the encrypted account vault.**
+  `application_accounts.py` owns authenticated, owner-bound Fernet storage,
+  atomic writes, exact employer/origin matching, and pending/active/attention
+  transitions. The deployment-only `APPLICATION_VAULT_KEYS` never comes from
+  workspace secrets. Contexts, questions, profile answers and CLI metadata must
+  never carry passwords. Browser filling runs in the external host, not the
+  read-only discovery scraper. See `docs/application-password-manager.md`.
