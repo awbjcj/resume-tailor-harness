@@ -1,5 +1,13 @@
 # Gmail integration developer reference
 
+- Additional transports live in `mailboxes/` and `services/mailboxes.py`.
+  They normalize read-only IMAP/Microsoft Graph messages into `EmailMessage`
+  and reuse `MessageProcessor.process_emails`. Receipts keep separate account
+  and message identities; proposal chronology spans accounts, while explicit
+  Gmail cleared-proposal recovery remains scoped to the connected Gmail account.
+  The existing scheduler now includes these mailboxes. See
+  `docs/mailbox-connections.md` for limits, OAuth setup, and secret custody.
+
 Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loads only when working under `src/resume_tailor_harness/gmail/`.
 
 - **The Gmail token exchange must reconcile scopes; oauthlib cannot.** Connect

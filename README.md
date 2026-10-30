@@ -626,6 +626,10 @@ for the full variable list and recommended production posture.
 
 ### Gmail setup (for `sync-status`, sync, reminders, and email drafts)
 
+The web app also supports Outlook/Microsoft 365 sign-in, Yahoo/iCloud/Fastmail
+presets, and custom IMAP accounts with optional SMTP verification. See
+[Email provider connections](docs/mailbox-connections.md) for setup and scope.
+
 Gmail powers the CLI's `sync-status`, plus (in the API/web app) scheduled
 background inbox sync, stale-application follow-up reminders, and the
 email-draft writer. It only ever **reads** mail (readonly scope) and

@@ -380,6 +380,10 @@ SESSION_SECRET=<long random value>
 
 ### Gmail 设置（用于 `sync-status`、同步、提醒和邮件草稿）
 
+Web 应用还支持 Outlook/Microsoft 365 登录、Yahoo/iCloud/Fastmail 服务器预设，
+以及自定义 IMAP 邮箱和可选的 SMTP 验证。配置步骤和功能范围见
+[邮箱服务商连接说明](docs/mailbox-connections.md)。
+
 Gmail 为 CLI 的 `sync-status` 提供支持；在 API/网页应用中，它还支持定时后台收件箱同步、长时间未更新申请的跟进提醒和邮件草稿撰写。它只会**读取**邮件（readonly scope）和**创建草稿**（compose scope），绝不会发送邮件。`.env` 中不保存密码；系统通过 Google OAuth 客户端认证，客户端类型取决于你的运行方式。
 
 **CLI，单机：**将 OAuth **Desktop app** 客户端保存为文件：
