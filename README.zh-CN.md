@@ -684,12 +684,16 @@ PREMIUM_MODEL=claude-opus-5             # 不带前缀时由 Anthropic 承担简
 ## 开发
 
 ```bash
-uv run pytest              # 运行完整测试套件
-uv run pytest -k scraper   # 运行部分测试
+uv run pytest                  # 最多四个隔离进程运行完整测试套件
+uv run pytest -n 0 -k scraper   # 小范围测试，避免启动多个工作进程的开销
 ruff check                 # 代码检查
 ```
 
 测试是纯离线的。智能体和浏览器都由替身实现，因此测试套件不需要 API 密钥或网络。连接器后端使用从真实响应中保存的固定 JSON 数据进行测试。
+
+完整 Python 测试默认使用有限数量的并行进程，并显示最慢的十个测试阶段。
+串行调试或运行少量测试时使用 `-n 0`，排查耗时时可添加 `--durations=40`。
+测量结果和隔离规则见[测试性能说明](docs/test-performance.md)。
 
 异步定制流程通过 `gather_isolated` 并行处理职位和评审调用，在实际模型调用时获取并发许可。同步流程仍可使用。共享服务和数据保存的边界见[架构蓝图](Project_Architecture_Blueprint.md)。
 

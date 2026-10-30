@@ -1063,14 +1063,19 @@ title-gate prunes the list before detail fetches begin.
 ## Development
 
 ```bash
-uv run pytest              # run the full test suite
-uv run pytest -k scraper   # run a subset
+uv run pytest                  # full suite, up to four isolated workers
+uv run pytest -n 0 -k scraper   # small subset without worker startup cost
 ruff check                 # lint
 ```
 
 Tests are pure and offline. Agents and the browser are faked, so the suite needs
 no API key and no network. Connector backends are tested against fixture JSON
 payloads captured from real responses.
+
+The full Python suite uses bounded process parallelism and reports its ten
+slowest test phases. Use `-n 0` for serial debugging or small selections, and
+`--durations=40` when investigating runtime. See
+[test performance](docs/test-performance.md) for measurements and isolation rules.
 
 The async tailoring path supports concurrent jobs and reviewer calls through
 `gather_isolated`, with LLM permits acquired at leaf calls. The synchronous path

@@ -45,6 +45,7 @@ dev = [
     "pyright==1.1.414",
     "pytest>=9.0.3",
     "pytest-asyncio>=1.4.0",
+    "pytest-xdist>=3.8,<4",
     "python-docx>=1.2.0",
     "python-pptx>=1.0.2",
     "ruff>=0.15.18,<0.18.0",
@@ -63,7 +64,9 @@ packages = ["src/resume_tailor_harness"]
 [tool.pytest.ini_options]
 pythonpath = [".", "sdk/python/src"]
 testpaths = ["tests"]
-addopts = "-q"
+# Keep all tests and their per-test fixtures; distribute work across at most
+# four processes. Use `-n 0` for small selections, profiling, or debugging.
+addopts = "-q -n auto --maxprocesses=4 --dist=worksteal --durations=10"
 asyncio_mode = "auto"
 
 [tool.ruff.lint]

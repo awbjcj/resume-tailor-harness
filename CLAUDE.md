@@ -51,8 +51,12 @@ account's included Actions minutes.
 ## Commands
 
 ```bash
-# Test (offline — no API key, no network needed)
+# Test (offline, up to four isolated workers)
+uv sync --frozen
 .venv/Scripts/python.exe -m pytest
+
+# Small selections / debugging (avoid worker startup overhead)
+.venv/Scripts/python.exe -m pytest -n 0 tests/api/test_app_health.py
 
 # Lint
 ruff check
