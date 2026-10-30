@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 
 export async function mockGmailSettings(page: Page) {
+  await page.route("**/api/mailboxes", (route) => route.fulfill({ json: { providers: [], accounts: [] } }));
   await page.route("**/api/gmail/status", (route) => route.fulfill({ json: {
     connected: true, scopes: [], draftCapable: true, clientSource: "platform",
   } }));

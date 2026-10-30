@@ -16,6 +16,7 @@ const SECRETS = [
 
 beforeEach(() => {
   server.use(
+    http.get("/api/mailboxes", () => HttpResponse.json({ providers: [], accounts: [] })),
     http.get("/api/secrets", () => HttpResponse.json(SECRETS)),
     http.get("/api/gmail/status", () => HttpResponse.json({
       connected: false, scopes: [], draftCapable: false, clientSource: "platform",

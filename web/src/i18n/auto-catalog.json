@@ -12024,10 +12024,10 @@
     "en": "Email & notifications",
     "zh-CN": "邮件与通知"
   },
-  "Connect Gmail, sync application updates, and choose the email notifications you receive.": {
-    "key": "ui_37524a8bffbb",
-    "en": "Connect Gmail, sync application updates, and choose the email notifications you receive.",
-    "zh-CN": "连接 Gmail，同步申请状态更新，并选择要接收的邮件通知。"
+  "Email sync": {
+    "key": "ui_6c71cbe357fc",
+    "en": "Email sync",
+    "zh-CN": "邮件同步"
   },
   "Custom Gmail OAuth client (optional)": {
     "key": "ui_3c8600808ce4",

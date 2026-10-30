@@ -3,6 +3,7 @@ import autoEn from "./auto-en.json";
 import { billingEn, billingZh } from "./billing";
 import { passwordManagerEn, passwordManagerZh } from "./password-manager";
 import { manualJobEn, manualJobZh } from "./manual-job";
+import { mailboxesEn, mailboxesZh } from "./mailboxes";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -25,6 +26,7 @@ const en = {
   emailNotifications: emailNotificationsEn,
   passwordManager: passwordManagerEn,
   manualJob: manualJobEn,
+  mailboxes: mailboxesEn,
   agentPrompts: {
     originalLanguage: "Built-in instructions are shown in their original language.",
   },
@@ -766,6 +768,7 @@ const en = {
       discovery: "Discovery",
       emailDraftGeneration: "Email-draft generation",
       gmailSync: "Gmail sync",
+      mailboxSync: "Email sync",
       githubSync: "GitHub sync",
       h1bSponsorshipCheck: "H-1B sponsorship check",
       linkedinImport: "LinkedIn import",
@@ -868,6 +871,7 @@ const zhCN = {
   emailNotifications: emailNotificationsZh,
   passwordManager: passwordManagerZh,
   manualJob: manualJobZh,
+  mailboxes: mailboxesZh,
   agentPrompts: {
     originalLanguage: "内置指令以原文显示。",
   },
@@ -1556,6 +1560,7 @@ const zhCN = {
       discovery: "职位发现",
       emailDraftGeneration: "邮件草稿生成",
       gmailSync: "Gmail 同步",
+      mailboxSync: "邮件同步",
       githubSync: "GitHub 同步",
       h1bSponsorshipCheck: "H-1B 担保核查",
       linkedinImport: "LinkedIn 导入",
