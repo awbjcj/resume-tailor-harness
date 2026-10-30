@@ -1,0 +1,68 @@
+{
+  "format": 1,
+  "milestones": [
+    {
+      "tag": "v0.1.0",
+      "sha": "8bc27e34a19dfc056b94fd5376c053e1db9fd1b3",
+      "date": "2026-06-29",
+      "title": "Job search and resume tailoring foundation",
+      "release": true,
+      "notes": [
+        "Built profile ingestion, job discovery, fit scoring, resume tailoring, review, and PDF rendering around provenance-backed facts.",
+        "Added the web workspace, job tracking, ATS connectors, skill taxonomy, Match & Gap, and profile coaching.",
+        "Covers the entire initial history from the first scaffold on June 8 through the last June commit."
+      ]
+    },
+    {
+      "tag": "v0.2.0",
+      "sha": "4f079fe6e1c533c536ea3e5d61a05ad2539c5213",
+      "date": "2026-07-31",
+      "title": "Accounts, career workflows, and provider controls",
+      "release": false,
+      "notes": [
+        "Expanded profile synthesis and source management, Career Lab, interview preparation, and discovery workflows.",
+        "Added authentication, email verification, OAuth, tenancy controls, and spending quotas.",
+        "Improved agent streaming, review behavior, and the web application experience."
+      ]
+    },
+    {
+      "tag": "v0.3.0",
+      "sha": "05fca652cf364922ab4e2a8887de98b7cac6877d",
+      "date": "2026-08-30",
+      "title": "Evidence, company intelligence, and application timelines",
+      "release": true,
+      "notes": [
+        "Strengthened fact-lock review and evidence portfolio tailoring, skill taxonomy maintenance, and security boundaries.",
+        "Added grounded company intelligence, hiring contact research, role preparation, role comparison, and saved workspace views.",
+        "Added application timelines, calendar exports and reminders, funnel analytics, and English/Chinese interface localization.",
+        "Established dev integration and protected main promotion workflows."
+      ]
+    },
+    {
+      "tag": "v0.4.0",
+      "sha": "afe40d8753fdd4d181c1c493d9c08cf497efec06",
+      "date": "2026-09-30",
+      "title": "Provider routing and workflow hardening",
+      "release": false,
+      "notes": [
+        "Expanded model support and unified provider routing, structured output handling, and conversation behavior.",
+        "Added evidence-bearing public job URL imports, browser-free acquisition and recovery, and persistent scrape review workflows.",
+        "Completed the subscription credit lifecycle, added dashboard operation history, and improved timezone handling and Gmail resilience.",
+        "Covers all September changes including the Responses routing hotfix."
+      ]
+    },
+    {
+      "tag": "v0.5.0",
+      "sha": "629640cffc573f0c978fad2a48ad0294a1ac87e2",
+      "date": "2026-10-29",
+      "title": "Interactive applications, Gmail recovery, and grouped settings",
+      "release": true,
+      "notes": [
+        "Added interactive job application SDK workflows, reusable screening answers, and structured application profiles.",
+        "Added resumable incremental Gmail sync, cached recruiting decision review, email digests, and notification preferences.",
+        "Grouped settings by user workflow and expanded Chinese localization, model support, and evidence-grounded agent policies.",
+        "Strengthened typing, offline regression coverage, and dependency security audits. The target main commit passed its full CI push run."
+      ]
+    }
+  ]
+}

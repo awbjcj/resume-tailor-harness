@@ -1,0 +1,26 @@
+name: Release automation checks
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - .github/workflows/release*.yml
+      - .github/release-history.json
+      - scripts/release.py
+      - tests/test_release_automation.py
+
+permissions:
+  contents: read
+
+jobs:
+  release-tests:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: python -m unittest discover -s tests -p test_release_automation.py -v
