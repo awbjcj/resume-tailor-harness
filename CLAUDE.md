@@ -40,7 +40,11 @@ jobs (`python-quality`, `web-quality`, `security-audit`) behind a `full` input;
 `.github/workflows/ci-main.yml` calls it with `full: true` (including the web
 production build and the pip-audit/npm-audit dependency scan) on pushes/PRs to
 `main`. Python quality includes Ruff, Pyright (the Pylance type-checking engine),
-and offline pytest. Dependency audits read the committed lockfiles and fail CI
+and offline pytest. Pyright checks application code, tests, the Python SDK,
+evaluation tools, maintenance scripts, and the diagram generator so editor
+diagnostics in those directories are also covered by CI.
+Both type errors and warnings fail the type-check step. Dependency audits read
+the committed lockfiles and fail CI
 on Python vulnerabilities or high/critical npm vulnerabilities.
 `.github/workflows/public-browser.yml` also runs only for matching PRs
 to `main`. CodeQL uses GitHub's default code scanning setup, which creates its
