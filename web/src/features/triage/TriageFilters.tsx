@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import type { Facets } from "@/features/board/use-board-query";
 import { SavedViewsControl } from "@/features/board/SavedViewsControl";
 import { ImportJobsButton } from "@/features/runs/ImportJobsDialog";
+import { ManualJobDialog } from "@/features/runs/ManualJobDialog";
 import {
   emptyFilterState,
   type FilterState,
@@ -255,7 +256,10 @@ export function TriageFilters({
             Show archived
           </Label>
         </div>
-        <ImportJobsButton />
+        <div className="flex flex-wrap gap-2">
+          <ManualJobDialog />
+          <ImportJobsButton />
+        </div>
       </div>
 
       <ActiveFilterSummary

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 
 from resume_tailor_harness.career_skills.models import (
     CoverLetterSkillName,
@@ -14,14 +14,21 @@ from resume_tailor_harness.career_skills.models import (
 from resume_tailor_harness.api.runs.models import RunState
 from resume_tailor_harness.api.schemas.base import CamelModel
 from resume_tailor_harness.services.redo import RedoStage
+from resume_tailor_harness.models.manual_job import ManualJobDetails, posting_url
 
 
 class AddJobTextRequest(CamelModel):
-    jd_text: str
-    url: str | None = None
-    company: str | None = None
-    title: str | None = None
-    location: str | None = None
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    jd_text: str = Field(min_length=1, max_length=2_000_000)
+    url: str | None = Field(default=None, max_length=4096)
+    company: str | None = Field(default=None, max_length=1000)
+    title: str | None = Field(default=None, max_length=1000)
+    location: str | None = Field(default=None, max_length=4000)
+    posted_at: datetime | None = None
+    details: ManualJobDetails | None = None
+
+    _url = field_validator("url")(posting_url)
 
 
 class RunOut(CamelModel):

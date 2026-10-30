@@ -1,5 +1,6 @@
 import { AddUrlDialog } from "./AddUrlDialog";
 import { ImportJobsButton } from "./ImportJobsDialog";
+import { ManualJobDialog } from "./ManualJobDialog";
 import { cn } from "@/lib/utils";
 import {
   PullDialog,
@@ -20,6 +21,7 @@ export function RunActions({ className }: { className?: string }) {
       <DiscoverDialog />
       <ReprocessDialog />
       <AddUrlDialog />
+      <ManualJobDialog />
       <ImportJobsButton />
     </div>
   );
