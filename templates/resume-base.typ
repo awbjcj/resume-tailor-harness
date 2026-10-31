@@ -3,7 +3,7 @@
 #let data = json(bytes(sys.inputs.data))
 #let contact = data.contact
 
-// Density removes excess whitespace first; body text never falls below 10pt.
+// Positive density compacts; negative density expands within readable limits.
 #let zoom = float(sys.inputs.at("zoom", default: "1.0"))
 #let density = float(sys.inputs.at("density", default: "0"))
 #let styles = (
@@ -19,7 +19,8 @@
 #let theme = styles.at(style)
 #set document(title: contact.name)
 #set page(paper: "us-letter", margin: (x: 0.6in, y: 0.55in))
-#set text(font: theme.font, size: calc.max(10pt, 10.5pt * zoom), hyphenate: false, fill: black)
+#let body-size = calc.clamp(10.5 * zoom, 10, 12) * 1pt
+#set text(font: theme.font, size: body-size, hyphenate: false, fill: black)
 #set par(justify: false, leading: (0.45 - density * 0.17) * 1em, spacing: 0.35em)
 #set list(indent: 0pt, body-indent: 0.8em, marker: [•], spacing: (0.3 - density * 0.2) * 1em)
 #show list.item: set block(breakable: false)
@@ -101,6 +102,7 @@
 }
 
 #let maybe-join(values) = values.filter(x => x != none and x != "").join(", ")
+#let linked(title, url) = if url != none and url != "" { link(url)[#title] } else { [#title] }
 
 // Inline text preserves reading order without layout tables or columns.
 #let subheading(row1-left, row1-right, row2-left, row2-right) = block(
@@ -192,21 +194,25 @@
         #if tail.len() > 0 [ #emph(tail.join("   |   ")) \ ]
         #let coursework = ed.at("relevant_coursework", default: ())
         #if coursework.len() > 0 [ #emph("Coursework: " + coursework.join(", ")) \ ]
+        #let activities = ed.at("activities", default: ())
+        #if activities.len() > 0 [ #emph("Activities: " + activities.join(", ")) \ ]
         #v(2pt)
       ]
     ]
   }
 }
 
-#let projects-block() = {
-  let xs = data.at("projects", default: ())
+#let projects-block(key: "projects", title: "Projects") = {
+  let xs = data.at(key, default: ())
   if xs.len() > 0 {
     [
-      #section-title("Projects")
+      #section-title(title)
       #for (index, p) in xs.enumerate() [
-        #break-before("projects:" + str(index))
+        #break-before(key + ":" + str(index))
         #let tech = p.at("tech", default: ())
-        #subheading(p.name, [], none, none)
+        #subheading(p.name, dates(p.at("start", default: none), p.at("end", default: none)), p.at("role", default: none), none)
+        #let urls = (p.at("url", default: none), p.at("repo_url", default: none)).filter(u => u != none and u != "").dedup()
+        #if urls.len() > 0 [#urls.map(u => linked(u, u)).join(" | ") \ ]
         #if tech.len() > 0 [#text(size: 10pt)[#tech.join(" · ")] \ ]
         #if p.at("description", default: none) != none [#p.description \ ]
         #bullets(p.at("bullets", default: ()))
@@ -236,7 +242,8 @@
       #section-title("Publications")
       #for p in xs [
         #let meta = maybe-join((p.at("venue", default: none), p.at("date", default: none)))
-        - #p.title#if meta != "" [ — #emph(meta)]
+        #let authors = p.at("authors", default: ())
+        - #if authors.len() > 0 [#authors.join(", "). ]#linked(p.title, p.at("url", default: none))#if meta != "" [ — #emph(meta)]
       ]
     ]
   }
@@ -249,7 +256,7 @@
       #section-title("Certifications")
       #for c in xs [
         #let meta = maybe-join((c.at("issuer", default: none), c.at("date", default: none)))
-        - *#c.name*#if meta != "" [ — #meta]
+        - *#linked(c.name, c.at("url", default: none))*#if meta != "" [ — #meta]#if c.at("credential_id", default: none) != none [ — Credential: #c.credential_id]
       ]
     ]
   }
@@ -259,7 +266,7 @@
   let xs = data.at("awards", default: ())
   if xs.len() > 0 {
     [
-      #section-title("Awards")
+      #section-title("Honors & Awards")
       #for a in xs [
         #let meta = maybe-join((a.at("issuer", default: none), a.at("date", default: none)))
         - *#a.name*#if meta != "" [ — #meta]#if a.at("description", default: none) != none [. #a.description]
@@ -305,10 +312,29 @@
   }
 }
 
+#let interests-block() = {
+  let xs = data.at("interests", default: ())
+  if xs.len() > 0 [#section-title("Interests") #xs.join(", ")]
+}
+
+#let additional-block() = {
+  for (index, section) in data.at("additional_sections", default: ()).enumerate() {
+    if section.entries.len() > 0 [
+      #break-before("additional_sections:" + str(index))
+      #section-title(section.title)
+      #for entry in section.entries [
+        #subheading(linked(entry.title, entry.at("url", default: none)), entry.at("date", default: ""), entry.at("organization", default: none), none)
+        #if entry.at("description", default: none) != none [#entry.description \ ]
+      ]
+    ]
+  }
+}
+
 #let default-order = (
   "summary",
   "experience",
   "projects",
+  "portfolio",
   "skills",
   "education",
   "publications",
@@ -316,18 +342,25 @@
   "awards",
   "languages",
   "volunteer",
+  "additional_sections",
+  "interests",
 )
 
 #let preferred-order = if style == "graduate" {
-  ("education", "experience", "projects", "skills")
+  ("summary", "education", "awards", "experience", "projects", "portfolio", "skills", "certifications", "volunteer")
 } else if style == "academic" {
-  ("education", "publications", "experience", "projects", "skills")
+  ("summary", "education", "publications", "awards", "additional_sections", "experience", "projects", "portfolio", "skills")
 } else if style == "modern" {
-  ("summary", "skills", "experience", "projects", "education")
+  ("summary", "skills", "experience", "projects", "portfolio", "certifications", "education")
+} else if style == "executive" {
+  ("summary", "experience", "additional_sections", "awards", "projects", "portfolio", "education", "certifications", "skills")
+} else if style == "technical" {
+  ("summary", "experience", "projects", "portfolio", "skills", "certifications", "education", "publications")
 } else { default-order }
 #let order = data.at("section_order", default: none)
 #let first = if order == none or order.len() == 0 { preferred-order } else { order }
-#let chosen = first + default-order.filter(s => not first.contains(s))
+#let normalized = first.map(s => if s == "honors" { "awards" } else { s }).dedup()
+#let chosen = normalized + default-order.filter(s => not normalized.contains(s))
 
 #for section in chosen {
   break-before(section)
@@ -339,6 +372,8 @@
     education-block()
   } else if section == "projects" {
     projects-block()
+  } else if section == "portfolio" {
+    projects-block(key: "portfolio", title: "Portfolio")
   } else if section == "skills" {
     skills-block()
   } else if section == "publications" {
@@ -351,6 +386,10 @@
     languages-block()
   } else if section == "volunteer" {
     volunteer-block()
+  } else if section == "additional_sections" {
+    additional-block()
+  } else if section == "interests" {
+    interests-block()
   }
 }
 

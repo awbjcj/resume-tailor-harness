@@ -63,7 +63,7 @@ def aggregate(critiques: list[ReviewCritique], config: ReviewConfig) -> PanelVer
     """Combine critiques into one verdict: any failed gate blocks the round.
 
     Gates are the configured reviewer gates plus the deterministic gates
-    (provenance, skill-naming, and numeric-evidence). Each rides in `critiques`,
+    (provenance, skill-naming, numeric-evidence, and rendered layout-fit). Each rides in `critiques`,
     so there is a single verdict shape whether or not the panel ran.
     """
     # Coverage is retained in the verdict's critique list for health reporting

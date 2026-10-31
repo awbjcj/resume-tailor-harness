@@ -115,7 +115,7 @@ def test_advisory_review_receives_effective_length_policy_without_changing_fact_
     else:
         run_panel(_content(), _facts(), "JD", config, agents)
     assert "LENGTH BUDGET" in advisory.received
-    assert "Set summary to null" in advisory.received
+    assert "evidence-backed summary" in advisory.received
     assert "16 bullets in total" in advisory.received
     assert "LENGTH BUDGET" not in gate.received
 

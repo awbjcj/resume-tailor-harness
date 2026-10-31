@@ -4663,6 +4663,54 @@ export interface components {
             /** Url */
             url?: string | null;
         };
+        /**
+         * AdditionalEntry
+         * @description Source wording for optional sections such as teaching, grants or service.
+         */
+        AdditionalEntry: {
+            /** Date */
+            date?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Id */
+            id?: string;
+            /** Organization */
+            organization?: string | null;
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /** @default resume */
+            source: components["schemas"]["Source"];
+            /** Source Ref */
+            source_ref?: string | null;
+            /**
+             * Synthesized
+             * @default false
+             */
+            synthesized: boolean;
+            /** Title */
+            title: string;
+            /** Url */
+            url?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** AdditionalSection */
+        AdditionalSection: {
+            /** Entries */
+            entries?: components["schemas"]["AdditionalEntry"][];
+            /**
+             * Schema Version
+             * @default 1
+             */
+            schema_version: number;
+            /** Title */
+            title: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** AdminUser */
         AdminUser: {
             /**
@@ -9831,6 +9879,8 @@ export interface components {
          *     the LLM never emits markup.
          */
         ResumeContent: {
+            /** Additional Sections */
+            additional_sections?: components["schemas"]["AdditionalSection"][];
             /** Awards */
             awards?: components["schemas"]["TailoredAward"][];
             /** Certifications */
@@ -9840,8 +9890,18 @@ export interface components {
             education?: components["schemas"]["Education"][];
             /** Experience */
             experience?: components["schemas"]["TailoredExperience"][];
+            /** Interests */
+            interests?: string[];
             /** Languages */
             languages?: components["schemas"]["Language"][];
+            /**
+             * Layout Density
+             * @description Layout preference: -1 uses roomier spacing and up to 12pt body text; 0 uses the template default; 1 uses compact spacing and 10pt body text. The renderer may adjust it to meet the page budget.
+             * @default 0
+             */
+            layout_density: number;
+            /** Portfolio */
+            portfolio?: components["schemas"]["TailoredProject"][];
             /** Projects */
             projects?: components["schemas"]["TailoredProject"][];
             /** Publications */
@@ -11304,6 +11364,8 @@ export interface components {
         };
         /** TailoredCertification */
         TailoredCertification: {
+            /** Credential Id */
+            credential_id?: string | null;
             /** Date */
             date?: string | null;
             /** Issuer */
@@ -11352,17 +11414,27 @@ export interface components {
             bullets?: components["schemas"]["TailoredBullet"][];
             /** Description */
             description?: string | null;
+            /** End */
+            end?: string | null;
             /** Name */
             name: string;
             /** Provenance */
             provenance: string;
+            /** Repo Url */
+            repo_url?: string | null;
+            /** Role */
+            role?: string | null;
             /**
              * Schema Version
              * @default 1
              */
             schema_version: number;
+            /** Start */
+            start?: string | null;
             /** Tech */
             tech?: string[];
+            /** Url */
+            url?: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -11411,6 +11483,8 @@ export interface components {
         TailoredVolunteer: {
             /** Bullets */
             bullets?: components["schemas"]["TailoredBullet"][];
+            /** Description */
+            description?: string | null;
             /** End */
             end?: string | null;
             /** Organization */

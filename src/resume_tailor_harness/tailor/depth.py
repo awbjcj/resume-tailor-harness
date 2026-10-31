@@ -40,7 +40,7 @@ class DepthReport(ExtensibleModel):
 
 def _rendered_counts(content: ResumeContent) -> dict[str, int]:
     counts: dict[str, int] = {}
-    for entry in (*content.experience, *content.projects):
+    for entry in (*content.experience, *content.projects, *content.portfolio):
         counts[entry.provenance] = counts.get(entry.provenance, 0) + len(entry.bullets)
     return counts
 
@@ -48,7 +48,7 @@ def _rendered_counts(content: ResumeContent) -> dict[str, int]:
 def _rendered_aspects(content: ResumeContent, owner: OwnerRef) -> list[Aspect]:
     by_id = {bullet.id: bullet.aspect for bullet in owner.bullets}
     found: list[Aspect] = []
-    for entry in (*content.experience, *content.projects):
+    for entry in (*content.experience, *content.projects, *content.portfolio):
         if entry.provenance != owner.id:
             continue
         for bullet in entry.bullets:

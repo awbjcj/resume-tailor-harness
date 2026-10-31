@@ -865,11 +865,21 @@ an earlier PDF.
 
 **Settings → Rendering** offers eight bundled layouts: Classic, Modern,
 Technical, Executive, Graduate, Academic, Minimal, and Compact. The one-page
-option also guides new drafts: keep experience and projects, omit the
-summary, and use fewer bullets. Turn it off for a detailed resume of up to two
-pages. Body text stays at least 10pt. If the content still cannot fit, rendering
-asks you to shorten it before a PDF can be exported. See the
+option also guides new drafts: retain a concise summary, prioritize experience
+and projects, and include relevant optional sections. Turn it off to fit one page
+or two nearly full pages. Fonts and spacing adapt within a 10–12pt body range;
+each page of a two-page export must fill at least 80% of the printable height.
+Honors, publications, certifications, portfolio work and source-backed additional
+sections retain their evidence. Content that cannot fit cleanly requests revision
+before publication. See the
 [layout catalog and design sources](templates/README.md).
+
+The summary explains fit for the specific position by connecting the job's main
+requirements to verified candidate evidence. The **concision** reviewer also
+inspects rendered page images and sends layout fixes into the revision loop.
+It requires an image-capable model. Content and `layout_density` adjustments are
+re-rendered and fact-checked; an unfit page layout blocks acceptance. See the
+[formatting and review rules](docs/resume-formatting-rules.md).
 
 ```bash
 uv run resume-tailor-harness render 12 [--config config/render.yaml]

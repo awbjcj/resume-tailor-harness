@@ -65,10 +65,12 @@ def test_tailor_loads_config_and_calls_tailor_jobs(monkeypatch):
         cluster_map=None,
         model=None,
         taxonomy=None,
+        render_config=None,
     ):
         captured["targets"] = [j.id for j in targets]
         captured["match_plan"] = match_plan_agent
         captured["skill_matrix"] = skill_matrix
+        captured["render_config"] = render_config
         return TailorOutcome(
             versions=cast(dict[int, list[ResumeVersion]], {targets[0].id: ["v1"]}),
             failures={},
@@ -105,6 +107,7 @@ def test_tailor_loads_config_and_calls_tailor_jobs(monkeypatch):
         session.refresh(job)
         assert job.id is not None
         result = tailoring.tailor(session, job_ids=[job.id])
+        assert captured["render_config"] is not None
     assert captured["targets"] == [job.id]
     assert captured["match_plan"] is not None
     assert result

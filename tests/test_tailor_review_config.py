@@ -99,7 +99,9 @@ def test_fast_mode_rejects_unknown_writer_tier():
         ReviewConfig(tailor_tier="typo")  # type: ignore[arg-type]
 
 
-@pytest.mark.parametrize("name", ["provenance", "skill-naming", "numeric-evidence"])
+@pytest.mark.parametrize(
+    "name", ["provenance", "skill-naming", "numeric-evidence", "layout-fit"]
+)
 def test_deterministic_gate_names_are_reserved_from_configured_reviewers(name):
     with pytest.raises(ValidationError, match=name):
         ReviewConfig(reviewers=[ReviewerSpec(name=name)])

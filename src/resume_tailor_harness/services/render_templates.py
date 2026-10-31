@@ -110,7 +110,7 @@ def render_preview(template_id: str) -> bytes:
     try:
         with tempfile.TemporaryDirectory() as output_directory:
             output = render_pdf(
-                sample_resume_content(),
+                sample_resume_content(template_id),
                 Path(output_directory) / "preview.pdf",
                 info.path,
                 fit_pages=None,

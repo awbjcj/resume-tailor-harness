@@ -17,8 +17,20 @@ fitOnePage}`; legacy `template_path` and `output_dir` remain runtime-only CLI
   `templates/README.md` and `templates/fonts/LICENSE.md`. Compile with the
   bundled font directory; do not require host fonts or remote Typst packages.
 - **Export length is validated before publication.** `fit_one_page` selects
-  one page or a maximum of two. The fitter uses at most five layout probes and
-  one optional two-page balance probe; body text stays >=10pt. `PageFitError`
+  one page or a maximum of two. Bundled fitting uses bounded compression/expansion (at most twelve calls),
+  10–12pt body text, and at least 80% printable-height fill on both pages.
+  A short spill compacts into one page; insufficient two-page fill raises
+  `PageBalanceError` for content revision. Custom templates retain page-count
+  validation without bundled expansion. `PageFitError`
   leaves previous artifacts intact and maps to an actionable 422. Rendering
   never cuts approved content. `services/resume_shape.py` aligns authoring
   budgets with this length before any native planning or external context.
+- **Visual review uses the export renderer.** `layout_review.py` renders the
+  selected tenant template with the same length, density and highlight terms.
+  The concision reviewer receives bounded in-memory page PNGs; failed fits
+  produce diagnostic previews and a deterministic `layout-fit` failure.
+  Temporary PDFs are removed before provider calls. PDFium operations, including
+  resource cleanup, must hold the process-wide lock. Async rendering runs off
+  the event loop under the batch semaphore. Preview failures must never silently
+  become successful visual reviews. The persisted `layout_density` preference
+  stays within [-1, 1]; page fitting and the 10pt floor take precedence.

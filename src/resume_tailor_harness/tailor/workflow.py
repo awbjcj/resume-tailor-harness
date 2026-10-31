@@ -13,6 +13,7 @@ from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import ReviewCritique
 from resume_tailor_harness.profile.matrix import SkillMatchContext
+from resume_tailor_harness.render.render_config import RenderConfig
 from resume_tailor_harness.tailor.coverage import coverage_critique, format_coverage
 from resume_tailor_harness.tailor.depth import depth_critique
 from resume_tailor_harness.tailor.length import prepare_draft
@@ -63,6 +64,7 @@ class TailorRequest:
     profile_facts: ProfileFacts
     config: ReviewConfig
     skill_context: SkillMatchContext | None = None
+    render_config: RenderConfig | None = None
 
 
 @dataclass(frozen=True)
@@ -296,10 +298,15 @@ def run_tailor_review(
     match_plan_agent: Runner | None = None,
     skill_context: SkillMatchContext | None = None,
     evidence_portfolio_agent: Runner | None = None,
+    render_config: RenderConfig | None = None,
 ) -> list[TailorRound]:
     """Draft, then gate/review/revise until the round passes or max_rounds is hit."""
     config = config.model_copy(
-        update={"length_budget": config.length_budget.for_pages()}
+        update={
+            "length_budget": config.length_budget.for_pages(
+                (1 if render_config.fit_one_page else 2) if render_config else None
+            )
+        }
     )
     pending: dict[str, float] = {}
     portfolio = None
@@ -342,6 +349,8 @@ def run_tailor_review(
             config,
             reviewer_agents,
             coverage=coverage,
+            render_config=render_config,
+            highlight_terms=portfolio.highlight_terms if portfolio else None,
         )
         state.pending["panel"] = time.monotonic() - started
         verdict = state.record(panel)
@@ -372,10 +381,15 @@ async def arun_tailor_review(
     *,
     sem: asyncio.Semaphore,
     evidence_portfolio_agent: Runner | None = None,
+    render_config: RenderConfig | None = None,
 ) -> list[TailorRound]:
     """Async twin of run_tailor_review; DB writes happen after callers gather."""
     config = config.model_copy(
-        update={"length_budget": config.length_budget.for_pages()}
+        update={
+            "length_budget": config.length_budget.for_pages(
+                (1 if render_config.fit_one_page else 2) if render_config else None
+            )
+        }
     )
     pending: dict[str, float] = {}
     portfolio = None
@@ -421,6 +435,8 @@ async def arun_tailor_review(
             reviewer_agents,
             sem=sem,
             coverage=coverage,
+            render_config=render_config,
+            highlight_terms=portfolio.highlight_terms if portfolio else None,
         )
         state.pending["panel"] = time.monotonic() - started
         verdict = state.record(panel)
@@ -453,6 +469,7 @@ class TailorWorkflow:
             agents.reviser,
             skill_context=request.skill_context,
             evidence_portfolio_agent=agents.portfolio_planner,
+            render_config=request.render_config,
         )
 
     async def arun(
@@ -473,4 +490,5 @@ class TailorWorkflow:
             skill_context=request.skill_context,
             sem=sem,
             evidence_portfolio_agent=agents.portfolio_planner,
+            render_config=request.render_config,
         )

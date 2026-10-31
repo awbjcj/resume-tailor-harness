@@ -123,7 +123,7 @@ def _prose(content: ResumeContent) -> list[str]:
     bullets: list[str] = []
     for experience in content.experience:
         bullets.extend(bullet.text for bullet in experience.bullets)
-    for project in content.projects:
+    for project in (*content.projects, *content.portfolio):
         bullets.extend(bullet.text for bullet in project.bullets)
     for volunteer in content.volunteer:
         bullets.extend(bullet.text for bullet in volunteer.bullets)

@@ -17,7 +17,7 @@ from resume_tailor_harness.llm_runner import (
 from resume_tailor_harness.models.profile import ProfileFacts
 
 # Bump whenever _INSTRUCTIONS change so cached fragments re-extract.
-PROMPT_VERSION = 4
+PROMPT_VERSION = 5
 
 
 _INSTRUCTIONS = [
@@ -29,6 +29,12 @@ _INSTRUCTIONS = [
     "section structure, but do not strengthen claims or rewrite them into new facts.",
     "Separate each role, project, education record, credential, publication, award, language, and "
     "volunteer record. Split accomplishments into individual bullet facts rather than merging them.",
+    "Keep education honors and activities under education; standalone honors belong in awards. "
+    "Portfolio work belongs in projects with its actual role, dates, and URLs. Preserve publication "
+    "author order, venue and links, and certification credential IDs. For source sections without "
+    "a dedicated field (teaching, grants, presentations, patents, board roles, memberships or "
+    "service), use additional_sections with the source heading and verbatim entry wording. "
+    "Never create an empty section or duplicate a record already in a dedicated section.",
     "Associate nested bullets and technologies with the role or project that actually contains them. "
     "Do not duplicate the same claim into multiple sections merely to fill the schema.",
     "Assign every experience bullet and project highlight exactly one schema-defined aspect: "

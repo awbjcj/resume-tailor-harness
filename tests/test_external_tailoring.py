@@ -39,7 +39,9 @@ def external_case(tmp_path, monkeypatch):
     monkeypatch.setattr(
         service,
         "run_panel",
-        lambda *a: [ReviewCritique(reviewer="fact-check", score=100, passed=True)],
+        lambda *a, **kw: [
+            ReviewCritique(reviewer="fact-check", score=100, passed=True)
+        ],
     )
     with Session(engine) as session:
         job = Job(source="manual", jd_text="Write Python", status="rendered")
@@ -112,7 +114,7 @@ def test_stale_context_rejected_before_and_after_review(
 ):
     session, job_id, path, content, revision, facts, _ = external_case
 
-    def mutate(*a):
+    def mutate(*a, **kw):
         save_facts(facts.model_copy(update={"summary": "New evidence"}), path)
         return [ReviewCritique(reviewer="fact-check", score=100, passed=True)]
 
@@ -131,7 +133,7 @@ def test_panel_failure_does_not_save(external_case, monkeypatch):
     monkeypatch.setattr(
         service,
         "run_panel",
-        lambda *a: [ReviewCritique(reviewer="fact-check", score=0, passed=False)],
+        lambda *a, **kw: [ReviewCritique(reviewer="fact-check", score=0, passed=False)],
     )
     assert not service.submit_draft(session, job_id, path, content, revision, "test")[
         "passed"
@@ -148,7 +150,9 @@ def test_external_submission_honors_advisory_fact_check(external_case, monkeypat
     monkeypatch.setattr(
         service,
         "run_panel",
-        lambda *a: [ReviewCritique(reviewer="fact-check", score=90, passed=False)],
+        lambda *a, **kw: [
+            ReviewCritique(reviewer="fact-check", score=90, passed=False)
+        ],
     )
     result = service.submit_draft(session, job_id, path, content, revision, "test")
     assert result["passed"] is True

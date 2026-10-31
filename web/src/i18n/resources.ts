@@ -92,7 +92,7 @@ const en = {
       recruiter: "Can a recruiter understand the top of the resume in a six-second skim?",
       hiringManager:
         "Depth and credibility of the evidence for this specific role.",
-      concision: "Concision: remove padding while keeping evidence.",
+      concision: "Format and concision: inspect rendered pages, balance spacing and font size, and keep relevant evidence. Requires an image-capable model.",
       mustHaveCoverage:
         "How many must-have requirements with supporting evidence appear in the resume.",
     },
@@ -930,7 +930,7 @@ const zhCN = {
       atsKeyword: "简历覆盖了多少职位描述中明确提出的要求。",
       recruiter: "招聘人员快速浏览六秒，能否看懂简历顶部的重点？",
       hiringManager: "与此职位相关的经历依据是否充分、可信。",
-      concision: "删去冗余表达，保留有依据的内容。",
+      concision: "格式与精简：检查渲染后的页面，平衡间距和字号，保留相关证据。需要支持图像输入的模型。",
       mustHaveCoverage: "已有依据的必备要求中，有多少实际写进了简历。",
     },
   },
