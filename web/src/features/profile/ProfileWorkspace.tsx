@@ -93,12 +93,12 @@ export function ProfileWorkspace() {
         icon={<Sparkles />}
         eyebrow="Step 1 · Your profile"
         title="Profile"
-        description="The resume, documents, and skills every tailored application is grounded in."
+        description="Your resume, documents, and skills form the basis for every tailored application."
         meta={
           <Badge variant="outline">
             {lastCoach
               ? `${lastCoach.topicCount} topics · last session ${formatUserDate(lastCoach.startedAt)}`
-              : "Start your first coaching session to uncover grounded profile evidence."}
+              : "Find evidence for your profile in your first coaching session."}
           </Badge>
         }
         actions={

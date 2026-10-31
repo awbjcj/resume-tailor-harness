@@ -43,7 +43,7 @@ export function InterviewTab({
         )}
         {!activeRow && !canStart ? (
           <p className="text-xs text-muted-foreground">
-            {hasJd ? "Tailor a resume first to run a mock interview." : "This job has no description to interview against."}
+            {hasJd ? "Tailor a resume first to run a mock interview." : "This job has no description to use for interview practice."}
           </p>
         ) : null}
       </div>

@@ -36,7 +36,7 @@ export function DraftNoteCard({ note, saving, discarding, onSave, onDiscard }: D
           {pending ? <Badge variant="secondary" className="ml-auto">Needs approval</Badge> : null}
         </CardTitle>
         <CardDescription>
-          {pending ? "Review this grounded note before adding it to your profile." : `Note ${note.status}.`}
+          {pending ? "Review this note and its evidence before adding it to your profile." : `Note ${note.status}.`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -867,18 +867,20 @@ an earlier PDF.
 Technical, Executive, Graduate, Academic, Minimal, and Compact. The one-page
 option also guides new drafts: retain a concise summary, prioritize experience
 and projects, and include relevant optional sections. Turn it off to fit one page
-or two nearly full pages. Fonts and spacing adapt within a 10–12pt body range;
-each page of a two-page export must fill at least 80% of the printable height.
+or two nearly full pages. Body text and spacing adjust automatically; body text
+stays within 10–12pt. Each page of a two-page export must fill at least 80% of
+the printable height.
 Honors, publications, certifications, portfolio work and source-backed additional
-sections retain their evidence. Content that cannot fit cleanly requests revision
-before publication. See the
+sections retain their evidence. If the content cannot fit cleanly, revise it
+before publishing a PDF. See the
 [layout catalog and design sources](templates/README.md).
 
-The summary explains fit for the specific position by connecting the job's main
-requirements to verified candidate evidence. The **concision** reviewer also
+The summary connects the job's main requirements to verified candidate evidence
+to explain why the candidate fits the position. The **concision** reviewer also
 inspects rendered page images and sends layout fixes into the revision loop.
-It requires an image-capable model. Content and `layout_density` adjustments are
-re-rendered and fact-checked; an unfit page layout blocks acceptance. See the
+It requires an image-capable model. Changes to content or `layout_density` are
+rendered again, and revised content is fact-checked. A page that does not fit
+blocks acceptance. See the
 [formatting and review rules](docs/resume-formatting-rules.md).
 
 ```bash

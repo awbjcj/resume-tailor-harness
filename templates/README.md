@@ -36,8 +36,8 @@ default order; omitted populated sections are appended rather than lost.
 
 ## Optional sections and source formats
 
-All eight layouts render populated sections and omit empty headings. Summary is
-restored in both page modes and remains visible to provenance and fact-check.
+All eight layouts render populated sections and omit empty headings. The summary
+is included in both page modes and remains visible to provenance and fact-check.
 Explicit `section_order` wins; omitted populated sections are appended once.
 `honors` in the order is an alias for the existing `awards` data field.
 
@@ -66,15 +66,15 @@ Template previews include fictional examples appropriate to their purpose.
 
 ## Length and content policy
 
-**Fit resume to one page** sets the drafting envelope for native and external
-contexts. Legacy larger budgets are capped at three roles, three projects, five
+**Fit resume to one page** sets the drafting limits for native and external
+contexts. Larger legacy budgets are capped at three roles, three projects, five
 combined evidence owners and about 16 bullets (2–4 per role, 1–3 per project),
-clamped to source supply. Lower saved caps still apply. Portfolio work shares the
-project budget. Include a concise 25–40-word summary with `summary_provenance`,
+depending on the available source evidence. Lower saved caps still apply. Portfolio
+work shares the project budget. Include a concise 25–40-word summary with `summary_provenance`,
 connecting the job's main requirements to verified capabilities or accomplishments
-to explain the candidate's fit for that position;
-never silently erase it before review. Aim for 400–550 words including optional
-sections. Preserve distinct work and project evidence; shorten repetition first.
+to explain the candidate's fit for that position. Never silently erase it before
+review. Aim for 400–550 words including optional sections. Preserve distinct work
+and project evidence; shorten repetition first.
 
 Turning the option off allows one page or two nearly full pages. Writers target
 650–900 words only when verified, relevant evidence supports that detail. Expand

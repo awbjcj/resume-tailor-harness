@@ -47,7 +47,7 @@ export function JobQuickActions({
         <ConfirmDialog
           trigger={<Button size="icon-sm" variant="ghost" aria-label="Delete job"><Trash2 aria-hidden="true" /></Button>}
           title="Delete this job?"
-          description="Deletion is permanent. Jobs with progress are refused."
+          description="Deletion is permanent. Jobs with progress cannot be deleted."
           confirmLabel="Delete"
           confirmDisabled={deleteJob.isPending}
           onConfirm={() => deleteJob.mutateAsync(jobId)}

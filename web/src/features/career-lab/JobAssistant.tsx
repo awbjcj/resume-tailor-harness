@@ -64,7 +64,7 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
     finished.current.add(run.runId);
     setPending(null);
     const cancelled = run.status === "cancelled";
-    if (run.status !== "succeeded") { setError(cancelled ? "" : run.error ?? "The response could not be completed. Your request is ready to retry."); return; }
+    if (run.status !== "succeeded") { setError(cancelled ? "" : run.error ?? "The response could not be completed. You can retry your request."); return; }
     setLocalRunId((current) => current === run.runId ? null : current);
     const result = run.result as { sessionId?: string } | null;
     if (result?.sessionId) setOpenedId(result.sessionId);

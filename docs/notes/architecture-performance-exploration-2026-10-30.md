@@ -96,9 +96,9 @@ reprocessing within a single pass. Existing run budgets remain in force;
 deferred work must remain resumable and old receipt associations must not
 silently transfer to another application.
 
-The dependency is local-substitutable: test through the processing interface
+The dependency can be substituted locally: test through the processing interface
 with SQLite, including a second Session for concurrent edits. Production and
-fake transport adapters already supply messages at a real seam.
+fake transport adapters already supply messages through the same interface.
 
 ### Tests and acceptance
 
@@ -116,10 +116,10 @@ fake transport adapters already supply messages at a real seam.
 - Preserve atomic receipt/proposal/checkpoint commits, cancellation, retry,
   and current-state validation when accepting a proposal.
 
-The deletion test favors deepening the processor: deleting it would distribute
-decision rules across Gmail, Graph, and IMAP callers. Locality belongs inside
-that module; leverage comes from all adapters sharing the same corrected
-lifetime semantics. Compatible with ADR-0002, ADR-0003, and ADR-0012.
+The deletion test favors keeping these rules in the processor: deleting it would
+distribute decision rules across Gmail, Graph, and IMAP callers. Keeping the
+rules together lets all adapters share the corrected lifetime semantics. This is
+compatible with ADR-0002, ADR-0003, and ADR-0012.
 
 ## 2. Job-description text ownership
 
@@ -177,10 +177,10 @@ Record endpoint-level before/after measurements separately from microbenchmarks.
 Keep SQL paging, full detail, <=400-character previews, and <150 KB Pipeline
 payloads. Avoid flaky wall-clock assertions in the ordinary test suite.
 
-The deletion test preserves shared normalization; deleting it would duplicate
-rules. Depth comes from owning normalization and preview semantics, locality
-from removing tracking's knowledge of connector internals, and leverage from
-all existing text callers. Compatible with ADR-0007.
+The deletion test favors keeping normalization shared; deleting it would
+duplicate rules. The module owns normalization and preview behavior, removes
+tracking's dependency on connector internals, and serves existing text callers.
+This is compatible with ADR-0007.
 
 ## 3. Startup loading ownership
 
@@ -245,9 +245,8 @@ resources are ready; do not remount forms by language.
   are separate evidence; no real-user improvement is established yet.
 
 Moving imports alone fails the deletion test: complexity merely moves. The
-feature module earns depth by owning loading/readiness/errors/state behind a
-small interface. That gives locality to one feature and leverage to both its
-navigation and action adapters.
+feature module owns loading, readiness, errors, and state behind a small
+interface shared by its navigation and action adapters.
 
 ## 4. Mailbox read-pass ownership
 
@@ -302,9 +301,9 @@ receipts and advance the transport cursor.
 
 Graph and IMAP are true external dependencies: use mock adapters for tests.
 Their real differences justify the seam, but not a new generic transport
-framework. Keep protocol rules in each adapter; concentrate lifetime/work limits
-inside the read-pass module. This gives locality and leverage without deleting
-valuable provider-specific depth. Preserve ADR-0008.
+framework. Keep protocol rules in each adapter, and put lifetime and work limits
+inside the read-pass module. This keeps those limits together while preserving
+provider-specific behavior. Preserve ADR-0008.
 
 ## Delivery and evidence
 

@@ -7,8 +7,8 @@ not modifications to installed skills or to the candidate's master profile.
 ## Local skill review
 
 The local `.agents/skills` collection supplies the following playbooks; the
-application-workflow skill lives in `.codex/skills`. Their applicable rules are
-combined below rather than injected wholesale into every model prompt.
+application-workflow skill lives in `.codex/skills`. The applicable rules are
+combined below rather than copied wholesale into every model prompt.
 
 | Skills reviewed | Rule adopted |
 | --- | --- |
@@ -34,8 +34,8 @@ combined below rather than injected wholesale into every model prompt.
    an explicit connection between the job's main responsibilities and the candidate's
    strongest verified capabilities or accomplishments, explaining why they fit this
    specific position. A generic biography or unsupported "excellent fit" assertion
-   does not satisfy this rule. Preserve
-   its evidence IDs through initial drafts and revisions, sync and async. Missing
+   does not satisfy this rule. Preserve the summary's evidence IDs through
+   initial drafts and revisions, in both sync and async workflows. Missing
    or unsupported claims must be visible to the existing gates. No filler praise,
    objectives, inferred tenure or invented metrics.
 2. **Optional means evidence-dependent:** omit empty sections. Standalone honors
@@ -49,8 +49,9 @@ combined below rather than injected wholesale into every model prompt.
 4. **Content adjustment:** select distinct relevant facts, shorten repetitions and
    prioritize recent relevant work. One-page guide: 400–550 words including summary
    and optional sections. Detailed guide: 650–900 words only with enough evidence.
-   Saved bullet/owner limits still apply. Word counts guide writing, not forced
-   truncation or padding; the final PDF supplies the layout measurement.
+   Saved bullet and evidence-owner limits still apply. Word counts guide writing;
+   they do not force truncation or padding. The final PDF supplies the layout
+   measurement.
 5. **Layout adjustment:** US Letter, 0.6in horizontal/0.55in vertical margins,
    10–12pt body, 12pt headings, 20pt name; adjust leading and bullet/entry/section
    spacing together. Retain hyperlinks, content, ordering and provenance.
@@ -72,10 +73,11 @@ combined below rather than injected wholesale into every model prompt.
    from -1 (roomier, up to 12pt) to 1 (compact, 10pt); export uses the same fitting
    rules and may adjust the preference. Content changes re-enter all fact gates.
    `layout-fit` blocks acceptance when the renderer cannot satisfy the budget.
-   A failed fit gets diagnostic screenshots, never a published draft artifact.
+   A failed fit produces diagnostic screenshots, but no published draft artifact.
    Only the format reviewer receives images in separate mode; fact-check still
    uses cited facts. A reviewer model with image input support is required;
-   provider/adapter failures are surfaced rather than silently claiming visual review.
+   provider or adapter failures are reported instead of silently claiming a visual
+   review.
    Previews stay in memory after temporary PDF cleanup, with at most four images
    of 1600px per edge and a 12MiB byte cap. No preview URLs or cross-tenant cache.
 
