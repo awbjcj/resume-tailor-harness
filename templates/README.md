@@ -34,43 +34,84 @@ host or runtime downloads. Essential information stays black; accent color
 is decorative. Explicit `section_order` takes precedence over each layout's
 default order; omitted populated sections are appended rather than lost.
 
+## Optional sections and source formats
+
+All eight layouts render populated sections and omit empty headings. Summary is
+restored in both page modes and remains visible to provenance and fact-check.
+Explicit `section_order` wins; omitted populated sections are appended once.
+`honors` in the order is an alias for the existing `awards` data field.
+
+- **Honors & Awards:** standalone award name, issuer, date and description;
+  education-specific honors and activities remain under Education. Graduate and
+  Academic place recognition early; Executive follows experience/advisory roles.
+- **Publications:** preserve author order, linked title, venue and date, following
+  [Brilliant CV's citation-oriented source](https://github.com/yunanwg/brilliant-CV/blob/main/template/profile_en/publications.typ).
+  Academic places publications immediately after education.
+- **Certifications:** name, issuer, date, credential ID and clickable source link,
+  informed by [Brilliant CV's honor entries](https://github.com/yunanwg/brilliant-CV/blob/main/template/profile_en/certificates.typ)
+  and [imprecv's structured fields](https://github.com/jskherman/imprecv/blob/main/template/template.yml).
+- **Portfolio:** project-backed case studies with actual role, dates, visible work
+  and repository links, description, technologies and achievement bullets. This
+  follows [Modern CV's project entries](https://github.com/ptsouchlos/modern-cv/blob/main/template/sections/projects.typ).
+  It shares the project evidence budget; never duplicate a project in both lists.
+- **Other sections:** languages, volunteering and interests are supported.
+  `additional_sections` retains source headings and verbatim entries for teaching,
+  grants, presentations, patents, memberships, service or board/advisory work.
+  Each entry has a stable fact ID. The deterministic gate verifies both its heading
+  and content against the source; unsupported entries cannot bypass review.
+
+Source formats were rechecked on 2026-10-31. These remain local adaptations:
+no copied package code, remote imports, icons, photographs or layout tables.
+Template previews include fictional examples appropriate to their purpose.
+
 ## Length and content policy
 
-**Fit resume to one page** also sets drafting limits for new native and external
-tailoring contexts. Older two-page review budgets are capped at
-three roles, three projects, five combined entries, and about 16 bullets:
-2–4 per role and 1–3 per project, limited by the available source evidence.
-Lower saved caps still apply. When there is evidence of both work and projects,
-one slot is reserved for a project. One-page native drafts omit the summary
-before review; this adjustment does not cut work or project content. Writers
-receive a 400–550 word guide and prioritize actual work over repeated
-descriptions or secondary details.
+**Fit resume to one page** sets the drafting envelope for native and external
+contexts. Legacy larger budgets are capped at three roles, three projects, five
+combined evidence owners and about 16 bullets (2–4 per role, 1–3 per project),
+clamped to source supply. Lower saved caps still apply. Portfolio work shares the
+project budget. Include a concise 25–40-word summary with `summary_provenance`,
+connecting the job's main requirements to verified capabilities or accomplishments
+to explain the candidate's fit for that position;
+never silently erase it before review. Aim for 400–550 words including optional
+sections. Preserve distinct work and project evidence; shorten repetition first.
 
-Turning the option off selects detailed drafting and an export limit of two
-pages, using the saved review roster's larger budget. Short content can stay on
-one page without filler. If only a few lines fall on the second page, the fitter
-may try one break at an entry or section boundary. It keeps that break only if
-it improves the second page without adding a third.
+Turning the option off allows one page or two nearly full pages. Writers target
+650–900 words only when verified, relevant evidence supports that detail. Expand
+selected achievements and relevant optional sections during drafting/revision,
+never by adding filler or unsupported facts. The saved length-budget controls
+continue to govern content selection and bullet counts.
+
+The format reviewer receives rendered page images and gives page-specific feedback.
+Revisions can change `layout_density` from -1 (roomier/up to 12pt) to 1 (compact/10pt),
+along with evidence-backed content edits. The export fitter may adjust this preference
+to meet the page budget. Each native revision is rendered and reviewed again.
 
 Bundled pages are US Letter with 0.6-inch horizontal and 0.55-inch vertical
-margins, 10–10.5pt body text, 12pt headings, and a 20pt name. Fitting tries the
-natural layout and a compact layout, then makes at most three binary-search
-probes between them. It reuses a compiler within that render and works in memory.
-The old fitter reduced zoom in a linear loop. The current fitter keeps bundled
-body text at 10pt or above and rejects overflow. Headings stay with following
-content; bullets stay together while
-long sections can continue to the next page.
+margins. The fitter adjusts body text within **10–12pt**, paragraph leading,
+bullet spacing, entry spacing and section gaps. Names stay 20pt and headings
+12pt. It measures the text span against the printable area on **both** pages;
+each must occupy at least **80%** for a two-page export. This is a vertical layout
+measure, not an ATS score or a count of ink pixels.
 
-If the content cannot fit, rendering raises `PageFitError` (HTTP 422
-`resume_page_overflow`) with guidance to shorten it or use two pages. No new PDF
-is published, and any previous artifact is kept. Rendering never truncates or
-deletes approved resume content.
-Direct Python calls to `render_pdf(..., fit_pages=None)` remain available for an
-unrestricted full CV. Uploaded templates retain the existing `data` and `zoom`
-inputs; `density` and `break_before` are optional enhancements. Their own font
-rules remain the template author's responsibility.
+Fitting first tests the natural layout and bounded whitespace/font compression
+(at most five probes). In detailed mode, a sparse second page is compacted into
+one page if possible; otherwise bounded expansion adds readable type and spacing
+(at most six expansion probes). It never merely moves a page break to produce
+two short pages. A render uses at most twelve compiler calls, with one compiler
+cache scoped to that render. Headings stay with following content and bullets
+stay together while long sections can continue onto the next page.
 
-The formatting/content policy applies the supplied `resume-formatter` and
-`resume-section-builder` playbooks: readable type, standard section names,
-consistent hierarchy, optional summaries, and work/project evidence first.
-Fact-lock gates continue to review every resulting native draft.
+If approved content cannot fit within the readable range, `PageFitError` requests
+revision. If neither a concise page nor two sufficiently full pages is possible,
+`PageBalanceError` requests verified additions or a shorter draft. Both map to
+HTTP 422 `resume_page_overflow`; previous artifacts remain intact. Rendering
+never changes, truncates or adds approved resume content.
+
+Direct Python calls with `fit_pages=None` remain available for unrestricted CVs.
+Uploaded templates retain their `data` and `zoom` contract and the page-count
+limit; automatic expansion and the 80% rule apply to bundled templates only.
+Custom template authors remain responsible for their typography and spacing.
+
+See [the local resume-skill review and resolved rules](../docs/resume-formatting-rules.md)
+for role-specific rules, conflicts, evidence requirements and validation.

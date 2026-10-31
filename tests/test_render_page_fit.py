@@ -13,6 +13,8 @@ from resume_tailor_harness.render.templates import BUNDLED, resolve_template
 
 def _dense_content(roles=4, bullets=5, projects=3):
     content = sample_resume_content()
+    content.summary = None
+    content.summary_provenance = []
     role = content.experience[0]
     texts = [
         "Cut p95 latency 40% by redesigning the query planner.",
@@ -90,11 +92,11 @@ def test_borderline_overflow_fits_in_bounded_probes_without_losing_text(
     assert content.model_dump_json() == original
 
 
-def test_two_page_mode_balances_a_sliver_without_adding_or_losing_text(tmp_path):
+def test_two_page_mode_compacts_a_sliver_without_adding_or_losing_text(tmp_path):
     content = _dense_content()
     natural = renderer.render_pdf(content, tmp_path / "natural.pdf", fit_pages=None)
     detailed = renderer.render_pdf(content, tmp_path / "detailed.pdf", fit_pages=2)
-    assert len(PdfReader(detailed).pages) == 2
+    assert len(PdfReader(detailed).pages) == 1
     assert renderer._last_page_fill(natural.read_bytes()) < 0.2
     assert renderer._last_page_fill(detailed.read_bytes()) > 0.35
     assert re.sub(r"\s+", "", _text(detailed)) == re.sub(r"\s+", "", _text(natural))
@@ -109,6 +111,43 @@ def test_longer_content_fits_within_two_pages_in_every_layout(tmp_path, template
         fit_pages=2,
     )
     assert len(PdfReader(path).pages) == 2
+    assert min(renderer._page_fills(path.read_bytes())) >= renderer.MIN_PAGE_FILL
+
+
+@pytest.mark.parametrize("template_id", BUNDLED)
+def test_half_page_tail_expands_without_content_loss_or_unreadable_type(
+    tmp_path, template_id
+):
+    content = _dense_content(roles=5, bullets=7, projects=4)
+    original = content.model_dump_json()
+    natural = renderer.render_pdf(
+        content, tmp_path / "natural.pdf", BUNDLED[template_id].path, fit_pages=None
+    )
+    fitted = renderer.render_pdf(
+        content, tmp_path / "fitted.pdf", BUNDLED[template_id].path, fit_pages=2
+    )
+    assert min(renderer._page_fills(fitted.read_bytes())) >= renderer.MIN_PAGE_FILL
+    assert re.sub(r"\s+", "", _text(fitted)) == re.sub(r"\s+", "", _text(natural))
+    assert content.model_dump_json() == original
+    sizes = []
+    for page in PdfReader(fitted).pages:
+        page.extract_text(
+            visitor_text=lambda text, cm, tm, font, size: (
+                sizes.append(size) if text.strip() else None
+            )
+        )
+    assert min(sizes) >= 10 and max(size for size in sizes if size < 20) <= 12
+
+
+def test_unbalanced_content_requests_revision_and_keeps_previous_artifact(tmp_path):
+    path = tmp_path / "previous.pdf"
+    path.write_bytes(b"previous validated artifact")
+    with pytest.raises(renderer.PageBalanceError, match="verified"):
+        renderer.render_pdf(
+            _dense_content(roles=5, bullets=6, projects=3), path, fit_pages=2
+        )
+    assert path.read_bytes() == b"previous validated artifact"
+    assert list(tmp_path.iterdir()) == [path]
 
 
 @pytest.mark.parametrize("target", [1, 2])
@@ -118,7 +157,7 @@ def test_impossible_fit_preserves_existing_pdf_and_source_content(tmp_path, targ
     path = tmp_path / "existing.pdf"
     path.write_bytes(b"previous validated artifact")
     with pytest.raises(
-        renderer.PageFitError, match="remove the summary first"
+        renderer.PageFitError, match="Shorten repeated wording"
     ) as error:
         renderer.render_pdf(content, path, fit_pages=target)
     assert error.value.pages > target

@@ -7,9 +7,12 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 The selected rendering length resolves the effective authoring budget through
 `services/resume_shape.py`. `LengthBudget.for_pages(1)` bounds legacy two-page
 ceilings to a realistic one-page envelope, including achievable depth floors.
-Native one-page drafts remove summary + summary provenance **before** review;
-work/project entries and their claims are untouched. Apply that policy to both
-the initial draft and every revision, sync and async. Work/project selection
+Both page modes retain concise summaries and summary provenance before review.
+Summaries must connect the job's main requirements to verified candidate
+capabilities or accomplishments and explain fit for that specific position.
+Never delete claims to hide them from a gate; adjust content through drafting
+and revision. Portfolio entries share project evidence and budgets. Additional
+section headings/entries and selected interests must match verified sources. Work/project selection
 reserves a project slot when both evidence kinds exist. The saved review roster
 remains unchanged so detailed mode retains its larger ceilings.
 
@@ -35,6 +38,16 @@ not same canonical token) are never claimable as the JD's own term.
 ---
 
 ## Review/scoring design notes
+
+- **Format review observes rendered pages.** Production tailoring and requested
+  re-review pass the selected render config into the panel. The `concision`
+  reviewer receives PNGs and measured page-fit diagnostics, including when it
+  belongs to a merged advisory call. The fact-check input remains evidence-only.
+  Layout feedback reaches the normal reviser; `layout_density` and content edits
+  are persisted with the revised draft, re-rendered and re-gated each round.
+  `layout-fit` is a reserved deterministic gate for measured render acceptance;
+  it does not let a visual opinion certify factual claims. Image-unsupported
+  models/adapters fail explicitly, without a text-only success fallback.
 
 - **Tailoring is fast by default.** `config/review.yaml.example` materializes as
   the two-round roster with mid-tier writers and one `MergedPanelReview`

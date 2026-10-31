@@ -10,10 +10,15 @@ from resume_tailor_harness.career_skills.provenance import append_skill_use
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.render.export import export_job_artifacts
 from resume_tailor_harness.services.agents import TailorBundle, build_tailor_bundle
+from resume_tailor_harness.services.rendering import DEFAULT_RENDER, _load_config
+from resume_tailor_harness.services.resume_shape import for_rendering
 from resume_tailor_harness.tailor.panel import run_panel
 from resume_tailor_harness.tailor.provenance import provenance_critique
 from resume_tailor_harness.tailor.review_config import load_review_config
-from resume_tailor_harness.tailor.revision import apply_revision, compose_user_revision_input
+from resume_tailor_harness.tailor.revision import (
+    apply_revision,
+    compose_user_revision_input,
+)
 from resume_tailor_harness.tailor.style_guide import load_style_guide
 from resume_tailor_harness.tailor.verdict import aggregate
 from resume_tailor_harness.tracking.repository import (
@@ -67,8 +72,25 @@ def revise_resume_version(
 
     if re_review and provenance.passed and job is not None:
         assert config is not None
+        render_config = _load_config(DEFAULT_RENDER)
+        config = for_rendering(config, render_config)
+        highlights = (
+            EvidencePortfolio.model_validate(
+                parent.evidence_portfolio_json
+            ).highlight_terms
+            if parent.evidence_portfolio_json is not None
+            else None
+        )
         critiques.extend(
-            run_panel(revised, facts, job.jd_text, config, bundle.reviewers)
+            run_panel(
+                revised,
+                facts,
+                job.jd_text,
+                config,
+                bundle.reviewers,
+                render_config=render_config,
+                highlight_terms=highlights,
+            )
         )
         verdict = aggregate(critiques, config)
         review_score = verdict.aggregate_score

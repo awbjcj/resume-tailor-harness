@@ -3,10 +3,20 @@ import json
 from collections.abc import Coroutine, Mapping
 from typing import Any
 
-from resume_tailor_harness.llm_runner import Runner, acall, expect_schema
+from resume_tailor_harness.llm_runner import (
+    Runner,
+    acall,
+    call_with_images,
+    expect_schema,
+)
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import MergedPanelReview, ReviewCritique
+from resume_tailor_harness.render.layout_review import (
+    LayoutPreview,
+    render_layout_preview,
+)
+from resume_tailor_harness.render.render_config import RenderConfig
 from resume_tailor_harness.tailor.length import (
     format_budget,
     format_depth_plan,
@@ -78,9 +88,21 @@ def _validate_reviewer_identity(
 
 
 def review_one(
-    input_text: str, agent: Runner, *, expected_reviewer: str | None = None
+    input_text: str,
+    agent: Runner,
+    *,
+    expected_reviewer: str | None = None,
+    layout: LayoutPreview | None = None,
 ) -> ReviewCritique:
-    critique = expect_schema(agent.run(input_text), ReviewCritique, source="reviewer")
+    critique = expect_schema(
+        call_with_images(
+            agent,
+            input_text + (layout.prompt() if layout else ""),
+            layout.images if layout else (),
+        ),
+        ReviewCritique,
+        source="reviewer",
+    )
     return _validate_reviewer_identity(critique, expected_reviewer)
 
 
@@ -92,15 +114,31 @@ def run_panel(
     reviewer_agents: Mapping[str, Runner],
     *,
     coverage: str = "",
+    render_config: RenderConfig | None = None,
+    highlight_terms: list[str] | None = None,
 ) -> list[ReviewCritique]:
     """Run configured reviewers with the smallest sufficient input per role."""
-    depth_plan = (
-        f"LENGTH BUDGET:\n{format_budget(config.length_budget)}\n\n"
-        f"{format_depth_plan(profile_facts, config.length_budget)}"
+    budget = config.length_budget.for_pages(
+        (1 if render_config.fit_one_page else 2) if render_config else None
     )
+    depth_plan = (
+        f"LENGTH BUDGET:\n{format_budget(budget)}\n\n"
+        f"{format_depth_plan(profile_facts, budget)}"
+    )
+    layout = (
+        render_layout_preview(content, render_config, highlight_terms=highlight_terms)
+        if render_config
+        else None
+    )
+    measurements = [layout.critique()] if layout else []
     if not config.merged_advisory:
-        return [
-            review_one(text, reviewer_agents[name], expected_reviewer=name)
+        return measurements + [
+            review_one(
+                text,
+                reviewer_agents[name],
+                expected_reviewer=name,
+                layout=layout if name == "concision" else None,
+            )
             for name, text in _panel_inputs(
                 content,
                 profile_facts,
@@ -112,18 +150,21 @@ def run_panel(
         ]
 
     evidence = resolve_evidence(content, profile_facts)
-    critiques = [
+    critiques = measurements + [
         review_one(
             compose_evidence_review_input(content, jd_text, evidence),
             reviewer_agents[spec.name],
             expected_reviewer=spec.name,
+            layout=layout if spec.name == "concision" else None,
         )
         for spec in config.reviewers
         if spec.requires_evidence
     ]
     advisory_names = _advisory_names(config)
     if advisory_names:
-        result = reviewer_agents[MERGED_ADVISORY].run(
+        visual = layout if "concision" in advisory_names else None
+        result = call_with_images(
+            reviewer_agents[MERGED_ADVISORY],
             compose_lean_review_input(
                 content,
                 jd_text,
@@ -131,6 +172,8 @@ def run_panel(
                 coverage=coverage,
                 depth_plan=depth_plan,
             )
+            + (visual.prompt() if visual else ""),
+            visual.images if visual else (),
         )
         critiques.extend(_merged_review(result, advisory_names))
     return critiques
@@ -178,8 +221,14 @@ async def areview_one(
     *,
     sem: asyncio.Semaphore,
     expected_reviewer: str | None = None,
+    layout: LayoutPreview | None = None,
 ) -> ReviewCritique:
-    result = await acall(agent, input_text, sem=sem)
+    result = await acall(
+        agent,
+        input_text + (layout.prompt() if layout else ""),
+        sem=sem,
+        images=layout.images if layout else (),
+    )
     critique = expect_schema(result, ReviewCritique, source="reviewer")
     return _validate_reviewer_identity(critique, expected_reviewer)
 
@@ -193,12 +242,38 @@ async def arun_panel(
     *,
     sem: asyncio.Semaphore,
     coverage: str = "",
+    render_config: RenderConfig | None = None,
+    highlight_terms: list[str] | None = None,
 ) -> list[ReviewCritique]:
     """Run configured reviewers concurrently; results stay in reviewer order."""
-    depth_plan = (
-        f"LENGTH BUDGET:\n{format_budget(config.length_budget)}\n\n"
-        f"{format_depth_plan(profile_facts, config.length_budget)}"
+    budget = config.length_budget.for_pages(
+        (1 if render_config.fit_one_page else 2) if render_config else None
     )
+    depth_plan = (
+        f"LENGTH BUDGET:\n{format_budget(budget)}\n\n"
+        f"{format_depth_plan(profile_facts, budget)}"
+    )
+    layout = None
+    if render_config is not None:
+        # Bound CPU/raster work with the same batch limit as provider calls;
+        # keep it off the event loop and preserve the active tenant context.
+        async with sem:
+            rendering = asyncio.create_task(
+                asyncio.to_thread(
+                    render_layout_preview,
+                    content,
+                    render_config,
+                    highlight_terms=highlight_terms,
+                )
+            )
+            try:
+                layout = await asyncio.shield(rendering)
+            except asyncio.CancelledError:
+                # A thread cannot be cancelled. Keep its permit until resources
+                # are closed, and never start a provider call after cancellation.
+                await asyncio.gather(rendering, return_exceptions=True)
+                raise
+    measurements = [layout.critique()] if layout else []
     if not config.merged_advisory:
         inputs = _panel_inputs(
             content,
@@ -215,12 +290,13 @@ async def arun_panel(
                     reviewer_agents[name],
                     sem=sem,
                     expected_reviewer=name,
+                    layout=layout if name == "concision" else None,
                 )
                 for name, text in inputs
             ),
             return_exceptions=True,
         )
-        return _settled_critiques(outputs)
+        return measurements + _settled_critiques(outputs)
 
     evidence = resolve_evidence(content, profile_facts)
     evidence_specs = [spec for spec in config.reviewers if spec.requires_evidence]
@@ -231,10 +307,12 @@ async def arun_panel(
             reviewer_agents[spec.name],
             sem=sem,
             expected_reviewer=spec.name,
+            layout=layout if spec.name == "concision" else None,
         )
         for spec in evidence_specs
     ]
     if advisory_names:
+        visual = layout if "concision" in advisory_names else None
         calls.append(
             acall(
                 reviewer_agents[MERGED_ADVISORY],
@@ -244,12 +322,14 @@ async def arun_panel(
                     resume_stats(content),
                     coverage=coverage,
                     depth_plan=depth_plan,
-                ),
+                )
+                + (visual.prompt() if visual else ""),
                 sem=sem,
+                images=visual.images if visual else (),
             )
         )
     outputs = await asyncio.gather(*calls, return_exceptions=True)
-    critiques: list[ReviewCritique] = []
+    critiques: list[ReviewCritique] = measurements.copy()
     first_error: BaseException | None = None
     for index, output in enumerate(outputs):
         if isinstance(output, BaseException):

@@ -49,14 +49,15 @@ def test_one_page_envelope_respects_lower_user_caps():
     assert compact.target_total_bullets == 2 and compact.target_skills == 10
 
 
-def test_one_page_draft_drops_summary_before_review_and_keeps_evidence():
+def test_one_page_draft_preserves_summary_and_evidence_before_review():
     from resume_tailor_harness.render.sample_content import sample_resume_content
 
     original = sample_resume_content()
     original.summary = "A redundant profile summary."
     original.summary_provenance = ["sample-experience"]
     prepared = prepare_draft(original, LengthBudget(page_target=1))
-    assert prepared.summary is None and prepared.summary_provenance == []
+    assert prepared.summary == original.summary
+    assert prepared.summary_provenance == original.summary_provenance
     assert prepared.experience == original.experience
     assert prepared.projects == original.projects
     assert prepared.skills == original.skills
@@ -66,7 +67,7 @@ def test_one_page_draft_drops_summary_before_review_and_keeps_evidence():
 
 def test_one_page_prompt_prioritizes_work_over_summary_and_uses_realistic_floors():
     text = format_budget(LengthBudget(page_target=1))
-    assert "Set summary to null" in text
+    assert "evidence-backed summary" in text and "summary_provenance" in text
     assert "professional experience and projects" in text
     assert "2–4 bullets" in text and "1–3" in text
     assert "16 bullets in total" in text

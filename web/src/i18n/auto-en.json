@@ -957,7 +957,7 @@
   "ui_65074239f4f5": "Re-fetch the posting and replace its text.",
   "ui_650fb7ef1814": "Additional application answers",
   "ui_651fae6a2f2c": "Role keyword",
-  "ui_65b0ae1dfcee": "New drafts prioritize experience and projects and omit the summary. Turn off for a detailed resume of up to two pages. Text stays at least 10pt; content that still overflows must be shortened before export.",
+  "ui_65b0ae1dfcee": "Keep a concise summary and relevant optional sections. Turn off to fit one page or two nearly full pages. Fonts and spacing adjust automatically within 10–12pt; revise content if it cannot fit cleanly.",
   "ui_65c3a30179de": "Min bullets per project",
   "ui_65c84bb0c298": "e.g. 25.00",
   "ui_65ced81f8708": "Shortlist",

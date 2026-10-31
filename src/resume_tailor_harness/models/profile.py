@@ -173,6 +173,21 @@ class GitHubProfile(FactItem):
     total_stars: int | None = None
 
 
+class AdditionalEntry(FactItem):
+    """Source wording for optional sections such as teaching, grants or service."""
+
+    title: str
+    organization: str | None = None
+    date: str | None = None
+    description: str | None = None
+    url: str | None = None
+
+
+class AdditionalSection(ExtensibleModel):
+    title: str
+    entries: list[AdditionalEntry] = Field(default_factory=list)
+
+
 class ProfileFacts(ExtensibleModel):
     """The fact-lock: the ONLY facts any tailoring is allowed to draw from."""
 
@@ -189,3 +204,4 @@ class ProfileFacts(ExtensibleModel):
     volunteer: list[Volunteer] = Field(default_factory=list)
     github_profile: GitHubProfile | None = None
     interests: list[str] = Field(default_factory=list)
+    additional_sections: list[AdditionalSection] = Field(default_factory=list)

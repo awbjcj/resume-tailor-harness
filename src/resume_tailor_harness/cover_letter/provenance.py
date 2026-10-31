@@ -24,6 +24,9 @@ def collect_fact_ids(facts: ProfileFacts) -> set[str]:
     ):
         for item in group:
             ids.add(item.id)
+    ids.update(
+        entry.id for section in facts.additional_sections for entry in section.entries
+    )
     if facts.github_profile is not None:
         ids.add(facts.github_profile.id)
     return ids

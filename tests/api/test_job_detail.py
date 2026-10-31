@@ -11,6 +11,7 @@ from resume_tailor_harness.models.resume import (
     ResumeContent,
     TailoredBullet,
     TailoredExperience,
+    TailoredProject,
 )
 from resume_tailor_harness.tracking.repository import save_application
 from resume_tailor_harness.tracking.tables import Application, Job, JobStatus, ResumeVersion
@@ -70,7 +71,15 @@ def test_evidence_portfolio_is_lazy_and_reports_realized_outside_facts():
                 rank=1,
                 bullet_budget=1,
                 rationale="best match",
-            )
+            ),
+            PortfolioSelection(
+                owner_id="project-planned",
+                owner_kind="project",
+                selected_fact_ids=["project-bullet-planned"],
+                rank=2,
+                bullet_budget=1,
+                rationale="relevant project",
+            ),
         ],
         highlight_terms=["Python"],
     )
@@ -83,6 +92,26 @@ def test_evidence_portfolio_is_lazy_and_reports_realized_outside_facts():
                 provenance="exp1",
                 bullets=[TailoredBullet(text="Built Python APIs", provenance="ghost")],
             )
+        ],
+        portfolio=[
+            TailoredProject(
+                name="Planned case study",
+                provenance="project-planned",
+                bullets=[
+                    TailoredBullet(
+                        text="Built a Python tool", provenance="project-bullet-planned"
+                    )
+                ],
+            ),
+            TailoredProject(
+                name="Added case study",
+                provenance="project-added",
+                bullets=[
+                    TailoredBullet(
+                        text="Built a compiler", provenance="project-bullet-added"
+                    )
+                ],
+            ),
         ],
     )
     with client:
@@ -115,7 +144,11 @@ def test_evidence_portfolio_is_lazy_and_reports_realized_outside_facts():
     assert "evidencePortfolio" not in version_body
     assert response.status_code == 200
     assert response.json()["highlightTerms"] == ["Python"]
-    assert response.json()["realizedOutsideFactIds"] == ["ghost"]
+    assert response.json()["realizedOutsideFactIds"] == [
+        "ghost",
+        "project-added",
+        "project-bullet-added",
+    ]
 
 
 def test_legacy_evidence_portfolio_endpoint_is_explicitly_unavailable():

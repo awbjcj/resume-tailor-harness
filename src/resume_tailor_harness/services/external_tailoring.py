@@ -17,6 +17,7 @@ from resume_tailor_harness.progress import ProgressReporter
 from resume_tailor_harness.render.export import export_job_artifacts
 from resume_tailor_harness.services.agents import build_reviewers
 from resume_tailor_harness.services.resume_shape import for_rendering
+from resume_tailor_harness.services.rendering import DEFAULT_RENDER, _load_config
 from resume_tailor_harness.tailor.numeric_evidence import numeric_evidence_critique
 from resume_tailor_harness.tailor.panel import run_panel
 from resume_tailor_harness.tailor.provenance import (
@@ -138,7 +139,8 @@ def submit_draft(
             "CONTEXT_STALE", "Fetch fresh context and rebase the draft"
         )
     critiques = deterministic_checks(content, facts)
-    config = for_rendering(load_review_config(REVIEW_PATH))
+    render_config = _load_config(DEFAULT_RENDER)
+    config = for_rendering(load_review_config(REVIEW_PATH), render_config)
     if not any(r.name == "fact-check" for r in config.reviewers):
         raise ExternalTailoringError(
             "REVIEW_REQUIRED",
@@ -148,7 +150,16 @@ def submit_draft(
         reviewers = build_reviewers(
             config, style_guide=load_style_guide(config.style_guide_path)
         )
-        critiques.extend(run_panel(content, facts, job.jd_text, config, reviewers))
+        critiques.extend(
+            run_panel(
+                content,
+                facts,
+                job.jd_text,
+                config,
+                reviewers,
+                render_config=render_config,
+            )
+        )
     verdict = aggregate(critiques, config)
     result: dict[str, Any] = {
         "passed": verdict.passed,

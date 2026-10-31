@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from inspect import isawaitable
 from types import SimpleNamespace
-from typing import Any, Literal, Protocol, TypeVar, cast
+from typing import Any, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import httpx
 from pydantic import BaseModel
@@ -51,6 +51,33 @@ class Runner(Protocol):
     def run(self, prompt: str) -> Any: ...
 
     async def arun(self, prompt: str) -> Any: ...
+
+
+@runtime_checkable
+class ImageRunner(Protocol):
+    """Explicit capability; text-only adapters must never pretend to see images."""
+
+    def run_images(self, prompt: str, images: tuple[bytes, ...]) -> Any: ...
+
+    async def arun_images(self, prompt: str, images: tuple[bytes, ...]) -> Any: ...
+
+
+def call_with_images(agent: Runner, prompt: str, images: tuple[bytes, ...]) -> Any:
+    if not images:
+        return agent.run(prompt)
+    if not isinstance(agent, ImageRunner):
+        raise TypeError(
+            "Layout review requires an image-capable reviewer adapter and model"
+        )
+    return agent.run_images(prompt, images)
+
+
+def _image_kwargs(images: tuple[bytes, ...]) -> dict[str, Any]:
+    if not images:
+        return {}
+    from agno.media import Image
+
+    return {"images": [Image(content=png, mime_type="image/png") for png in images]}
 
 
 class _ModelWithAsyncClient(Protocol):
@@ -345,14 +372,20 @@ class AgentRunner:
                     if waiter in self._key_waiters:
                         self._key_waiters.remove(waiter)
 
-    def run(self, prompt: str) -> Any:
+    def run_images(self, prompt: str, images: tuple[bytes, ...]) -> Any:
+        return self.run(prompt, images=images)
+
+    async def arun_images(self, prompt: str, images: tuple[bytes, ...]) -> Any:
+        return await self.arun(prompt, images=images)
+
+    def run(self, prompt: str, *, images: tuple[bytes, ...] = ()) -> Any:
         settings = self._settings or get_settings()
         for attempt in range(settings.llm_retries + 1):
             try:
                 self._enter(settings)
                 try:
                     with capture_errors() as errors:
-                        response = self._agent.run(prompt)
+                        response = self._agent.run(prompt, **_image_kwargs(images))
                     record_call(self._agent, response)
                 finally:
                     self._exit()
@@ -385,7 +418,7 @@ class AgentRunner:
                 time.sleep(settings.llm_retry_delay * (2**attempt))
         raise AssertionError("unreachable")
 
-    async def arun(self, prompt: str) -> Any:
+    async def arun(self, prompt: str, *, images: tuple[bytes, ...] = ()) -> Any:
         settings = self._settings or get_settings()
         for attempt in range(settings.llm_retries + 1):
             try:
@@ -395,7 +428,9 @@ class AgentRunner:
                 await self._enter_async(settings)
                 try:
                     with capture_errors() as errors:
-                        response = await self._agent.arun(prompt)
+                        response = await self._agent.arun(
+                            prompt, **_image_kwargs(images)
+                        )
                     recording = asyncio.create_task(
                         asyncio.to_thread(record_call, self._agent, response)
                     )
@@ -2387,11 +2422,18 @@ async def acall(
     sem: asyncio.Semaphore,
     on_acquire: Callable[[], None] | None = None,
     on_release: Callable[[], None] | None = None,
+    images: tuple[bytes, ...] = (),
 ) -> Any:
     """Run one agent call, holding a semaphore permit only for its duration."""
     async with sem:
         _observe(on_acquire)
         try:
+            if images:
+                if not isinstance(agent, ImageRunner):
+                    raise TypeError(
+                        "Layout review requires an image-capable reviewer adapter and model"
+                    )
+                return await agent.arun_images(prompt, images)
             return await agent.arun(prompt)
         finally:
             _observe(on_release)

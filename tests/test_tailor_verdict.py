@@ -54,7 +54,8 @@ def test_advisory_fact_check_contributes_weight_without_veto(threshold, passed):
 
 
 @pytest.mark.parametrize(
-    "deterministic_gate", ["provenance", "skill-naming", "numeric-evidence"]
+    "deterministic_gate",
+    ["provenance", "skill-naming", "numeric-evidence", "layout-fit"],
 )
 def test_disabling_fact_gate_keeps_deterministic_gates(deterministic_gate):
     config = ReviewConfig(reviewers=[ReviewerSpec(name="fact-check", gate=False)])

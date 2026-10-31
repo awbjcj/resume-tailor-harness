@@ -106,7 +106,7 @@ def test_loop_revises_until_gate_passes():
     assert rounds[-1].verdict.passed is True
 
 
-def test_one_page_draft_and_revision_remove_summary_before_all_gates():
+def test_one_page_draft_and_revision_keep_unsupported_summary_visible_to_gates():
     class SummaryAgent(_ContentAgent):
         def run(self, prompt):
             return _Result(
@@ -130,9 +130,14 @@ def test_one_page_draft_and_revision_remove_summary_before_all_gates():
         {"fact-check": _FactCheck()},
         SummaryAgent(),
     )
-    assert len(rounds) == 2 and rounds[-1].verdict.passed
+    assert len(rounds) >= 2 and not rounds[-1].verdict.passed
     assert all(
-        r.content.summary is None and not r.content.summary_provenance for r in rounds
+        r.content.summary
+        and r.content.summary_provenance == ["unsupported-summary-id"]
+        and any(
+            c.reviewer == "provenance" and not c.passed for c in r.verdict.critiques
+        )
+        for r in rounds
     )
 
 
@@ -166,9 +171,14 @@ def test_async_one_page_revisions_apply_same_summary_policy():
         )
 
     rounds = asyncio.run(go())
-    assert len(rounds) == 2 and rounds[-1].verdict.passed
+    assert len(rounds) >= 2 and not rounds[-1].verdict.passed
     assert all(
-        r.content.summary is None and not r.content.summary_provenance for r in rounds
+        r.content.summary
+        and r.content.summary_provenance == ["unsupported-summary-id"]
+        and any(
+            c.reviewer == "provenance" and not c.passed for c in r.verdict.critiques
+        )
+        for r in rounds
     )
 
 

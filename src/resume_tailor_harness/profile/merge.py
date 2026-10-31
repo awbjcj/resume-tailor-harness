@@ -67,6 +67,11 @@ def _norm(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", ascii_name)
 
 
+def _section_key(text: str) -> str:
+    """Retain non-Latin source headings while normalizing case and whitespace."""
+    return " ".join(unicodedata.normalize("NFKC", text).casefold().split())
+
+
 def _enrich(resume_project: Project, github_project: Project) -> None:
     """Fill empty resume-project fields from its GitHub twin."""
     for field in _ENRICH_FIELDS:
@@ -470,6 +475,31 @@ def merge_fragments(
             report=report,
         )
         _merge_skills(merged, fragment.skills, doc, report)
+        for section in fragment.additional_sections:
+            existing = next(
+                (
+                    s
+                    for s in merged.additional_sections
+                    if _section_key(s.title) == _section_key(section.title)
+                ),
+                None,
+            )
+            if existing is None:
+                merged.additional_sections.append(section.model_copy(deep=True))
+                continue
+            _merge_entity_list(
+                existing.entries,
+                section.entries,
+                key=lambda entry: (
+                    _section_key(entry.title),
+                    _section_key(entry.organization or ""),
+                    _section_key(entry.date or ""),
+                ),
+                scalar_fields=("date", "description", "url"),
+                label=lambda entry: f"{section.title}: {entry.title}",
+                doc=doc,
+                report=report,
+            )
 
     if dedup_agent is not None:
         dedup_experience_bullets(merged, dedup_agent, report)

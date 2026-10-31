@@ -32,6 +32,14 @@ Write native resume JSON to `draft.json`:
   a target. If a material fact is missing, ask for that specific information and
   have the user add it through the app's profile workflow and rebuild. Fetch new
   context afterward; unverified chat assertions are not profile facts.
+- Keep a concise evidence-backed summary in either page mode that explains why
+  the candidate fits this specific position: connect the job's main requirements
+  to verified capabilities or accomplishments, with `summary_provenance`.
+  Avoid generic biography and unsupported claims of being an excellent fit. Select relevant
+  honors, publications, certifications, portfolio and other source sections
+  using the returned schema. Portfolio entries share the project budget and
+  must not repeat projects. Preserve additional-section headings and entries
+  verbatim, including their source IDs.
 
 Run the free deterministic preflight, using the revision saved with the draft:
 
@@ -52,6 +60,11 @@ resume-harness wait RUN_ID
 Set `--agent` to the current harness name; this is descriptive attribution.
 The API requires its fact-check gate and saves only a passing verdict. Inspect
 `result.passed` and the critiques: a `done` run can still reject the draft.
+The format reviewer receives rendered page images when configured as `concision`;
+its model must support image input. Respond to page-specific feedback with
+content edits or `layout_density` (-1 roomier/up to 12pt, 0 default, 1 compact/10pt).
+The renderer still enforces page limits; a failed `layout-fit` requires revision.
+Submit the complete revised draft again so both facts and layout are checked.
 If rejected, make an evidence-backed revision; do not relaunch indefinitely or
 claim success. `CONTEXT_STALE` requires a fresh context and actual rebase, not
 merely swapping the revision string. Wait timeouts leave the run active, so
@@ -67,8 +80,10 @@ resume-harness download VERSION_ID --output resume.pdf
 
 Rendering uses the workspace's configured Typst template and page-fit settings.
 Do not invent a per-render template flag or change workspace settings to get
-around `resume_page_overflow`; shorten the draft within the actual length budget
-and run its normal validation/review again. The SDK reads UTF-8 draft files,
+around `resume_page_overflow`; follow its specific revision guidance. Compress
+repetition for one page or add distinct verified detail for two nearly full
+pages, within the actual length budget, then validate/review again. The renderer
+adjusts fonts and spacing but never changes approved content. The SDK reads UTF-8 draft files,
 including PowerShell UTF-8 BOM files.
 
 Report the saved version, review outcome, and output path, with remaining gaps

@@ -17,6 +17,7 @@ from resume_tailor_harness.profile.matrix import (
     build_skill_match_context,
 )
 from resume_tailor_harness.progress import ProgressReporter
+from resume_tailor_harness.render.render_config import RenderConfig
 from resume_tailor_harness.services.errors import StageFailure
 from resume_tailor_harness.tailor.review_config import ReviewConfig
 from resume_tailor_harness.tailor.workflow import (
@@ -145,6 +146,7 @@ def tailor_job(
     skill_context: SkillMatchContext | None = None,
     evidence_portfolio_agent: Runner | None = None,
     taxonomy: EffectiveTaxonomy | None = None,
+    render_config: RenderConfig | None = None,
 ) -> list[ResumeVersion]:
     """Run the loop for one job and persist each round. Marks the job tailored."""
     if job.id is None:
@@ -159,7 +161,12 @@ def tailor_job(
         run_with_cleanup(
             TailorWorkflow().arun(
                 TailorRequest(
-                    job.jd_text, criteria, profile_facts, config, skill_context
+                    job.jd_text,
+                    criteria,
+                    profile_facts,
+                    config,
+                    skill_context,
+                    render_config,
                 ),
                 TailorAgents(tailor_agent, reviewer_agents, reviser_agent, planner),
                 sem=sem,
@@ -194,6 +201,7 @@ def tailor_jobs(
     model: str | None = None,
     evidence_portfolio_agent: Runner | None = None,
     taxonomy: EffectiveTaxonomy | None = None,
+    render_config: RenderConfig | None = None,
 ) -> TailorOutcome:
     """Tailor targets concurrently, then persist successful jobs serially."""
     for job in targets:
@@ -225,6 +233,7 @@ def tailor_jobs(
                     profile_facts,
                     config,
                     _skill_context(criteria),
+                    render_config,
                 ),
                 TailorAgents(tailor_agent, reviewer_agents, reviser_agent, planner),
                 sem=sem,
