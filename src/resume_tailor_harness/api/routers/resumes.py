@@ -56,7 +56,7 @@ def _realized_portfolio_fact_ids(content: ResumeContent) -> set[str]:
         ),
         *(
             fact_id
-            for project in content.projects
+            for project in (*content.projects, *content.portfolio)
             for fact_id in (
                 project.provenance,
                 *(bullet.provenance for bullet in project.bullets),
