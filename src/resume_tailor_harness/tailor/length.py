@@ -19,18 +19,30 @@ def format_budget(budget: LengthBudget) -> str:
     """
     budget = budget.for_pages()
     shape = (
-        "ONE-PAGE PRIORITY: Set summary to null and summary_provenance to []. "
-        "Spend the space on professional experience and projects. Keep both "
-        "sections when relevant evidence exists; compress older roles before "
-        "dropping project evidence. Aim for 400–550 words overall and 15–25 "
-        "words per bullet, normally one or two rendered lines. Avoid repeated "
-        "project descriptions, long coursework lists, and secondary sections "
-        "that displace work evidence. "
+        "ONE-PAGE PRIORITY: Include a concise, evidence-backed summary of 25–40 words "
+        "with summary_provenance, explaining fit for this position by connecting the job's "
+        "main requirements to verified candidate evidence. Preserve professional experience and projects. Keep both "
+        "sections when relevant evidence exists; compress older roles before dropping "
+        "project evidence. Aim for 400–550 words overall including the summary and "
+        "optional sections, and 15–25 words per bullet, normally one or two rendered lines. "
         if budget.page_target == 1
-        else "TWO-PAGE PRIORITY: Use distinct, relevant evidence to justify the "
-        "second page. Prefer experience and projects; omit the summary unless "
-        "it explains a career transition or senior specialization, and keep "
-        "it within 40 words. Avoid a nearly empty second page or filler. "
+        else "TWO-PAGE PRIORITY: Include an evidence-backed summary within 40 words with "
+        "summary_provenance that connects the job's main requirements to verified candidate "
+        "evidence and explains fit for this position. Aim for 650–900 words when distinct relevant source evidence "
+        "supports it, with both pages nearly full (at least 80% of their usable height). "
+        "Avoid a one-and-a-half-page resume: expand relevant work, projects, portfolio, "
+        "publications or credentials from verified facts, or edit into a concise one-page "
+        "draft when evidence is sparse. Never pad with repeated claims or filler. "
+    )
+    shape += (
+        "Optional sections are selected by relevance and available evidence: honors and "
+        "awards, publications, certifications, portfolio, languages, volunteering, interests, "
+        "and source-backed additional_sections. Do not create empty sections. Preserve "
+        "publication authors and source URLs; portfolio entries cite project facts and "
+        "count toward the project and evidence-owner limits, never duplicate projects. "
+        "Keep additional-section headings and selected entries verbatim from the profile. "
+        "Adjust wording, bullet counts and section selection during drafting/revision; "
+        "the renderer adjusts font size and spacing but never cuts approved content. "
     )
     return shape + (
         f"Target {budget.page_target} pages. Use at most {budget.max_experiences} experiences, "
@@ -81,22 +93,21 @@ def format_depth_plan(facts: ProfileFacts, budget: LengthBudget) -> str:
 def resume_stats(content: ResumeContent) -> str:
     """Deterministic size summary for reviewers."""
     total_bullets = sum(len(e.bullets) for e in content.experience) + sum(
-        len(p.bullets) for p in content.projects
+        len(p.bullets) for p in (*content.projects, *content.portfolio)
     )
     return (
-        f"experiences={len(content.experience)} projects={len(content.projects)} "
+        f"experiences={len(content.experience)} projects={len(content.projects) + len(content.portfolio)} "
+        f"portfolio_entries={len(content.portfolio)} "
         f"total_bullets={total_bullets} "
         f"summary_words={len((content.summary or '').split())} "
-        f"bullet_words={sum(len(b.text.split()) for e in (*content.experience, *content.projects) for b in e.bullets)}"
+        f"bullet_words={sum(len(b.text.split()) for e in (*content.experience, *content.projects, *content.portfolio) for b in e.bullets)}"
     )
 
 
 def prepare_draft(content: ResumeContent, budget: LengthBudget) -> ResumeContent:
-    """Apply the one-page summary policy before any reviewer sees the draft.
+    """Keep authored summaries and their evidence intact for every review round.
 
-    Work/project entries, evidence ids, and credentials remain intact. Never
-    slice sentences or bullets to meet a word count: that can change a claim.
+    Length guidance belongs in the writer/reviser budget. Deterministic deletion
+    would hide unsupported summary claims from provenance and fact-check gates.
     """
-    if budget.page_target != 1:
-        return content
-    return content.model_copy(update={"summary": None, "summary_provenance": []})
+    return content

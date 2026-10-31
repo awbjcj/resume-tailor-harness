@@ -49,13 +49,26 @@ CRAFT_WRITER = [
     "Give the most recent and most role-relevant positions the largest bullet "
     "share; compress older or off-target roles to one or two bullets instead "
     "of trimming every role evenly.",
-    "Omit the summary by default, especially for a one-page resume. For a "
-    "two-page career transition or senior specialization, use at most two "
-    "lines and 40 words aimed at this role: seniority, the "
-    "strongest matching skills, and a signature outcome or concrete contribution, "
+    "Include a concise professional summary in both page modes, normally two "
+    "or three lines and at most 40 words explaining why the candidate is a good fit "
+    "for this specific position. Connect the job's one or two highest-priority "
+    "responsibilities to the candidate's strongest matching skills and a signature "
+    "outcome or concrete contribution; show the fit through evidence, "
     "each supported by facts listed in summary_provenance. Never fill it with empty self-praise "
     "such as 'results-driven', 'team player', or 'detail-oriented', and never "
     "state what the candidate is seeking.",
+    "Start layout_density at 0. When rendered-layout feedback calls for more breathing "
+    "room, lower it toward -1 (up to 12pt body); for a short spill, raise it toward 1 "
+    "(10pt body with tighter spacing). The renderer still enforces page limits. "
+    "Revise repeated wording or add distinct relevant source evidence when spacing "
+    "alone cannot produce one page or two nearly full pages. Keep the summary's "
+    "role-fit explanation and preserve correct evidence and provenance.",
+    "Include optional sections only when supported and relevant. Preserve publication "
+    "author order, venue, date and URLs; show certification issuer, date and credential "
+    "ID when supplied. Use awards for standalone honors, education.honors for academic "
+    "honors, and portfolio for selected project-backed case studies with source links. "
+    "Never repeat a project in both projects and portfolio. Preserve additional_sections "
+    "headings and entries verbatim for teaching, grants, patents, service or board roles.",
     "Prefer concrete nouns and numbers over adjectives, delete filler words, "
     "and keep each bullet under roughly thirty words.",
 ]
@@ -97,6 +110,11 @@ CRAFT_REVIEWERS: dict[str, list[str]] = {
         "Flag empty self-praise in the summary ('results-driven', 'team "
         "player', 'detail-oriented') and any statement of what the candidate "
         "is seeking; summary lines must read as evidence, not adjectives.",
+        "Require the summary to explain why the candidate is a good fit for this "
+        "specific position by connecting cited accomplishments or capabilities to "
+        "the job's main responsibilities. Flag a missing summary or a generic "
+        "biography with no clear requirement-to-evidence connection; a bare "
+        "'excellent fit' claim is not that connection.",
     ],
     "hiring-manager": [
         "Reward concrete scale signals such as users, throughput, data volume, "
@@ -108,7 +126,7 @@ CRAFT_REVIEWERS: dict[str, list[str]] = {
     ],
     "concision": [
         "Preserve professional experience and projects when resolving length "
-        "pressure. An absent summary is valid; remove a redundant summary and "
+        "pressure. Retain a useful concise summary; shorten repeated wording and "
         "secondary details before recommending cuts to distinct work evidence.",
         "Flag bullets over roughly thirty words when excess wording obscures "
         "their evidence, vague duty phrasing, and duplicated evidence across "

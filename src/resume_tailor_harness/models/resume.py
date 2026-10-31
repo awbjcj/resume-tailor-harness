@@ -1,7 +1,12 @@
 from pydantic import Field
 
 from resume_tailor_harness.models.base import ExtensibleModel
-from resume_tailor_harness.models.profile import Contact, Education, Language
+from resume_tailor_harness.models.profile import (
+    AdditionalSection,
+    Contact,
+    Education,
+    Language,
+)
 
 
 class TailoredBullet(ExtensibleModel):
@@ -35,6 +40,11 @@ class TailoredProject(ExtensibleModel):
     tech: list[str] = Field(default_factory=list)
     bullets: list[TailoredBullet] = Field(default_factory=list)
     provenance: str  # id of the source Project
+    url: str | None = None
+    repo_url: str | None = None
+    role: str | None = None
+    start: str | None = None
+    end: str | None = None
 
 
 class TailoredPublication(ExtensibleModel):
@@ -51,6 +61,7 @@ class TailoredCertification(ExtensibleModel):
     issuer: str | None = None
     date: str | None = None
     url: str | None = None
+    credential_id: str | None = None
     provenance: str  # id of the source Certification
 
 
@@ -67,6 +78,7 @@ class TailoredVolunteer(ExtensibleModel):
     role: str | None = None
     start: str | None = None
     end: str | None = None
+    description: str | None = None
     bullets: list[TailoredBullet] = Field(default_factory=list)
     provenance: str  # id of the source Volunteer record
 
@@ -88,6 +100,7 @@ class ResumeContent(ExtensibleModel):
     summary_provenance: list[str] = Field(default_factory=list)
     experience: list[TailoredExperience] = Field(default_factory=list)
     projects: list[TailoredProject] = Field(default_factory=list)
+    portfolio: list[TailoredProject] = Field(default_factory=list)
     skills: dict[str, list[TailoredSkill]] = Field(default_factory=dict)
     education: list[Education] = Field(default_factory=list)  # carried verbatim
     publications: list[TailoredPublication] = Field(default_factory=list)
@@ -95,4 +108,17 @@ class ResumeContent(ExtensibleModel):
     awards: list[TailoredAward] = Field(default_factory=list)
     languages: list[Language] = Field(default_factory=list)  # carried verbatim
     volunteer: list[TailoredVolunteer] = Field(default_factory=list)
+    interests: list[str] = Field(default_factory=list)  # selected verbatim
+    additional_sections: list[AdditionalSection] = Field(default_factory=list)
     section_order: list[str] | None = None  # optional per-JD ordering hint
+    layout_density: float = Field(
+        default=0,
+        ge=-1,
+        le=1,
+        allow_inf_nan=False,
+        description=(
+            "Layout preference: -1 uses roomier spacing and up to 12pt body text; "
+            "0 uses the template default; 1 uses compact spacing and 10pt body text. "
+            "The renderer may adjust it to meet the page budget."
+        ),
+    )

@@ -41,7 +41,8 @@ def test_sdk_against_real_api_with_pat_review_and_revocation(
     token, job_id, facts = seed(mu_app, mu_client)
     monkeypatch.setattr(service, "build_reviewers", lambda *a, **kw: {})
 
-    def panel(content, facts, jd, config, reviewers):
+    def panel(content, facts, jd, config, reviewers, *, render_config=None):
+        assert render_config is not None
         return [
             ReviewCritique(reviewer=r.name, score=100, passed=True)
             for r in config.reviewers

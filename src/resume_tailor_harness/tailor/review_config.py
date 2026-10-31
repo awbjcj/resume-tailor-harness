@@ -6,6 +6,7 @@ from pydantic import Field, model_validator
 from resume_tailor_harness.config import load_yaml
 from resume_tailor_harness.models.base import ExtensibleModel
 from resume_tailor_harness.models.review import FACT_CHECK_REVIEWER
+from resume_tailor_harness.render.layout_review import LAYOUT_FIT_REVIEWER
 from resume_tailor_harness.tailor.numeric_evidence import NUMERIC_EVIDENCE_REVIEWER
 from resume_tailor_harness.tailor.provenance import PROVENANCE_REVIEWER
 from resume_tailor_harness.tailor.skill_naming import SKILL_NAMING_REVIEWER
@@ -17,7 +18,12 @@ from resume_tailor_harness.tailor.skill_naming import SKILL_NAMING_REVIEWER
 # ``must-have-coverage`` is intentionally absent: it is also a supported
 # configured reviewer name.
 RESERVED_REVIEWER_NAMES = frozenset(
-    {PROVENANCE_REVIEWER, SKILL_NAMING_REVIEWER, NUMERIC_EVIDENCE_REVIEWER}
+    {
+        PROVENANCE_REVIEWER,
+        SKILL_NAMING_REVIEWER,
+        NUMERIC_EVIDENCE_REVIEWER,
+        LAYOUT_FIT_REVIEWER,
+    }
 )
 
 

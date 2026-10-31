@@ -1,17 +1,25 @@
 """Deterministic resume content for template validation and previews."""
 
-from resume_tailor_harness.models.profile import Contact, Education
+from resume_tailor_harness.models.profile import (
+    AdditionalEntry,
+    AdditionalSection,
+    Contact,
+    Education,
+)
 from resume_tailor_harness.models.resume import (
     ResumeContent,
     TailoredBullet,
     TailoredExperience,
     TailoredProject,
     TailoredSkill,
+    TailoredAward,
+    TailoredCertification,
+    TailoredPublication,
 )
 
 
-def sample_resume_content() -> ResumeContent:
-    return ResumeContent(
+def sample_resume_content(template_id: str | None = None) -> ResumeContent:
+    content = ResumeContent(
         contact=Contact(
             name="Alex Sample",
             headline="Software Engineer",
@@ -19,6 +27,8 @@ def sample_resume_content() -> ResumeContent:
             location="Remote",
         ),
         # Fictional preview content, never profile evidence.
+        summary="Software engineer building reliable services, practical data tools, and accessible interfaces with Python, PostgreSQL, and TypeScript.",
+        summary_provenance=["sample-experience", "sample-project"],
         experience=[
             TailoredExperience(
                 company="Acme Corp",
@@ -129,3 +139,60 @@ def sample_resume_content() -> ResumeContent:
             )
         ],
     )
+    if template_id is not None:
+        # Keep previews focused while demonstrating each layout's optional sections.
+        content.experience = content.experience[:1]
+        content.projects = content.projects[:1]
+        content.certifications = [
+            TailoredCertification(
+                name="Cloud Architecture Certificate",
+                issuer="Example Institute",
+                date="2025",
+                url="https://example.com/credential",
+                provenance="sample-certification",
+            )
+        ]
+        if template_id in {"modern", "technical", "minimal"}:
+            content.portfolio = content.projects
+            content.projects = []
+            content.portfolio[0].url = "https://example.com/case-study"
+        if template_id in {"graduate", "academic", "executive"}:
+            content.awards = [
+                TailoredAward(
+                    name="Excellence Award",
+                    issuer="Example Institute",
+                    date="2025",
+                    provenance="sample-award",
+                )
+            ]
+        if template_id == "graduate":
+            content.education[0].honors = ["Graduated with honors"]
+            content.education[0].activities = ["Engineering Society"]
+        if template_id == "academic":
+            content.publications = [
+                TailoredPublication(
+                    title="Reliable Data Systems",
+                    authors=["Alex Sample", "Sam Researcher"],
+                    venue="Example Research Conference",
+                    date="2025",
+                    url="https://example.com/paper",
+                    provenance="sample-publication",
+                )
+            ]
+        if template_id in {"academic", "executive"}:
+            content.additional_sections = [
+                AdditionalSection(
+                    title="Teaching"
+                    if template_id == "academic"
+                    else "Board & Advisory Roles",
+                    entries=[
+                        AdditionalEntry(
+                            id="sample-additional-entry",
+                            title="Systems Mentor",
+                            organization="Example Institute",
+                            description="Mentored engineering teams on reliable service design.",
+                        )
+                    ],
+                )
+            ]
+    return content

@@ -12084,10 +12084,10 @@
     "en": "Gmail OAuth client (optional)",
     "zh-CN": "Gmail OAuth 客户端（可选）"
   },
-  "New drafts prioritize experience and projects and omit the summary. Turn off for a detailed resume of up to two pages. Text stays at least 10pt; content that still overflows must be shortened before export.": {
+  "Keep a concise summary and relevant optional sections. Turn off to fit one page or two nearly full pages. Fonts and spacing adjust automatically within 10–12pt; revise content if it cannot fit cleanly.": {
     "key": "ui_65b0ae1dfcee",
-    "en": "New drafts prioritize experience and projects and omit the summary. Turn off for a detailed resume of up to two pages. Text stays at least 10pt; content that still overflows must be shortened before export.",
-    "zh-CN": "新草稿优先保留工作经历和项目，不写个人简介。关闭后将生成最多两页的详细简历。正文字号不低于 10pt；若仍然超页，需要先精简内容再导出。"
+    "en": "Keep a concise summary and relevant optional sections. Turn off to fit one page or two nearly full pages. Fonts and spacing adjust automatically within 10–12pt; revise content if it cannot fit cleanly.",
+    "zh-CN": "保留简洁的摘要和相关可选章节。关闭后自动排为一页或接近两整页。字号在 10–12pt 内与间距自动调整；若无法合理排版，请修改内容。"
   },
   "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.": {
     "key": "ui_3a7fc08f84fa",

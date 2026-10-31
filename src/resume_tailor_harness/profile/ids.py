@@ -58,6 +58,11 @@ def assign_fact_ids(facts: ProfileFacts, doc_id: str) -> ProfileFacts:
         ids.assign(language, "lang", language.language)
     for volunteer in output.volunteer:
         ids.assign(volunteer, "vol", volunteer.organization, volunteer.role)
+    for section in output.additional_sections:
+        for entry in section.entries:
+            ids.assign(
+                entry, "additional", section.title, entry.title, entry.organization
+            )
     if output.github_profile is not None:
         ids.assign(output.github_profile, "github", output.github_profile.username)
     return output

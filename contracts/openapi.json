@@ -663,6 +663,120 @@
         "title": "AddSourceIn",
         "type": "object"
       },
+      "AdditionalEntry": {
+        "additionalProperties": true,
+        "description": "Source wording for optional sections such as teaching, grants or service.",
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source",
+            "default": "resume"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "synthesized": {
+            "default": false,
+            "title": "Synthesized",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "AdditionalEntry",
+        "type": "object"
+      },
+      "AdditionalSection": {
+        "additionalProperties": true,
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/AdditionalEntry"
+            },
+            "title": "Entries",
+            "type": "array"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "AdditionalSection",
+        "type": "object"
+      },
       "AdminUser": {
         "properties": {
           "activeJobs": {
@@ -14543,6 +14657,13 @@
         "additionalProperties": true,
         "description": "Structured, fact-locked resume content. The renderer turns this into a PDF;\nthe LLM never emits markup.",
         "properties": {
+          "additional_sections": {
+            "items": {
+              "$ref": "#/components/schemas/AdditionalSection"
+            },
+            "title": "Additional Sections",
+            "type": "array"
+          },
           "awards": {
             "items": {
               "$ref": "#/components/schemas/TailoredAward"
@@ -14574,11 +14695,33 @@
             "title": "Experience",
             "type": "array"
           },
+          "interests": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Interests",
+            "type": "array"
+          },
           "languages": {
             "items": {
               "$ref": "#/components/schemas/Language"
             },
             "title": "Languages",
+            "type": "array"
+          },
+          "layout_density": {
+            "default": 0,
+            "description": "Layout preference: -1 uses roomier spacing and up to 12pt body text; 0 uses the template default; 1 uses compact spacing and 10pt body text. The renderer may adjust it to meet the page budget.",
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "title": "Layout Density",
+            "type": "number"
+          },
+          "portfolio": {
+            "items": {
+              "$ref": "#/components/schemas/TailoredProject"
+            },
+            "title": "Portfolio",
             "type": "array"
           },
           "projects": {
@@ -18671,6 +18814,17 @@
       "TailoredCertification": {
         "additionalProperties": true,
         "properties": {
+          "credential_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credential Id"
+          },
           "date": {
             "anyOf": [
               {
@@ -18815,6 +18969,17 @@
             ],
             "title": "Description"
           },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -18823,10 +18988,43 @@
             "title": "Provenance",
             "type": "string"
           },
+          "repo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repo Url"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
           "schema_version": {
             "default": 1,
             "title": "Schema Version",
             "type": "integer"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
           },
           "tech": {
             "items": {
@@ -18834,6 +19032,17 @@
             },
             "title": "Tech",
             "type": "array"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
           }
         },
         "required": [
@@ -18952,6 +19161,17 @@
             },
             "title": "Bullets",
             "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
           },
           "end": {
             "anyOf": [

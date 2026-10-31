@@ -41,6 +41,9 @@ def index_facts(facts: ProfileFacts) -> dict[str, Any]:
         *facts.volunteer,
     ):
         index[record.id] = record
+    for section in facts.additional_sections:
+        for entry in section.entries:
+            index[entry.id] = entry
     return index
 
 
@@ -58,7 +61,7 @@ def _referenced_uses(content: ResumeContent) -> list[tuple[str, ProvenanceUse]]:
     for exp in content.experience:
         uses.append((exp.provenance, "entity"))
         uses.extend((bullet.provenance, "bullet") for bullet in exp.bullets)
-    for proj in content.projects:
+    for proj in (*content.projects, *content.portfolio):
         uses.append((proj.provenance, "entity"))
         uses.extend((bullet.provenance, "bullet") for bullet in proj.bullets)
     for skills in content.skills.values():
@@ -73,6 +76,8 @@ def _referenced_uses(content: ResumeContent) -> list[tuple[str, ProvenanceUse]]:
     for vol in content.volunteer:
         uses.append((vol.provenance, "entity"))
         uses.extend((bullet.provenance, "bullet") for bullet in vol.bullets)
+    for section in content.additional_sections:
+        uses.extend((entry.id, "entity") for entry in section.entries)
     return uses
 
 
@@ -137,6 +142,44 @@ def check_provenance(content: ResumeContent, facts: ProfileFacts) -> ProvenanceR
         fact_id for fact_id in referenced_ids(content) if fact_id not in index
     )
     invalid: set[str] = set()
+    duplicate_projects = {p.provenance for p in content.projects} & {
+        p.provenance for p in content.portfolio
+    }
+    if duplicate_projects:
+        invalid.add(
+            "portfolio: do not repeat the same project in projects and portfolio"
+        )
+    for section in content.additional_sections:
+        originals = {
+            entry.id: entry
+            for source in facts.additional_sections
+            if source.title == section.title
+            for entry in source.entries
+        }
+        for entry in section.entries:
+            if entry != originals.get(entry.id):
+                invalid.add(
+                    f"{section.title}:{entry.id}: must match a verified source section verbatim"
+                )
+    if any(interest not in facts.interests for interest in content.interests):
+        invalid.add("interests: must match verified profile interests verbatim")
+    for project in (*content.projects, *content.portfolio):
+        original = index.get(project.provenance)
+        for field in ("url", "repo_url", "role", "start", "end"):
+            value = getattr(project, field)
+            if value is not None and value != getattr(original, field, None):
+                invalid.add(
+                    f"projects:{project.provenance}:{field}: must match the cited project"
+                )
+    for certificate in content.certifications:
+        if (
+            certificate.credential_id is not None
+            and certificate.credential_id
+            != getattr(index.get(certificate.provenance), "credential_id", None)
+        ):
+            invalid.add(
+                f"certifications:{certificate.provenance}:credential_id: must match the cited credential"
+            )
     for section in ("education", "languages"):
         originals = {record.id: record for record in getattr(facts, section)}
         for record in getattr(content, section):
@@ -230,8 +273,13 @@ def resolve_evidence(content: ResumeContent, facts: ProfileFacts) -> dict[str, A
                 for evidence_id in fact.evidence_fact_ids
                 if evidence_id in index
             )
-    return {
+    evidence = {
         fact_id: index[fact_id].model_dump(mode="json")
         for fact_id in sorted(expanded)
         if fact_id in index
     }
+    # Legacy interests have no individual fact IDs. Include their actual source
+    # so the evidence reviewer can assess this deterministically checked section.
+    if content.interests:
+        evidence["profile:interests"] = {"interests": facts.interests}
+    return evidence

@@ -180,6 +180,17 @@ REVIEWER_INSTRUCTIONS: dict[str, list[str]] = {
         "bullet length, active voice, specificity, and density within the supplied page budget.",
         "Do not require a metric where the resume provides no truthful metric. Prefer deleting low-value "
         "content over compressing it into vague or unsupported claims.",
+        "When RENDERED LAYOUT EVIDENCE and page images are attached, also act as the "
+        "format and layout reviewer. Inspect the actual pages for crowded or tiny text, "
+        "overlap, clipping, uneven whitespace, misalignment, awkward wrapping, stranded "
+        "headings, and poor page balance. Respect the measured page count and fit result. "
+        "Do not claim exact point sizes from an image or claim to see unattached pages. "
+        "Without attached images, explicitly limit your judgment to content and stats.",
+        "Give page/section-specific fixes. Suggest a bounded layout_density change "
+        "(-1 roomier/up to 12pt, 0 default, 1 compact/10pt) or concrete content edits. "
+        "Target one readable page or two nearly full pages; never pad with repetition, "
+        "invent evidence, shrink below 10pt, or remove the role-fit summary to force fit. "
+        "The next round will re-render and re-check the complete revised resume.",
     ],
 }
 
@@ -257,7 +268,7 @@ def build_tailor_agent(
         ),
         run_meta=AgentRunMeta(
             agent_family=AgentFamily.RESUME_AUTHORING,
-            prompt_policy_version="resume-tailor-v1",
+            prompt_policy_version="resume-tailor-v2",
             model_id=resolved_model_id,
             skill_ref=resolved_skill.ref,
         ),
@@ -298,7 +309,7 @@ def build_reviser_agent(
         ),
         run_meta=AgentRunMeta(
             agent_family=AgentFamily.RESUME_AUTHORING,
-            prompt_policy_version="resume-reviser-v1",
+            prompt_policy_version="resume-reviser-v2",
             model_id=resolved_model_id,
             skill_ref=resolved_skill.ref,
         ),
@@ -389,7 +400,7 @@ def build_reviewer_agent(
         ),
         run_meta=AgentRunMeta(
             agent_family=AgentFamily.RESUME_REVIEW,
-            prompt_policy_version=f"resume-review-{name}-v1",
+            prompt_policy_version=f"resume-review-{name}-v{2 if name in {'concision', 'recruiter'} else 1}",
             model_id=resolved_model_id,
             skill_ref=resolved_skill.ref if resolved_skill is not None else None,
         ),

@@ -63,7 +63,12 @@ and inspect the actual review outcome. Generate a missing cover letter with
 `cover-letter JOB_ID` only when needed and authorized; it uses hosted models
 and renders its PDF. Re-fetch context after either operation. A `done` run alone
 does not prove a document passed. Rendering uses the workspace's configured
-template; `resume_page_overflow` requires a shorter evidence-backed revision.
+template; `resume_page_overflow` requires an evidence-backed revision following
+the error's guidance: compact into one page or supply relevant detail for two
+nearly full pages. Preserve the summary's explanation of why the candidate fits
+the job, grounded in verified evidence, and do not add filler. Follow any visual
+layout critique through a reviewed content or `layout_density` revision, then
+inspect the newly rendered PDF.
 
 Use `select-resume JOB_ID VERSION_ID` and, when appropriate,
 `select-cover-letter JOB_ID LETTER_ID` to remember the chosen attachments in
