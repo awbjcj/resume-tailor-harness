@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { AuthLayout } from "./AuthLayout";
 
 describe("AuthLayout", () => {
-  it("renders one main landmark and keeps the brand story decorative", () => {
+  it("renders one main landmark and keeps the workflow canvas decorative", () => {
     const { container } = render(
       <AuthLayout title="Sign in" description="Welcome back">
         <p>Form</p>
@@ -25,5 +25,7 @@ describe("AuthLayout", () => {
     expect(story).toContainElement(copy as HTMLElement);
     expect(container.querySelector("[data-slot='auth-brand'] img")).toBeNull();
     expect(screen.getAllByText("Secure workspace")).toHaveLength(1);
+    expect(screen.getByRole("region", { name: "Agent-powered. Evidence-led." })).toBeInTheDocument();
+    expect(container.querySelector("[data-slot='auth-brand']")).not.toContainElement(screen.getByRole("main"));
   });
 });
