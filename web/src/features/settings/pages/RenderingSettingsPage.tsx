@@ -190,9 +190,10 @@ export function RenderingSettingsPage() {
           <FieldContent>
             <FieldLabel htmlFor="fit-one-page">Fit resume to one page</FieldLabel>
             <FieldDescription>
-              Keep a concise summary and relevant optional sections. Turn off to
-              fit one page or two nearly full pages. Fonts and spacing adjust
-              automatically within 10–12pt; revise content if it cannot fit cleanly.
+              Keep a concise summary and relevant optional sections. Turn this off to
+              allow one page or two nearly full pages. For bundled layouts, body
+              text and spacing adjust automatically; body text stays between 10
+              and 12pt. Revise the content if it still cannot fit cleanly.
             </FieldDescription>
           </FieldContent>
         </Field>

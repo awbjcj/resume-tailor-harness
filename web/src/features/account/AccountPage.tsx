@@ -69,12 +69,12 @@ export function AccountPage() {
             Workspace data
           </h2>
           <p className="text-sm text-muted-foreground">
-            Keep a portable archive or remove data at a clearly defined scope.
+            Keep a portable archive or delete data within a chosen scope.
           </p>
         </div>
         <DataArchiveCard
           title="My workspace data"
-          description="Export your workspace for a local browser pull, then import it back without touching anyone else's data. The archive contains operational secrets."
+          description="Export your workspace to fetch jobs with a local browser, then import the updated workspace without affecting anyone else's data. The archive contains operational secrets."
           exportLabel="Export my data"
           exportPath="/api/account/export"
           importPath="/api/account/import"

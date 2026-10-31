@@ -282,7 +282,7 @@ export function CoachPage() {
         icon={<Sparkles />}
         eyebrow="Guided evidence discovery"
         title="Profile Coach"
-        description="Turn overlooked outcomes, scope, and project evidence into grounded profile notes."
+        description="Use overlooked results, the scope of your work, and project evidence to create fact-based profile notes."
         meta={<>
           <Badge variant={active?.status === "active" ? "secondary" : "outline"}>{active?.status === "active" ? "Session live" : active?.status === "ended" ? "Session complete" : "Ready when you are"}</Badge>
           {active ? <Badge variant="outline">{active.topics?.length ?? 0} topics</Badge> : null}
@@ -350,7 +350,7 @@ export function CoachPage() {
                 steps={[
                   { icon: SearchCheck, title: "Review gaps", description: "Start with evidence your current profile does not yet show." },
                   { icon: MessageCircleQuestion, title: "Answer one question", description: "Answer each question while the coach follows up on useful details." },
-                  { icon: FileCheck2, title: "Approve grounded notes", description: "Review every claim and its supporting words before saving." },
+                  { icon: FileCheck2, title: "Approve notes backed by evidence", description: "Review every claim and its supporting words before saving." },
                 ]}
               />
             )}

@@ -55,7 +55,7 @@ export function SuggestionPanel({
       <div className="border-l-2 border-primary/45 pl-4">
         <p className="text-sm font-medium">No advice cached yet</p>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          Research verified repositories, learning resources, and a portfolio project on demand.
+          Find verified repositories, learning resources, and a portfolio project when you need them.
         </p>
         <Button className="mt-3" size="sm" disabled={generating} onClick={onGenerate}>
           <Lightbulb data-icon="inline-start" />

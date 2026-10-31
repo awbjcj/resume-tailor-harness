@@ -894,14 +894,14 @@
     "en": "Administration",
     "zh-CN": "管理"
   },
-  "Administrator access is unlimited": {
+  "Administrators are exempt from individual limits": {
     "key": "ui_18618715e2e2",
-    "en": "Administrator access is unlimited",
+    "en": "Administrators are exempt from individual limits",
     "zh-CN": "管理员不受个人配额限制"
   },
-  "Administrator accounts always remain unlimited.": {
+  "Administrators are exempt from these limits.": {
     "key": "ui_031af0fae47c",
-    "en": "Administrator accounts always remain unlimited.",
+    "en": "Administrators are exempt from these limits.",
     "zh-CN": "管理员账户始终不受个人配额限制。"
   },
   "Administrator usage is recorded for visibility and still counts toward the platform cap, but has no user-level allowance ceiling.": {
@@ -1264,9 +1264,9 @@
     "en": "Approve for tailoring",
     "zh-CN": "批准并用于定制简历"
   },
-  "Approve grounded notes": {
+  "Approve notes backed by evidence": {
     "key": "ui_1eee32567d51",
-    "en": "Approve grounded notes",
+    "en": "Approve notes backed by evidence",
     "zh-CN": "批准有依据的笔记"
   },
   "Approve what fits": {
@@ -1619,9 +1619,9 @@
     "en": "Building…",
     "zh-CN": "正在生成…"
   },
-  "bullets gained metrics": {
+  "bullets with added metrics": {
     "key": "ui_05847ed0020e",
-    "en": "bullets gained metrics",
+    "en": "bullets with added metrics",
     "zh-CN": "新增量化数据的要点数"
   },
   "Bundle file": {
@@ -2949,9 +2949,9 @@
     "en": "Deleted skills",
     "zh-CN": "已删除的技能"
   },
-  "Deletion is permanent. Jobs with progress are refused.": {
+  "Deletion is permanent. Jobs with progress cannot be deleted.": {
     "key": "ui_8b5c2e422c07",
-    "en": "Deletion is permanent. Jobs with progress are refused.",
+    "en": "Deletion is permanent. Jobs with progress cannot be deleted.",
     "zh-CN": "删除后无法恢复。已有进展的职位无法删除。"
   },
   "Demand intelligence": {
@@ -3684,10 +3684,10 @@
     "en": "Export settings",
     "zh-CN": "导出设置"
   },
-  "Export your workspace for a local browser pull, then import it back without touching anyone else's data. The archive contains operational secrets.": {
+  "Export your workspace to fetch jobs with a local browser, then import the updated workspace without affecting anyone else's data. The archive contains operational secrets.": {
     "key": "ui_ad20884a120d",
-    "en": "Export your workspace for a local browser pull, then import it back without touching anyone else's data. The archive contains operational secrets.",
-    "zh-CN": "导出工作区，在本地浏览器中获取职位后再导入，不影响其他人的数据。压缩包包含运行所需的密钥等敏感信息。"
+    "en": "Export your workspace to fetch jobs with a local browser, then import the updated workspace without affecting anyone else's data. The archive contains operational secrets.",
+    "zh-CN": "导出工作区，在本地使用浏览器获取职位，再导回更新后的数据，不影响其他人的数据。压缩包包含运行所需的密钥等敏感信息。"
   },
   "Exports are compressed tar.gz files. Keep archives private because they may contain workspace credentials and source data.": {
     "key": "ui_963c67436903",
@@ -4864,10 +4864,10 @@
     "en": "Keep a complete portable snapshot before maintenance or migration.",
     "zh-CN": "在维护或迁移前保留一份完整的可移植快照。"
   },
-  "Keep a portable archive or remove data at a clearly defined scope.": {
+  "Keep a portable archive or delete data within a chosen scope.": {
     "key": "ui_cea915a7718c",
-    "en": "Keep a portable archive or remove data at a clearly defined scope.",
-    "zh-CN": "保留可移植存档，或按明确范围删除数据。"
+    "en": "Keep a portable archive or delete data within a chosen scope.",
+    "zh-CN": "保留可转移的存档，或在选定范围内删除数据。"
   },
   "Keep coaching": {
     "key": "ui_7a6ce1aed167",
@@ -5684,10 +5684,10 @@
     "en": "Move your customizations between installs. A bundle includes only the settings below. It never includes your jobs, profile, or API keys.",
     "zh-CN": "将自定义设置迁移到其他安装环境。设置包只包含下列设置，不含职位、个人资料或 API 密钥。"
   },
-  "Moving this job forward overrides its discovery filter or rejection so it can be scored on the next discovery or shortlist re-score run.": {
+  "Moving this job forward overrides its discovery filter or rejection, so it can be scored the next time you run discovery or re-score the shortlist.": {
     "key": "ui_8fa494e5213a",
-    "en": "Moving this job forward overrides its discovery filter or rejection so it can be scored on the next discovery or shortlist re-score run.",
-    "zh-CN": "推进此职位会解除之前的筛除或拒绝状态。下次运行职位发现或候选清单重新评分时，它会重新参与评分。"
+    "en": "Moving this job forward overrides its discovery filter or rejection, so it can be scored the next time you run discovery or re-score the shortlist.",
+    "zh-CN": "推进此职位会覆盖此前的筛除或拒绝状态。下次运行职位发现或重新评分候选清单时，可以再次为其评分。"
   },
   "Must": {
     "key": "ui_e8bfb4fc6bc6",
@@ -5774,9 +5774,9 @@
     "en": "New domain…",
     "zh-CN": "新建领域…"
   },
-  "new grounded facts": {
+  "new facts backed by evidence": {
     "key": "ui_8d11ee4c313b",
-    "en": "new grounded facts",
+    "en": "new facts backed by evidence",
     "zh-CN": "新增的经历依据"
   },
   "New interview": {
@@ -7804,9 +7804,9 @@
     "en": "Research unavailable",
     "zh-CN": "调研暂不可用"
   },
-  "Research verified repositories, learning resources, and a portfolio project on demand.": {
+  "Find verified repositories, learning resources, and a portfolio project when you need them.": {
     "key": "ui_2d5824760f85",
-    "en": "Research verified repositories, learning resources, and a portfolio project on demand.",
+    "en": "Find verified repositories, learning resources, and a portfolio project when you need them.",
     "zh-CN": "按需查找经过验证的代码仓库、学习资源和作品集项目。"
   },
   "Researched": {
@@ -8199,9 +8199,9 @@
     "en": "Review these sample jobs and their evidence. Corrections stay with each job; extraction rules are reused for future pulls.",
     "zh-CN": "检查这些职位样本及其证据。字段修正会保存在对应职位中；提取规则将用于后续抓取。"
   },
-  "Review this grounded note before adding it to your profile.": {
+  "Review this note and its evidence before adding it to your profile.": {
     "key": "ui_d17e84a4a81c",
-    "en": "Review this grounded note before adding it to your profile.",
+    "en": "Review this note and its evidence before adding it to your profile.",
     "zh-CN": "添加到个人资料前，请先核对这条笔记及其依据。"
   },
   "Review updated rules": {
@@ -9229,9 +9229,9 @@
     "en": "Skills",
     "zh-CN": "技能"
   },
-  "skills gained evidence": {
+  "skills with added evidence": {
     "key": "ui_b21aefc79c94",
-    "en": "skills gained evidence",
+    "en": "skills with added evidence",
     "zh-CN": "新增经历依据的技能数"
   },
   "Skills in this domain move to the target; this domain disappears.": {
@@ -9494,15 +9494,15 @@
     "en": "Start with the decision, draft, comparison, or next step you need.",
     "zh-CN": "说说你需要做什么决定、写什么草稿、对比哪些选项，或如何安排下一步。"
   },
-  "Start with the provider and model already billed by the app. Historical rows remain immutable.": {
+  "Start with a provider and model the app has billed for. Past records cannot be changed.": {
     "key": "ui_8b233c2a7ce1",
-    "en": "Start with the provider and model already billed by the app. Historical rows remain immutable.",
-    "zh-CN": "先选择应用已经产生费用的服务商和模型。历史记录不会改动。"
+    "en": "Start with a provider and model the app has billed for. Past records cannot be changed.",
+    "zh-CN": "先选择应用曾计费的服务商和模型。历史记录不可更改。"
   },
-  "Start your first coaching session to uncover grounded profile evidence.": {
+  "Find evidence for your profile in your first coaching session.": {
     "key": "ui_35c3aee99efd",
-    "en": "Start your first coaching session to uncover grounded profile evidence.",
-    "zh-CN": "开始第一次资料梳理，补充能写进简历的真实经历。"
+    "en": "Find evidence for your profile in your first coaching session.",
+    "zh-CN": "开始第一次资料梳理，整理可用于个人资料的真实经历。"
   },
   "Started": {
     "key": "ui_ecbc89cd37a0",
@@ -10019,9 +10019,9 @@
     "en": "The research did not find a matching historical filing record.",
     "zh-CN": "未找到匹配的历史申报记录。"
   },
-  "The resume, documents, and skills every tailored application is grounded in.": {
+  "Your resume, documents, and skills form the basis for every tailored application.": {
     "key": "ui_e2096f15c59a",
-    "en": "The resume, documents, and skills every tailored application is grounded in.",
+    "en": "Your resume, documents, and skills form the basis for every tailored application.",
     "zh-CN": "每份定制申请所依据的简历、文档和技能。"
   },
   "The Scout could not finish that step": {
@@ -10104,9 +10104,9 @@
     "en": "There is not enough history yet. Log a few stages to see where applications go.",
     "zh-CN": "历史记录不足。记录几个阶段后即可查看申请的进展。"
   },
-  "These are the strongest profile-backed examples for this job.": {
+  "These examples from your profile best support your fit for this job.": {
     "key": "ui_d97c1ae87a07",
-    "en": "These are the strongest profile-backed examples for this job.",
+    "en": "These examples from your profile best support your fit for this job.",
     "zh-CN": "这些经历最能说明你符合此职位的要求，均有个人资料作为依据。"
   },
   "These stay removed across profile rebuilds until you restore them.": {
@@ -10169,9 +10169,9 @@
     "en": "This interview is still in progress. Deleting it ends the interview without a debrief. This cannot be undone.",
     "zh-CN": "此次面试仍在进行中。删除后将结束面试，且不会生成复盘。此操作无法撤销。"
   },
-  "This job has no description to interview against.": {
+  "This job has no description to use for interview practice.": {
     "key": "ui_3a121e01680d",
-    "en": "This job has no description to interview against.",
+    "en": "This job has no description to use for interview practice.",
     "zh-CN": "此职位缺少职位描述，暂时无法据此准备面试。"
   },
   "This job has no tailored resume version yet.": {
@@ -10474,9 +10474,9 @@
     "en": "Tune skill groups",
     "zh-CN": "调整技能分组"
   },
-  "Tune the interview style. Every question stays grounded in this job and your selected resume.": {
+  "Adjust the interview style. Each question is based on this job and your selected resume.": {
     "key": "ui_288b34cf1a05",
-    "en": "Tune the interview style. Every question stays grounded in this job and your selected resume.",
+    "en": "Adjust the interview style. Each question is based on this job and your selected resume.",
     "zh-CN": "调整面试风格。每个问题都基于该职位和你所选的简历。"
   },
   "Turn a career question into a useful draft": {
@@ -10484,9 +10484,9 @@
     "en": "Turn a career question into a useful draft",
     "zh-CN": "围绕求职问题，写出可用的草稿"
   },
-  "Turn overlooked outcomes, scope, and project evidence into grounded profile notes.": {
+  "Use overlooked results, the scope of your work, and project evidence to create fact-based profile notes.": {
     "key": "ui_be4ea093d4d6",
-    "en": "Turn overlooked outcomes, scope, and project evidence into grounded profile notes.",
+    "en": "Use overlooked results, the scope of your work, and project evidence to create fact-based profile notes.",
     "zh-CN": "梳理容易遗漏的成果、职责范围和项目细节，补充到个人资料中。"
   },
   "Type": {
@@ -10739,9 +10739,9 @@
     "en": "Use these when no named person is verified or when a general recruiting channel is more appropriate.",
     "zh-CN": "还没核实具体联系人，或更适合通过通用招聘渠道联系时，可以使用这些草稿。"
   },
-  "Use this for one member or every member. Member plan and override settings stay in the member drawer below.": {
+  "Use this for one member or all members. Manage member plans and overrides in the member drawer below.": {
     "key": "ui_763379b6a734",
-    "en": "Use this for one member or every member. Member plan and override settings stay in the member drawer below.",
+    "en": "Use this for one member or all members. Manage member plans and overrides in the member drawer below.",
     "zh-CN": "可对单个成员或全部成员操作。套餐和自定义额度请在下方的成员详情中设置。"
   },
   "useChart must be used within a <ChartContainer />": {
@@ -11304,9 +11304,9 @@
     "en": "Career assistant",
     "zh-CN": "职业助手"
   },
-  "The response could not be completed. Your request is ready to retry.": {
+  "The response could not be completed. You can retry your request.": {
     "key": "ui_2e3f46f0184b",
-    "en": "The response could not be completed. Your request is ready to retry.",
+    "en": "The response could not be completed. You can retry your request.",
     "zh-CN": "未能完成回复。你可以重试此请求。"
   },
   "Unable to start the response.": {
@@ -12084,10 +12084,10 @@
     "en": "Gmail OAuth client (optional)",
     "zh-CN": "Gmail OAuth 客户端（可选）"
   },
-  "Keep a concise summary and relevant optional sections. Turn off to fit one page or two nearly full pages. Fonts and spacing adjust automatically within 10–12pt; revise content if it cannot fit cleanly.": {
+  "Keep a concise summary and relevant optional sections. Turn this off to allow one page or two nearly full pages. For bundled layouts, body text and spacing adjust automatically; body text stays between 10 and 12pt. Revise the content if it still cannot fit cleanly.": {
     "key": "ui_65b0ae1dfcee",
-    "en": "Keep a concise summary and relevant optional sections. Turn off to fit one page or two nearly full pages. Fonts and spacing adjust automatically within 10–12pt; revise content if it cannot fit cleanly.",
-    "zh-CN": "保留简洁的摘要和相关可选章节。关闭后自动排为一页或接近两整页。字号在 10–12pt 内与间距自动调整；若无法合理排版，请修改内容。"
+    "en": "Keep a concise summary and relevant optional sections. Turn this off to allow one page or two nearly full pages. For bundled layouts, body text and spacing adjust automatically; body text stays between 10 and 12pt. Revise the content if it still cannot fit cleanly.",
+    "zh-CN": "保留简洁的摘要和相关可选章节。关闭后可排成一页或接近填满的两页。使用内置布局时，正文字号和间距会自动调整，正文字号保持在 10–12pt 之间。如果仍无法合理排版，请修改内容。"
   },
   "Aim for this number. It is not a hard cap. The skills section renders compact comma-separated categories; long names can wrap. Preserve evidenced must-have skills and remove redundant supporting entries before cutting work or project evidence.": {
     "key": "ui_3a7fc08f84fa",

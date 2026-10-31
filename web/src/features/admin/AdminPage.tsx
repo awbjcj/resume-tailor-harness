@@ -28,7 +28,7 @@ export function AdminPage() {
       <AdminSectionNav current="/admin" />
       <Alert className="-mt-5">
         <ShieldCheck aria-hidden="true" />
-        <AlertTitle>Administrator access is unlimited</AlertTitle>
+        <AlertTitle>Administrators are exempt from individual limits</AlertTitle>
         <AlertDescription>
           Cost allowances, active-job caps, and maximum concurrency do not apply to
           administrators. Their shared-key spend still counts against the platform cap.

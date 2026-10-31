@@ -82,8 +82,8 @@ export function StageManager({ job }: { job: JobDetail }) {
         stage !== "filtered" &&
         stage !== "rejected" && (
           <p className="text-xs text-muted-foreground">
-            Moving this job forward overrides its discovery filter or rejection so it can be
-            scored on the next discovery or shortlist re-score run.
+            Moving this job forward overrides its discovery filter or rejection, so it can be
+            scored the next time you run discovery or re-score the shortlist.
           </p>
         )}
     </div>

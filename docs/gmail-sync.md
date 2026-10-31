@@ -14,11 +14,11 @@ Routine read/unread changes do not cause message downloads.
 Each run processes at most `GMAIL_SYNC_MAX_PAGES` pages of at most
 `GMAIL_MAX_MESSAGES` messages each (page size capped at 500). Defaults are 20 pages
 of 50 messages. A partial run returns `has_more: true` and a progress message;
-the completion label says “Sync complete; more emails remain.” Saved continuation
-is normal progress, not a warning. The next manual or scheduled sync continues
-saved work. Increasing budgets changes
-throughput, not which messages are permanently eligible. The existing scheduler
-interval still controls when scheduled passes run.
+the completion label says “Sync complete; more emails remain.” A saved continuation
+is normal progress, not a warning. The next manual or scheduled sync resumes
+the saved work. Increasing budgets changes throughput, not which messages are
+permanently eligible. The existing scheduler interval still controls when
+scheduled passes run.
 
 Metadata and relevant bodies use serial HTTP batches of 25, respecting Google's
 recommendation to stay below 50. Only failed batch parts are retried. Batching

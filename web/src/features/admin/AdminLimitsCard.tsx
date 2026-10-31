@@ -112,7 +112,7 @@ export function AdminLimitsCard() {
       </CardContent>
       <CardFooter className="justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          Administrator accounts always remain unlimited.
+          Administrators are exempt from these limits.
         </p>
         <Button onClick={() => saveDefaults.mutate(limits)} disabled={saveDefaults.isPending}>
           {saveDefaults.isPending ? (

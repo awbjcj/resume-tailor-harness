@@ -115,7 +115,7 @@ export function InterviewSetupDialog({
             <div className="space-y-1.5">
               <DialogTitle className="text-lg leading-tight">Set up your mock interview</DialogTitle>
               <DialogDescription className="leading-6">
-                Tune the interview style. Every question stays grounded in this job and your selected resume.
+                Adjust the interview style. Each question is based on this job and your selected resume.
               </DialogDescription>
             </div>
           </div>

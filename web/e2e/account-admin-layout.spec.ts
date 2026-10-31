@@ -74,7 +74,7 @@ test("admin makes the unlimited policy and member controls explicit", async ({ p
   await page.goto("/admin");
 
   await expect(page.getByRole("heading", { name: "Administration" })).toBeVisible();
-  await expect(page.getByText("Administrator access is unlimited")).toBeVisible();
+  await expect(page.getByText("Administrators are exempt from individual limits")).toBeVisible();
   await expect(page.getByText("Member defaults")).toBeVisible();
   await expect(page.getByText("Tokens, jobs, and concurrency")).toBeVisible();
 });

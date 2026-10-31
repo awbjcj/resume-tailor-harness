@@ -207,7 +207,7 @@ export function EvidencePortfolioDisclosure({
                 <div>
                   <h4 className="font-semibold">Experience used and why</h4>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    These are the strongest profile-backed examples for this job.
+                    These examples from your profile best support your fit for this job.
                   </p>
                   {selections.length ? (
                     <ol className="mt-3 space-y-3">

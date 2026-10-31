@@ -1420,7 +1420,7 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
       <CardHeader className="pb-3">
         <CardTitle><h2 className="text-base">Create future rate version</h2></CardTitle>
         <CardDescription>
-          Start with the provider and model already billed by the app. Historical rows remain immutable.
+          Start with a provider and model the app has billed for. Past records cannot be changed.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -1651,7 +1651,7 @@ export function AdminQuotasPage() {
             tiers={tiers.data.data}
             targetTypes={["USER", "ALL_MEMBERS"]}
             title="Member balance operation"
-            description="Use this for one member or every member. Member plan and override settings stay in the member drawer below."
+            description="Use this for one member or all members. Manage member plans and overrides in the member drawer below."
           />
 
           <Card className="overflow-hidden">
