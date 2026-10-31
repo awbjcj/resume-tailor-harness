@@ -191,6 +191,7 @@ before changing code near the invariant.
 | `src/resume_tailor_harness/discovery/connectors/tesla.py`     | Tesla visible-browser portal: state capture + same-origin detail fetches                                                  |
 | `src/resume_tailor_harness/discovery/connectors/google.py`    | Google Careers results-page `AF_initDataCallback` parser (list-only)                                                      |
 | `src/resume_tailor_harness/discovery/connectors/text.py`      | Relevance gates + `html_to_text`                                                                                          |
+| `src/resume_tailor_harness/job_description.py`               | Pure description normalization and previews shared by ingestion and board reads                                           |
 | `src/resume_tailor_harness/discovery/connectors/runner.py`    | Pull orchestration: concurrent fetch (bounded by `pull_concurrency`), serial canonical-order ingest, `+N added` telemetry |
 | `src/resume_tailor_harness/concurrency.py`                    | `gather_isolated` — ordered, error-isolated async fan-out                                                                 |
 | `src/resume_tailor_harness/discovery/ingest.py`               | `save_or_upgrade`, source-priority logic                                                                                  |

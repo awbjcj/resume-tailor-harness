@@ -2,7 +2,8 @@
 
 The offline suites must keep the same tests, assertions, production password
 hashing, database migrations, real PDF compilation, and performance regression
-checks. Speed comes from scheduling independent work, not excluding slow tests.
+checks. Reduce runtime by scheduling independent work while keeping slow tests
+in the suite.
 
 ## Python
 

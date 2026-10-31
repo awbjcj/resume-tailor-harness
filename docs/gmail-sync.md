@@ -14,7 +14,9 @@ Routine read/unread changes do not cause message downloads.
 Each run processes at most `GMAIL_SYNC_MAX_PAGES` pages of at most
 `GMAIL_MAX_MESSAGES` messages each (page size capped at 500). Defaults are 20 pages
 of 50 messages. A partial run returns `has_more: true` and a progress message;
-the next manual or scheduled sync continues saved work. Increasing budgets changes
+the completion label says “Sync complete; more emails remain.” Saved continuation
+is normal progress, not a warning. The next manual or scheduled sync continues
+saved work. Increasing budgets changes
 throughput, not which messages are permanently eligible. The existing scheduler
 interval still controls when scheduled passes run.
 
@@ -35,6 +37,11 @@ Decision reuse checks the classifier input, rules version, and whether AI is
 enabled. Changed inputs or classification rules invalidate the decision; failures
 and budget-deferred reviews are not marked complete. The result's
 `classification_cache_hits` counter reports decisions reused during rematching.
+The `cached` counter also includes saved email evidence reused for rematching or
+retrying a deferred classification, plus messages skipped because their results
+are already current. It overlaps `processed` when cached evidence is reprocessed;
+it is not a count of AI prompt-cache tokens. An idle incremental sync can correctly
+report zero reuse because no messages needed processing.
 
 When history overlaps with a completed backfill, known incoming messages reuse
 their metadata, bodies, and decisions. Previously excluded or missing messages

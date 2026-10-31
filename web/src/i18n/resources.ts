@@ -16,6 +16,7 @@ export async function loadAutoTranslations(
 }
 
 const en = {
+  deferred: { loading: "Loading…", failed: "This form could not load. Try again.", appFailed: "The workspace could not load. Try again.", retry: "Try again", reload: "Reload page" },
   salary: { hour: "hour", month: "month", week: "week", day: "day" },
   chat: {
     reviseDraft: "Revise the selected draft.\n\n{{feedback}}",
@@ -86,7 +87,7 @@ const en = {
   review: {
     reviewerNotes: {
       factCheck:
-        "Checks claims against profile evidence. With Gate on, a failed check blocks the round; with Gate off, its score contributes according to its weight.",
+        "Checks claims against profile evidence. With Gate on, a failed check blocks the round. With Gate off, the score counts toward the result at the configured weight.",
       atsKeyword: "Coverage of the job description's stated requirements.",
       recruiter: "Can a recruiter understand the top of the resume in a six-second skim?",
       hiringManager:
@@ -231,16 +232,35 @@ const en = {
     signingOut: "Signing out…",
   },
   auth: {
+    brandName: "Résumé Tailor",
+    brandSuffix: "Harness",
     privateCareerWorkspace: "Private job-search workspace",
-    evidenceLedOperations: "Evidence-based job search",
-    brandHeadline: "Resume tailoring,",
-    brandHeadlineAccent: "with traceable facts.",
+    evidenceLedOperations: "Agent-powered. Evidence-led.",
+    brandHeadline: "Your next chapter.",
+    brandHeadlineAccent: "Intelligently crafted.",
+    traceableEvidence: "Traceable evidence",
+    humanControl: "You stay in control",
+    workflowCaption: "From evidence to opportunity",
+    workflow: {
+      sources: "Your experience",
+      sourcesDetail: "Résumés · projects · achievements",
+      evidence: "Evidence extraction",
+      evidenceDetail: "Source-linked career facts",
+      tailoring: "Tailoring agent",
+      tailoringDetail: "Your story, aligned to the role",
+      review: "Review panel",
+      reviewDetail: "Evidence checks · quality review",
+      approval: "Your approval",
+      approvalDetail: "Human judgment, always",
+      output: "Tailored résumé",
+      outputDetail: "Ready for your next opportunity",
+    },
     sourceRecords: "Source records",
     tailoredResume: "Tailored résumé",
     validation: "Validation",
     brandPromise: "Every resume bullet must trace back to a fact you provided.",
     brandSummary:
-      "Find roles, tailor your materials with traceable evidence, and track each application in one workspace.",
+      "A team of AI agents turns your experience into tailored applications. Grounded in your facts. Guided by you.",
     privateCommandCenter: "Your private job-search workspace.",
     privateCommandCenterShort: "Your private job-search workspace",
     discover: "Discover",
@@ -836,6 +856,7 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  deferred: { loading: "正在加载…", failed: "无法加载此表单，请重试。", appFailed: "无法加载工作区，请重试。", retry: "重试", reload: "重新加载页面" },
   salary: { hour: "小时", month: "月", week: "周", day: "天" },
   chat: {
     reviseDraft: "请修改所选草稿。\n\n{{feedback}}",
@@ -905,7 +926,7 @@ const zhCN = {
   },
   review: {
     reviewerNotes: {
-      factCheck: "真实性要求：根据个人资料中的事实依据核查表述。启用硬性门槛时，核查未通过会阻断本轮；关闭后，按权重计入评分。",
+      factCheck: "核查表述是否有个人资料中的事实支持。启用硬性门槛时，核查未通过则本轮不通过；关闭后，核查分数按设定权重计入总分。",
       atsKeyword: "简历覆盖了多少职位描述中明确提出的要求。",
       recruiter: "招聘人员快速浏览六秒，能否看懂简历顶部的重点？",
       hiringManager: "与此职位相关的经历依据是否充分、可信。",
@@ -1040,15 +1061,34 @@ const zhCN = {
     signingOut: "正在退出…",
   },
   auth: {
+    brandName: "Résumé Tailor",
+    brandSuffix: "Harness",
     privateCareerWorkspace: "私密求职工作区",
-    evidenceLedOperations: "基于事实的求职管理",
-    brandHeadline: "定制简历，",
-    brandHeadlineAccent: "每项事实都有出处。",
+    evidenceLedOperations: "智能体协作，真实经历为据",
+    brandHeadline: "职业新篇章，",
+    brandHeadlineAccent: "用智能精心打磨。",
+    traceableEvidence: "事实有据可查",
+    humanControl: "每一步，由你掌控",
+    workflowCaption: "让真实经历连接新的机遇",
+    workflow: {
+      sources: "你的经历",
+      sourcesDetail: "简历 · 项目 · 成就",
+      evidence: "提取事实依据",
+      evidenceDetail: "每项经历都关联原始资料",
+      tailoring: "简历定制智能体",
+      tailoringDetail: "让你的经历契合目标职位",
+      review: "评审小组",
+      reviewDetail: "事实核验 · 质量评审",
+      approval: "由你审批",
+      approvalDetail: "始终保留你的判断",
+      output: "定制简历",
+      outputDetail: "为下一次机遇做好准备",
+    },
     sourceRecords: "原始资料",
     tailoredResume: "定制简历",
     validation: "内容校验",
     brandPromise: "简历里的每一条内容，都要有你提供的事实作为依据。",
-    brandSummary: "在同一个工作区查找职位，依据可追溯的经历定制材料，并跟踪每份申请。",
+    brandSummary: "让 AI 智能体协作，将你的经历打磨成契合职位的申请材料。以事实为依据，由你把握方向。",
     privateCommandCenter: "你的私密求职工作区。",
     privateCommandCenterShort: "你的私密求职工作区",
     discover: "发现",

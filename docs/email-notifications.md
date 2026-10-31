@@ -1,9 +1,9 @@
 # Email notifications
 
-For connecting inboxes for analysis, see [Email provider connections](mailbox-connections.md).
-Gmail, Outlook/Microsoft 365, and custom IMAP accounts are managed beside these
-notification preferences. Incoming mailbox credentials do not change the platform
-provider used to send digests or account notices.
+To connect inboxes for analysis, see [Email provider connections](mailbox-connections.md).
+Manage Gmail, Outlook/Microsoft 365, and custom IMAP accounts on the same page
+as notification preferences. Connecting an inbox does not change the platform's
+provider for sending digests or account notices.
 
 Email subjects and bodies follow the language selected in the dashboard
 (English or Simplified Chinese). The dashboard saves that selection to the

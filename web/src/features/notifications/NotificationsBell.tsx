@@ -157,7 +157,8 @@ export function NotificationsBell() {
                           </div>
                           <p className="mt-1 text-xs leading-5 text-muted-foreground">
                             {localizeRunError(item.error, i18n.resolvedLanguage)
-                              ?? (item.kind === "gmailSync" && item.label === "Done with warnings"
+                              ?? (item.kind === "gmailSync"
+                                && (item.label === "Done with warnings" || item.label === "Sync complete; more emails remain")
                                 ? localizeRunPhase(item.label, i18n.resolvedLanguage)
                                 : formatUserDateTime(item.completedAt, i18n.resolvedLanguage))}
                           </p>

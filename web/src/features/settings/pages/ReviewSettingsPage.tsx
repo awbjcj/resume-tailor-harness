@@ -479,7 +479,7 @@ function ReviewRosterForm({
         <FieldDescription>
           Used by the writer, reviser, and advisory panel. Minimums stay within
           the evidence in your profile, so they do not require invented claims.
-          Rendering selects one or two pages. One-page drafts use lower bullet
+          Choose one or two pages in Rendering. One-page drafts use lower bullet
           limits and preserve space for experience and projects.
         </FieldDescription>
 

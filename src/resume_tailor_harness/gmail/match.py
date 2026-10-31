@@ -1,9 +1,23 @@
 import re
 from html import unescape
 from urllib.parse import unquote, parse_qs, urlsplit
+from typing import Protocol
 
 from resume_tailor_harness.gmail.client import EmailMessage, authored_text
 from resume_tailor_harness.tracking.tables import Job
+
+
+class MatchableJob(Protocol):
+    @property
+    def id(self) -> int | None: ...
+    @property
+    def company(self) -> str | None: ...
+    @property
+    def title(self) -> str | None: ...
+    @property
+    def url(self) -> str | None: ...
+    @property
+    def source_identity(self) -> str | None: ...
 
 
 def _text(value: str) -> str:
@@ -36,7 +50,7 @@ def _requisitions(text: str) -> set[str]:
     return refs
 
 
-def _job_requisitions(job: Job) -> set[str]:
+def _job_requisitions(job: MatchableJob) -> set[str]:
     refs = _requisitions(f"{job.url or ''} {job.source_identity or ''}")
     url = urlsplit(job.url or "")
     for key, values in parse_qs(url.query).items():
@@ -75,10 +89,10 @@ def _company_names(company: str) -> set[tuple[str, ...]]:
     return names
 
 
-class ApplicationMatcher:
-    """Build company/requisition indexes once per pass, not once per email."""
+class ApplicationMatcher[JobT: MatchableJob]:
+    """Index one catalog revision, without depending on ORM row lifetime."""
 
-    def __init__(self, jobs: list[Job]):
+    def __init__(self, jobs: list[JobT]):
         self.jobs = jobs
         self.refs: dict[str, set[int]] = {}
         self.names: dict[str, list[tuple[tuple[str, ...], int]]] = {}
@@ -91,7 +105,7 @@ class ApplicationMatcher:
                 self.names.setdefault(words[0], []).append((words, index))
                 self.domains.setdefault("".join(words), set()).add(index)
 
-    def company_candidates(self, email: EmailMessage) -> list[Job]:
+    def company_candidates(self, email: EmailMessage) -> list[JobT]:
         return [self.jobs[i] for i in sorted(self._companies(email))]
 
     def _companies(self, email: EmailMessage) -> set[int]:
@@ -105,7 +119,7 @@ class ApplicationMatcher:
                     found.add(index)
         return found
 
-    def match(self, email: EmailMessage) -> Job | None:
+    def match(self, email: EmailMessage) -> JobT | None:
         candidates = self._companies(email)
         references = _requisitions(_message_text(email))
         if references:

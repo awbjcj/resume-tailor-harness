@@ -53,6 +53,7 @@
     "Classifying": "正在分类",
     "Done": "已完成",
     "Done with warnings": "已完成，但有警告",
+    "Sync complete; more emails remain": "本次同步已完成；仍有邮件待处理",
     "AI classification is unavailable. Synced using email rules only.": "AI 分类暂不可用。本次同步仅使用邮件规则。",
     "AI review reached its per-sync limit. Remaining uncertain emails are saved for a later sync.": "AI 审核已达到本次同步上限。其余待确认邮件已保存，将在后续同步中继续处理。",
     "More emails remain. Progress is saved; the next sync continues where this one stopped.": "仍有邮件待处理。进度已保存，下次同步将从此处继续。",

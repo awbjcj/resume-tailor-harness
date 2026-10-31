@@ -380,8 +380,8 @@ SESSION_SECRET=<long random value>
 
 ### Gmail 设置（用于 `sync-status`、同步、提醒和邮件草稿）
 
-Web 应用还支持 Outlook/Microsoft 365 登录、Yahoo/iCloud/Fastmail 服务器预设，
-以及自定义 IMAP 邮箱和可选的 SMTP 验证。配置步骤和功能范围见
+在 Web 应用中，你也可以通过 Microsoft 登录连接 Outlook/Microsoft 365，使用 Yahoo/iCloud/Fastmail
+的服务器预设，或添加自定义 IMAP 邮箱。SMTP 验证为可选项。配置步骤和支持的功能见
 [邮箱服务商连接说明](docs/mailbox-connections.md)。
 
 Gmail 为 CLI 的 `sync-status` 提供支持；在 API/网页应用中，它还支持定时后台收件箱同步、长时间未更新申请的跟进提醒和邮件草稿撰写。它只会**读取**邮件（readonly scope）和**创建草稿**（compose scope），绝不会发送邮件。`.env` 中不保存密码；系统通过 Google OAuth 客户端认证，客户端类型取决于你的运行方式。
@@ -554,7 +554,7 @@ uv run resume-tailor-harness cover-letter --job-id 7
 
 通过 Typst 模板将已保存的简历版本（按 ID）渲染到 `output/`。每个版本的文件名唯一，因此重新渲染不会覆盖较早的 PDF。
 
-在 **设置 → 渲染** 中可选择八种内置布局：经典、现代、技术、高管、毕业生、学术、简约和紧凑。单页选项也会约束新的简历定制：优先保留工作经历和项目，不写个人简介，并减少要点数量。关闭后可生成最多两页的详细简历。正文字号不低于 10pt；若仍然无法容纳，系统会提示精简，而不会导出超页文件。参见[模板目录与设计来源](templates/README.md)。
+在 **设置 → 渲染** 中可选择八种内置布局：经典、现代、技术、高管、毕业生、学术、简约和紧凑。单页选项也会限制新草稿的篇幅：优先保留工作经历和项目，不写个人简介，并减少要点数量。关闭后可生成最多两页的详细简历。正文字号不低于 10pt。如果内容仍放不下，需先按提示精简，再导出 PDF。参见[模板目录与设计来源](templates/README.md)。
 
 ```bash
 uv run resume-tailor-harness render 12 [--config config/render.yaml]

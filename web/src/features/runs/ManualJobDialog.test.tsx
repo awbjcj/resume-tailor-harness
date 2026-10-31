@@ -14,6 +14,7 @@ async function openForm() {
   render(<ManualJobDialog />, { wrapper });
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Add job manually" }));
+  await screen.findByLabelText("Job title *");
   return { user, invalidate };
 }
 
@@ -32,7 +33,7 @@ it("submits structured fields and refreshes the boards with a saved-job link", a
   const { user, invalidate } = await openForm();
   await fillRequired(user);
   await user.type(screen.getByLabelText("Job posting URL"), "https://example.com/jobs/42");
-  await user.selectOptions(screen.getByLabelText("Work policy"), "hybrid");
+  await user.selectOptions(screen.getByLabelText("Work arrangement"), "hybrid");
   await user.selectOptions(screen.getByLabelText("Employment type"), "full_time");
   await user.type(screen.getByLabelText("Minimum salary"), "120000");
   await user.type(screen.getByLabelText("Maximum salary"), "160000");

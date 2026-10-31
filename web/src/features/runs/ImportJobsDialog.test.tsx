@@ -28,7 +28,7 @@ it("shows the report and row errors after a CSV import", async () => {
   render(<ImportJobsDialog open onOpenChange={() => undefined} />, { wrapper });
 
   await userEvent.upload(
-    screen.getByLabelText(/import file/i),
+    await screen.findByLabelText(/import file/i),
     new File(["title,company\n"], "jobs.csv", { type: "text/csv" }),
   );
   await userEvent.click(screen.getByRole("button", { name: /^import$/i }));

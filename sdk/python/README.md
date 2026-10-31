@@ -131,12 +131,13 @@ through a live employer form with you. Authenticate as above and
 
 The agent selects the requested job, reads fresh application context, prepares
 and uploads eligible documents, and fills supported fields with its own
-browser/computer tools. At a missing required answer, it asks you, saves your
-answer with its exact scope, re-fetches context, and continues from the current
-page. It does not ask you to reconfirm each answer you just supplied. After the
-final review and your specific confirmation, it can submit, verify the employer's
-receipt, and record the outcome in the harness. Login or verification handoffs
-preserve progress so the next turn resumes instead of starting over.
+browser/computer tools. When a required answer is missing, it asks you, saves
+your answer with the limits you specified, refreshes the context, and continues
+from the current page. An answer you just supplied does not need another
+confirmation. After your final review and specific confirmation, the agent can
+submit, verify the employer's receipt, and record the outcome in the harness.
+If you need to handle login or verification, progress is kept so the next turn
+can continue where you left off.
 
 The [apply skill](src/resume_harness_sdk/skills/resume-harness-apply/SKILL.md) is
 the operating guide. Its [interaction examples](src/resume_harness_sdk/skills/resume-harness-apply/references/interactive-application.md)
@@ -189,8 +190,8 @@ Prefer structured fields for reusable answers: `legalName`, `preferredNameParts`
 `mailingAddress`, `alternateEmails`, `workEligibility`, `experienceRanges`, `sex`,
 `aiMatchingPreference`, and `employerAnswers`. Repeated records require actual
 `confirmedOn` dates and the matching employer/country/requisition/timeframe scope.
-Unknown booleans are null, never an inferred No. Alternate emails require explicit
-permission; sex remains separate from gender, and optional AI matching preferences
+Use null for unknown booleans; do not infer No. Alternate emails require explicit
+permission. Sex is separate from gender, and optional AI matching preferences
 do not authorize consent or submission. See the
 [structured-answer contract](../../docs/agent-applications.md#structured-personal-answers).
 
@@ -248,8 +249,8 @@ submission is not recorded yet. The equivalent CLI is
 and excludes the job from the queue; it does not submit the employer form. Event
 creation is not idempotent: read timeline history after an ambiguous failure
 before retrying. Use job detail and events after submission, since application
-context becomes ineligible. The queue is live and has no claims/leases;
-coordinate agents to avoid duplicates.
+context becomes ineligible. The queue changes as jobs are updated and does not
+reserve jobs for an agent. Coordinate agents to avoid duplicate work.
 
 Application return types live in `resume_harness_sdk.applications` and are
 validated at the HTTP boundary. `ResponseValidationError` signals an invalid

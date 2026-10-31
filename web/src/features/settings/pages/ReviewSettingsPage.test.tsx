@@ -78,7 +78,7 @@ describe("ReviewSettingsPage pipeline controls", () => {
 
     expect(screen.getByText("硬性门槛")).toBeInTheDocument();
     expect(screen.getByText(/硬性门槛评审未通过时，无论本轮得分如何，本轮都不通过/)).toBeInTheDocument();
-    expect(screen.getByText(/真实性要求/)).toBeInTheDocument();
+    expect(screen.getByText(/核查表述是否有个人资料中的事实支持/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "写作模型档位：标准型" }));
     await userEvent.click(screen.getByRole("button", { name: "保存更改" }));
 

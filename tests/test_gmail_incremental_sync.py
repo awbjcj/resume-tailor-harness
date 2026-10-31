@@ -273,9 +273,54 @@ def test_no_decision_classification_survives_unrelated_application_changes(tmp_p
     result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=runner)
     assert result["stats"]["ai_calls"] == 0
     assert result["stats"]["classification_cache_hits"] == 1
+    assert result["stats"]["cached"] == 1
     assert runner.run.call_count == 1
     assert len(service._messages.gets) == reads
     assert not result["has_more"]
+
+
+def test_rematching_unmatched_mail_reports_reused_evidence(tmp_path):
+    engine = _seed()
+    service = FakeGmailService([_mail("unmatched", company=1)])
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    with Session(engine) as session:
+        session.add(Job(id=2, source="manual", company="Another employer", title="Engineer"))
+        session.add(Application(id=2, job_id=2, status="submitted"))
+        session.commit()
+
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+
+    assert result["stats"]["processed"] == 1
+    assert result["stats"]["unmatched"] == 1
+    assert result["stats"]["metadata_reads"] == 0
+    assert result["stats"]["body_reads"] == 0
+    assert result["stats"]["classification_cache_hits"] == 0
+    assert result["stats"]["cached"] == 1
+
+
+def test_saved_backfill_continuation_is_not_a_warning(tmp_path, monkeypatch):
+    from resume_tailor_harness.progress import read_progress
+
+    monkeypatch.setenv("GMAIL_MAX_MESSAGES", "2")
+    monkeypatch.setenv("GMAIL_SYNC_MAX_PAGES", "1")
+    engine = _seed()
+    service = FakeGmailService([_mail(str(i)) for i in range(3)])
+    reporter = _reporter(tmp_path)
+
+    result = run_gmail_sync(engine, reporter, service=service, llm=None)
+    reporter.done()
+
+    assert result["has_more"] is True
+    assert not result.get("warnings")
+    progress = read_progress("test-run", root=tmp_path)
+    assert progress is not None
+    assert progress["label"] == "Sync complete; more emails remain"
+    assert result["stats"]["cached"] == 0
+    monkeypatch.setenv("GMAIL_SYNC_MAX_PAGES", "20")
+    resumed = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert resumed["has_more"] is False
+    assert not resumed.get("warnings")
+    assert resumed["stats"]["metadata_reads"] == 1
 
 
 @pytest.mark.parametrize("decision", ["rejection", "uncertain"])

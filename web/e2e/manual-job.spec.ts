@@ -21,7 +21,7 @@ for (const language of ["en", "zh-CN"] as const) {
       });
       await page.goto("/triage");
       const zh = language === "zh-CN";
-      await page.getByRole("button", { name: zh ? "手动添加职位" : "Add job manually", exact: true }).click();
+      await page.locator("header.app-chrome").getByRole("button", { name: zh ? "手动添加职位" : "Add job manually", exact: true }).click();
       const dialog = page.getByRole("dialog");
       await expect(dialog.getByRole("heading", { name: zh ? "手动添加职位" : "Add job manually" })).toBeVisible();
       await expect(dialog.getByLabel(zh ? "职位名称 *" : "Job title *", { exact: true })).toHaveAttribute("required", "");

@@ -29,18 +29,18 @@ describe("NotificationsBell", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Connect Gmail in Settings before syncing");
   });
 
-  it("makes a degraded sync visible in completed run history", async () => {
+  it.each(["Done with warnings", "Sync complete; more emails remain"])("shows sync completion detail: %s", async (label) => {
     server.use(
       http.get("*/api/notifications", () => HttpResponse.json([])),
       http.get("*/api/run-completions", () => HttpResponse.json([{
-        id: 20, runId: "gmail-partial", kind: "gmailSync", label: "Done with warnings",
+        id: 20, runId: "gmail-partial", kind: "gmailSync", label,
         status: "succeeded", error: null, completedAt: "2026-09-21T12:00:00Z", readAt: null,
       }])),
     );
     const user = userEvent.setup();
     render(<NotificationsBell />, { wrapper: withQueryClient });
     await user.click(await screen.findByRole("button", { name: /notifications/i }));
-    expect(await screen.findByText("Done with warnings")).toBeInTheDocument();
+    expect(await screen.findByText(label)).toBeInTheDocument();
   });
 
   afterEach(async () => {

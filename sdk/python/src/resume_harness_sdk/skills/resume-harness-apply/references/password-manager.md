@@ -1,8 +1,8 @@
 # Password manager and computer use
 
-The server stores encrypted employer accounts. The host agent operates the real
-employer site. Account creation and sign-in are not job submission; retain the
-final application review boundary.
+The server stores encrypted employer accounts, and the host agent operates the
+employer site. Creating an account or signing in does not submit an application.
+The user must still review the completed application before final submission.
 
 1. The deployment administrator configures `APPLICATION_VAULT_KEYS`; the user
    enables account creation under Settings → Applications → Password manager.

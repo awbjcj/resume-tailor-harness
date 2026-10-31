@@ -100,7 +100,7 @@ const addressFields: AnswerField<Address>[] = [
 const emailFields: AnswerField<Email>[] = [
   { key: "email", label: "Alternate email", type: "email", required: true },
   { key: "employer", label: "Employer (blank means all employers)" },
-  { key: "requisition", label: "Requisition / role ID" }, { key: "country", label: "Country scope" },
+  { key: "requisition", label: "Requisition / role ID" }, { key: "country", label: "Applicable country" },
   { key: "permitted", label: "May use for applications", type: "boolean" },
   { key: "confirmedOn", label: "Confirmation date", type: "date", required: true },
 ];
@@ -116,7 +116,7 @@ const eligibilityFields: AnswerField<Eligibility>[] = [
   { key: "confirmedOn", label: "Confirmation date", type: "date", required: true },
 ];
 const experienceFields: AnswerField<Experience>[] = [
-  { key: "specialty", label: "Experience specialty", required: true },
+  { key: "specialty", label: "Area of experience", required: true },
   { key: "minimumYears", label: "Minimum years", type: "number" },
   { key: "maximumYears", label: "Maximum years", type: "number" },
   { key: "confirmedOn", label: "Confirmation date", type: "date", required: true },
@@ -124,14 +124,14 @@ const experienceFields: AnswerField<Experience>[] = [
 const employerFields: AnswerField<Employer>[] = [
   { key: "employer", label: "Employer", required: true },
   { key: "requisition", label: "Requisition / role ID" },
-  { key: "country", label: "Country scope" },
+  { key: "country", label: "Applicable country" },
   { key: "category", label: "Answer category", type: "select", options: [
     { value: "general", label: "General screening" }, { value: "referral", label: "Referral source" },
     { value: "employment", label: "Employment history" }, { value: "contractor", label: "Contractor history" },
     { value: "relationship", label: "Employer relationships" }, { value: "previous_application", label: "Application history" },
     { value: "degree_category", label: "Degree dropdown mapping" }, { value: "role_requirement", label: "Role requirements" },
   ] },
-  { key: "question", label: "Exact question / degree mapping context", type: "textarea", required: true },
+  { key: "question", label: "Exact question or degree option details", type: "textarea", required: true },
   { key: "answer", label: "Confirmed answer (blank means unknown)", type: "textarea" },
   { key: "timeframe", label: "Applicable timeframe" },
   { key: "confirmedOn", label: "Confirmation date", type: "date", required: true },
@@ -142,32 +142,32 @@ export function StructuredApplicationProfile({ profile, onChange }: {
   profile: Profile; onChange: (changes: Partial<Profile>) => void;
 }) {
   return <>
-    <Section title="Structured names and mailing address"
-      description="Save name and address parts exactly as you want them entered. Blank parts remain unknown; existing contact notes are preserved.">
+    <Section title="Names and mailing address"
+      description="Enter each part of your name and address as it should appear on applications. Blank fields stay unknown; your existing contact notes are kept.">
       <fieldset className="space-y-4"><legend className="mb-3 text-sm font-medium">Legal name</legend>
         <AnswerFields prefix="legal-name" value={profile.legalName ?? emptyName} fields={nameFields} onChange={(legalName) => onChange({ legalName })} />
       </fieldset>
-      <fieldset className="space-y-4"><legend className="mb-3 text-sm font-medium">Preferred name parts</legend>
+      <fieldset className="space-y-4"><legend className="mb-3 text-sm font-medium">Preferred name</legend>
         <AnswerFields prefix="preferred-name" value={profile.preferredNameParts ?? emptyName} fields={nameFields} onChange={(preferredNameParts) => onChange({ preferredNameParts })} />
       </fieldset>
       <AnswerFields prefix="mailing-address" value={profile.mailingAddress ?? emptyAddress} fields={addressFields} onChange={(mailingAddress) => onChange({ mailingAddress })} />
     </Section>
     <Records<Email> title="Alternate application emails" prefix="alternate-email" items={profile.alternateEmails ?? []} fields={emailFields}
-      description="Keep the primary email above. An alternate can be used only with explicit permission and a matching employer, requisition, and country scope."
+      description="Keep your primary email above. Use an alternate only with explicit permission and when its employer, requisition, and country limits match the application."
       addLabel="Add alternate email" removeLabel="Remove alternate email"
       create={() => ({ email: "", employer: "", requisition: "", country: "", permitted: null, confirmedOn: "" })}
       onChange={(alternateEmails) => onChange({ alternateEmails })} />
     <Records<Eligibility> title="Work eligibility by country" prefix="eligibility" items={profile.workEligibility ?? []} fields={eligibilityFields}
-      description="Record each country separately. Unknown is different from No. Immigration status, authorization, sponsorship, OPT, and STEM eligibility are independent answers."
+      description="Record each country separately. Unknown does not mean No. Answer immigration status, work authorization, sponsorship, OPT, and STEM eligibility separately."
       addLabel="Add country eligibility" removeLabel="Remove country eligibility"
       create={() => ({ country: "", immigrationStatus: "", confirmedOn: "" })} onChange={(workEligibility) => onChange({ workEligibility })} />
-    <Records<Experience> title="Dated experience ranges" prefix="experience-range" items={profile.experienceRanges ?? []} fields={experienceFields}
-      description="Use self-reported experience for a named specialty. Enter both bounds or leave both unknown. Ranges never supply an exact count or update automatically with time."
+    <Records<Experience> title="Experience by specialty" prefix="experience-range" items={profile.experienceRanges ?? []} fields={experienceFields}
+      description="Enter your own experience range for each specialty. Fill in both the minimum and maximum, or leave both blank. A range cannot stand in for an exact number of years and does not increase automatically over time."
       addLabel="Add experience range" removeLabel="Remove experience range"
       create={() => ({ specialty: "", minimumYears: null, maximumYears: null, confirmedOn: "" })}
       onChange={(experienceRanges) => onChange({ experienceRanges })} />
     <Section title="Application defaults"
-      description="Sex and gender are separate optional disclosures. AI matching preferences apply to optional matching; agreements and submission still require application-specific confirmation.">
+      description="Sex and gender are separate, optional disclosures. The AI preference covers optional candidate matching only. Confirm agreements and submission separately for each application.">
       <AnswerFields prefix="application-default" value={profile} fields={[
         { key: "sex", label: "Sex (optional self-identification)" },
         { key: "sexConfirmedOn", label: "Sex answer confirmation date", type: "date" },
@@ -178,8 +178,8 @@ export function StructuredApplicationProfile({ profile, onChange }: {
         { key: "aiMatchingConfirmedOn", label: "AI matching preference confirmation date", type: "date" },
       ]} onChange={onChange} />
     </Section>
-    <Records<Employer> title="Scoped employer answer records" prefix="employer-answer" items={profile.employerAnswers ?? []} fields={employerFields}
-      description="Save exact wording and scope for employer questions, degree dropdown mappings, and role-specific answers. A blank requisition applies across that employer. Keep the actual degree unchanged. Existing employer notes remain below."
+    <Records<Employer> title="Employer answers" prefix="employer-answer" items={profile.employerAnswers ?? []} fields={employerFields}
+      description="Save the exact wording and where each answer applies, including degree dropdown choices and role-specific answers. Leave the requisition blank to cover all roles at that employer. Keep your actual degree unchanged. Existing employer notes are below."
       addLabel="Add employer answer" removeLabel="Remove employer answer"
       create={() => ({ employer: "", requisition: "", country: "", timeframe: "", question: "", answer: null, category: "general", confirmedOn: "" })}
       onChange={(employerAnswers) => onChange({ employerAnswers })} />
