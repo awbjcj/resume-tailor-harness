@@ -6,15 +6,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from resume_tailor_harness.models.profile import ProfileFacts
-from resume_tailor_harness.models.base import new_id
 from resume_tailor_harness.profile.group_corrections import (
     GroupCorrection,
     corrections_path,
     load_group_corrections,
     save_group_corrections,
     GroupCorrections,
-    SkillCategoryDefinition,
-    SkillGroupDefinition,
+    UnknownGroupError,
+    edit_catalog,
 )
 from resume_tailor_harness.profile.manual_skills import manual_skills_lock
 from resume_tailor_harness.profile.matrix import (
@@ -30,10 +29,6 @@ from resume_tailor_harness.services.profile_skills import (
 )
 from resume_tailor_harness.rollback import rollback_scope
 from resume_tailor_harness.tracking.match_gap import normalize_skill
-
-
-class UnknownGroupError(ValueError):
-    """Raised when a group slug is outside the fixed vocabulary."""
 
 
 class GroupCorrectionNotFoundError(ValueError):
@@ -113,50 +108,9 @@ def edit_organization(
         directory = Path(profile_dir)
         path = corrections_path(directory)
         ledger = load_group_corrections(path, strict=True)
-        catalog = (
-            ledger.group_catalog() if kind == "group" else ledger.category_catalog()
+        edit_catalog(
+            ledger, kind, key=key, label=label, category=category, delete=delete
         )
-        if key is not None and key not in catalog:
-            raise UnknownGroupError(f"Unknown {kind} '{key}'")
-        if delete:
-            if key == "other":
-                raise ValueError("Other is the fallback and cannot be deleted")
-            assert key is not None
-            if kind == "group":
-                ledger.removed_groups.append(key)
-                ledger.groups.pop(key, None)
-                ledger.corrections = {
-                    k: v for k, v in ledger.corrections.items() if v.group != key
-                }
-                ledger.automatic = {
-                    k: v for k, v in ledger.automatic.items() if v != key
-                }
-            else:
-                for slug, definition in ledger.group_catalog().items():
-                    if definition.category == key:
-                        ledger.groups[slug] = definition.model_copy(
-                            update={"category": "other"}
-                        )
-                ledger.removed_categories.append(key)
-                ledger.categories.pop(key, None)
-        else:
-            label = label.strip()
-            if not label or len(label) > 80:
-                raise ValueError("Enter a name between 1 and 80 characters")
-            if any(
-                k != key and v.label.casefold() == label.casefold()
-                for k, v in catalog.items()
-            ):
-                raise ValueError(f"A {kind} with this name already exists")
-            key = key or f"custom-{new_id()}"
-            if kind == "group":
-                if category not in ledger.category_catalog():
-                    raise UnknownGroupError(f"Unknown category '{category}'")
-                ledger.groups[key] = SkillGroupDefinition(
-                    label=label, category=category, custom_label=True
-                )
-            else:
-                ledger.categories[key] = SkillCategoryDefinition(label=label)
         with rollback_scope((path, directory / "matrix.json")):
             save_group_corrections(ledger, path)
             if (directory / "facts.json").is_file():

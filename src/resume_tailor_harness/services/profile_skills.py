@@ -89,7 +89,6 @@ def _publish(
     *,
     group: str | None = None,
     skill_key: str = "",
-    restoring_token: str = "",
 ) -> None:
     from resume_tailor_harness.profile.group_corrections import (
         corrections_path,
@@ -101,7 +100,7 @@ def _publish(
     directory = Path(profile_dir)
     organization_path = corrections_path(directory)
     edits = load_edits(directory)
-    capture_skill_overrides(facts, edits, restoring_token=restoring_token)
+    capture_skill_overrides(facts, edits)
     with rollback_scope(
         (
             directory / "facts.json",
@@ -206,16 +205,15 @@ def update_skill(
                 ]
             )
         )
-        for skill in selected[:1]:
-            ledger.entries.append(
-                ManualEditEntry(
-                    target_token=normalize_skill(skill.name),
-                    name=name,
-                    aliases=names,
-                    category=category,
-                    added_at=_utcnow(),
-                )
+        ledger.entries.append(
+            ManualEditEntry(
+                target_token=normalize_skill(selected[0].name),
+                name=name,
+                aliases=names,
+                category=category,
+                added_at=_utcnow(),
             )
+        )
         updated, _ = apply_manual_skills(facts, ledger)
         _publish(profile_dir, updated, ledger, group=group, skill_key=name)
 
@@ -419,6 +417,4 @@ def restore_skill(profile_dir: str | Path, token: str) -> None:
         ledger.cleanup_exempt = list(dict.fromkeys([*ledger.cleanup_exempt, norm]))
         ledger.entries = [e for e in ledger.entries if e not in removed]
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        _publish(
-            profile_dir, updated_facts, ledger, restoring_token=token
-        )
+        _publish(profile_dir, updated_facts, ledger)
