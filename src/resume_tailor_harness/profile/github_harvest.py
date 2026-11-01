@@ -54,7 +54,10 @@ def validate_repo_branches(value: Mapping[str, str]) -> dict[str, str]:
             or branch.endswith(("/", ".", ".lock"))
             or "//" in branch
             or branch == "@"
-            or any(part.startswith(".") or part.endswith(".lock") for part in branch.split("/"))
+            or any(
+                part.startswith(".") or part.endswith(".lock")
+                for part in branch.split("/")
+            )
         ):
             raise ValueError("Enter a valid GitHub branch name")
         result[key] = branch
@@ -402,8 +405,12 @@ def _write_source_locked(
     # The filename was chosen before the network response was committed. A user
     # may have uploaded that name meanwhile; never overwrite their document.
     if existing is not None and existing.origin != "github":
-        report.failures[repo_name] = "Source filename is used by an uploaded document; saved files were preserved"
-        kept.update(_github_docs_for(profile_dir, normalize_repo_url(frontmatter_repo_url(data))))
+        report.failures[repo_name] = (
+            "Source filename is used by an uploaded document; saved files were preserved"
+        )
+        kept.update(
+            _github_docs_for(profile_dir, normalize_repo_url(frontmatter_repo_url(data)))
+        )
         return
     target = sources_dir(profile_dir) / filename
     if not target.exists() or target.read_bytes() != data:

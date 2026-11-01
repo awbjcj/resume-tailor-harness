@@ -291,11 +291,15 @@ def _add_source(
     target_dir = sources_dir(profile_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
     target = doc_path(profile_dir, doc)
-    if any(other.filename == doc.filename for other in manifest.docs) or (
+    occupied = {doc_path(profile_dir, other) for other in manifest.docs}
+    filename_sequence = 1
+    while target in occupied or (
         target.exists() and hashlib.sha256(target.read_bytes()).hexdigest() != sha256
     ):
-        doc.filename = f"{doc.id}{suffix}"
+        discriminator = "" if filename_sequence == 1 else f"-{filename_sequence}"
+        doc.filename = f"{doc.id}{discriminator}{suffix}"
         target = doc_path(profile_dir, doc)
+        filename_sequence += 1
     # codeql[py/path-injection] -- Local source capability is compared with a confined destination.
     if source.resolve() != target.resolve():
         # codeql[py/path-injection] -- Source is the intentional local file selected above.
