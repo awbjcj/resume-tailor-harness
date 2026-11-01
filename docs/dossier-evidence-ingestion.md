@@ -1,12 +1,11 @@
 # Project dossier evidence in the personal profile
 
-Project documents using the `project-resume-dossier` skill's labeled format now
-produce a reusable evidence bank. Profile construction preserves source detail;
-the later tailoring step chooses the examples relevant to a job and page budget.
-For the labeled format, the model extracts project metadata from the summary
-and technology sections; the application copies the complete evidence sections
-directly. This avoids asking the model to reproduce a large evidence bank within
-its output-token limit.
+Project documents in the `project-resume-dossier` skill's labeled format produce
+a reusable evidence bank. During a profile build, the model extracts project
+metadata from the summary and technology sections, while the application copies
+the evidence sections directly and preserves their source detail. This avoids
+asking the model to reproduce a large evidence bank within its output-token limit.
+Tailoring then chooses examples relevant to the job and page budget.
 
 For each project, the build retains:
 
@@ -33,12 +32,12 @@ The source sections use `# Project:`, `## Tech stack (evidence-backed)`,
     - Tested cancellation while preserving completed results — `tests/test_worker.py:test_cancel`.
 ```
 
-This snippet illustrates the structure, not facts about a real repository.
-A usage context and at least one explained repository citation are required.
-Bare paths and uncited examples are omitted with build diagnostics. Fenced
-examples are ignored. Older dossiers and harvested README documents continue
-through the general project extractor, whose instructions also require complete
-usage context and citations without a resume-sized bullet quota.
+This snippet illustrates the structure; it does not describe a real repository.
+Each skill needs a usage context and at least one explained repository citation.
+The build reports and omits bare paths and uncited examples. It ignores fenced
+examples. Older dossiers and harvested README documents still use the general
+project extractor, whose instructions also require complete usage context and
+citations without a resume-sized bullet quota.
 
 The existing project schema still prevents employment, education, and
 certification sections from being created by project extraction. Repository
@@ -47,7 +46,7 @@ retain their body `Repository:` deep links rather than sharing one project key.
 
 Stable evidence links survive fragment caching and project deduplication. Skill
 matching uses those links and project highlights, so broader skills such as API
-design or concurrency can identify their project even without appearing in its
+design or concurrency can link to a project even when they do not appear in its
 technology list. Tailoring's supporting-facts resolver supplies the cited usage
 examples to the fact-check reviewer. Provenance and numeric gates still apply
 to individually cited facts.

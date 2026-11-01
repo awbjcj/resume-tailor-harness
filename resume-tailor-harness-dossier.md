@@ -7,7 +7,7 @@ generated_at: 2026-11-01
 
 # Project: Résumé Tailor Harness
 
-A job-search application for candidates who want application materials grounded in their own evidence.
+A job-search application for candidates who want their materials grounded in their own evidence.
 
 ## Summary
 

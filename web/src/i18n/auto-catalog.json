@@ -12314,9 +12314,9 @@
     "en": "Branch for {{v0}}",
     "zh-CN": "{{v0}} 的分支"
   },
-  "Build your profile from resume and project evidence for your tailored applications.": {
-    "key": "ui_2fe0208e6aa6",
-    "en": "Build your profile from resume and project evidence for your tailored applications.",
+  "Build your profile from your resume and project evidence to tailor your applications.": {
+    "key": "ui_b13c08961f9c",
+    "en": "Build your profile from your resume and project evidence to tailor your applications.",
     "zh-CN": "根据简历和项目证据构建个人档案，用于定制求职材料。"
   },
   "Build your profile to include new or updated project evidence.": {

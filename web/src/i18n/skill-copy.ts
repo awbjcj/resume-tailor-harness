@@ -38,8 +38,8 @@ const en = {
   back: "Back",
   close: "Close",
   saving: "Saving…",
-  containerHelp: "Your organization is kept across profile rebuilds.",
-  fallbackHelp: "This is the fallback container and cannot be deleted.",
+  containerHelp: "Your organization is kept when you rebuild your profile.",
+  fallbackHelp: "Ungrouped items go here. This group or category cannot be deleted.",
   deleteHelp:
     "Its contents will move to Other. Your skills and source evidence are kept.",
   addGroupHelp: "Give this group a short, recognizable name.",
@@ -54,28 +54,28 @@ const en = {
   editDescription:
     "Update its name, aliases, type, or group. Your changes survive profile rebuilds.",
   addDescription:
-    "Add a skill you have. Use aliases for other names of the same skill.",
+    "Add one of your skills. Use aliases for other names for the same skill.",
   aliasHelp:
     "One per line or separated by commas. Previous names stay as aliases after a rename.",
   cleanupDescription:
-    "Merge duplicate names and saved synonyms. Remove clear non-skills, such as degree or travel requirements. Distinct skills stay.",
+    "Merge duplicate names and saved synonyms, and remove entries that aren't skills, such as degree or travel requirements. Distinct skills are kept.",
   cleanupRestore:
     "Removed skills can be restored below. Your source documents and work history are kept.",
   mergeDescription:
     "Choose the name to keep. The other names become aliases, and supporting evidence is combined. Merge only skills that mean the same thing.",
   libraryDescription:
-    "A focused view of what you bring. Build from your profile, combine duplicates, and organize skills your way.",
+    "Build your skill library from your profile, merge duplicates, and organize your skills.",
   rebuilt: "Skills rebuilt. Your manual edits and organization were kept.",
   firstProfile:
-    "Add a resume in Documents, then build your profile to create your skill library.",
+    "To start your skill library, add a resume in Documents and build your profile, or create a profile with the coach.",
   noMatches: "Try another search or clear your filters.",
   noSkills: "Rebuild from your profile or add your first skill.",
   cleanupHelp:
-    "Merge duplicates and prune clear non-skills after rebuilds. Restored entries stay protected.",
+    "After each rebuild, merge duplicates and remove entries that clearly aren't skills. Restored entries won't be removed automatically.",
   restoreHelp:
     "Restore a skill at any time. Restored entries are protected from automatic pruning.",
   organizationDescription:
-    "Categories contain groups. Rename, move, or add them to fit your work. Deleting a container keeps its skills in Other.",
+    "Categories contain groups. Rename, move, or add them to suit your needs. When you delete a category or group, its contents move to Other. Your skills are kept.",
   deleteNotice: "will be removed. Its contents will move to Other.",
   edit_skill: "Edit skill",
   add_a_skill: "Add a skill",
@@ -168,7 +168,7 @@ const zh: typeof en = {
   close: "关闭",
   saving: "正在保存…",
   containerHelp: "重新构建个人资料后，分组设置仍会保留。",
-  fallbackHelp: "这是默认接收未分组内容的位置，无法删除。",
+  fallbackHelp: "未分组的内容会放在这里。此分组或类别无法删除。",
   deleteHelp: "其中的内容将移至“其他”，技能与来源证据会保留。",
   addGroupHelp: "请为分组填写简短、易识别的名称。",
   categoryActions: (name: string) => `类别操作：${name}`,
@@ -180,7 +180,7 @@ const zh: typeof en = {
   incomplete: "部分技能未完成分类，已保留原分组。可点击“重新分类”重试。",
   editDescription:
     "修改名称、别名、类型或分组。重新构建个人资料后，这些修改仍会保留。",
-  addDescription: "添加你掌握的技能。同一技能的其他名称可以设为别名。",
+  addDescription: "添加你的技能。同一技能的其他名称可以设为别名。",
   aliasHelp: "每行填写一个，或用逗号分隔。重命名后，原名称会保留为别名。",
   cleanupDescription:
     "合并重复名称和已确认的同义词，移除学位、出差要求等明确不属于技能的条目。不同技能会分别保留。",
@@ -188,16 +188,16 @@ const zh: typeof en = {
   mergeDescription:
     "选择要保留的名称。其他名称将成为别名，相关证据会合并。请仅合并含义相同的技能。",
   libraryDescription:
-    "集中查看你的能力。从个人资料构建技能，合并重复条目，并按自己的习惯整理。",
+    "从个人资料构建技能库，合并重复项，并按自己的习惯整理技能。",
   rebuilt: "技能已重新构建，手动修改和分组设置均已保留。",
-  firstProfile: "在“文档”中添加简历，然后构建个人资料以生成技能库。",
+  firstProfile: "要开始使用技能库，可以在“文档”中添加简历并构建个人资料，也可以通过个人资料助手创建。",
   noMatches: "请更换搜索词，或清除筛选条件。",
   noSkills: "从个人资料重新构建，或手动添加第一项技能。",
   cleanupHelp:
     "每次重新构建后合并重复项，移除明确不属于技能的条目。已恢复的条目不会再次被自动移除。",
   restoreHelp: "随时可以恢复技能，恢复后不会再次被自动移除。",
   organizationDescription:
-    "类别下包含分组。你可以按需重命名、移动或添加。删除类别或分组后，其中的内容会移至“其他”。",
+    "类别下包含分组。你可以按需重命名、移动或添加。删除类别或分组后，其中的内容会移至“其他”，技能会保留。",
   deleteNotice: "将被删除，其中的内容会移至“其他”。",
   edit_skill: "编辑技能",
   add_a_skill: "添加技能",

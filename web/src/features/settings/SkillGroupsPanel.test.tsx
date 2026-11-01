@@ -127,6 +127,7 @@ describe("SkillGroupsPanel skill library", () => {
     };
     show();
     expect(screen.getByText("Start with your profile")).toBeInTheDocument();
+    expect(screen.getByText(/create a profile with the coach/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Rebuild skills" }),
     ).toBeDisabled();
