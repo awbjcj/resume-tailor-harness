@@ -11442,6 +11442,13 @@
       },
       "MatrixOut": {
         "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/SkillCategoryOut"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
           "generatedAt": {
             "default": "",
             "title": "Generatedat",
@@ -11467,6 +11474,13 @@
       },
       "MatrixRowOut": {
         "properties": {
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Aliases",
+            "type": "array"
+          },
           "category": {
             "anyOf": [
               {
@@ -11481,6 +11495,13 @@
           "display": {
             "title": "Display",
             "type": "string"
+          },
+          "evidenceFactIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidencefactids",
+            "type": "array"
           },
           "group": {
             "anyOf": [
@@ -11603,6 +11624,31 @@
           }
         },
         "title": "MeResponse",
+        "type": "object"
+      },
+      "MergeProfileSkillsIn": {
+        "properties": {
+          "into": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Into",
+            "type": "string"
+          },
+          "keys": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Keys",
+            "type": "array"
+          }
+        },
+        "required": [
+          "keys",
+          "into"
+        ],
+        "title": "MergeProfileSkillsIn",
         "type": "object"
       },
       "ModelOption": {
@@ -14500,6 +14546,17 @@
           "reason"
         ],
         "title": "QuotaTierPatch",
+        "type": "object"
+      },
+      "RebuildProfileSkillsIn": {
+        "properties": {
+          "reclassifyOnly": {
+            "default": false,
+            "title": "Reclassifyonly",
+            "type": "boolean"
+          }
+        },
+        "title": "RebuildProfileSkillsIn",
         "type": "object"
       },
       "RedoParams": {
@@ -17930,8 +17987,134 @@
         "title": "SkeletonEntryOut",
         "type": "object"
       },
+      "SkillCategoryOut": {
+        "properties": {
+          "customized": {
+            "default": false,
+            "title": "Customized",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "label"
+        ],
+        "title": "SkillCategoryOut",
+        "type": "object"
+      },
+      "SkillCleanupMergeOut": {
+        "properties": {
+          "into": {
+            "title": "Into",
+            "type": "string"
+          },
+          "names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Names",
+            "type": "array"
+          }
+        },
+        "required": [
+          "into",
+          "names"
+        ],
+        "title": "SkillCleanupMergeOut",
+        "type": "object"
+      },
+      "SkillCleanupOut": {
+        "properties": {
+          "afterCount": {
+            "title": "Aftercount",
+            "type": "integer"
+          },
+          "beforeCount": {
+            "title": "Beforecount",
+            "type": "integer"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "merges": {
+            "items": {
+              "$ref": "#/components/schemas/SkillCleanupMergeOut"
+            },
+            "title": "Merges",
+            "type": "array"
+          },
+          "pruned": {
+            "items": {
+              "$ref": "#/components/schemas/SkillCleanupPruneOut"
+            },
+            "title": "Pruned",
+            "type": "array"
+          }
+        },
+        "required": [
+          "enabled",
+          "beforeCount",
+          "afterCount",
+          "merges",
+          "pruned"
+        ],
+        "title": "SkillCleanupOut",
+        "type": "object"
+      },
+      "SkillCleanupPolicyIn": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "SkillCleanupPolicyIn",
+        "type": "object"
+      },
+      "SkillCleanupPruneOut": {
+        "properties": {
+          "display": {
+            "title": "Display",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "display",
+          "reason"
+        ],
+        "title": "SkillCleanupPruneOut",
+        "type": "object"
+      },
       "SkillEntryOut": {
         "properties": {
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Aliases",
+            "type": "array"
+          },
           "category": {
             "anyOf": [
               {
@@ -17948,9 +18131,21 @@
             ],
             "title": "Category"
           },
+          "evidenceFactIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidencefactids",
+            "type": "array"
+          },
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "inferred": {
+            "default": false,
+            "title": "Inferred",
+            "type": "boolean"
           },
           "name": {
             "title": "Name",
@@ -17966,6 +18161,16 @@
       },
       "SkillGroupOut": {
         "properties": {
+          "category": {
+            "default": "other",
+            "title": "Category",
+            "type": "string"
+          },
+          "customized": {
+            "default": false,
+            "title": "Customized",
+            "type": "boolean"
+          },
           "label": {
             "title": "Label",
             "type": "string"
@@ -18062,6 +18267,26 @@
           "jobCount"
         ],
         "title": "SkillNodeOut",
+        "type": "object"
+      },
+      "SkillOrganizationIn": {
+        "properties": {
+          "category": {
+            "default": "other",
+            "title": "Category",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "SkillOrganizationIn",
         "type": "object"
       },
       "SkillTagOut": {
@@ -18817,6 +19042,17 @@
           "display": {
             "title": "Display",
             "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
           },
           "token": {
             "title": "Token",
@@ -19961,6 +20197,58 @@
         "title": "UpcomingEventOut",
         "type": "object"
       },
+      "UpdateProfileSkillIn": {
+        "properties": {
+          "aliases": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Aliases",
+            "type": "array"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hard",
+                  "soft",
+                  "domain"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "UpdateProfileSkillIn",
+        "type": "object"
+      },
       "UrlIn": {
         "properties": {
           "url": {
@@ -20262,6 +20550,16 @@
       },
       "resume_tailor_harness__api__schemas__profile__AddSkillIn": {
         "properties": {
+          "aliases": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Aliases",
+            "type": "array"
+          },
           "category": {
             "anyOf": [
               {
@@ -20277,6 +20575,17 @@
               }
             ],
             "title": "Category"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group"
           },
           "name": {
             "maxLength": 200,
@@ -34401,6 +34710,322 @@
         "summary": "Get Skeleton"
       }
     },
+    "/api/profile/skill-categories": {
+      "post": {
+        "operationId": "create_category_api_profile_skill_categories_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillOrganizationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Category"
+      }
+    },
+    "/api/profile/skill-categories/{key}": {
+      "delete": {
+        "operationId": "delete_category_api_profile_skill_categories__key__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Category"
+      },
+      "put": {
+        "operationId": "update_category_api_profile_skill_categories__key__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillOrganizationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Category"
+      }
+    },
+    "/api/profile/skill-groups": {
+      "post": {
+        "operationId": "create_group_api_profile_skill_groups_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillOrganizationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Group"
+      }
+    },
+    "/api/profile/skill-groups/{key}": {
+      "delete": {
+        "operationId": "delete_group_api_profile_skill_groups__key__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Group"
+      },
+      "put": {
+        "operationId": "update_group_api_profile_skill_groups__key__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillOrganizationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Group"
+      }
+    },
     "/api/profile/skills": {
       "get": {
         "operationId": "get_profile_skills_api_profile_skills_get",
@@ -34505,6 +35130,248 @@
         "summary": "Post Profile Skill"
       }
     },
+    "/api/profile/skills/cleanup": {
+      "get": {
+        "operationId": "preview_cleanup_api_profile_skills_cleanup_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillCleanupOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Cleanup"
+      },
+      "patch": {
+        "operationId": "cleanup_policy_api_profile_skills_cleanup_patch",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillCleanupPolicyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cleanup Policy"
+      },
+      "post": {
+        "operationId": "cleanup_skills_api_profile_skills_cleanup_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillCleanupOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cleanup Skills"
+      }
+    },
+    "/api/profile/skills/merge": {
+      "post": {
+        "operationId": "merge_skills_api_profile_skills_merge_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergeProfileSkillsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Merge Skills"
+      }
+    },
+    "/api/profile/skills/rebuild": {
+      "post": {
+        "operationId": "rebuild_skills_api_profile_skills_rebuild_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RebuildProfileSkillsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rebuild Skills"
+      }
+    },
     "/api/profile/skills/{key}": {
       "delete": {
         "operationId": "delete_profile_skill_api_profile_skills__key__delete",
@@ -34551,6 +35418,62 @@
           }
         },
         "summary": "Delete Profile Skill"
+      },
+      "put": {
+        "operationId": "update_skill_api_profile_skills__key__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileSkillIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Skill"
       }
     },
     "/api/profile/skills/{key}/group": {

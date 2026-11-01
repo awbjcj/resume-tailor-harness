@@ -59,6 +59,18 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 - **Profile rebuilds regenerate inferred skills.** `profile build` strips and re-derives
   all `inferred=true` skills; durable corrections belong in `data/profile/overrides.yaml`,
   not hand-edits to facts.json.
+- **Profile skill management is durable and source-preserving.** `manual_skills.json`
+  replays additions, edits, merges, and suppressions; suppressions retain snapshots for
+  immediate restore. Restores are exempt from future automatic pruning. Cleanup merges
+  exact names/explicit synonyms and removes only conservative non-skill patterns; it
+  never prunes by popularity or evidence count. Facts, ledger, organization, and matrix
+  mutations share a per-profile thread/process lock and roll back together on errors.
+- **User organization is a display layer.** `group_corrections.json` owns category/group
+  catalogs, deletions, explicit assignments, and automatic reclassifications. Custom
+  groups use stable `custom-` ids; deleting containers moves their contents to Other.
+  The shared matching taxonomy and fact-lock's hard/soft/domain skill types stay closed.
+  Skill-only rebuilds infer from saved facts, classify against the current user catalog,
+  preserve manual assignments, and reject stale results after concurrent edits.
 - **Synthesis ingest is text-only.** markitdown converts slide text frames, tables, and
   speaker notes; images/diagrams are skipped, and an LLM image description is never
   verification evidence (it would punch a hole in fact-lock). Put key numbers in slide

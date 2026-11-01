@@ -309,11 +309,6 @@
     "en": "{{v0}} selected",
     "zh-CN": "已选择 {{v0}} 项"
   },
-  "{{v0}} skill{{v1}}": {
-    "key": "ui_440c5c1de10f",
-    "en": "{{v0}} skill{{v1}}",
-    "zh-CN": "{{v0}} 项技能"
-  },
   "{{v0}} skills restored": {
     "key": "ui_a55eacbc9e7e",
     "en": "{{v0}} skills restored",
@@ -674,11 +669,6 @@
     "en": "Add a note",
     "zh-CN": "添加备注"
   },
-  "Add a profile skill and pin it to this category.": {
-    "key": "ui_2768b898d957",
-    "en": "Add a profile skill and pin it to this category.",
-    "zh-CN": "将技能添加到个人资料，并固定在此分类下。"
-  },
   "Add a public careers page, review a sample of its postings, and save reusable import rules.": {
     "key": "ui_8cd92302f5b9",
     "en": "Add a public careers page, review a sample of its postings, and save reusable import rules.",
@@ -809,16 +799,6 @@
     "en": "Add timeline event",
     "zh-CN": "添加时间线事件"
   },
-  "Add to": {
-    "key": "ui_82b9ffd3cec8",
-    "en": "Add to",
-    "zh-CN": "添加到"
-  },
-  "Add to category": {
-    "key": "ui_0ee35d6ca543",
-    "en": "Add to category",
-    "zh-CN": "添加到分类"
-  },
   "Add to my skills": {
     "key": "ui_60ccc16251e3",
     "en": "Add to my skills",
@@ -863,11 +843,6 @@
     "key": "ui_f0fdf49c98c5",
     "en": "Added to your skills",
     "zh-CN": "已添加到你的技能"
-  },
-  "Adding…": {
-    "key": "ui_c6de6f45c827",
-    "en": "Adding…",
-    "zh-CN": "添加中…"
   },
   "Adjacent": {
     "key": "ui_4483e90a302f",
@@ -1794,11 +1769,6 @@
     "en": "Change extraction rules",
     "zh-CN": "修改提取规则"
   },
-  "Change group for {{v0}}": {
-    "key": "ui_72363b30fb72",
-    "en": "Change group for {{v0}}",
-    "zh-CN": "更改 {{v0}} 的分组"
-  },
   "Change password": {
     "key": "ui_3f9c991f63a9",
     "en": "Change password",
@@ -2549,11 +2519,6 @@
     "en": "Couldn't load skill demand",
     "zh-CN": "无法加载技能需求数据"
   },
-  "Couldn't load the skill matrix": {
-    "key": "ui_405df1ed9188",
-    "en": "Couldn't load the skill matrix",
-    "zh-CN": "无法加载技能矩阵"
-  },
   "Couldn't start taxonomy": {
     "key": "ui_4bc274ab73cb",
     "en": "Couldn't start taxonomy",
@@ -2899,11 +2864,6 @@
     "en": "Delete job",
     "zh-CN": "删除职位"
   },
-  "Delete skill": {
-    "key": "ui_d60d2a2ab6b4",
-    "en": "Delete skill",
-    "zh-CN": "删除技能"
-  },
   "Delete this job?": {
     "key": "ui_883ccaba0e1b",
     "en": "Delete this job?",
@@ -2928,11 +2888,6 @@
     "key": "ui_eba394ffb3c1",
     "en": "Deleted {{v0}} version{{v1}}",
     "zh-CN": "已删除 {{v0}} 个简历版本"
-  },
-  "Deleted skills": {
-    "key": "ui_6f2c27135c2a",
-    "en": "Deleted skills",
-    "zh-CN": "已删除的技能"
   },
   "Deletion is permanent. Jobs with progress cannot be deleted.": {
     "key": "ui_8b5c2e422c07",
@@ -3268,11 +3223,6 @@
     "key": "ui_5a7033f4eee6",
     "en": "e.g. Team",
     "zh-CN": "例如：Team"
-  },
-  "e.g. TypeScript": {
-    "key": "ui_19d0a6a7473b",
-    "en": "e.g. TypeScript",
-    "zh-CN": "例如：TypeScript"
   },
   "Each entry should cover different types of contribution, such as scope, impact, or technique.": {
     "key": "ui_edbf2a4d21d0",
@@ -5159,11 +5109,6 @@
     "en": "Loading sessions",
     "zh-CN": "正在加载会话"
   },
-  "Loading skill matrix": {
-    "key": "ui_999b687fde98",
-    "en": "Loading skill matrix",
-    "zh-CN": "正在加载技能矩阵"
-  },
   "Loading sources...": {
     "key": "ui_d9c4e3ec76dd",
     "en": "Loading sources...",
@@ -5649,11 +5594,6 @@
     "en": "Move to {{v0}}",
     "zh-CN": "移动到 {{v0}}"
   },
-  "Move to…": {
-    "key": "ui_5af2f53c9459",
-    "en": "Move to…",
-    "zh-CN": "移动到…"
-  },
   "Move your customizations between installs. A bundle includes only the settings below. It never includes your jobs, profile, or API keys.": {
     "key": "ui_41d4a0976eeb",
     "en": "Move your customizations between installs. A bundle includes only the settings below. It never includes your jobs, profile, or API keys.",
@@ -6083,11 +6023,6 @@
     "key": "ui_ea9c3ecf18ff",
     "en": "No skills extracted for this job.",
     "zh-CN": "尚未从该职位中提取任何技能。"
-  },
-  "No skills in this category yet.": {
-    "key": "ui_5a3c6e0456e7",
-    "en": "No skills in this category yet.",
-    "zh-CN": "此分类下还没有技能。"
   },
   "No skills match these filters": {
     "key": "ui_ddd5f6de2397",
@@ -6893,11 +6828,6 @@
     "key": "ui_f02f5dcaf985",
     "en": "Profile skills",
     "zh-CN": "个人技能"
-  },
-  "Profile skills grouped by their primary professional use. Click a skill to move it; open any category to add a new one. Corrections are pinned and survive profile rebuilds.": {
-    "key": "ui_79d6efe2e3fe",
-    "en": "Profile skills grouped by their primary professional use. Click a skill to move it; open any category to add a new one. Corrections are pinned and survive profile rebuilds.",
-    "zh-CN": "技能按主要用途分组。点击技能可调整分组，展开分类可添加新技能。手动修改会保留，重建个人资料时也不会被覆盖。"
   },
   "projects": {
     "key": "ui_2577c0f557b2",
@@ -7844,11 +7774,6 @@
     "en": "Reset this agent",
     "zh-CN": "重置此助手"
   },
-  "Reset to automatic": {
-    "key": "ui_374345f2e32f",
-    "en": "Reset to automatic",
-    "zh-CN": "重置为自动"
-  },
   "Reset to defaults": {
     "key": "ui_e240e635ff6d",
     "en": "Reset to defaults",
@@ -8058,11 +7983,6 @@
     "key": "ui_0f113e7db3c1",
     "en": "Return to tier allowance",
     "zh-CN": "恢复档位默认额度"
-  },
-  "Reverted to automatic grouping": {
-    "key": "ui_a4b2194408a5",
-    "en": "Reverted to automatic grouping",
-    "zh-CN": "已恢复为自动分组"
   },
   "Review": {
     "key": "ui_aff0766a5290",
@@ -9119,16 +9039,6 @@
     "en": "Skill filters",
     "zh-CN": "技能筛选"
   },
-  "Skill group updated": {
-    "key": "ui_4b67c2d190ff",
-    "en": "Skill group updated",
-    "zh-CN": "技能组已更新"
-  },
-  "Skill groups": {
-    "key": "ui_952cfb6e36e6",
-    "en": "Skill groups",
-    "zh-CN": "技能组"
-  },
   "Skill moved": {
     "key": "ui_f9a58f8339b5",
     "en": "Skill moved",
@@ -10038,11 +9948,6 @@
     "key": "ui_d97c1ae87a07",
     "en": "These examples from your profile best support your fit for this job.",
     "zh-CN": "这些经历最能说明你符合此职位的要求，均有个人资料作为依据。"
-  },
-  "These stay removed across profile rebuilds until you restore them.": {
-    "key": "ui_3ead37341fbd",
-    "en": "These stay removed across profile rebuilds until you restore them.",
-    "zh-CN": "重建个人资料时，这些条目仍会被排除，直到你手动恢复。"
   },
   "This {{v0}} and its rendered PDF will be removed. This cannot be undone.": {
     "key": "ui_568fd8e87aaf",
@@ -12748,5 +12653,70 @@
     "key": "ui_e688cc3720a9",
     "en": "Sync again to finish updating your project sources.",
     "zh-CN": "请再次同步，以完成项目来源更新。"
+  },
+  "{{v0}} matching skills": {
+    "key": "ui_c684dbebe4b3",
+    "en": "{{v0}} matching skills",
+    "zh-CN": "{{v0}} 项匹配技能"
+  },
+  "{{v0}} skills · {{v1}} groups": {
+    "key": "ui_e9381cf89544",
+    "en": "{{v0}} skills · {{v1}} groups",
+    "zh-CN": "{{v0}} 项技能 · {{v1}} 个分组"
+  },
+  "{{v0}} skills → {{v1}} skills": {
+    "key": "ui_6183dc0b8c9e",
+    "en": "{{v0}} skills → {{v1}} skills",
+    "zh-CN": "{{v0}} 项技能 → {{v1}} 项技能"
+  },
+  "Delete category {{v0}}": {
+    "key": "ui_8c974afbded3",
+    "en": "Delete category {{v0}}",
+    "zh-CN": "删除类别 {{v0}}"
+  },
+  "Delete group {{v0}}": {
+    "key": "ui_2158d0a60c43",
+    "en": "Delete group {{v0}}",
+    "zh-CN": "删除分组 {{v0}}"
+  },
+  "Edit category {{v0}}": {
+    "key": "ui_d4c32e64254a",
+    "en": "Edit category {{v0}}",
+    "zh-CN": "编辑类别 {{v0}}"
+  },
+  "Edit group {{v0}}": {
+    "key": "ui_bee1e6b82b21",
+    "en": "Edit group {{v0}}",
+    "zh-CN": "编辑分组 {{v0}}"
+  },
+  "Profile skill rebuild": {
+    "key": "ui_26338a0ef19e",
+    "en": "Profile skill rebuild",
+    "zh-CN": "个人技能重新构建"
+  },
+  "Rebuild skills": {
+    "key": "ui_9ebcfe5c0182",
+    "en": "Rebuild skills",
+    "zh-CN": "重新构建技能"
+  },
+  "Removed skills ({{v0}})": {
+    "key": "ui_5ff499c1e6f1",
+    "en": "Removed skills ({{v0}})",
+    "zh-CN": "已移除的技能（{{v0}}）"
+  },
+  "Skill cleanup complete": {
+    "key": "ui_c66cd035083a",
+    "en": "Skill cleanup complete",
+    "zh-CN": "技能清理完成"
+  },
+  "Skill organization updated": {
+    "key": "ui_b0aeeed1a183",
+    "en": "Skill organization updated",
+    "zh-CN": "技能分组设置已更新"
+  },
+  "Skill updated": {
+    "key": "ui_575784e36c75",
+    "en": "Skill updated",
+    "zh-CN": "技能已更新"
   }
 }

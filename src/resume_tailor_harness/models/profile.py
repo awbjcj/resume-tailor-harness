@@ -36,6 +36,7 @@ class Skill(FactItem):
     inferred: bool = False
     evidence_fact_ids: list[str] = Field(default_factory=list)
     category: Literal["hard", "soft", "domain"] | None = None
+    source_refs: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def inferred_has_evidence(self) -> "Skill":

@@ -68,12 +68,14 @@ def run_corpus_build(
         apply_manual_skills,
         load_manual_skills,
         manual_skills_lock,
+        save_manual_skills,
     )
     from resume_tailor_harness.profile.effective import build_effective_taxonomy
     from resume_tailor_harness.profile.matrix import (
         build_matrix,
         decorate_matrix_groups,
         save_matrix,
+        load_overrides,
     )
     from resume_tailor_harness.profile.merge import build_bullet_dedup_agent
     from resume_tailor_harness.profile.project_extractor import (
@@ -88,6 +90,8 @@ def run_corpus_build(
     from resume_tailor_harness.taxonomy.custody import TaxonomyCustody
     from resume_tailor_harness.taxonomy.state import mark_legacy_group_map_imported
     from resume_tailor_harness.services.match_gap import refresh_clusters
+    from resume_tailor_harness.profile.skill_cleanup import clean_skills
+    from resume_tailor_harness.services.profile_skills import _utcnow
 
     if reporter is not None:
         reporter.begin(3, "Extracting and merging source documents")
@@ -111,6 +115,18 @@ def run_corpus_build(
         report.warnings.extend(replay_warnings)
         facts, edit_warnings = replay_edits(facts, load_edits(profile_dir))
         report.warnings.extend(edit_warnings)
+        cleanup = None
+        if manual_ledger.auto_cleanup:
+            cleanup_taxonomy = build_effective_taxonomy(profile_dir)
+            facts, cleanup = clean_skills(
+                facts,
+                manual_ledger,
+                aliases=cleanup_taxonomy.cluster_map.aliases,
+                forbid_alias=load_overrides(
+                    Path(profile_dir) / "overrides.yaml"
+                ).forbid_alias,
+                added_at=_utcnow(),
+            )
         if reporter is not None:
             reporter.step(1, label="Prepared profile facts")
         if reporter is not None:
@@ -159,15 +175,33 @@ def run_corpus_build(
         # Classification and the legacy-import marker may both have mutated
         # persisted taxonomy artifacts, so the final matrix must rebind.
         post = build_effective_taxonomy(profile_dir)
+        if manual_ledger.auto_cleanup:
+            facts, final_cleanup = clean_skills(
+                facts,
+                manual_ledger,
+                aliases=post.cluster_map.aliases,
+                forbid_alias=load_overrides(
+                    Path(profile_dir) / "overrides.yaml"
+                ).forbid_alias,
+                added_at=_utcnow(),
+            )
+            if cleanup is not None:
+                cleanup.merges.extend(final_cleanup.merges)
+                cleanup.pruned.extend(final_cleanup.pruned)
+                cleanup.after_count = final_cleanup.after_count
         matrix = build_matrix(facts, post)
         decorate_matrix_groups(matrix, profile_dir, post)
-        _publish_profile_artifacts(
-            facts,
-            matrix,
-            facts_path=facts_path,
-            matrix_path=matrix_path,
-            matrix_writer=save_matrix,
-        )
+        ledger_path = Path(profile_dir) / "manual_skills.json"
+        with rollback_scope((ledger_path, facts_path, matrix_path)):
+            if cleanup is not None and (cleanup.merges or cleanup.pruned):
+                save_manual_skills(manual_ledger, ledger_path)
+            _publish_profile_artifacts(
+                facts,
+                matrix,
+                facts_path=facts_path,
+                matrix_path=matrix_path,
+                matrix_writer=save_matrix,
+            )
     if reporter is not None:
         reporter.step(3, label="Saved matrix.json")
     return {
@@ -181,6 +215,7 @@ def run_corpus_build(
         "verificationDrops": list(report.verification_drops),
         "inferred": list(report.inferred_added),
         "warnings": list(report.warnings),
+        "skillCleanup": cleanup.model_dump(mode="json") if cleanup else None,
         # Diagnostic-only: the regroup's own telemetry, carried through so a
         # slow corpus build can be read without re-running the classification.
         "taxonomy": taxonomy_telemetry,

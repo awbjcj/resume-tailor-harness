@@ -35,6 +35,7 @@ import { useActiveRun } from "@/features/runs/use-active-run";
 import { launchers, useLaunchRun } from "@/features/runs/use-launch-run";
 import { SaveBar } from "@/features/settings/SaveBar";
 import { SkillGroupsPanel } from "@/features/settings/SkillGroupsPanel";
+import { SKILL_MUTATION_KEY } from "@/features/profile-skills/use-profile-skills";
 import { useConfig, useSaveConfig } from "@/features/settings/use-config";
 import { useDraft } from "@/features/settings/use-draft";
 import { useSetupStatus } from "@/features/settings/use-setup-status";
@@ -109,6 +110,8 @@ export function ProfileWorkspace() {
     (!!buildRun &&
       ["queued", "running", "cancelling"].includes(buildRun.status));
   const syncGithub = useSyncGithub();
+  const skillRun = useActiveRun("profile-skills-rebuild");
+  const skillMutations = useIsMutating({ mutationKey: SKILL_MUTATION_KEY });
   const sourceMutations = useIsMutating({ mutationKey: SOURCE_MUTATION_KEY });
   const activeTab =
     searchParams.get("tab") === "skills" ? "skills" : "documents";
@@ -139,7 +142,7 @@ export function ProfileWorkspace() {
   const limitValid =
     Number.isInteger(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 100;
   const busy =
-    building || syncGithub.isPending || save.isPending || sourceMutations > 0;
+    building || syncGithub.isPending || save.isPending || sourceMutations > 0 || skillMutations > 0 || !!(skillRun && ["queued", "running", "cancelling"].includes(skillRun.status));
   const buildDisabled =
     busy || dirty || setupStatus.data?.profile.hasResume === false;
   const rebuild = () => {
@@ -150,6 +153,14 @@ export function ProfileWorkspace() {
       "profile-sources",
       "profile-skeleton",
       "profile-matrix",
+      "profile-skills",
+      "skill-cleanup",
+      "suppressed-skills",
+      "match-gap",
+      "job",
+      "triage",
+      "shortlist",
+      "pipeline",
     ]).finally(() => setLaunchingBuild(false));
   };
 
@@ -394,7 +405,7 @@ export function ProfileWorkspace() {
         </TabsContent>
 
         <TabsContent value="skills" className="flex flex-col gap-6 pt-2">
-          <SkillGroupsPanel />
+          <SkillGroupsPanel disabled={busy} />
         </TabsContent>
       </Tabs>
     </div>
