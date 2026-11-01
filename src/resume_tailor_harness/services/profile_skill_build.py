@@ -33,6 +33,7 @@ from resume_tailor_harness.profile.manual_skills import (
 )
 from resume_tailor_harness.profile.matrix import build_decorated_matrix, load_overrides
 from resume_tailor_harness.profile.effective import build_effective_taxonomy
+from resume_tailor_harness.profile.conversation import apply_skill_overrides, load_edits
 from resume_tailor_harness.profile.skill_cleanup import clean_skills
 from resume_tailor_harness.rollback import rollback_scope
 from resume_tailor_harness.services.profile_skills import (
@@ -85,12 +86,15 @@ def rebuild_profile_skills(
         directory / "facts.json",
         directory / "manual_skills.json",
         corrections_path(directory),
+        directory / "overrides.yaml",
+        directory / "conversation_edits.json",
     )
     with manual_skills_lock(directory):
         facts = _load_facts_or_raise(directory)
         ledger = load_manual_skills(paths[1])
         organization = load_group_corrections(paths[2], strict=True)
         taxonomy = build_effective_taxonomy(directory)
+        edits = load_edits(directory)
         revision = _revision(paths)
     if reporter is not None:
         reporter.begin(3, "Rebuilding profile skills")
@@ -107,6 +111,7 @@ def rebuild_profile_skills(
             facts, infer_skills(facts, build_inference_agent())
         )
     facts, warnings = apply_manual_skills(facts, ledger)
+    apply_skill_overrides(facts, edits)
     cleanup = None
     if ledger.auto_cleanup:
         facts, cleanup = clean_skills(
@@ -157,11 +162,15 @@ def rebuild_profile_skills(
     if reporter is not None:
         reporter.step(2, label="Reclassified profile skills")
     with manual_skills_lock(directory):
-        if _revision(paths) != revision:
+        if (
+            _revision(paths) != revision
+            or build_effective_taxonomy(directory).semantic_revision
+            != taxonomy.semantic_revision
+        ):
             raise ValueError(
                 "Your profile or skills changed during this rebuild. Run it again to include your latest edits."
             )
-        with rollback_scope((*paths, directory / "matrix.json")):
+        with rollback_scope((*paths[:3], directory / "matrix.json", paths[4])):
             save_group_corrections(organization, paths[2])
             _publish(directory, facts, ledger)
     if reporter is not None:

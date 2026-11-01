@@ -54,7 +54,11 @@ export function SkillOrganizationDialog({
         if (!open && !mutation.isPending) onClose();
       }}
     >
-      <DialogContent overlayClassName="transition-none" className="min-w-0 transition-none sm:max-w-2xl">
+      <DialogContent
+        overlayClassName="transition-none"
+        className="min-w-0 transition-none [overflow-wrap:anywhere] sm:max-w-2xl"
+        showCloseButton={!mutation.isPending}
+      >
         <DialogHeader>
           <DialogTitle>{copy.groups_categories}</DialogTitle>
           <DialogDescription>{copy.organizationDescription}</DialogDescription>

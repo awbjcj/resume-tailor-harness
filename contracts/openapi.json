@@ -13280,6 +13280,11 @@
       },
       "ProfileStatus": {
         "properties": {
+          "canRebuild": {
+            "default": false,
+            "title": "Canrebuild",
+            "type": "boolean"
+          },
           "documentCount": {
             "title": "Documentcount",
             "type": "integer"

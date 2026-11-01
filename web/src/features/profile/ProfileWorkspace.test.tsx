@@ -9,6 +9,7 @@ import { ProfileWorkspace } from "./ProfileWorkspace";
 const mocks = vi.hoisted(() => ({
   launch: vi.fn().mockResolvedValue(true),
   save: vi.fn(),
+  profile: { factsBuiltAt: null as string | null, hasResume: true, canRebuild: true },
   config: {
     githubUsername: null as string | null,
     githubRepoAllow: [] as string[],
@@ -50,7 +51,7 @@ vi.mock("@/features/settings/use-config", () => ({
 }));
 
 vi.mock("@/features/settings/use-setup-status", () => ({
-  useSetupStatus: () => ({ data: { profile: { factsBuiltAt: null } } }),
+  useSetupStatus: () => ({ data: { profile: mocks.profile } }),
 }));
 
 describe("ProfileWorkspace", () => {
@@ -62,6 +63,7 @@ describe("ProfileWorkspace", () => {
       githubRepoLimit: 20,
     };
     mocks.save.mockClear();
+    mocks.profile = { factsBuiltAt: null, hasResume: true, canRebuild: true };
   });
   function renderWorkspace(initialEntry = "/profile") {
     return render(
@@ -134,6 +136,12 @@ describe("ProfileWorkspace", () => {
     expect(screen.queryByTestId("skill-groups")).not.toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: /skills/i }));
     expect(await screen.findByTestId("skill-groups")).toBeInTheDocument();
+  });
+
+  it("lets a conversational profile rebuild without an uploaded resume", () => {
+    mocks.profile = { factsBuiltAt: "2026-11-01T00:00:00Z", hasResume: false, canRebuild: true };
+    renderWorkspace();
+    expect(screen.getByRole("button", { name: "Rebuild profile" })).toBeEnabled();
   });
 
   it("opens the skills tab from a dashboard deep link", async () => {

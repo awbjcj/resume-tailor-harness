@@ -47,7 +47,13 @@ def run_corpus_build(
     enforce_active_budget()
     profile_dir = resolve_tenant_path(profile_dir)
     facts_out = resolve_tenant_path(facts_out)
-    from resume_tailor_harness.profile.conversation import load_edits, replay_edits
+    from resume_tailor_harness.profile.conversation import (
+        capture_skill_overrides,
+        edits_path,
+        load_edits,
+        replay_edits,
+        save_edits,
+    )
 
     if load_edits(profile_dir).deleted:
         raise ValueError(
@@ -192,9 +198,15 @@ def run_corpus_build(
         matrix = build_matrix(facts, post)
         decorate_matrix_groups(matrix, profile_dir, post)
         ledger_path = Path(profile_dir) / "manual_skills.json"
-        with rollback_scope((ledger_path, facts_path, matrix_path)):
+        edits = load_edits(profile_dir)
+        capture_skill_overrides(facts, edits)
+        with rollback_scope(
+            (ledger_path, facts_path, matrix_path, edits_path(profile_dir))
+        ):
             if cleanup is not None and (cleanup.merges or cleanup.pruned):
                 save_manual_skills(manual_ledger, ledger_path)
+            if edits_path(profile_dir).exists():
+                save_edits(profile_dir, edits)
             _publish_profile_artifacts(
                 facts,
                 matrix,
@@ -225,30 +237,70 @@ def run_corpus_build(
 def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -> dict:
     """A user-created profile has no corpus requirement or extraction model work."""
     from resume_tailor_harness.models.profile import Contact
-    from resume_tailor_harness.profile.conversation import load_edits, replay_edits
+    from resume_tailor_harness.profile.conversation import (
+        capture_skill_overrides,
+        edits_path,
+        load_edits,
+        replay_edits,
+        save_edits,
+    )
+    from resume_tailor_harness.profile.effective import build_effective_taxonomy
     from resume_tailor_harness.profile.manual_skills import (
         apply_manual_skills,
         load_manual_skills,
         manual_skills_lock,
+        save_manual_skills,
     )
-    from resume_tailor_harness.profile.matrix import build_decorated_matrix, save_matrix
+    from resume_tailor_harness.profile.matrix import (
+        build_decorated_matrix,
+        load_overrides,
+        save_matrix,
+    )
+    from resume_tailor_harness.profile.skill_cleanup import clean_skills
+    from resume_tailor_harness.services.profile_skills import _utcnow
 
     if reporter is not None:
         reporter.begin(1, "Rebuilding your conversational profile")
     with manual_skills_lock(profile_dir):
+        ledger_path = profile_dir / "manual_skills.json"
+        manual_ledger = load_manual_skills(ledger_path)
         facts, manual_warnings = apply_manual_skills(
             ProfileFacts(contact=Contact(name="")),
-            load_manual_skills(profile_dir / "manual_skills.json"),
+            manual_ledger,
         )
-        facts, warnings = replay_edits(facts, load_edits(profile_dir))
+        edits = load_edits(profile_dir)
+        facts, warnings = replay_edits(facts, edits)
+        cleanup = None
+        if manual_ledger.auto_cleanup:
+            facts, cleanup = clean_skills(
+                facts,
+                manual_ledger,
+                aliases=build_effective_taxonomy(profile_dir).cluster_map.aliases,
+                forbid_alias=load_overrides(
+                    profile_dir / "overrides.yaml"
+                ).forbid_alias,
+                added_at=_utcnow(),
+            )
+        capture_skill_overrides(facts, edits)
         matrix = build_decorated_matrix(profile_dir, facts)
-        _publish_profile_artifacts(
-            facts,
-            matrix,
-            facts_path=facts_path,
-            matrix_path=facts_path.with_name("matrix.json"),
-            matrix_writer=save_matrix,
-        )
+        with rollback_scope(
+            (
+                facts_path,
+                facts_path.with_name("matrix.json"),
+                ledger_path,
+                edits_path(profile_dir),
+            )
+        ):
+            if cleanup is not None and (cleanup.merges or cleanup.pruned):
+                save_manual_skills(manual_ledger, ledger_path)
+            save_edits(profile_dir, edits)
+            _publish_profile_artifacts(
+                facts,
+                matrix,
+                facts_path=facts_path,
+                matrix_path=facts_path.with_name("matrix.json"),
+                matrix_writer=save_matrix,
+            )
     if reporter is not None:
         reporter.step(1, label="Saved profile and skill matrix")
     return {
@@ -262,5 +314,6 @@ def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -
         "verificationDrops": [],
         "inferred": [],
         "warnings": [*manual_warnings, *warnings],
+        "skillCleanup": cleanup.model_dump(mode="json") if cleanup else None,
         "taxonomy": {},
     }

@@ -31,6 +31,11 @@ from resume_tailor_harness.models.profile import (
     Volunteer,
 )
 from resume_tailor_harness.profile.store import load_facts
+from resume_tailor_harness.profile.group_corrections import (
+    GroupCorrections,
+    corrections_path,
+    load_group_corrections,
+)
 from resume_tailor_harness.rollback import restore_file
 from resume_tailor_harness.tracking.match_gap import normalize_skill
 
@@ -58,13 +63,21 @@ FACT_MODELS: dict[str, type[FactItem]] = {
     "bullets": Bullet,
     "highlights": Bullet,
 }
-_HOST_FIELDS = {"id", "source", "source_ref", "synthesized", "schema_version"}
+_HOST_FIELDS = {
+    "id",
+    "source",
+    "source_ref",
+    "source_refs",
+    "synthesized",
+    "schema_version",
+}
 _NESTED_FACTS = {"bullets", "highlights"}
 _FILES = (
     "facts.json",
     "conversation_edits.json",
     "manual_skills.json",
     "overrides.yaml",
+    "group_corrections.json",
 )
 
 
@@ -93,6 +106,8 @@ class AppliedChange(ClosedModel):
     record_id: str = ""
     source_ref: str = ""
     category_members: list[str] = Field(default_factory=list)
+    organization_key: str = ""
+    organization_group: str = ""
 
 
 class SavedSkill(ClosedModel):
@@ -195,8 +210,9 @@ def change_schema(entity: str, section: str = "") -> dict:
     if entity == "skill_category":
         return {
             "fields": ["name"],
-            "note": "Categories are display buckets, separate "
-            "from hard/soft/domain. Deleting a category moves its skills to Other.",
+            "note": "Categories use the same display catalog as the skill library, separate "
+            "from hard/soft/domain. Inspect skill_categories for exact ids. Names are limited "
+            "to 80 characters. Deleting a category moves its groups and skills to Other.",
         }
     model = Skill if entity == "skill" else FACT_MODELS.get(section)
     if model is None:
@@ -207,7 +223,7 @@ def change_schema(entity: str, section: str = "") -> dict:
         "definitions": schema.get("$defs", {}),
         "note": "Update/delete require an exact saved id. Add bullets separately "
         "with their parent_id. Skill category values are hard, soft, domain or null; "
-        "the outer category selects a display bucket.",
+        "the outer category selects a skill-library category id or its exact label.",
     }
 
 
@@ -253,6 +269,7 @@ def apply_change(
     record: AppliedChange,
     *,
     replay: bool = False,
+    organization: GroupCorrections | None = None,
 ) -> tuple[ProfileFacts | None, ChangePreview]:
     """Apply one validated operation to an owned in-memory copy only."""
     change = record.change
@@ -320,6 +337,12 @@ def apply_change(
     if facts is None:
         raise ValueError("Create a profile first")
     if change.entity == "skill_category":
+        if organization is not None:
+            from resume_tailor_harness.profile.conversation_organization import (
+                apply_category_change,
+            )
+
+            return apply_category_change(facts, record, organization)
         _check_values(change.values, {"name"})
         name = change.values.get("name", "")
         if change.operation != "delete" and (
@@ -472,7 +495,13 @@ def apply_change(
         # addressable id remains stable. They cannot certify the corrected claim.
         _clean_evidence(facts, {item.id})
     after = item.model_dump(mode="json")
-    if change.entity == "skill":
+    if isinstance(item, Skill):
+        if organization is not None:
+            from resume_tailor_harness.profile.conversation_organization import (
+                place_skill,
+            )
+
+            place_skill(organization, record, item, before)
         after["display_bucket"] = next(
             name for name, bucket in facts.skills.items() if item in bucket
         )
@@ -490,6 +519,7 @@ def prepare_changes(
     revision = profile_revision(root)
     facts = current_facts(root)
     facts = facts.model_copy(deep=True) if facts else None
+    organization = load_group_corrections(corrections_path(root), strict=True)
     records: list[AppliedChange] = []
     previews: list[ChangePreview] = []
     if (
@@ -510,7 +540,7 @@ def prepare_changes(
             record_id=new_id() if change.operation == "create" else "",
             source_ref=source_ref,
         )
-        facts, preview = apply_change(facts, record)
+        facts, preview = apply_change(facts, record, organization=organization)
         records.append(record)
         previews.append(
             preview.model_copy(
@@ -567,6 +597,10 @@ def replay_edits(
             result.github_profile = None
     warnings: list[str] = []
     for record in ledger.changes:
+        if record.change.entity == "skill_category" and record.organization_key:
+            # The reviewed catalog mutation is already durable; member snapshots
+            # below retain legacy display buckets when source ids change.
+            continue
         try:
             candidate = result.model_copy(deep=True) if result else None
             result, _ = apply_change(candidate, record, replay=True)
@@ -574,17 +608,22 @@ def replay_edits(
             warnings.append(f"Conversation edit needs review: {exc}")
     if result is None:
         raise ValueError("Conversation edits did not produce a profile")
+    apply_skill_overrides(result, ledger)
+    return result, warnings
+
+
+def apply_skill_overrides(facts: ProfileFacts, ledger: ProfileEdits) -> None:
+    """Keep the latest explicit skill edits when rebuilding only derived skills."""
     for token, saved in ledger.skill_overrides.items():
-        for bucket in result.skills.values():
+        for bucket in facts.skills.values():
             bucket[:] = [
                 skill for skill in bucket if normalize_skill(skill.name) != token
             ]
         if saved is not None:
-            result.skills.setdefault(saved.bucket, []).append(
+            facts.skills.setdefault(saved.bucket, []).append(
                 saved.skill.model_copy(deep=True)
             )
-    _clean_evidence(result)
-    return result, warnings
+    _clean_evidence(facts)
 
 
 def capture_skill_overrides(
@@ -597,7 +636,7 @@ def capture_skill_overrides(
     """Let later explicit skill edits on either surface supersede earlier ones.
 
     Only skills touched by conversation are captured; newly extracted skills
-    remain free to appear. Restore drops its tombstone for the next rebuild.
+    remain free to appear. Renames and restores keep their latest saved snapshot.
     """
     tokens = set(ledger.skill_overrides)
     if ledger.reset_sources:
@@ -615,10 +654,15 @@ def capture_skill_overrides(
         name = record.change.values.get("name")
         if isinstance(name, str):
             tokens.add(normalize_skill(name))
+    # The library keeps a previous name as an alias after renaming or merging.
+    # Follow it so a conversation-created skill survives a later source rebuild.
+    for bucket in facts.skills.values():
+        for skill in bucket:
+            if tokens.intersection(map(normalize_skill, skill.aliases)):
+                tokens.add(normalize_skill(skill.name))
     restoring = normalize_skill(restoring_token)
-    if restoring:
-        ledger.skill_overrides.pop(restoring, None)
-        tokens.discard(restoring)
+    if restoring in ledger.skill_overrides:
+        tokens.add(restoring)
     for token in tokens - {""}:
         found = next(
             (
@@ -651,6 +695,7 @@ def make_profile_tools(root: Path, *, user_text: str = "") -> list:
         if facts is None:
             return {"exists": False, "revision": profile_revision(root)}
         if section == "profile":
+            organization = load_group_corrections(corrections_path(root), strict=True)
             return {
                 "exists": True,
                 "revision": profile_revision(root),
@@ -662,15 +707,44 @@ def make_profile_tools(root: Path, *, user_text: str = "") -> list:
                     for key in FACT_MODELS
                     if key not in _NESTED_FACTS
                 },
-                "skillCategories": {
-                    key: len(values) for key, values in facts.skills.items()
-                },
+                "skillCategories": [
+                    {"id": key, "name": item.label}
+                    for key, item in list(organization.category_catalog().items())[:30]
+                ],
+                "organizationNote": "Page skill_categories or skill_groups for the full display catalog.",
             }
         if section == "skills":
+            from resume_tailor_harness.profile.matrix import build_decorated_matrix
+
+            organization = load_group_corrections(corrections_path(root), strict=True)
+            catalog = organization.group_catalog()
+            matrix = build_decorated_matrix(root, facts)
+            groups_by_id = {
+                fid: row.group or "other"
+                for row in matrix.rows
+                for fid in row.evidence_fact_ids
+            }
             rows = [
-                {**s.model_dump(mode="json"), "bucket": key}
+                {
+                    **s.model_dump(mode="json"),
+                    "bucket": key,
+                    "group": groups_by_id.get(s.id, "other"),
+                    "display_category": catalog[
+                        groups_by_id.get(s.id, "other")
+                    ].category,
+                }
                 for key, values in facts.skills.items()
                 for s in values
+            ]
+        elif section in {"skill_categories", "skill_groups"}:
+            organization = load_group_corrections(corrections_path(root), strict=True)
+            definitions = (
+                organization.category_catalog()
+                if section == "skill_categories"
+                else organization.group_catalog()
+            )
+            rows = [
+                {"id": key, **item.model_dump()} for key, item in definitions.items()
             ]
         elif section in _NESTED_FACTS:
             owners = facts.experience if section == "bullets" else facts.projects

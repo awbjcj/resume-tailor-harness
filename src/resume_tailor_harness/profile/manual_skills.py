@@ -179,6 +179,14 @@ def apply_manual_skill_entry(
             if not updated.skills[bucket]:
                 del updated.skills[bucket]
         updated.skills.setdefault(target[0], []).append(merged)
+        remapped = {skill.id: merged.id for skill in selected.values()}
+        for bucket in updated.skills.values():
+            for skill in bucket:
+                skill.evidence_fact_ids = list(
+                    dict.fromkeys(
+                        remapped.get(key, key) for key in skill.evidence_fact_ids
+                    )
+                )
         return updated, None
 
     if isinstance(entry, ManualEditEntry):

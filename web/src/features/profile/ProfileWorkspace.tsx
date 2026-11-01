@@ -143,8 +143,9 @@ export function ProfileWorkspace() {
     Number.isInteger(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 100;
   const busy =
     building || syncGithub.isPending || save.isPending || sourceMutations > 0 || skillMutations > 0 || !!(skillRun && ["queued", "running", "cancelling"].includes(skillRun.status));
-  const buildDisabled =
-    busy || dirty || setupStatus.data?.profile.hasResume === false;
+  const canRebuild = setupStatus.data?.profile.canRebuild ??
+    (setupStatus.data?.profile.hasResume !== false);
+  const buildDisabled = busy || dirty || !canRebuild;
   const rebuild = () => {
     if (buildDisabled) return;
     setLaunchingBuild(true);
@@ -208,7 +209,7 @@ export function ProfileWorkspace() {
         className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-3 [overflow-wrap:anywhere]"
       >
         <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="font-mono text-sm text-muted-foreground">01</span>
+          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">01</span>
           <div>
             <p className="text-sm font-medium">Add your evidence</p>
             <p className="text-sm text-muted-foreground">
@@ -217,7 +218,7 @@ export function ProfileWorkspace() {
           </div>
         </li>
         <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="font-mono text-sm text-muted-foreground">02</span>
+          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">02</span>
           <div>
             <p className="text-sm font-medium">Choose GitHub branches (optional)</p>
             <p className="text-sm text-muted-foreground">
@@ -226,7 +227,7 @@ export function ProfileWorkspace() {
           </div>
         </li>
         <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="font-mono text-sm text-muted-foreground">03</span>
+          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">03</span>
           <div>
             <p className="text-sm font-medium">Build your profile</p>
             <p className="text-sm text-muted-foreground">

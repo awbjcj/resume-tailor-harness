@@ -9592,6 +9592,11 @@ export interface components {
         };
         /** ProfileStatus */
         ProfileStatus: {
+            /**
+             * Canrebuild
+             * @default false
+             */
+            canRebuild: boolean;
             /** Documentcount */
             documentCount: number;
             /** Factsbuiltat */

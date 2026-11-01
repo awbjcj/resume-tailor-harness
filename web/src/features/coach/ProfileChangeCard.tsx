@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import type { CoachChangeDraft } from "./use-coach";
 
 const INTERNAL_FIELDS = new Set([
-  "id", "source", "source_ref", "schema_version", "synthesized", "inferred",
+  "id", "source", "source_ref", "source_refs", "schema_version", "synthesized", "inferred",
   "evidence_fact_ids", "github_profile", "extra",
 ]);
 

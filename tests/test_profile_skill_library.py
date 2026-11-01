@@ -379,3 +379,42 @@ def test_suppression_replays_against_a_new_primary_name_with_the_old_alias(libra
     assert not any(
         s.id == "python" for bucket in updated.skills.values() for s in bucket
     )
+
+
+def test_manual_merge_remaps_inferred_skill_evidence(library):
+    directory, facts = library
+    facts.skills["hard"].append(
+        Skill(
+            name="Backend development",
+            category="hard",
+            inferred=True,
+            evidence_fact_ids=["py3"],
+        )
+    )
+    save_facts(facts, directory / "facts.json")
+    profile_skills.merge_skills(directory, ["python", "python 3"], "python")
+    inferred = next(s for s in _skills(directory) if s.inferred)
+    assert inferred.evidence_fact_ids == ["python"]
+
+
+def test_rebuild_rejects_concurrent_override_changes(library, monkeypatch):
+    directory, _ = library
+    before = (directory / "facts.json").read_bytes()
+
+    class Classifier:
+        def run(self, _prompt):
+            (directory / "overrides.yaml").write_text(
+                "ban: [Python]\n", encoding="utf-8"
+            )
+            return SimpleNamespace(
+                content=SkillGroupAssignments(
+                    assignments=[
+                        SkillGroupAssignment(token="python", group="languages"),
+                    ]
+                )
+            )
+
+    monkeypatch.setattr(build, "build_profile_group_agent", lambda: Classifier())
+    with pytest.raises(ValueError, match="changed during"):
+        build.rebuild_profile_skills(directory, reclassify_only=True)
+    assert (directory / "facts.json").read_bytes() == before

@@ -20,6 +20,10 @@ from resume_tailor_harness.api.schemas.setup import (
 )
 from resume_tailor_harness.llm_runner import MODEL_CATALOG, provider_access_available
 from resume_tailor_harness.profile.corpus import MANIFEST_NAME, doc_path, load_manifest
+from resume_tailor_harness.profile.conversation import (
+    can_rebuild_without_resume,
+    load_edits,
+)
 from resume_tailor_harness.services.sources import list_sources
 from resume_tailor_harness.career_skills.registry import CareerSkillRegistry
 from resume_tailor_harness.api.deps import (
@@ -68,6 +72,12 @@ def get_setup_status(request: Request):
         facts_built_at=facts_built_at,
         github_username=profile_cfg.github_username,
     )
+    try:
+        profile.can_rebuild = not load_edits(profile_dir).deleted and (
+            profile.has_resume or can_rebuild_without_resume(profile_dir)
+        )
+    except (OSError, ValueError):
+        profile.can_rebuild = False
 
     search_cfg = cast(SearchConfigDoc, config_store.get("search"))
     search = SearchStatus(
@@ -105,7 +115,7 @@ def get_setup_status(request: Request):
 
     complete = (
         secrets.any_llm_key
-        and profile.has_resume
+        and profile.can_rebuild
         and profile.facts_built_at is not None
         and search.configured
         and sources.enabled_count > 0
