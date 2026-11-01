@@ -418,3 +418,20 @@ def test_upload_does_not_deduplicate_against_a_stale_stored_hash(tmp_path):
     assert uploaded.id != first.id
     assert doc_path(profile_dir, uploaded).read_text() == "original evidence"
     assert doc_path(profile_dir, first).read_text() == "synced evidence"
+
+
+def test_reupload_does_not_overwrite_a_source_with_the_fallback_filename(tmp_path):
+    profile_dir = tmp_path / "profile"
+    original = _file(tmp_path, "resume.txt", "original resume")
+    first = add_source(profile_dir, original)
+    replacement = tmp_path / "replacement" / "resume.txt"
+    replacement.parent.mkdir()
+    replacement.write_text("updated resume", encoding="utf-8")
+    replace_source(profile_dir, first.id, replacement)
+    conflict = add_source(profile_dir, _file(tmp_path, f"{first.id}-2.txt", "other evidence"))
+
+    restored = add_source(profile_dir, original)
+
+    assert restored.filename != conflict.filename
+    assert doc_path(profile_dir, restored).read_text() == "original resume"
+    assert doc_path(profile_dir, conflict).read_text() == "other evidence"
