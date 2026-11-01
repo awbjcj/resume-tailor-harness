@@ -119,9 +119,18 @@ class WorkspaceTools:
 
         def read_search_settings() -> dict:
             """Inspect discovery search preferences and configured company sources, without changing them."""
+            from resume_tailor_harness.discovery.connectors.config import (
+                ConnectorsConfig,
+                load_connectors_config,
+            )
+
+            path = self.config.config_dir / "connectors.yaml"
+            connectors = (
+                load_connectors_config(path) if path.exists() else ConnectorsConfig()
+            )
             return {
-                name: self.config.get(name).model_dump(mode="json")
-                for name in ("search", "connectors")
+                "search": self.config.get("search").model_dump(mode="json"),
+                "connectors": connectors.model_dump(mode="json"),
             }
 
         def workspace_change_schema(operation: str = "") -> dict:

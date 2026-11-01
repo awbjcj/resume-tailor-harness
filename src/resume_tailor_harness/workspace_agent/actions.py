@@ -12,6 +12,7 @@ from resume_tailor_harness.tracking.tables import utcnow
 from resume_tailor_harness.workspace_agent.commands import (
     prepare_change,
     prepare_plan as prepare_plan,
+    review_revision,
     schemas as schemas,
     snapshot_for,
 )
@@ -21,6 +22,7 @@ from resume_tailor_harness.workspace_agent.execution import (
 )
 from resume_tailor_harness.workspace_agent.models import WorkspaceChange, is_file_action
 from resume_tailor_harness.workspace_agent.reads import (
+    job_session_ids,
     record,
     revision,
 )
@@ -112,7 +114,7 @@ def resolve_plan(
             change = WorkspaceChange.model_validate(action["change"])
             if (
                 decision == "apply"
-                and revision(snapshot_for(session, root, config, change))
+                and review_revision(snapshot_for(session, root, config, change), change)
                 != action["expected_revision"]
             ):
                 raise ValueError(
@@ -130,7 +132,15 @@ def resolve_plan(
                     state = "outcome_unknown"
                     file_action = action, proposal.source_text
                 else:
+                    cleanup = (
+                        job_session_ids(root, change.job_id)
+                        if change.operation == "job.delete"
+                        and change.job_id is not None
+                        else None
+                    )
                     result = _execute_database(session, change, actor)
+                    if cleanup is not None:
+                        result["session_cleanup"] = cleanup
                     state = "applied"
             session.add(
                 WorkspaceActionReceipt(
@@ -163,8 +173,20 @@ def resolve_plan(
         for action in selected:
             if action["change"]["operation"] == "job.delete":
                 job_id = action["change"]["job_id"]
-                delete_sessions_for_job(root / "interview", job_id)
-                delete_lab_sessions(root / "career-lab", job_id)
+                with Session(engine) as session:
+                    receipt = session.get(WorkspaceActionReceipt, action["id"])
+                    assert receipt is not None
+                    cleanup = receipt.result.get("session_cleanup", {})
+                delete_sessions_for_job(
+                    root / "interview",
+                    job_id,
+                    session_ids=set(cleanup.get("interview", [])),
+                )
+                delete_lab_sessions(
+                    root / "career-lab",
+                    job_id,
+                    session_ids=set(cleanup.get("career-lab", [])),
+                )
     return proposal_view(engine, proposal_id)
 
 

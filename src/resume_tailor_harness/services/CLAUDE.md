@@ -103,14 +103,21 @@ null`; the domain model rejects that outright, so turning the budget off
   `workspace_agent/runtime.py` binds read/preview tools to the active `UserContext`
   for Profile Coach, Career Lab, Mock Interview and Discovery Scout. Model tools
   compute previews in memory; a successful chat turn publishes review cards.
-  `workspace_agent/actions.py` validates closed operations against existing domain
-  services, captures target revisions, and applies only stored actions selected
-  through the browser review endpoint. The endpoint rejects PAT authorization.
+  `workspace_agent/commands.py` owns read-only validation, target revisions and
+  before/after previews. `execution.py` applies validated commands through domain
+  services; `actions.py` owns immutable proposals, approval and receipt transactions.
+  Only stored actions selected through the browser review endpoint can execute.
+  The endpoint rejects PAT authorization; its DTOs live in `api/schemas/workspace_agent.py`.
   No model tool accepts approval, user ids, workspace paths, SQL, or shell input.
   Reviews expire after 24 hours; edited targets require a new preview. Database
   effects and per-action receipts share one transaction; file effects first record
   an outcome-unknown marker and never blindly retry. Profile changes retain the
-  existing evidence and rollback checks. Notes/preparation retain revision history
+  existing evidence and rollback checks. Note and document-selection revisions
+  include the parent job and reviewed target, so unrelated notes or the other
+  document selection do not invalidate separate approvals. Job-deletion receipts
+  retain the original conversation ids for retryable cleanup; never rescan by job
+  id alone on replay, because SQLite can reuse deleted ids.
+  Notes/preparation retain revision history
   and count as invested work in delete/prune guards. Browser cards remain visible
   after a chat ends. Skill loading exposes only hash-pinned instructions, not
   scripts or unverified reference files. Workspace tools check cancellation and
