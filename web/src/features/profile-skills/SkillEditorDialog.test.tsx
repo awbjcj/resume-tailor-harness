@@ -8,6 +8,7 @@ import { SkillEditorDialog } from "./SkillEditorDialog";
 vi.mock("./use-profile-skills", () => ({
   useAddSkill: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateSkill: () => ({ mutate: vi.fn(), isPending: false }),
+  useAddSkillAlias: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 describe("skill editor language changes", () => {

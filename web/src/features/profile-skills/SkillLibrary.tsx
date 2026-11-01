@@ -52,9 +52,9 @@ import {
 } from "@/i18n/skill-labels";
 import {
   LibrarySelect,
-  SkillEditorDialog,
   type LibraryRow,
-} from "./SkillEditorDialog";
+} from "./SkillEditorFields";
+import { SkillEditorDialog } from "./SkillEditorDialog";
 import { SkillCompactView } from "./SkillCompactView";
 import { SkillContextPopover } from "./SkillContextPopover";
 import { SkillOrganizationDialog } from "./SkillOrganizationDialog";

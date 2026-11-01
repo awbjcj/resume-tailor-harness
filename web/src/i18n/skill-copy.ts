@@ -57,6 +57,17 @@ const en = {
     "Update its name, aliases, type, or group. Your changes survive profile rebuilds.",
   addDescription:
     "Add one of your skills. Use aliases for other names for the same skill.",
+  addFromJobDescription: (name: string) =>
+    `Add “${name}” only if you have this skill. If you rename it, the job's wording is kept as an alias.`,
+  addSkillMethod: "How to add this skill",
+  newSkill: "New skill",
+  existingSkill: "Use existing skill",
+  addAliasDescription: (name: string) =>
+    `Choose a skill you already have. “${name}” will become another name for it.`,
+  loadingSkills: "Loading your skills…",
+  couldNotLoadSkills: "Couldn't load your skills.",
+  noAliasTargets: "No personal skills yet. Add this as a new skill.",
+  tryAgain: "Try again",
   aliasHelp:
     "One per line or separated by commas. Previous names stay as aliases after a rename.",
   cleanupDescription:
@@ -184,6 +195,17 @@ const zh: typeof en = {
   editDescription:
     "修改名称、别名、类型或分组。重新构建个人资料后，这些修改仍会保留。",
   addDescription: "添加你的技能。同一技能的其他名称可以设为别名。",
+  addFromJobDescription: (name: string) =>
+    `请确认自己掌握“${name}”后再添加。如修改名称，职位中的原始表述会保留为别名。`,
+  addSkillMethod: "选择添加方式",
+  newSkill: "新建技能",
+  existingSkill: "关联已有技能",
+  addAliasDescription: (name: string) =>
+    `选择你已掌握的同一项技能，“${name}”将作为它的别名保存。`,
+  loadingSkills: "正在加载个人技能…",
+  couldNotLoadSkills: "无法加载个人技能。",
+  noAliasTargets: "个人技能库暂无技能，请将此项添加为新技能。",
+  tryAgain: "重试",
   aliasHelp: "每行填写一个，或用逗号分隔。重命名后，原名称会保留为别名。",
   cleanupDescription:
     "合并重复名称和已确认的同义词，移除学位、出差要求等明确不属于技能的条目。不同技能会分别保留。",
