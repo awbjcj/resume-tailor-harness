@@ -1,4 +1,3 @@
-import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bot, Clock3, FileCheck2, MessageCircleQuestion, SearchCheck, Sparkles, SquareCheckBig } from "lucide-react";
@@ -9,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import { ChatRunProgress } from "@/components/chat/ChatRunProgress";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatSessionHistory, type ChatSessionHistoryItem } from "@/components/chat/ChatSessionHistory";
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { ChatThread, type ChatThreadMessage } from "@/components/chat/ChatThread";
 import { GuidedWorkspaceHeader } from "@/components/chat/GuidedWorkspaceHeader";
 import { CHAT_PAGE_WIDTH, CHAT_SURFACE_HEIGHT } from "@/components/chat/layout";
@@ -411,7 +411,7 @@ export function CoachPage() {
                   />
                 ) : null}
               </div>
-          <WorkspaceReview surface="coach" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
+              <WorkspaceReview className="border-t p-4 sm:p-6" surface="coach" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
               {active.status === "active" ? (
                 <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
                   <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />

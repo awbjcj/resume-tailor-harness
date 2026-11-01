@@ -1,10 +1,10 @@
-import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bot, Building2, CheckCircle2, Clock3, Compass, MessageCircleQuestion, Search } from "lucide-react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatSessionHistory, type ChatSessionHistoryItem } from "@/components/chat/ChatSessionHistory";
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { ChatThread, type ChatThreadMessage } from "@/components/chat/ChatThread";
 import { GuidedWorkspaceHeader } from "@/components/chat/GuidedWorkspaceHeader";
 import { CHAT_PAGE_WIDTH, CHAT_SURFACE_HEIGHT } from "@/components/chat/layout";

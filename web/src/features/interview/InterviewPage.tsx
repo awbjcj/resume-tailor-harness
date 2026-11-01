@@ -1,4 +1,3 @@
-import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { localizeDisplayValue } from "@/i18n/dynamic-labels";
@@ -7,6 +6,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { ChatRunProgress } from "@/components/chat/ChatRunProgress";
 import { ChatComposer } from "@/components/chat/ChatComposer";
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { ChatThread, type ChatThreadMessage } from "@/components/chat/ChatThread";
 import { GuidedWorkspaceHeader } from "@/components/chat/GuidedWorkspaceHeader";
 import { CHAT_PAGE_WIDTH, CHAT_SURFACE_HEIGHT } from "@/components/chat/layout";
@@ -333,7 +333,7 @@ export function InterviewPage() {
             ) : null}
           </div>
 
-          <WorkspaceReview surface="interview" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
+          <WorkspaceReview className="border-t p-4 sm:p-6" surface="interview" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
           {canAnswer ? (
             <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
               <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />
