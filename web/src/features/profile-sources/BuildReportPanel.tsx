@@ -140,7 +140,7 @@ export function BuildReportPanel() {
       <Section
         title="Warnings"
         lines={(report.warnings ?? []).map((line) =>
-          profileBuildReportLineLabel(t, "warning", line),
+          profileBuildReportLineLabel(t, "warning", line, i18n.resolvedLanguage),
         )}
         tone="warn"
       />

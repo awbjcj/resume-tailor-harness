@@ -160,7 +160,7 @@ export function ProfileWorkspace() {
         icon={<Sparkles />}
         eyebrow="Step 1 · Your profile"
         title="Profile"
-        description="Bring your resume and project evidence together, then build the profile behind every tailored application."
+        description="Build your profile from resume and project evidence for your tailored applications."
         meta={
           <Badge variant="outline" className="h-auto min-h-5 max-w-full whitespace-normal">
             {factsStatusText(setupStatus.data?.profile.factsBuiltAt)}
@@ -208,9 +208,9 @@ export function ProfileWorkspace() {
         <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
           <span className="font-mono text-sm text-muted-foreground">02</span>
           <div>
-            <p className="text-sm font-medium">Choose GitHub branches</p>
+            <p className="text-sm font-medium">Choose GitHub branches (optional)</p>
             <p className="text-sm text-muted-foreground">
-              Point each repository to its dossier
+              Choose the branch with each project's documents
             </p>
           </div>
         </li>
@@ -219,7 +219,7 @@ export function ProfileWorkspace() {
           <div>
             <p className="text-sm font-medium">Build your profile</p>
             <p className="text-sm text-muted-foreground">
-              Turn saved evidence into profile facts
+              Extract facts from your saved sources
             </p>
           </div>
         </li>
@@ -262,8 +262,8 @@ export function ProfileWorkspace() {
                   GitHub projects
                 </h2>
                 <p className="max-w-prose text-sm text-muted-foreground">
-                  Choose a branch for each repository. Sync saves dossiers;
-                  building turns them into profile facts.
+                  Choose a branch for each repository. Sync saves project
+                  documents; building extracts facts for your profile.
                 </p>
               </div>
               <Button

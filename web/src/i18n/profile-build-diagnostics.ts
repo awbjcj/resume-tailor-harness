@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import zhCN from "./dynamic-zh-CN.json";
 
 type ReportLineKind = "warning" | "conflict" | "anchor" | "verificationDrop";
 
@@ -37,7 +38,7 @@ export function profileBuildStatusLabel(t: TFunction, status: string): string {
   return status;
 }
 
-function profileBuildWarningLabel(t: TFunction, warning: string): string {
+function profileBuildWarningLabel(t: TFunction, warning: string, language: string | null | undefined): string {
   if (warning === "GitHub rate limit hit; cached docs were preserved. Set GITHUB_TOKEN to raise the limit.") {
     return t("profileBuild.warning.githubRateLimit");
   }
@@ -46,7 +47,7 @@ function profileBuildWarningLabel(t: TFunction, warning: string): string {
   if (harvestFailure) {
     return t("profileBuild.warning.githubHarvestFailed", {
       repository: harvestFailure[1],
-      reason: harvestFailure[2],
+      reason: githubSyncFailureLabel(harvestFailure[2], language),
     });
   }
 
@@ -98,6 +99,23 @@ function profileBuildWarningLabel(t: TFunction, warning: string): string {
   }
 
   return warning;
+}
+
+export function githubSyncFailureLabel(reason: string, language: string | null | undefined): string {
+  const chinese = language?.toLowerCase().startsWith("zh") ?? false;
+  if (reason === "Source filename is used by an uploaded document; saved files were preserved") {
+    return chinese ? zhCN.githubSyncFailures.filenameUsed : "The source filename is used by an uploaded document. Saved files were preserved.";
+  }
+  if (reason === "virtual document duplicated an upload source") {
+    return chinese ? zhCN.githubSyncFailures.duplicateUpload : "The synced document duplicates an uploaded source.";
+  }
+  const missingBranchDocs = /^No dossier or README found on branch '(.+)'; saved sources were preserved$/.exec(reason);
+  if (missingBranchDocs) {
+    return chinese
+      ? zhCN.githubSyncFailures.missingBranchDocs.replace("{{branch}}", () => missingBranchDocs[1])
+      : `No dossier or README was found on branch '${missingBranchDocs[1]}'. Saved sources were preserved.`;
+  }
+  return reason;
 }
 
 function profileBuildConflictLabel(t: TFunction, conflict: string): string {
@@ -154,10 +172,11 @@ export function profileBuildReportLineLabel(
   t: TFunction,
   kind: ReportLineKind,
   line: string,
+  language?: string | null,
 ): string {
   switch (kind) {
     case "warning":
-      return profileBuildWarningLabel(t, line);
+      return profileBuildWarningLabel(t, line, language);
     case "conflict":
       return profileBuildConflictLabel(t, line);
     case "anchor":

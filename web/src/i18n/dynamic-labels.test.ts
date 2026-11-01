@@ -77,10 +77,14 @@ describe("dynamic Chinese labels", () => {
   });
 
   it("uses Chinese display labels without changing source protocol values", () => {
-    expect(localizeSourceMode("synthesis", "zh-CN")).toBe("综合提炼");
+    expect(localizeSourceMode("literal", "zh-CN")).toBe("简历／文本");
+    expect(localizeSourceMode("synthesis", "zh-CN")).toBe("提炼并核验");
+    expect(localizeSourceMode("project", "zh-CN")).toBe("项目档案");
+    expect(localizeSourceFragmentStatus("cached", "zh-CN")).toBe("已就绪");
     expect(localizeSourceFragmentStatus("source-changed", "zh-CN")).toBe("待重新构建");
     expect(localizeSourceFragmentStatus("missing", "zh-CN")).toBe("待构建");
     expect(localizeSourceFragmentStatus("missing", "en")).toBe("Needs build");
+    expect(localizeSourceFragmentStatus("cached", "en")).toBe("Ready");
     expect(localizeSourceMode("synthesis", "en")).toBe("Verified synthesis");
   });
 

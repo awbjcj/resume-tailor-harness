@@ -93,7 +93,7 @@ export function localizeSourceMode(mode: string, language: string | null | undef
 
 export function localizeSourceFragmentStatus(status: string, language: string | null | undefined): string {
   if (!isChinese(language)) return {
-    cached: "Ready", missing: "Needs build", stale: "Needs rebuild", "source-changed": "Needs rebuild",
+    cached: "Ready", extracted: "Extracted", missing: "Needs build", stale: "Needs rebuild", "source-changed": "Needs rebuild",
   }[status] ?? status;
   return zhCN.sourceFragmentStatuses[status as keyof typeof zhCN.sourceFragmentStatuses]
     ?? zhCN.fallbacks.unknownStatus;
