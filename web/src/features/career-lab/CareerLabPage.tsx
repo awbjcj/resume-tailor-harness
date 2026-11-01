@@ -1,4 +1,3 @@
-import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -6,6 +5,7 @@ import { FileText, ListChecks, MessageCircleMore, Sparkles, SquareCheckBig } fro
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatSessionHistory, type ChatSessionHistoryItem } from "@/components/chat/ChatSessionHistory";
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { ChatThread, type ChatThreadMessage } from "@/components/chat/ChatThread";
 import { GuidedWorkspaceHeader } from "@/components/chat/GuidedWorkspaceHeader";
 import { CHAT_PAGE_WIDTH, CHAT_SURFACE_HEIGHT } from "@/components/chat/layout";
@@ -323,7 +323,7 @@ export function CareerLabPage() {
                 </div>
               ) : null}
             </CardContent>
-          <WorkspaceReview surface="career-lab" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
+            <WorkspaceReview className="border-t p-4 sm:p-6" surface="career-lab" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
             {canCompose ? <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
               <ChatRunProgress runId={runId} status={stream.status} reconnecting={stream.reconnecting} />
               <CareerLabContextSummary context={context} onChange={setContext} disabled={busy} />
