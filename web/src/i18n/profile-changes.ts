@@ -13,6 +13,7 @@ export const profileChangesEn = {
   pendingEnd: "{{count}} pending drafts will remain unapplied.",
   fields: {
     profile: "Profile", skill: "Skill", skill_category: "Skill category",
+    display_bucket: "Display category",
     contact: "Contact", name: "Name", headline: "Headline", email: "Email", phone: "Phone",
     location: "Location", willing_to_relocate: "Willing to relocate", work_authorization: "Work authorization",
     links: "Links", label: "Label", url: "URL", summary: "Summary", interests: "Interests",
@@ -42,6 +43,7 @@ export const profileChangesZh: typeof profileChangesEn = {
   pendingEnd: "{{count}} 份待处理草稿将保留，尚未应用。",
   fields: {
     profile: "个人资料", skill: "技能", skill_category: "技能分类",
+    display_bucket: "显示分类",
     contact: "联系信息", name: "姓名", headline: "个人标题", email: "电子邮箱", phone: "电话",
     location: "所在地", willing_to_relocate: "愿意搬迁", work_authorization: "工作许可",
     links: "链接", label: "标签", url: "网址", summary: "简介", interests: "兴趣",
