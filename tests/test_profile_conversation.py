@@ -275,6 +275,29 @@ def test_fact_edit_and_delete_survive_rebuild_and_remove_orphan_inference(profil
     assert rebuilt.skills["Inferred"] == []
 
 
+def test_corrected_fact_invalidates_inference_from_its_previous_content(profile):
+    original = _facts(profile).model_copy(deep=True)
+    _apply(
+        profile,
+        _stage(
+            profile,
+            [
+                _change(
+                    entity="fact",
+                    operation="update",
+                    section="bullets",
+                    parent_id="exp1",
+                    target_id="b1",
+                    values={"text": "Coordinated a scheduling change"},
+                )
+            ],
+        ),
+    )
+    assert _facts(profile).skills["Inferred"] == []
+    rebuilt, warnings = replay_edits(original, load_edits(profile))
+    assert not warnings and rebuilt.skills["Inferred"] == []
+
+
 def test_skill_rename_move_and_delete_replay_with_new_source_ids(profile):
     original = _facts(profile).model_copy(deep=True)
     original.skills["Programming"][0].id = "rebuilt-id"
@@ -315,6 +338,10 @@ def test_organizing_inferred_skill_does_not_promote_it_to_evidence(profile):
             )
         ],
     )
+    assert draft.previews[0].before is not None
+    assert draft.previews[0].after is not None
+    assert draft.previews[0].before["display_bucket"] == "Inferred"
+    assert draft.previews[0].after["display_bucket"] == "Design methods"
     _apply(profile, draft)
     skill = _facts(profile).skills["Design methods"][0]
     assert skill.inferred and skill.evidence_fact_ids == ["b1"]

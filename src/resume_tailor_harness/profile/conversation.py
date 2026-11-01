@@ -161,6 +161,13 @@ def current_facts(root: Path) -> ProfileFacts | None:
     return load_facts(path) if path.exists() else None
 
 
+def can_rebuild_without_resume(root: Path) -> bool:
+    ledger = load_edits(root)
+    return (
+        not ledger.deleted and bool(ledger.changes) and (root / "facts.json").is_file()
+    )
+
+
 def _fields(model: type[BaseModel]) -> set[str]:
     fields = set(model.model_fields) - _HOST_FIELDS - _NESTED_FACTS
     if model is Skill:
@@ -225,10 +232,12 @@ def _manual(item: FactItem, record: AppliedChange) -> None:
     item.synthesized = False
 
 
-def _clean_evidence(facts: ProfileFacts) -> None:
+def _clean_evidence(
+    facts: ProfileFacts, invalidated_ids: set[str] | None = None
+) -> None:
     from resume_tailor_harness.tailor.provenance import index_facts
 
-    known = set(index_facts(facts))
+    known = set(index_facts(facts)) - (invalidated_ids or set())
     for bucket in facts.skills.values():
         for skill in bucket[:]:
             if skill.inferred:
@@ -417,6 +426,7 @@ def apply_change(
             original_bucket = next(
                 name for name, bucket in facts.skills.items() if item in bucket
             )
+            before["display_bucket"] = original_bucket
             for bucket in facts.skills.values():
                 if item in bucket:
                     bucket.remove(item)
@@ -454,10 +464,22 @@ def apply_change(
     _manual(item, record)
     if change.operation != "create":
         item.id = original_id
+    if change.operation == "update" and (
+        (change.entity == "fact" and change.values.keys() - {"aspect"})
+        or (change.entity == "skill" and change.values.keys() & {"name", "context"})
+    ):
+        # Existing pointers were inferred from the old content, even though its
+        # addressable id remains stable. They cannot certify the corrected claim.
+        _clean_evidence(facts, {item.id})
+    after = item.model_dump(mode="json")
+    if change.entity == "skill":
+        after["display_bucket"] = next(
+            name for name, bucket in facts.skills.items() if item in bucket
+        )
     return facts, ChangePreview(
         label=f"{change.operation.title()} {change.section or 'skill'}",
         before=before,
-        after=item.model_dump(mode="json"),
+        after=after,
     )
 
 

@@ -33,6 +33,17 @@ describe("ProfileChangeCard", () => {
     expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
   });
 
+  it("shows the source and destination display categories for a skill move", () => {
+    render(<ProfileChangeCard draft={{ ...draft, previews: [{
+      label: "Update skill", entity: "skill", operation: "update",
+      before: { name: "Python", display_bucket: "Programming" },
+      after: { name: "Python", display_bucket: "Data platforms" },
+    }] }} busy={false} onResolve={vi.fn()} />);
+    expect(screen.getAllByText("Display category")).toHaveLength(2);
+    expect(screen.getByText("Programming")).toBeInTheDocument();
+    expect(screen.getByText("Data platforms")).toBeInTheDocument();
+  });
+
   it("offers discard and hides all decisions once applied", async () => {
     const resolve = vi.fn();
     const { rerender } = render(<ProfileChangeCard draft={draft} busy={false} onResolve={resolve} />);

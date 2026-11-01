@@ -263,9 +263,15 @@ def end_coach_session(
             reporter, profile_dir=profile_dir, session_id=session_id, sink=sink
         )
         saved_count = sum(draft["status"] == "saved" for draft in ended["draftNotes"])
+        applied_count = sum(
+            draft["status"] == "applied" for draft in ended.get("changeDrafts", [])
+        )
+        from resume_tailor_harness.profile.conversation import load_edits
+
+        removed = load_edits(profile_dir).deleted
         build_run_id = None
         skipped_reason = None
-        if payload.build and saved_count:
+        if payload.build and not removed and (saved_count or applied_count):
             try:
                 build_run_id = manager.submit(
                     "profile-build",
@@ -287,8 +293,10 @@ def end_coach_session(
                 skipped_reason = str(exc)
         elif not payload.build:
             skipped_reason = "build=false"
+        elif removed:
+            skipped_reason = "profile was removed"
         else:
-            skipped_reason = "no saved notes to build from"
+            skipped_reason = "no saved notes or applied changes to build from"
         return {
             "session": ended,
             "buildRunId": build_run_id,

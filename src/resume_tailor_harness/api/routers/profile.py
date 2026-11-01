@@ -112,8 +112,16 @@ def delete_document(doc_id: str, request: Request):
 
 @router.post("/profile/build", response_model=RunOut, status_code=202)
 def launch_profile_build(request: Request, mgr: RunManager = Depends(get_run_manager)):
+    from resume_tailor_harness.profile.conversation import can_rebuild_without_resume
+
+    profile_dir = _profile_dir(request)
+    conversation_only = can_rebuild_without_resume(profile_dir) and not any(
+        doc.primary and doc.mode == "literal" for doc in load_manifest(profile_dir).docs
+    )
     settings = get_settings_dep(request)
-    if not model_access_available(settings.mid_model, settings=settings):
+    if not conversation_only and not model_access_available(
+        settings.mid_model, settings=settings
+    ):
         raise ApiException(
             400,
             "SETUP_INCOMPLETE",
@@ -129,8 +137,11 @@ def _launch_build(
     singleton_conflict: str = "join",
 ) -> RunOut:
     profile_dir = _profile_dir(request)
+    from resume_tailor_harness.profile.conversation import can_rebuild_without_resume
+
+    conversational = can_rebuild_without_resume(profile_dir)
     manifest = load_manifest(profile_dir)
-    if not manifest.docs:
+    if not manifest.docs and not conversational:
         if (profile_dir / MANIFEST_NAME).exists():
             raise ApiException(
                 400,
@@ -147,7 +158,7 @@ def _launch_build(
         # One-time migration mirroring the CLI's migrate_legacy: the wizard's
         # newest resume becomes the corpus primary.
         add_source(profile_dir, resume_path, primary=True)
-    elif not any(doc.primary for doc in manifest.docs):
+    elif not any(doc.primary for doc in manifest.docs) and not conversational:
         raise ApiException(
             400,
             "SETUP_INCOMPLETE",

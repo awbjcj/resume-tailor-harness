@@ -108,7 +108,9 @@ def test_start_guards_and_opening_run(monkeypatch, tmp_path):
         assert _wait(client, response.json()["runId"])["state"] == "done"
 
 
-def test_profile_change_approval_endpoint_is_revision_bound_and_scoped(tmp_path):
+def test_profile_change_approval_endpoint_is_revision_bound_and_scoped(
+    tmp_path, monkeypatch
+):
     from resume_tailor_harness.profile.conversation import (
         ProfileChange,
         ProfileChangeSet,
@@ -175,6 +177,26 @@ def test_profile_change_approval_endpoint_is_revision_bound_and_scoped(tmp_path)
             ).status_code
             == 200
         )
+        # The public build flow must admit a profile with no resume or model key.
+        build = client.post("/api/profile/build")
+        assert build.status_code == 202
+        assert _wait(client, build.json()["runId"])["state"] == "done"
+
+        monkeypatch.setattr(
+            "resume_tailor_harness.llm_runner.resolve_api_key",
+            lambda model, **kwargs: "key",
+        )
+
+        def recap(reporter, **kwargs):
+            end_session(root, "s1", "Profile created.")
+            return coach_router.session_view(root, "s1")
+
+        monkeypatch.setattr(coach_router, "run_recap_turn", recap)
+        ended = client.post("/api/profile/coach/sessions/s1/end", json={"build": True})
+        assert ended.status_code == 202
+        result = _wait(client, ended.json()["runId"])
+        assert result["state"] == "done" and result["result"]["buildRunId"]
+        assert _wait(client, result["result"]["buildRunId"])["state"] == "done"
 
 
 def test_session_fetch_message_and_unknown_mapping(monkeypatch, tmp_path):
