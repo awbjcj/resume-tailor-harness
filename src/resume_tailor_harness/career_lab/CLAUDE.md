@@ -44,3 +44,13 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   query per page (never per row), because Career Lab deliberately freezes no job
   snapshot the way `InterviewContext` does; a thread whose job is gone simply
   has no label.
+
+
+- **Workspace management is an approved Career Lab skill.** The router and
+  formatter remain tool-free; the selected persona can inspect the tenant's
+  current jobs, profile, answers, notes and history through shared workspace
+  tools. Context references still describe the explicitly attached snapshot;
+  later tool reads are scoped by `UserContext`. Changes use immutable review
+  cards and require human approval outside the model loop; see
+  `../services/CLAUDE.md`. The existing draft artifact is conversation output,
+  never evidence that a proposed data change was applied.

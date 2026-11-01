@@ -99,7 +99,7 @@ Short version: [condensed to 60 seconds]
 ## Rules
 
 - Only build stories from the user's actual experience
-- Every STAR story must end with a quantified result
+- Use a supported quantitative or concrete qualitative result; never invent a metric or require one the user did not measure.
 - "Tell me about yourself" should be adapted per role, not generic
 - Failure stories must show genuine learning, not disguised wins
 - Keep full stories under 2 minutes when spoken aloud

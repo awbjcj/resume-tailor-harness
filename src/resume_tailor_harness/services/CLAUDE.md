@@ -97,3 +97,24 @@ null`; the domain model rejects that outright, so turning the budget off
   workspace secrets. Contexts, questions, profile answers and CLI metadata must
   never carry passwords. Browser filling runs in the external host, not the
   read-only discovery scraper. See `docs/application-password-manager.md`.
+
+
+- **Conversational workspace management requires human review.**
+  `workspace_agent/runtime.py` binds read/preview tools to the active `UserContext`
+  for Profile Coach, Career Lab, Mock Interview and Discovery Scout. Model tools
+  compute previews in memory; a successful chat turn publishes review cards.
+  `workspace_agent/actions.py` validates closed operations against existing domain
+  services, captures target revisions, and applies only stored actions selected
+  through the browser review endpoint. The endpoint rejects PAT authorization.
+  No model tool accepts approval, user ids, workspace paths, SQL, or shell input.
+  Reviews expire after 24 hours; edited targets require a new preview. Database
+  effects and per-action receipts share one transaction; file effects first record
+  an outcome-unknown marker and never blindly retry. Profile changes retain the
+  existing evidence and rollback checks. Notes/preparation retain revision history
+  and count as invested work in delete/prune guards. Browser cards remain visible
+  after a chat ends. Skill loading exposes only hash-pinned instructions, not
+  scripts or unverified reference files. Workspace tools check cancellation and
+  bound each turn to 15 calls and 180 seconds; public search has its own five-call
+  budget and URL reads use the outbound gateway. Provider calls retain existing
+  model/time/spend limits. This is chat-driven work, without unattended scheduling,
+  email sending or application submission.

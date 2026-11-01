@@ -1,3 +1,4 @@
+import { withQueryClient } from "@/test/utils";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -137,7 +138,7 @@ describe("CoachPage", () => {
   });
 
   it("renders the active coaching thread and agenda", () => {
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
 
     expect(screen.getByRole("heading", { name: "Profile Coach" })).toBeInTheDocument();
     expect(screen.getAllByText("What changed after you shipped it?")).toHaveLength(2);
@@ -149,7 +150,7 @@ describe("CoachPage", () => {
 
   it("uses the shared guided starting state when there is no active session", () => {
     coachState.useDefaultSession = false;
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
 
     expect(screen.getByText("Find the evidence your profile is missing")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Start coaching session" })).toBeInTheDocument();
@@ -158,7 +159,7 @@ describe("CoachPage", () => {
 
   it("preserves a message until its run succeeds", async () => {
     const user = userEvent.setup();
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
 
     const composer = screen.getByLabelText("Message your Profile Coach");
     await user.type(composer, "It reduced cycle time by 30%.");
@@ -176,7 +177,7 @@ describe("CoachPage", () => {
   it("renders streamed text and can stop the active turn", async () => {
     sendMessage.mockResolvedValue({ runId: "run-stream" });
     const user = userEvent.setup();
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
     await user.type(screen.getByLabelText("Message your Profile Coach"), "Evidence");
     await user.click(screen.getByRole("button", { name: "Send message" }));
     await waitFor(() => expect(FakeEventSource.last).not.toBeNull());
@@ -196,7 +197,7 @@ describe("CoachPage", () => {
       return { runId: "run-end" };
     });
     const user = userEvent.setup();
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
 
     await user.click(screen.getByRole("button", { name: "End session" }));
     const dialog = await screen.findByRole("alertdialog");
@@ -220,7 +221,7 @@ describe("CoachPage", () => {
   it("describes pending notes and changes in both languages before ending a session", async () => {
     coachState.extraPendingChange = true;
     const user = userEvent.setup();
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
 
     await user.click(screen.getByRole("button", { name: "End session" }));
     const dialog = await screen.findByRole("alertdialog");
@@ -240,7 +241,7 @@ describe("CoachPage", () => {
     coachState.sessions = [{ sessionId: "session-1", status: "ended", startedAt: "2026-07-15T12:00:00Z", endedAt: "2026-07-15T13:00:00Z", topicCount: 1, savedNoteCount: 0, archivedAt: null }];
     const user = userEvent.setup();
 
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
     await user.click(screen.getByRole("button", { name: /^Coaching · 7\/15\/2026/i }));
 
     expect(screen.queryByLabelText("Message your Profile Coach")).not.toBeInTheDocument();
@@ -254,7 +255,7 @@ describe("CoachPage", () => {
       { sessionId: "c1", status: "ended", startedAt: "2026-07-15T12:00:00Z", endedAt: "2026-07-15T13:00:00Z", topicCount: 2, savedNoteCount: 1, archivedAt: null },
     ];
     const user = userEvent.setup();
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
     await user.click(screen.getByRole("button", { name: "Actions for Coaching · 7/15/2026" }));
     await user.click(await screen.findByRole("menuitem", { name: "Archive" }));
     expect(archiveSession).toHaveBeenCalledWith({ sessionId: "c1" }, expect.any(Object));
@@ -266,7 +267,7 @@ describe("CoachPage", () => {
       { sessionId: "c1", status: "ended", startedAt: "2026-07-15T12:00:00Z", endedAt: "2026-07-15T13:00:00Z", topicCount: 2, savedNoteCount: 1, archivedAt: null },
     ];
     const user = userEvent.setup();
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
     await user.click(screen.getByRole("button", { name: "Actions for Coaching · 7/15/2026" }));
     await user.click(await screen.findByRole("menuitem", { name: "Delete" }));
     expect(await screen.findByText(/Saved notes are kept in your profile/i)).toBeInTheDocument();
@@ -276,7 +277,7 @@ describe("CoachPage", () => {
 
   it("includes archived sessions when toggled", async () => {
     const user = userEvent.setup();
-    render(<CoachPage />);
+    render(<CoachPage />, { wrapper: withQueryClient });
     await user.click(screen.getByRole("checkbox", { name: "Show archived" }));
     expect(coachState.includeArchived).toBe(true);
   });

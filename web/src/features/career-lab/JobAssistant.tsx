@@ -1,3 +1,4 @@
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useRef, useState } from "react";
 import { MessageCircle, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -100,7 +101,7 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
     <ChatThread messages={messages} streaming={advanced ? null : stream.parts} streamingActive={stream.status === "streaming"} showReasoning={false} assistantName="Career assistant" assistantIcon={icon} />
     <ChatRunProgress runId={runId} status={stream.status} reconnecting={stream.reconnecting} />
     {error || stream.error ? <p role="alert" className="text-sm text-destructive">{error || stream.error}</p> : null}
-    <ChatComposer value={message} onChange={setMessage} onSend={() => void submit()} onStop={stop} busy={busy} disabled={sessions.isPending || sessions.isError || session.isError || Boolean(sessionId && session.isPending)} settling={stream.status === "settled"} ariaLabel="Ask about this job" placeholder="Ask about this role or selected resume…" />
+    <WorkspaceReview surface="career-lab" sessionId={sessionId} turnCount={session.data?.turns?.length ?? 0} />    <ChatComposer value={message} onChange={setMessage} onSend={() => void submit()} onStop={stop} busy={busy} disabled={sessions.isPending || sessions.isError || session.isError || Boolean(sessionId && session.isPending)} settling={stream.status === "settled"} ariaLabel="Ask about this job" placeholder="Ask about this role or selected resume…" />
     {sessionId ? <Link to={`/career-lab?session=${encodeURIComponent(sessionId)}`} className="text-center text-xs font-medium text-primary underline underline-offset-4">Open full workspace</Link> : null}
   </div>;
 }

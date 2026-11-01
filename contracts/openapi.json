@@ -406,6 +406,41 @@
         "title": "AckRunsOut",
         "type": "object"
       },
+      "ActionOut": {
+        "properties": {
+          "after": {
+            "title": "After"
+          },
+          "before": {
+            "title": "Before"
+          },
+          "change": {
+            "$ref": "#/components/schemas/WorkspaceChange"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "change",
+          "before",
+          "after"
+        ],
+        "title": "ActionOut",
+        "type": "object"
+      },
       "AddAliasIn": {
         "properties": {
           "alias": {
@@ -4566,6 +4601,7 @@
       },
       "CareerLabSkillName": {
         "enum": [
+          "workspace-management",
           "application-form-filler",
           "career-changer-translator",
           "career-pivot-planner",
@@ -13349,6 +13385,90 @@
         "title": "ProjectOut",
         "type": "object"
       },
+      "ProposalOut": {
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionOut"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
+          },
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "expiresAt": {
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "sessionId": {
+            "title": "Sessionid",
+            "type": "string"
+          },
+          "surface": {
+            "enum": [
+              "coach",
+              "career-lab",
+              "interview",
+              "scout"
+            ],
+            "title": "Surface",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "digest",
+          "surface",
+          "sessionId",
+          "createdAt",
+          "expiresAt",
+          "actions"
+        ],
+        "title": "ProposalOut",
+        "type": "object"
+      },
+      "ProposalPage": {
+        "properties": {
+          "nextOffset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextoffset"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ProposalOut"
+            },
+            "title": "Proposals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "proposals"
+        ],
+        "title": "ProposalPage",
+        "type": "object"
+      },
       "ProviderModelCatalog": {
         "properties": {
           "hasKey": {
@@ -14564,6 +14684,35 @@
         "title": "RebuildProfileSkillsIn",
         "type": "object"
       },
+      "ReceiptOut": {
+        "properties": {
+          "approvedBy": {
+            "title": "Approvedby",
+            "type": "string"
+          },
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
+          },
+          "result": {
+            "additionalProperties": true,
+            "title": "Result",
+            "type": "object"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "result",
+          "approvedBy",
+          "createdAt"
+        ],
+        "title": "ReceiptOut",
+        "type": "object"
+      },
       "RedoParams": {
         "description": "Which jobs to redo and which stages to run.\n\nValidated here and nowhere deeper: redo_jobs trusts its inputs. Deduping\nstages matters because [\"tailor\", \"tailor\"] would otherwise bill twice.",
         "properties": {
@@ -15299,6 +15448,40 @@
           }
         },
         "title": "ReviewConfigDoc",
+        "type": "object"
+      },
+      "ReviewIn": {
+        "additionalProperties": false,
+        "properties": {
+          "actionIds": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Actionids",
+            "type": "array"
+          },
+          "decision": {
+            "enum": [
+              "apply",
+              "discard"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "digest": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "digest",
+          "actionIds",
+          "decision"
+        ],
+        "title": "ReviewIn",
         "type": "object"
       },
       "ReviewerEntry": {
@@ -20509,6 +20692,87 @@
           "country"
         ],
         "title": "WorkEligibility",
+        "type": "object"
+      },
+      "WorkspaceChange": {
+        "additionalProperties": false,
+        "properties": {
+          "citations": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Citations",
+            "type": "array"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "operation": {
+            "enum": [
+              "job.create",
+              "job.update",
+              "job.archive",
+              "job.restore",
+              "job.delete",
+              "application.update",
+              "event.create",
+              "event.update",
+              "event.delete",
+              "note.create",
+              "note.update",
+              "note.delete",
+              "preparation.save",
+              "profile.change",
+              "application_profile.update",
+              "question.create",
+              "question.update",
+              "question.delete",
+              "artifact.select",
+              "artifact.delete",
+              "search.update"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "values": {
+            "additionalProperties": true,
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "operation",
+          "reason"
+        ],
+        "title": "WorkspaceChange",
         "type": "object"
       },
       "resume_tailor_harness__api__schemas__admin_users__ResetPasswordRequest": {
@@ -41594,6 +41858,160 @@
           }
         },
         "summary": "Get Triage"
+      }
+    },
+    "/api/workspace-agent/proposals": {
+      "get": {
+        "operationId": "list_proposals_api_workspace_agent_proposals_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "surface",
+            "required": true,
+            "schema": {
+              "enum": [
+                "coach",
+                "career-lab",
+                "interview",
+                "scout"
+              ],
+              "title": "Surface",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Sessionid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Proposals",
+        "tags": [
+          "Workspace agent review"
+        ]
+      }
+    },
+    "/api/workspace-agent/proposals/{proposal_id}/review": {
+      "post": {
+        "operationId": "review_proposal_api_workspace_agent_proposals__proposal_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Review Proposal",
+        "tags": [
+          "Workspace agent review"
+        ]
       }
     }
   }

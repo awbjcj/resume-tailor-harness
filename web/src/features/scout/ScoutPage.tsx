@@ -1,3 +1,4 @@
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bot, Building2, CheckCircle2, Clock3, Compass, MessageCircleQuestion, Search } from "lucide-react";
@@ -156,6 +157,7 @@ export function ScoutPage() {
           {!active && !busy ? <WorkspaceEmptyState icon={Compass} title="Set your search direction" description="Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything." actionLabel="Create Scout session" onAction={() => setNewOpen(true)} steps={[{ icon: MessageCircleQuestion, title: "Describe the search", description: "Share roles, locations, industries, and boundaries in plain language." }, { icon: Search, title: "Review the research", description: "The Scout returns separate proposals with citations. It waits for your approval before changing settings." }, { icon: CheckCircle2, title: "Approve what fits", description: "Add or dismiss each company and search term yourself." }]} /> : <ChatThread messages={messages} streaming={streaming?.length ? streaming : null} streamingActive={stream.status === "streaming"} showReasoning renderAfter={(message) => active ? <ScoutResearchCards session={active} proposalIds={turnByMessageId.get(message.id)?.proposalIds ?? []} /> : null} assistantName="Discovery Scout" assistantIcon={<Compass className="size-4" aria-hidden="true" />} />}
           <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />
           {active?.recap ? <div className="rounded-xl border bg-muted/35 p-3 text-sm"><span className="font-medium">Recap: </span>{active.recap}</div> : null}
+          <WorkspaceReview surface="scout" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
           {active?.status === "active" ? <ChatComposer value={composer} onChange={setComposer} onSend={() => launchMessage()} onStop={stop} busy={busy} settling={stream.status === "settled"} ariaLabel="Discovery request" placeholder="Ask for a change…" /> : active ? <p className="rounded-xl bg-muted/50 p-3 text-center text-sm text-muted-foreground">This conversation has ended. Pending proposals remain available to review.</p> : null}
         </CardContent>
       </Card>

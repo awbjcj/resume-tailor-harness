@@ -101,6 +101,36 @@ def resolve_changes(
                 for quote in record.change.quotes
             ):
                 raise ValueError("The draft's user evidence no longer matches")
+        apply_workspace_draft(
+            root,
+            draft,
+            source,
+            receipt_paths=(coach_dir(root) / f"session-{session_id}.json",),
+            on_applied=lambda: mutate_session(root, session_id, mark_resolved),
+        )
+
+
+def apply_workspace_draft(
+    root: Path,
+    draft: CoachChangeDraft,
+    source: str,
+    *,
+    receipt_paths: tuple[Path, ...] = (),
+    on_applied=None,
+) -> None:
+    """Apply a host-approved draft; this function is never exposed as an agent tool."""
+    with manual_skills_lock(root):
+        if profile_revision(root) != draft.revision:
+            raise StaleProfileDraft("Profile changed; request a fresh proposal")
+        if hashlib.sha256(source.encode()).hexdigest() != draft.source_text_hash:
+            raise ValueError("Original user evidence no longer matches")
+        normalized = " ".join(source.split()).casefold()
+        for item in draft.changes:
+            if any(
+                not q.strip() or " ".join(q.split()).casefold() not in normalized
+                for q in item.change.quotes
+            ):
+                raise ValueError("Profile changes require current user evidence")
         facts = current_facts(root)
         facts = facts.model_copy(deep=True) if facts else None
         ledger = load_edits(root)
@@ -138,7 +168,7 @@ def resolve_changes(
             root / "matrix.json",
             root / "manual_skills.json",
             corrections_path(root),
-            coach_dir(root) / f"session-{session_id}.json",
+            *receipt_paths,
         )
         with rollback_scope(paths):
             save_edits(root, ledger)
@@ -151,4 +181,5 @@ def resolve_changes(
             else:
                 save_facts(facts, root / "facts.json")
                 rebuild_saved_matrix(root, facts)
-            mutate_session(root, session_id, mark_resolved)
+            if on_applied is not None:
+                on_applied()

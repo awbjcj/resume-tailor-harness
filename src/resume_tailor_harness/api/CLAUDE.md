@@ -123,3 +123,11 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   different existing `google_sub` is never overwritten. Sign-in scopes remain
   identity-only. Gmail consent is a separate incremental flow and keeps its
   readonly + compose scopes; `gmail.send` remains out of scope.
+
+
+- **`/workspace-agent/proposals` is the in-app review queue.** Reads are tenant,
+  surface and session scoped. Review accepts the stored digest and selected action
+  ids only, never replacement values. Browser session authentication grants the
+  human review surface; PAT callers cannot apply or discard these proposals.
+  Model tools only inspect records and prepare previews. Per-action receipts
+  distinguish applied, discarded and an unconfirmed file effect.

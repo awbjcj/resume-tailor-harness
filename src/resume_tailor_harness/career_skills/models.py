@@ -68,6 +68,7 @@ class CoverLetterSkillName(StrEnum):
 
 
 class CareerLabSkillName(StrEnum):
+    WORKSPACE_MANAGEMENT = "workspace-management"
     APPLICATION_FORM_FILLER = "application-form-filler"
     CAREER_CHANGER_TRANSLATOR = "career-changer-translator"
     CAREER_PIVOT_PLANNER = "career-pivot-planner"

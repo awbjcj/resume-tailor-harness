@@ -4630,6 +4630,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workspace-agent/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Proposals */
+        get: operations["list_proposals_api_workspace_agent_proposals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workspace-agent/proposals/{proposal_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Proposal */
+        post: operations["review_proposal_api_workspace_agent_proposals__proposal_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4804,6 +4838,17 @@ export interface components {
         AckRunsOut: {
             /** Acknowledged */
             acknowledged: number;
+        };
+        /** ActionOut */
+        ActionOut: {
+            /** After */
+            after: unknown;
+            /** Before */
+            before: unknown;
+            change: components["schemas"]["WorkspaceChange"];
+            /** Id */
+            id: string;
+            receipt?: components["schemas"]["ReceiptOut"] | null;
         };
         /** AddAliasIn */
         AddAliasIn: {
@@ -6352,7 +6397,7 @@ export interface components {
          * CareerLabSkillName
          * @enum {string}
          */
-        CareerLabSkillName: "application-form-filler" | "career-changer-translator" | "career-pivot-planner" | "cold-email-writer" | "compensation-negotiator" | "linkedin-profile-booster" | "linkedin-profile-optimizer" | "offer-comparison-analyzer" | "portfolio-case-study" | "portfolio-case-study-writer" | "reference-list-builder" | "salary-negotiation-prep";
+        CareerLabSkillName: "workspace-management" | "application-form-filler" | "career-changer-translator" | "career-pivot-planner" | "cold-email-writer" | "compensation-negotiator" | "linkedin-profile-booster" | "linkedin-profile-optimizer" | "offer-comparison-analyzer" | "portfolio-case-study" | "portfolio-case-study-writer" | "reference-list-builder" | "salary-negotiation-prep";
         /** CareerLabSkillOut */
         CareerLabSkillOut: {
             /**
@@ -9615,6 +9660,35 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** ProposalOut */
+        ProposalOut: {
+            /** Actions */
+            actions: components["schemas"]["ActionOut"][];
+            /** Createdat */
+            createdAt: string;
+            /** Digest */
+            digest: string;
+            /** Expiresat */
+            expiresAt: string;
+            /** Id */
+            id: string;
+            /** Sessionid */
+            sessionId: string;
+            /**
+             * Surface
+             * @enum {string}
+             */
+            surface: "coach" | "career-lab" | "interview" | "scout";
+            /** Title */
+            title: string;
+        };
+        /** ProposalPage */
+        ProposalPage: {
+            /** Nextoffset */
+            nextOffset?: number | null;
+            /** Proposals */
+            proposals: components["schemas"]["ProposalOut"][];
+        };
         /** ProviderModelCatalog */
         ProviderModelCatalog: {
             /** Haskey */
@@ -10044,6 +10118,19 @@ export interface components {
              */
             reclassifyOnly: boolean;
         };
+        /** ReceiptOut */
+        ReceiptOut: {
+            /** Approvedby */
+            approvedBy: string;
+            /** Createdat */
+            createdAt: string;
+            /** Result */
+            result: {
+                [key: string]: unknown;
+            };
+            /** State */
+            state: string;
+        };
         /**
          * RedoParams
          * @description Which jobs to redo and which stages to run.
@@ -10387,6 +10474,18 @@ export interface components {
              * @enum {string}
              */
             tailorTier: "cheap" | "mid" | "premium";
+        };
+        /** ReviewIn */
+        ReviewIn: {
+            /** Actionids */
+            actionIds: string[];
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "apply" | "discard";
+            /** Digest */
+            digest: string;
         };
         /** ReviewerEntry */
         ReviewerEntry: {
@@ -12207,6 +12306,26 @@ export interface components {
             sponsorshipNow?: boolean | null;
             /** Stemoptextensioneligible */
             stemOptExtensionEligible?: boolean | null;
+        };
+        /** WorkspaceChange */
+        WorkspaceChange: {
+            /** Citations */
+            citations?: string[];
+            /** Job Id */
+            job_id?: number | null;
+            /**
+             * Operation
+             * @enum {string}
+             */
+            operation: "job.create" | "job.update" | "job.archive" | "job.restore" | "job.delete" | "application.update" | "event.create" | "event.update" | "event.delete" | "note.create" | "note.update" | "note.delete" | "preparation.save" | "profile.change" | "application_profile.update" | "question.create" | "question.update" | "question.delete" | "artifact.select" | "artifact.delete" | "search.update";
+            /** Reason */
+            reason: string;
+            /** Target Id */
+            target_id?: number | null;
+            /** Values */
+            values?: {
+                [key: string]: unknown;
+            };
         };
         /** ResetPasswordRequest */
         resume_tailor_harness__api__schemas__admin_users__ResetPasswordRequest: {
@@ -24276,6 +24395,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BoardPage_TriageItem_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_proposals_api_workspace_agent_proposals_get: {
+        parameters: {
+            query: {
+                surface: "coach" | "career-lab" | "interview" | "scout";
+                sessionId: string;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_proposal_api_workspace_agent_proposals__proposal_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                proposal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
                 };
             };
             /** @description Validation Error */
