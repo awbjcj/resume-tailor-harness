@@ -425,7 +425,7 @@ export function CoachPage() {
                   />
                 </div>
               ) : null}
-              {Boolean(active.changeDrafts?.length || active.draftNotes?.length || active.recap || active.impact) ? (
+              {(active.changeDrafts?.length || active.draftNotes?.length || active.recap || active.impact) ? (
                 <div className="space-y-4 border-t p-4 sm:p-6">
                   {(active.changeDrafts ?? []).map((draft) => (
                     <ProfileChangeCard key={`${draft.id}-${draft.status}`} draft={draft}
