@@ -19,10 +19,6 @@ def test_health_ok():
     }
 
 
-def test_no_auth_by_default():
-    assert _client().get("/api/health").status_code == 200
-
-
 def test_api_tests_ignore_host_auth_environment(monkeypatch):
     monkeypatch.setenv("API_TOKEN", "host-token-that-tests-must-not-inherit")
     env_settings.cache_clear()

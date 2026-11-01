@@ -79,15 +79,11 @@ def test_hiring_contact_resource_moves_from_empty_to_ready(monkeypatch, tmp_path
             session.refresh(job)
             assert job.id is not None
             job_id = job.id
-        empty = client.get(
-            f"/api/jobs/{job_id}/hiring-contact-intelligence"
-        ).json()
+        empty = client.get(f"/api/jobs/{job_id}/hiring-contact-intelligence").json()
         launched = client.post(
             f"/api/jobs/{job_id}/hiring-contact-intelligence/refreshes"
         )
-        ready = client.get(
-            f"/api/jobs/{job_id}/hiring-contact-intelligence"
-        ).json()
+        ready = client.get(f"/api/jobs/{job_id}/hiring-contact-intelligence").json()
 
     assert empty["state"] == "empty"
     assert launched.status_code == 202
@@ -107,9 +103,7 @@ def test_hiring_contact_resource_handles_a_missing_company(tmp_path):
             session.refresh(job)
             assert job.id is not None
             job_id = job.id
-        resource = client.get(
-            f"/api/jobs/{job_id}/hiring-contact-intelligence"
-        )
+        resource = client.get(f"/api/jobs/{job_id}/hiring-contact-intelligence")
         refresh = client.post(
             f"/api/jobs/{job_id}/hiring-contact-intelligence/refreshes"
         )
@@ -119,14 +113,3 @@ def test_hiring_contact_resource_handles_a_missing_company(tmp_path):
     assert resource.json()["reason"] == "missing_company"
     assert refresh.status_code == 409
     assert refresh.json()["error"]["code"] == "HIRING_CONTACT_INTELLIGENCE_UNAVAILABLE"
-
-
-def test_hiring_contact_openapi_has_no_send_endpoint(tmp_path):
-    client = _client(tmp_path)
-    with client:
-        paths = client.get("/openapi.json").json()["paths"]
-
-    resource = "/api/jobs/{job_id}/hiring-contact-intelligence"
-    assert "get" in paths[resource]
-    assert "post" in paths[f"{resource}/refreshes"]
-    assert not any("hiring-contact" in path and "send" in path for path in paths)

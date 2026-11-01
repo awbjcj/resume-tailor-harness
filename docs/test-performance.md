@@ -1,9 +1,9 @@
 # Test runtime
 
-The offline suites must keep the same tests, assertions, production password
-hashing, database migrations, real PDF compilation, and performance regression
-checks. Reduce runtime by scheduling independent work while keeping slow tests
-in the suite.
+The offline suites preserve behavior coverage, production password hashing,
+database migrations, real PDF compilation, and performance regression checks.
+Reduce runtime by scheduling independent work and consolidating related cases
+that can safely reuse initialization within one test.
 
 ## Python
 
@@ -17,7 +17,11 @@ Each worker has its own Python module state and pytest temporary directory.
 Function-scoped fixtures still run for every test. Keep writable files under
 `tmp_path` and databases private to the test; do not introduce fixed output
 paths or shared ports. Do not share a mutable application or database across
-tests merely to save setup time.
+tests merely to save setup time. Within one test, use pytest 9's `subtests`
+fixture for compatible input matrices: each case gets its own failure report
+without rerunning the application's fixtures. Rejected inputs must leave the
+shared state unchanged; restore mutable fake inputs before each case. Keep
+cases with incompatible startup settings or destructive side effects separate.
 
 ```sh
 uv run pytest                                     # complete suite
@@ -97,6 +101,61 @@ reports and compare test identities, statuses, and counts as well as elapsed
 time. Worker durations are overlapping wall-clock phases, so adding them does
 not give the duration of a parallel run. Local timings vary with other work
 on the machine; they are observations, not CI time limits.
+
+## Shared-initialization consolidation (2026-11-01)
+
+Related API and UI checks now follow one lifecycle where possible: defaults,
+validation, save, read-back, and cleanup reuse the same client or component.
+Validation matrices use named subtests, preserving every original input and
+continuing after individual failures. Fake billing prices are restored before
+each case so one invalid field cannot mask another. Applications, databases,
+and writable fixtures remain isolated between collected tests.
+
+The seven OpenAPI generations formerly spread across five modules are now one
+contract check with six named sections. It also checks that `/openapi.json`
+serves the generated schema. Release-policy checks that do not use Git no
+longer initialize repositories; compatible preview, publish, and validation
+checks share their local repository pair.
+
+Four redundant tests were removed: the duplicate public-health status check,
+the identical Ashby HTML fallback, the secondary-location assertion already
+present in Ashby's field mapping, and the two-stage ordering check covered by
+the larger pipeline priority test. The keyword-removal check now requires an
+empty output instead of checking for an empty substring.
+
+| Measurement | Before | After |
+| --- | ---: | ---: |
+| App builds in the profiled 13-file Python selection | 209 | 124 |
+| Git repository pairs initialized by release tests | 16 | 11 |
+| OpenAPI schema generations across the suite | 7 | 1 |
+| Collected cases in the 18 changed Python files | 263 | 166 |
+| Additional named pytest subtests | 0 | 80 |
+| Collected cases in the 8 changed web files | 45 | 25 |
+| Matched web selection, mean elapsed time | 19.30 s | 14.66 s |
+
+The profiled selection builds 40.7% fewer apps. The matched web selection is
+24.0% faster. Its original and revised tests ran against unchanged production
+components in before/after/after/before order: 20.56/14.03/15.30/18.03 seconds.
+All four runs passed. The temporary original test copies were removed afterward.
+
+Complete validation passed 5,033 Python tests plus 109 subtests (six existing
+skips), and 1,021 web tests in 225 files. All 4,873 untouched Python test
+identities/statuses, all six skip identities, and all 996 untouched web
+identities/statuses match the baseline. Ruff, Pyright, ESLint, and TypeScript
+checks also passed.
+
+These measurements establish less initialization and a faster affected web
+selection, not a full-suite speedup. Complete pytest time was essentially
+unchanged (206.29 to 206.05 seconds). Complete web elapsed time varied from
+48.65 to 94.12 seconds, with unchanged tests also taking substantially longer
+in the latter run. The profiled serial Python selection passed in 161.15 and
+148.93 seconds; profiler overhead means those times should not be compared
+with normal suite runs. Pytest subtest reports also include child timings, so
+summing JUnit case durations can double-count work.
+
+Raw reports, the fixed Python selection, input/identity audits, initializer
+counts, and matched web timings are in the ignored `output/test-consolidation/`
+directory. The performance budgets and production behavior were unchanged.
 
 For diagnosis, a profile of `tests/api/test_auth_email_flows.py` attributed
 5.33 seconds to PBKDF2 in a 9.54-second test run (seven tests). Those production

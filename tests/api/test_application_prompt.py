@@ -291,9 +291,11 @@ def test_structured_answers_keep_scope_dates_unknowns_and_actual_degrees(app_cli
     assert "Saved answers never authorize accepting terms" in prompt
 
 
-@pytest.mark.parametrize(
-    "invalid",
-    [
+def test_invalid_structured_answers_do_not_replace_saved_profile(app_client, subtests):
+    client, _, _ = app_client
+    route = "/api/config/application-profile"
+    assert client.put(route, json={"fullName": "Existing answer"}).status_code == 200
+    for invalid in [
         {
             "workEligibility": [
                 {"country": "US", "confirmedOn": "2026-10-20", "currentlyOnOpt": "no"}
@@ -349,14 +351,10 @@ def test_structured_answers_keep_scope_dates_unknowns_and_actual_degrees(app_cli
         },
         {"legalName": {"guessedName": "Ada"}},
         {"aiMatchingPreference": "yes"},
-    ],
-)
-def test_invalid_structured_answers_do_not_replace_saved_profile(app_client, invalid):
-    client, _, _ = app_client
-    route = "/api/config/application-profile"
-    client.put(route, json={"fullName": "Existing answer"})
-    assert client.put(route, json=invalid).status_code == 422
-    assert client.get(route).json()["fullName"] == "Existing answer"
+    ]:
+        with subtests.test(invalid=invalid):
+            assert client.put(route, json=invalid).status_code == 422
+            assert client.get(route).json()["fullName"] == "Existing answer"
 
 
 def test_legacy_notes_are_preserved_without_guessing_structured_answers(app_client):

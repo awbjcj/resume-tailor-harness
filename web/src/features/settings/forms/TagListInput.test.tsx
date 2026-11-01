@@ -16,32 +16,23 @@ function Harness() {
 }
 
 describe("TagListInput", () => {
-  it("splits a pasted comma-separated string into trimmed tags", async () => {
+  it("commits words, trims pasted tags, and drops empty and duplicate segments", async () => {
     const user = userEvent.setup();
     render(<Harness />);
     const input = screen.getByRole("textbox");
+    await user.type(input, "python{Enter}");
+    expect(screen.getByTestId("tags")).toHaveTextContent("python");
+    await user.click(input);
+    await user.paste("python,, python , django");
+    await user.tab();
+    expect(screen.getByTestId("tags")).toHaveTextContent("python|django");
+    await user.click(screen.getByRole("button", { name: "Remove python" }));
+    await user.click(screen.getByRole("button", { name: "Remove django" }));
     await user.click(input);
     await user.paste("Python, Django , Kubernetes,Go");
     await user.tab();
     expect(screen.getByTestId("tags")).toHaveTextContent(
       "Python|Django|Kubernetes|Go"
     );
-  });
-
-  it("drops empty segments and duplicate tags from a paste", async () => {
-    const user = userEvent.setup();
-    render(<Harness />);
-    const input = screen.getByRole("textbox");
-    await user.click(input);
-    await user.paste("python,, python , django");
-    await user.tab();
-    expect(screen.getByTestId("tags")).toHaveTextContent("python|django");
-  });
-
-  it("still commits a single word on Enter", async () => {
-    const user = userEvent.setup();
-    render(<Harness />);
-    await user.type(screen.getByRole("textbox"), "python{Enter}");
-    expect(screen.getByTestId("tags")).toHaveTextContent("python");
   });
 });

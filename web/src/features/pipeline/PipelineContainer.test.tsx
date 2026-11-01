@@ -192,43 +192,6 @@ describe("PipelineContainer", () => {
     expect(screen.getByRole("checkbox", { name: /Select tailored Co Architect/ })).toBeChecked();
   });
 
-  it("puts the tailored stage before every other status", async () => {
-    server.use(
-      statusAware([
-        {
-          jobId: 1,
-          company: "Raw Co",
-          title: "Raw role",
-          status: "raw",
-          fitScore: 40,
-          jdPreview: "raw",
-          critiqueJson: null,
-          pdfPath: null,
-          applicationStatus: null,
-          hasProgress: false,
-        },
-        {
-          jobId: 2,
-          company: "Tailored Co",
-          title: "Tailored role",
-          status: "tailored",
-          fitScore: 90,
-          jdPreview: "tailored",
-          critiqueJson: [],
-          pdfPath: null,
-          applicationStatus: null,
-          hasProgress: true,
-        },
-      ]),
-    );
-
-    wrap(<PipelineContainer />);
-    await waitFor(() => expect(screen.getByText("Tailored role")).toBeInTheDocument());
-
-    const stageHeadings = screen.getAllByRole("heading", { level: 2 });
-    expect(stageHeadings.map((heading) => heading.textContent)).toEqual(["Tailored", "Raw"]);
-  });
-
   it("orders stages by post-processing priority and collapses inactive groups", async () => {
     server.use(
       statusAware([
@@ -271,65 +234,19 @@ describe("PipelineContainer", () => {
     expect(screen.queryByText("Approved role")).not.toBeInTheDocument();
   });
 
-  it("filters the pipeline by multiple statuses through the server query", async () => {
-    const requestedStatuses: Array<string | null> = [];
-    server.use(
-      http.get("/api/pipeline", ({ request }) => {
-        requestedStatuses.push(new URL(request.url).searchParams.get("status"));
-        return HttpResponse.json({
-          data: [],
-          pagination: { page: 1, pageSize: 200, totalItems: 0, totalPages: 1 },
-          // Empty facets keep the board in its empty state so only the overview
-          // query runs — the test asserts on the status param it carries.
-          facets: { status: {} },
-          total: 0,
-        });
-      }),
-    );
-    const user = userEvent.setup();
-
-    wrap(<PipelineContainer />);
-    await screen.findByText("No jobs in the pipeline");
-    await user.click(screen.getByRole("button", { name: "Status" }));
-    await user.click(screen.getByRole("checkbox", { name: /tailored/i }));
-    await user.click(screen.getByRole("checkbox", { name: /rendered/i }));
-
-    await waitFor(() => expect(requestedStatuses.at(-1)).toBe("tailored,rendered"));
-  });
-
-  it("applies min fit from a numeric input", async () => {
-    const requestedMinFits: Array<string | null> = [];
-    server.use(
-      http.get("/api/pipeline", ({ request }) => {
-        requestedMinFits.push(new URL(request.url).searchParams.get("minFit"));
-        return HttpResponse.json({
-          data: [],
-          pagination: { page: 1, pageSize: 200, totalItems: 0, totalPages: 1 },
-          facets: { status: {} },
-          total: 0,
-        });
-      }),
-    );
-    const user = userEvent.setup();
-
-    wrap(<PipelineContainer />);
-    await screen.findByText("No jobs in the pipeline");
-    const minFit = screen.getByRole("spinbutton", { name: "Min fit" });
-    await user.type(minFit, "65");
-    await user.click(screen.getByRole("button", { name: /^apply$/i }));
-
-    await waitFor(() => expect(requestedMinFits.at(-1)).toBe("65"));
-  });
-
-  it("applies sponsorship and type facets through the pipeline server query", async () => {
-    const requestedFilters: Array<{
+  it("combines status, minimum fit, sponsorship, and employment filters in server queries", async () => {
+    const requests: Array<{
+      status: string | null;
+      minFit: string | null;
       sponsorship: string | null;
       employmentType: string | null;
     }> = [];
     server.use(
       http.get("/api/pipeline", ({ request }) => {
         const search = new URL(request.url).searchParams;
-        requestedFilters.push({
+        requests.push({
+          status: search.get("status"),
+          minFit: search.get("minFit"),
           sponsorship: search.get("sponsorship"),
           employmentType: search.get("employmentType"),
         });
@@ -342,21 +259,29 @@ describe("PipelineContainer", () => {
       }),
     );
     const user = userEvent.setup();
-
     wrap(<PipelineContainer />);
     await screen.findByText("No jobs in the pipeline");
+
+    await user.click(screen.getByRole("button", { name: "Status" }));
+    await user.click(screen.getByRole("checkbox", { name: /tailored/i }));
+    await user.click(screen.getByRole("checkbox", { name: /rendered/i }));
+    await waitFor(() => expect(requests.at(-1)?.status).toBe("tailored,rendered"));
+    await user.keyboard("{Escape}");
+
+    await user.type(screen.getByRole("spinbutton", { name: "Min fit" }), "65");
+    await user.click(screen.getByRole("button", { name: /^apply$/i }));
+    await waitFor(() => expect(requests.at(-1)?.minFit).toBe("65"));
 
     await user.click(screen.getByRole("button", { name: "Sponsorship" }));
     await user.click(screen.getByRole("checkbox", { name: /offered/i }));
     await user.click(screen.getByRole("button", { name: "Type" }));
     await user.click(screen.getByRole("checkbox", { name: /full time/i }));
-
-    await waitFor(() =>
-      expect(requestedFilters.at(-1)).toEqual({
-        sponsorship: "offered",
-        employmentType: "full_time",
-      }),
-    );
+    await waitFor(() => expect(requests.at(-1)).toEqual({
+      status: "tailored,rendered",
+      minFit: "65",
+      sponsorship: "offered",
+      employmentType: "full_time",
+    }));
   });
 
   it("opens redo for the current selection with re-tailor pre-ticked", async () => {

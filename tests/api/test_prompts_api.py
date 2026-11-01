@@ -26,25 +26,29 @@ def test_get_lists_complete_prompt_contract(client) -> None:
     assert by_key["tailor-writer"]["instructions"]
 
 
-@pytest.mark.parametrize("key", ["coach", "reviewer-fact-check"])
-def test_put_round_trips_and_clears_guidance(client, key) -> None:
-    original = next(
-        item for item in client.get("/api/agents/prompts").json() if item["key"] == key
-    )
-    response = client.put(
-        f"/api/agents/prompts/{key}", json={"guidance": "Check cited evidence first."}
-    )
-    assert response.status_code == 200
-    assert response.json()["guidance"] == "Check cited evidence first."
-    assert response.json()["instructions"] == original["instructions"]
-    listed = client.get("/api/agents/prompts").json()
-    assert next(item for item in listed if item["key"] == key)["guidance"] == (
-        "Check cited evidence first."
-    )
-    cleared = client.put(f"/api/agents/prompts/{key}", json={"guidance": ""})
-    assert cleared.status_code == 200
-    assert cleared.json()["guidance"] is None
-    assert cleared.json()["instructions"] == original["instructions"]
+def test_put_round_trips_and_clears_guidance(client, subtests):
+    for key in ["coach", "reviewer-fact-check"]:
+        with subtests.test(key=key):
+            original = next(
+                item
+                for item in client.get("/api/agents/prompts").json()
+                if item["key"] == key
+            )
+            response = client.put(
+                f"/api/agents/prompts/{key}",
+                json={"guidance": "Check cited evidence first."},
+            )
+            assert response.status_code == 200
+            assert response.json()["guidance"] == "Check cited evidence first."
+            assert response.json()["instructions"] == original["instructions"]
+            listed = client.get("/api/agents/prompts").json()
+            assert next(item for item in listed if item["key"] == key)["guidance"] == (
+                "Check cited evidence first."
+            )
+            cleared = client.put(f"/api/agents/prompts/{key}", json={"guidance": ""})
+            assert cleared.status_code == 200
+            assert cleared.json()["guidance"] is None
+            assert cleared.json()["instructions"] == original["instructions"]
 
 
 def test_put_error_contracts(client) -> None:

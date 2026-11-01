@@ -17,8 +17,18 @@ def test_comparison_endpoint_validates_selection_and_preserves_order(tmp_path):
     with client:
         with get_session(_app(client).state.engine) as session:
             jobs = [
-                Job(source="manual", company="Acme", title="Platform Engineer", fit_score=90),
-                Job(source="manual", company="Globex", title="Staff Engineer", fit_score=81),
+                Job(
+                    source="manual",
+                    company="Acme",
+                    title="Platform Engineer",
+                    fit_score=90,
+                ),
+                Job(
+                    source="manual",
+                    company="Globex",
+                    title="Staff Engineer",
+                    fit_score=81,
+                ),
             ]
             session.add_all(jobs)
             session.commit()
@@ -36,13 +46,11 @@ def test_comparison_endpoint_validates_selection_and_preserves_order(tmp_path):
             "/api/jobs/company-intelligence-comparisons",
             json={"jobIds": [ids[0], ids[0]]},
         )
-        paths = client.get("/openapi.json").json()["paths"]
 
     assert response.status_code == 200
     assert [item["jobId"] for item in response.json()["items"]] == [ids[1], ids[0]]
     assert response.json()["items"][0]["companyEvidence"]["state"] == "not_researched"
     assert duplicate.status_code == 422
-    assert "/api/jobs/company-intelligence-comparisons" in paths
 
 
 def test_comparison_endpoint_rejects_terminal_applications(tmp_path):
