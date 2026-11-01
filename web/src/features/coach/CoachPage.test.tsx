@@ -113,7 +113,7 @@ vi.mock("./use-coach", () => ({
   useEndCoachSession: () => ({ mutateAsync: endSession, isPending: false }),
   useSaveCoachNote: () => ({ mutateAsync: saveNote, isPending: false }),
   useDiscardCoachNote: () => ({ mutateAsync: discardNote, isPending: false }),
-  useResolveCoachChanges: () => ({ mutate: vi.fn(), isPending: false }),
+  useResolveCoachChanges: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useArchiveCoachSession: () => ({ mutate: archiveSession }),
   useUnarchiveCoachSession: () => ({ mutate: unarchiveSession }),
   useDeleteCoachSession: () => ({ mutate: deleteSession, isPending: false }),
@@ -145,7 +145,7 @@ describe("CoachPage", () => {
     expect(screen.getByText("In progress")).toBeInTheDocument();
     expect(screen.getByText(/Missing outcome/)).toBeInTheDocument();
     expect(screen.getByText("Improved delivery")).toBeInTheDocument();
-    expect(screen.getByText("Active · 1 topic · 0 saved")).toBeInTheDocument();
+    expect(screen.getByText("Active · 1 topic · 0 notes saved")).toBeInTheDocument();
   });
 
   it("uses the shared guided starting state when there is no active session", () => {

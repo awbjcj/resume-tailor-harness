@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import type { ProfileMatrix } from "@/features/settings/use-matrix";
 import {
-  SKILL_CATEGORY_LABELS,
+  SKILL_CATEGORIES,
   skillCategoryValue,
   type SkillCategory,
 } from "./skill-categories";
@@ -168,13 +168,13 @@ export function SkillEditorDialog({
                 onChange={(value) => setCategory(skillCategoryValue(value))}
                 disabled={pending || disabled}
               >
-                {Object.entries(SKILL_CATEGORY_LABELS)
+                {SKILL_CATEGORIES
                   .filter(
-                    ([value]) => !row?.inferred || value !== "unspecified",
+                    (value) => !row?.inferred || value !== "unspecified",
                   )
-                  .map(([value, label]) => (
+                  .map((value) => (
                     <option key={value} value={value}>
-                      {label}
+                      {copy.skillTypes[value]}
                     </option>
                   ))}
               </LibrarySelect>

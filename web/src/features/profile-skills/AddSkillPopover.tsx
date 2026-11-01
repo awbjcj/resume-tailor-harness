@@ -25,14 +25,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useSkillTypeLabels } from "@/i18n/skill-types";
 import {
-  SKILL_CATEGORY_LABELS,
-  SKILL_CATEGORY_OPTIONS,
+  SKILL_CATEGORIES,
   type SkillCategory,
 } from "./skill-categories";
 import { useAddSkill, useAddSkillAlias, useProfileSkills } from "./use-profile-skills";
 
 export function AddSkillPopover({ skillName }: { skillName: string }) {
+  const typeLabels = useSkillTypeLabels();
+  const categoryOptions = SKILL_CATEGORIES.map((value) => ({ value, label: typeLabels[value] }));
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"new" | "alias">("new");
   const [category, setCategory] = useState<SkillCategory>("unspecified");
@@ -108,7 +110,7 @@ export function AddSkillPopover({ skillName }: { skillName: string }) {
         {mode === "new" ? (
           <div className="mt-3 space-y-3">
             <Select
-              items={SKILL_CATEGORY_OPTIONS}
+              items={categoryOptions}
               value={category}
               onValueChange={(value) =>
                 setCategory((value as SkillCategory | null) ?? "unspecified")
@@ -118,9 +120,9 @@ export function AddSkillPopover({ skillName }: { skillName: string }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SKILL_CATEGORY_OPTIONS.map(({ value }) => (
+                {categoryOptions.map(({ value, label }) => (
                   <SelectItem key={value} value={value}>
-                    {SKILL_CATEGORY_LABELS[value]}
+                    {label}
                   </SelectItem>
                 ))}
               </SelectContent>
