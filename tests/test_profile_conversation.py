@@ -117,7 +117,14 @@ def _apply(root, draft, decision="apply"):
 
 
 def _bytes(root):
-    return {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+    # FileLock's platform-specific implementation may leave empty lock files.
+    # Compare all durable profile data, independently of those sidecars.
+    lock_files = {Path(".profile-mutations.lock"), Path(".cluster_map.json.lock")}
+    return {
+        p.relative_to(root): p.read_bytes()
+        for p in root.rglob("*")
+        if p.is_file() and p.relative_to(root) not in lock_files
+    }
 
 
 def test_tools_preview_and_draft_are_read_only(profile):
@@ -504,7 +511,6 @@ def test_failed_commit_rolls_back_facts_ledger_matrix_and_draft(profile, monkeyp
     with pytest.raises(OSError, match="Disk full"):
         _apply(profile, draft)
     after = _bytes(profile)
-    after.pop(Path(".profile-mutations.lock"), None)
     assert after == before
 
 
