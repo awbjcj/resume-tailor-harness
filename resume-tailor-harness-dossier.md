@@ -2,74 +2,80 @@
 repo_url: https://github.com/awbjcj/resume-tailor-harness
 repo_name: resume-agent
 role: sole author
-generated_at: 2026-10-25
+generated_at: 2026-10-31
 ---
 
-# Project: Résumé Tailor Harness — Fact-Locked Job-Search Application
+# Project: Résumé Tailor Harness
 
 ## Summary
 
-A job-search application for candidates who need generated résumés and cover letters grounded in source evidence (`src/resume_tailor_harness/tailor/`, `src/resume_tailor_harness/cover_letter/`). Closed profile schemas and deterministic provenance, skill-name, and numeric-evidence gates constrain drafting before paid review (`src/resume_tailor_harness/profile/project_extractor.py`, `src/resume_tailor_harness/tailor/workflow.py`). The application combines job acquisition, fit scoring, reviewer-panel tailoring, coaching, interviews, employer research, and application tracking through browser, command-line, and external-agent interfaces (`src/resume_tailor_harness/api/app.py`, `src/resume_tailor_harness/cli.py`, `sdk/python/`). Recent work adds revision-checked application preparation, reusable professional screening answers, bounded taxonomy recovery, reversible non-skill cleanup, and Chinese localization (`src/resume_tailor_harness/services/agent_applications.py`, `src/resume_tailor_harness/services/application_prompt.py`, `src/resume_tailor_harness/services/match_gap.py`, `src/resume_tailor_harness/services/taxonomy.py`, `web/src/i18n/`). The repository is actively maintained by its sole human author (`git shortlog -sne 9fa44306`).
+Résumé Tailor Harness is a job-search application for candidates who want résumés and cover letters grounded in profile evidence (`src/resume_tailor_harness/tailor/`, `src/resume_tailor_harness/cover_letter/`). It brings job discovery, fit analysis, reviewer-panel tailoring, coaching, interviews, and application tracking together in a browser interface, command-line interface, and external-agent SDK (`src/resume_tailor_harness/api/app.py`, `src/resume_tailor_harness/cli.py`, `sdk/python/`). It also analyzes recruiting email and reviews rendered résumé layouts (`src/resume_tailor_harness/services/gmail_sync.py`, `src/resume_tailor_harness/services/mailboxes.py`, `src/resume_tailor_harness/render/layout_review.py`). The project is actively maintained by its sole human author (`git shortlog -sne 429106b8`).
 
-Role: sole author (2,309 of 2,477 repository commits across the owner's three Git identities, `git shortlog -sne 9fa44306`; automation excluded from the owner count)
+Role: sole author (2,382 of 2,577 reachable commits across the owner's three Git identities; automation excluded from the author count, `git shortlog -sne 429106b8`, `git rev-list --count 429106b8`)
 Repository: https://github.com/awbjcj/resume-tailor-harness
-Timeline: 2026-06 – present (`git log --reverse --format=%as`)
+Timeline: 2026-06 – present (first commit 2026-06-08, `git log --reverse --format=%as 429106b8`)
 
-Evidence revision: `9fa44306ca47246824e4c6afdfcbeab63b454fb3`. Counts below refer to this snapshot; the first commit date is 2026-06-08.
+Evidence revision: `429106b88587059c97ecedf097fb1338fba07a31`. Repository counts below refer to this snapshot.
 
 ## Tech stack (evidence-backed)
 
 - Python — backend under `src/resume_tailor_harness/`.
 - TypeScript — browser application and API contracts in `web/src/` and `contracts/ts/`.
 - FastAPI — routers and schemas under `src/resume_tailor_harness/api/`.
-- Pydantic — closed extraction and output schemas under `src/resume_tailor_harness/models/` and `src/resume_tailor_harness/profile/`.
+- Pydantic — extraction and output schemas under `src/resume_tailor_harness/models/` and `src/resume_tailor_harness/profile/`.
 - SQLModel — tracking and tenancy tables under `src/resume_tailor_harness/`.
-- SQLAlchemy — engine pooling in `src/resume_tailor_harness/db.py` and conditional updates in `src/resume_tailor_harness/services/agent_applications.py`.
+- SQLAlchemy — database engine pooling in `src/resume_tailor_harness/db.py` and conditional writes in `src/resume_tailor_harness/services/agent_applications.py`.
 - SQLite — workspace and system databases in `src/resume_tailor_harness/db.py` and `src/resume_tailor_harness/tenancy/system_db.py`.
 - Agno — agent runner in `src/resume_tailor_harness/llm_runner.py`.
 - OpenAI API — provider routing and transport in `src/resume_tailor_harness/llm_runner.py`.
 - Anthropic API — provider models in `src/resume_tailor_harness/llm_routing.py`.
 - Google Gemini — provider models in `src/resume_tailor_harness/llm_routing.py`.
 - DeepSeek — provider models in `src/resume_tailor_harness/llm_routing.py`.
-- AG-UI — authenticated run-event projection in `src/resume_tailor_harness/api/runs/agui.py` and typed browser events in `web/src/`.
-- Stripe — hosted checkout, signed webhooks, credits, and subscription ledger integration in `src/resume_tailor_harness/tenancy/payments.py`.
+- AG-UI — authenticated run-event projection in `src/resume_tailor_harness/api/runs/agui.py` and browser events in `web/src/`.
+- Stripe — checkout, signed webhooks, credits, and subscription ledger integration in `src/resume_tailor_harness/tenancy/payments.py`.
+- Gmail API — mailbox history and backfill reads in `src/resume_tailor_harness/gmail/scan.py`.
+- Microsoft Graph — mailbox reads in `src/resume_tailor_harness/mailboxes/microsoft.py`.
+- IMAP — mailbox reads in `src/resume_tailor_harness/mailboxes/imap.py`.
 - React — browser components under `web/src/`.
 - TanStack Query — browser API caching under `web/src/features/`.
 - i18next — localization in `web/src/i18n/`.
-- Typer — CLI in `src/resume_tailor_harness/cli.py`.
+- Typer — command-line interface in `src/resume_tailor_harness/cli.py`.
 - Typst — PDF templates and renderer in `templates/` and `src/resume_tailor_harness/render/`.
 - httpx — guarded HTTP transport in `src/resume_tailor_harness/security/outbound.py`.
 - pytest — backend tests under `tests/` and `evals/`.
-- Vitest — browser tests configured in `web/package.json`.
-- Playwright — browser connectors and E2E checks under `web/e2e/` and `src/resume_tailor_harness/discovery/`.
-- Docker — frontend/backend image in `Dockerfile` and optional companion service in `compose.h1b.yaml`.
+- pytest-xdist — parallel backend test workers configured in `pyproject.toml`.
+- Vitest — browser tests configured in `web/package.json` and `web/vitest.config.ts`.
+- Playwright — browser connectors and end-to-end checks under `src/resume_tailor_harness/discovery/` and `web/e2e/`.
+- Docker — application image in `Dockerfile` and optional companion service in `compose.h1b.yaml`.
 - GitHub Actions — quality, security audit, and branch-promotion workflows in `.github/workflows/`.
+- Git — repository history and release automation in `scripts/release.py`.
 
 ## Architecture highlights
 
-- Enforced evidence-based résumé acceptance with closed project extraction, three deterministic gates, and blocking unscored fact verification, including external drafts (`src/resume_tailor_harness/tailor/review_config.py`, `src/resume_tailor_harness/tailor/verdict.py`, `src/resume_tailor_harness/services/external_tailoring.py`; `9d35d9cf`).
-- Bound task agents to root-confined, hash-verified skill procedures and persisted the resolved skill identity with artifacts (`src/resume_tailor_harness/career_skills/registry.py`, `skills-lock.json`).
-- Built external-agent application preparation with an approved-job queue, scoped questions, revision-checked answers, verified attachments, and a stop-before-submit handoff (`src/resume_tailor_harness/services/agent_applications.py`, `sdk/python/`; `40f1e0d1`).
-- Bounded skill-classification recovery with a shared call/prompt budget and durable retry history while retaining successful siblings and visibly provisional placements (`src/resume_tailor_harness/services/match_gap.py`, `src/resume_tailor_harness/taxonomy/classification.py`, `src/resume_tailor_harness/taxonomy/state.py`; `6d563d5c`).
+- Enforced provenance, skill-naming, numeric-evidence, and layout-fit gates in résumé review; the fact-check reviewer is a blocking gate by default and can be configured as advisory (`src/resume_tailor_harness/tailor/review_config.py`, `src/resume_tailor_harness/tailor/verdict.py`, `config/review.yaml.example`).
+- Preserved application progress when a higher-priority source replaces a duplicate job, using source-aware merge decisions and in-place updates (`src/resume_tailor_harness/discovery/merge.py`, `src/resume_tailor_harness/discovery/ingest.py`).
+- Added evidence-backed optional résumé sections and visual layout review, using the export renderer to produce bounded page previews and a page-fit verdict (`src/resume_tailor_harness/models/resume.py`, `src/resume_tailor_harness/tailor/provenance.py`, `src/resume_tailor_harness/render/layout_review.py`).
+- Bound task agents to root-confined, hash-verified skill procedures and recorded the selected skill identity with agent run metadata (`src/resume_tailor_harness/career_skills/registry.py`, `src/resume_tailor_harness/profile/project_extractor.py`).
+- Built external-agent application context with an approved-job queue, revision-checked answers, and verified attachments; the handoff instructs the agent to stop for confirmation before submission (`src/resume_tailor_harness/services/agent_applications.py`, `sdk/python/`; `40f1e0d1`).
 - Isolated hosted users through request-scoped workspace contexts, separate databases, and tenant-confined artifacts (`src/resume_tailor_harness/tenancy/context.py`, `src/resume_tailor_harness/tenancy/storage.py`, `src/resume_tailor_harness/tenancy/system_db.py`).
-- Implemented reversible non-skill cleanup through canonical retirement records, shared effective-taxonomy reads, and locked revision-checked writes without rewriting source evidence (`src/resume_tailor_harness/taxonomy/non_skills.py`, `src/resume_tailor_harness/taxonomy/snapshot.py`, `src/resume_tailor_harness/taxonomy/custody.py`; `4279b131`).
-- Localized browser copy and account communication through English/Chinese catalogs, backend-progress labels, and saved language preferences (`web/src/i18n/`, `web/scripts/i18n-catalog.mjs`, `src/resume_tailor_harness/mail/account_notifications.py`; `469eb2b9`, `9e46f732`).
-- Preserved recoverable chat workspaces through AG-UI projections of authenticated run events and shared Career Lab session context (`src/resume_tailor_harness/api/runs/agui.py`, `src/resume_tailor_harness/sessions/stream.py`, `src/resume_tailor_harness/career_lab/`; `846dbb38`, `9b502d1a`).
+- Secured employer account storage with an encrypted, tenant-bound vault and exact HTTPS-origin and employer matching for credential access (`src/resume_tailor_harness/services/application_accounts.py`, `src/resume_tailor_harness/api/routers/application_accounts.py`).
+- Built resumable recruiting-mail analysis across Gmail API, Microsoft Graph, and IMAP, with durable cursors and reuse of cached message classifications (`src/resume_tailor_harness/gmail/scan.py`, `src/resume_tailor_harness/gmail/processing.py`, `src/resume_tailor_harness/services/mailboxes.py`).
 
 ## Quantified outcomes
 
-- Counted 3,859 declared Python test functions in 499 tracked files; this is a static declaration count, not a test-pass or coverage result (`git grep -n -E '^\s*(async\s+)?def\s+test_' 9fa44306 -- ':(glob)**/test_*.py' ':(glob)**/*_test.py'`; count output lines and distinct file paths).
-- Counted 492 tracked backend Python modules (`git ls-tree -r --name-only 9fa44306 -- src/resume_tailor_harness`, filtered to `.py`).
-- Registered 35 pinned skill procedures across seven populated families; the enum also defines sponsorship research (`skills-lock.json`, `src/resume_tailor_harness/career_skills/models.py`; count `skills` entries and distinct `family` values at `9fa44306`).
-- Recorded 2,477 repository commits (`git rev-list --count 9fa44306`).
-- None evidenced for production latency, uptime, business impact, or benchmarked model quality; no such outcome is claimed.
+- Reduced the full Python suite's measured runtime on one Windows machine from 836.79 seconds to 294.21 seconds (64.8%) with four pytest-xdist workers; both runs reported 4,698 passed and 5 skipped (`docs/test-performance.md`, `edbe85b3`).
+- Reduced the full Vitest suite's measured runtime on the same machine from 186.39 seconds to 79.10 seconds (57.6%) using four isolated VM workers; both runs reported 215 files and 965 tests passed (`docs/test-performance.md`, `edbe85b3`).
+- Counted 4,115 declared Python test functions in 522 tracked test files at the evidence revision; these are declarations, not a test-pass or coverage result (`git grep -n -E '^[[:space:]]*(async[[:space:]]+)?def[[:space:]]+test_' 429106b8 -- ':(glob)**/test_*.py' ':(glob)**/*_test.py'`; count output lines and distinct file paths).
+- Counted 514 tracked backend Python modules (`git ls-tree -r --name-only 429106b8 -- src/resume_tailor_harness | grep -c '\.py$'`).
+- Registered 35 pinned skill procedures across seven agent families (`skills-lock.json` at `429106b8`; count entries under `skills` and their distinct `family` values).
+- Recorded 2,577 reachable repository commits (`git rev-list --count 429106b8`).
 
 ## Skills demonstrated
 
 Languages: Python, TypeScript
 Frameworks: FastAPI, Pydantic, SQLModel, SQLAlchemy, Agno, React, TanStack Query, i18next, Typer
 Databases: SQLite (aliases: SQLite3)
-AI and APIs: OpenAI API, Anthropic API, Google Gemini, DeepSeek, AG-UI, Stripe
-Testing: pytest, Vitest, Playwright
+AI and APIs: OpenAI API, Anthropic API, Google Gemini, DeepSeek, AG-UI, Stripe, Gmail API, Microsoft Graph, IMAP
+Testing: pytest, pytest-xdist, Vitest, Playwright
 Cloud & Infra: Docker, GitHub Actions
-Tooling: Typst, httpx
+Tooling: Typst, httpx, Git
