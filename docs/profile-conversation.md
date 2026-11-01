@@ -68,10 +68,21 @@ Removing a fact also removes inferred skills whose evidence no longer exists.
 Profiles created only through conversation rebuild deterministically without
 calling extraction models or requiring a primary resume.
 
-Skill display buckets can be created, renamed or removed. Removing a nonempty
-bucket moves its skills to Other, preserving the records. These buckets are
-distinct from `Skill.category` (`hard`, `soft`, `domain`) and the shared, fixed
-taxonomy group vocabulary.
+Skill display categories use the same catalog as the Profile skill library.
+`inspect_profile` pages `skill_categories` and `skill_groups`; a category move
+uses its saved id or label and retains an existing group in that category when
+possible. Category changes are previewed without writes and invalidate pending
+drafts when edited on another surface. Removing a category moves its groups to
+Other, preserving the skill records. These categories remain separate from
+`Skill.category` (`hard`, `soft`, `domain`) and the shared matching taxonomy.
+
+The skill library supports editing, merging, cleanup with immediate restoration,
+and skill-only inference/reclassification. Both corpus and conversation-only
+rebuilds honor the cleanup policy. Renames, merges and restores retain their
+latest explicit state across either kind of rebuild. A skill-only rebuild refuses
+to publish after concurrent profile, organization, override or taxonomy changes.
+Setup status exposes `profile.canRebuild` so a conversational profile can rebuild
+from the Profile workspace without an uploaded resume.
 
 Whole-profile removal is reviewed alone. It deletes saved facts and matrix,
 retains source documents and conversation history, and fences source replay.

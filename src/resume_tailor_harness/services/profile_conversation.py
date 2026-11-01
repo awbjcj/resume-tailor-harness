@@ -23,6 +23,11 @@ from resume_tailor_harness.profile.conversation import (
     capture_skill_overrides,
 )
 from resume_tailor_harness.profile.manual_skills import manual_skills_lock
+from resume_tailor_harness.profile.group_corrections import (
+    corrections_path,
+    load_group_corrections,
+    save_group_corrections,
+)
 from resume_tailor_harness.profile.matrix import rebuild_saved_matrix
 from resume_tailor_harness.profile.store import save_facts
 from resume_tailor_harness.rollback import rollback_scope
@@ -99,9 +104,11 @@ def resolve_changes(
         facts = current_facts(root)
         facts = facts.model_copy(deep=True) if facts else None
         ledger = load_edits(root)
+        organization = load_group_corrections(corrections_path(root), strict=True)
+        original_organization = organization.model_dump()
         for record in draft.changes:
             before = facts
-            facts, _ = apply_change(facts, record)
+            facts, _ = apply_change(facts, record, organization=organization)
             if (
                 record.change.entity == "profile"
                 and record.change.operation == "delete"
@@ -130,10 +137,13 @@ def resolve_changes(
             root / "facts.json",
             root / "matrix.json",
             root / "manual_skills.json",
+            corrections_path(root),
             coach_dir(root) / f"session-{session_id}.json",
         )
         with rollback_scope(paths):
             save_edits(root, ledger)
+            if organization.model_dump() != original_organization:
+                save_group_corrections(organization, corrections_path(root))
             if facts is None:
                 (root / "facts.json").unlink(missing_ok=True)
                 (root / "matrix.json").unlink(missing_ok=True)

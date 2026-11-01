@@ -13,6 +13,7 @@ export async function invalidateSkillSurfaces(
   await Promise.all(
     [
       "profile-skills",
+      "setup-status",
       "profile-matrix",
       "skill-cleanup",
       "suppressed-skills",

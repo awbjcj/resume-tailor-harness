@@ -71,6 +71,10 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   The shared matching taxonomy and fact-lock's hard/soft/domain skill types stay closed.
   Skill-only rebuilds infer from saved facts, classify against the current user catalog,
   preserve manual assignments, and reject stale results after concurrent edits.
+  Coach category previews and approval use this same catalog; its revision is part of
+  the draft's stale check. `conversation_organization.py` mutates only owned in-memory
+  copies. All profile rebuild paths apply cleanup and reconcile explicit skill snapshots,
+  including renames and restores of skills created through conversation.
 - **Synthesis ingest is text-only.** markitdown converts slide text frames, tables, and
   speaker notes; images/diagrams are skipped, and an LLM image description is never
   verification evidence (it would punch a hole in fact-lock). Put key numbers in slide

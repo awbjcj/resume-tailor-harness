@@ -193,6 +193,7 @@ def test_stale_draft_and_replaced_payload_cannot_apply(profile):
         {"source": "github"},
         {"inferred": False},
         {"evidence_fact_ids": ["b1"]},
+        {"source_refs": ["forged-source"]},
         {"category": "Tooling"},
         {"name": 42},
     ],
@@ -614,3 +615,268 @@ def test_message_turn_stages_changes_without_mutating_profile(profile):
     assert _facts(profile).summary is None
     assert view["changeDrafts"][0]["status"] == "pending"
     assert view["turns"][-1]["kind"] == "profile_changes"
+
+
+def test_library_rename_of_conversation_skill_survives_rebuild(profile):
+    from resume_tailor_harness.profile.manual_skills import (
+        apply_manual_skills,
+        load_manual_skills,
+    )
+    from resume_tailor_harness.services.profile_skills import update_skill
+
+    original = _facts(profile)
+    _apply(
+        profile,
+        _stage(
+            profile,
+            [
+                _change(
+                    entity="skill",
+                    operation="create",
+                    values={"name": "Rust", "category": "hard"},
+                )
+            ],
+        ),
+    )
+    update_skill(profile, "rust", "Rust programming", [], "hard")
+    rebuilt, _ = apply_manual_skills(
+        original, load_manual_skills(profile / "manual_skills.json")
+    )
+    rebuilt, _ = replay_edits(rebuilt, load_edits(profile))
+    names = {s.name for bucket in rebuilt.skills.values() for s in bucket}
+    assert "Rust programming" in names and "Rust" not in names
+
+
+def test_library_restore_overrides_older_conversation_deletion(profile):
+    from resume_tailor_harness.services.profile_skills import (
+        delete_skill,
+        restore_skill,
+    )
+
+    original = _facts(profile)
+    _apply(
+        profile,
+        _stage(
+            profile,
+            [
+                _change(
+                    entity="skill",
+                    operation="create",
+                    values={"name": "Rust", "category": "hard"},
+                )
+            ],
+        ),
+    )
+    rust = next(
+        s
+        for bucket in _facts(profile).skills.values()
+        for s in bucket
+        if s.name == "Rust"
+    )
+    delete_skill(profile, "rust")
+    restore_skill(profile, "rust")
+    _apply(
+        profile,
+        _stage(
+            profile,
+            [
+                _change(
+                    entity="skill",
+                    operation="delete",
+                    target_id=rust.id,
+                )
+            ],
+        ),
+    )
+    # Re-adding and removing through the library must retain a restorable snapshot.
+    from resume_tailor_harness.services.profile_skills import add_skill
+
+    add_skill(profile, "Rust", "hard")
+    delete_skill(profile, "rust")
+    restore_skill(profile, "rust")
+    rebuilt, _ = replay_edits(original, load_edits(profile))
+    assert any(s.name == "Rust" for bucket in rebuilt.skills.values() for s in bucket)
+
+
+def test_conversation_categories_and_moves_are_visible_in_skill_library(profile):
+    from resume_tailor_harness.profile.group_corrections import (
+        corrections_path,
+        load_group_corrections,
+    )
+    from resume_tailor_harness.profile.matrix import build_decorated_matrix
+    from resume_tailor_harness.services.profile_groups import edit_organization
+
+    created = edit_organization(profile, "category", label="My languages")
+    key = next(
+        k for k, v in created.category_catalog().items() if v.label == "My languages"
+    )
+    _apply(
+        profile,
+        _stage(
+            profile,
+            [
+                _change(
+                    entity="skill",
+                    operation="update",
+                    target_id="sk1",
+                    category=key,
+                )
+            ],
+        ),
+    )
+    organization = load_group_corrections(corrections_path(profile))
+    row = next(
+        r
+        for r in build_decorated_matrix(profile, _facts(profile)).rows
+        if r.display == "Python"
+    )
+    assert row.group is not None
+    assert organization.group_catalog()[row.group].category == key
+    _apply(
+        profile,
+        _stage(
+            profile,
+            [
+                _change(
+                    entity="skill_category",
+                    operation="update",
+                    target_id=key,
+                    values={"name": "Languages"},
+                )
+            ],
+        ),
+    )
+    assert (
+        load_group_corrections(corrections_path(profile)).category_catalog()[key].label
+        == "Languages"
+    )
+
+
+def test_library_category_edit_invalidates_pending_conversation_draft(profile):
+    from resume_tailor_harness.services.profile_groups import edit_organization
+
+    draft = _stage(
+        profile,
+        [
+            _change(
+                entity="profile", operation="update", values={"summary": "New summary"}
+            )
+        ],
+    )
+    edit_organization(profile, "category", label="New category")
+    with pytest.raises(StaleProfileDraft):
+        _apply(profile, draft)
+
+
+def test_skill_only_rebuild_keeps_conversation_suppression(profile, monkeypatch):
+    import json
+    from types import SimpleNamespace
+    from resume_tailor_harness.services import profile_skill_build as build
+    from resume_tailor_harness.services.profile_skills import add_skill
+    from resume_tailor_harness.taxonomy.groups import (
+        SkillGroupAssignment,
+        SkillGroupAssignments,
+    )
+
+    added = add_skill(profile, "Rust", "hard")
+    _apply(
+        profile,
+        _stage(
+            profile, [_change(entity="skill", operation="delete", target_id=added.id)]
+        ),
+    )
+
+    class Classifier:
+        def run(self, prompt):
+            return SimpleNamespace(
+                content=SkillGroupAssignments(
+                    assignments=[
+                        SkillGroupAssignment(token=token, group="other")
+                        for token in json.loads(prompt)["skills"]
+                    ]
+                )
+            )
+
+    monkeypatch.setattr(build, "build_profile_group_agent", lambda: Classifier())
+    build.rebuild_profile_skills(profile, reclassify_only=True)
+    assert all(
+        s.name != "Rust" for bucket in _facts(profile).skills.values() for s in bucket
+    )
+
+
+def test_category_preview_is_read_only_and_approval_uses_the_reviewed_group(profile):
+    from resume_tailor_harness.profile.group_corrections import (
+        corrections_path,
+        load_group_corrections,
+    )
+
+    _, _, preview = make_profile_tools(profile, user_text="Please make this change")
+    proposal = ProfileChangeSet(
+        title="Move Python",
+        changes=[
+            _change(
+                entity="skill",
+                operation="update",
+                target_id="sk1",
+                category="technical",
+            )
+        ],
+    )
+    before = _bytes(profile)
+    assert preview(proposal)["valid"]
+    assert _bytes(profile) == before
+    draft = _stage(profile, proposal.changes)
+    group = draft.changes[0].organization_group
+    _apply(profile, draft)
+    organization = load_group_corrections(corrections_path(profile))
+    assert organization.corrections["python"].group == group
+    inspect, _, _ = make_profile_tools(profile)
+    assert any(
+        row["id"] == "technical" for row in inspect("skill_categories")["records"]
+    )
+    assert (
+        next(row for row in inspect("skills")["records"] if row["name"] == "Python")[
+            "display_category"
+        ]
+        == "technical"
+    )
+
+
+def test_conversation_only_build_cleans_skills_without_growing_suppressions(tmp_path):
+    from resume_tailor_harness.profile.manual_skills import load_manual_skills
+    from resume_tailor_harness.services.profile_build import run_corpus_build
+
+    _apply(
+        tmp_path,
+        _stage(
+            tmp_path,
+            [
+                _change(
+                    entity="profile",
+                    operation="create",
+                    values={"contact": {"name": "Ada"}},
+                )
+            ],
+        ),
+    )
+    _apply(
+        tmp_path,
+        _stage(
+            tmp_path,
+            [
+                _change(
+                    entity="skill",
+                    operation="create",
+                    values={"name": "Willingness to travel", "category": "hard"},
+                )
+            ],
+        ),
+    )
+    for _ in range(2):
+        report = run_corpus_build(
+            profile_dir=tmp_path,
+            facts_out=tmp_path / "facts.json",
+            github_username=None,
+        )
+        assert report["matrixRows"] == 0
+        assert len(load_manual_skills(tmp_path / "manual_skills.json").entries) == 1

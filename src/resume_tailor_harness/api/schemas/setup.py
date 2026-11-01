@@ -15,6 +15,7 @@ class SecretsStatus(CamelModel):
 class ProfileStatus(CamelModel):
     document_count: int
     has_resume: bool
+    can_rebuild: bool = False
     facts_built_at: str | None = None
     github_username: str | None = None
 

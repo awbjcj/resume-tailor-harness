@@ -86,6 +86,7 @@ function CleanupDialog({ onClose }: { onClose: () => void }) {
       <DialogContent
         overlayClassName="transition-none"
         className="transition-none sm:max-w-lg"
+        showCloseButton={!clean.isPending}
       >
         <DialogHeader>
           <DialogTitle>{copy.clean_up_profile_skills}</DialogTitle>
@@ -201,6 +202,7 @@ function MergeDialog({
       <DialogContent
         overlayClassName="transition-none"
         className="transition-none sm:max-w-lg"
+        showCloseButton={!merge.isPending}
       >
         <DialogHeader>
           <DialogTitle>{copy.merge_selected_skills}</DialogTitle>
@@ -810,6 +812,7 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
                               variant="ghost"
                               size="icon-sm"
                               aria-label={`Delete ${row.display}`}
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                               disabled={busy}
                               onClick={() => remove.mutate(row.key)}
                             >

@@ -70,7 +70,7 @@ export function SkillEditorDialog({
   const [name, setName] = useState(row?.display ?? "");
   const [aliases, setAliases] = useState((row?.aliases ?? []).join("\n"));
   const [category, setCategory] = useState<SkillCategory>(
-    (row?.category as SkillCategory | undefined) ?? "hard",
+    row ? row.category ?? "unspecified" : "hard",
   );
   const [group, setGroup] = useState(
     row?.groupSource === "correction"

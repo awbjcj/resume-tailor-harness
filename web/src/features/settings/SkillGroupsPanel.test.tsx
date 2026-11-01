@@ -211,6 +211,18 @@ describe("SkillGroupsPanel skill library", () => {
       expect.any(Object),
     );
   });
+
+  it("preserves an unspecified skill type when editing aliases", async () => {
+    state.value = {
+      isPending: false,
+      data: { generatedAt: "2026-11-01", groups, categories, rows: [{ ...rows[0], category: null }] },
+    };
+    show();
+    await userEvent.click(screen.getByRole("button", { name: "Edit Python" }));
+    expect(screen.getByLabelText("Skill type")).toHaveValue("unspecified");
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(state.update).toHaveBeenCalledWith(expect.objectContaining({ category: null }), expect.any(Object));
+  });
   it("creates a user category and exposes group edit/delete controls", async () => {
     const user = userEvent.setup();
     show();
