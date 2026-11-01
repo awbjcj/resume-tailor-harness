@@ -1,58 +1,21 @@
 """Human review endpoints. None is supplied to a model as a tool."""
 
-from typing import Any, Literal
-
 from fastapi import APIRouter, Query, Request
-from pydantic import ConfigDict, Field
 from sqlmodel import Session, col, select
 
 from resume_tailor_harness.api.deps import get_config_store, get_data_dir, get_engine
 from resume_tailor_harness.api.errors import ApiException
-from resume_tailor_harness.api.schemas.base import CamelModel
+from resume_tailor_harness.api.schemas.workspace_agent import (
+    ProposalOut,
+    ProposalPage,
+    ReviewIn,
+)
 from resume_tailor_harness.tenancy.context import current_context
 from resume_tailor_harness.workspace_agent.actions import proposal_view, resolve_plan
-from resume_tailor_harness.workspace_agent.models import Surface, WorkspaceChange
+from resume_tailor_harness.workspace_agent.models import Surface
 from resume_tailor_harness.workspace_agent.tables import WorkspaceProposal
 
 router = APIRouter(tags=["Workspace agent review"])
-
-
-class ReceiptOut(CamelModel):
-    state: str
-    result: dict[str, Any]
-    approved_by: str
-    created_at: str
-
-
-class ActionOut(CamelModel):
-    id: str
-    change: WorkspaceChange
-    before: Any
-    after: Any
-    receipt: ReceiptOut | None = None
-
-
-class ProposalOut(CamelModel):
-    id: str
-    title: str
-    digest: str
-    surface: Surface
-    session_id: str
-    created_at: str
-    expires_at: str
-    actions: list[ActionOut]
-
-
-class ProposalPage(CamelModel):
-    proposals: list[ProposalOut]
-    next_offset: int | None = None
-
-
-class ReviewIn(CamelModel):
-    model_config = ConfigDict(extra="forbid")
-    digest: str = Field(pattern=r"^[a-f0-9]{64}$")
-    action_ids: list[str] = Field(min_length=1, max_length=20)
-    decision: Literal["apply", "discard"]
 
 
 @router.get("/workspace-agent/proposals", response_model=ProposalPage)
