@@ -24,7 +24,7 @@ import {
   type LibraryGroup,
   type LibraryRow,
 } from "./SkillEditorDialog";
-import { SKILL_CATEGORY_LABELS, type SkillCategory } from "./skill-categories";
+import { SKILL_CATEGORY_LABELS, skillCategoryValue } from "./skill-categories";
 import { useMoveSkillGroup } from "./use-profile-skills";
 
 export const skillPopoverClass =
@@ -140,12 +140,7 @@ export function SkillContextPopover({
   const trigger = useRef<HTMLButtonElement>(null);
   const handoff = useRef(false);
   const [open, setOpen] = useState(false);
-  const kind: SkillCategory =
-    row.category === "hard" ||
-    row.category === "soft" ||
-    row.category === "domain"
-      ? row.category
-      : "unspecified";
+  const kind = skillCategoryValue(row.category);
   return (
     <Popover
       open={open}

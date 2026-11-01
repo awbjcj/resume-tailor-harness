@@ -7879,10 +7879,10 @@
     "en": "Resume",
     "zh-CN": "简历"
   },
-  "Resume document": {
-    "key": "ui_9cac888763ac",
-    "en": "Resume document",
-    "zh-CN": "简历文件"
+  "Profile evidence": {
+    "key": "ui_840e60f98339",
+    "en": "Profile evidence",
+    "zh-CN": "个人资料依据"
   },
   "Resume or manage a coaching session.": {
     "key": "ui_17b0ad2c067f",

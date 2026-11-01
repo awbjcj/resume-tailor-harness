@@ -4,7 +4,7 @@ import { firstIncompleteStep, STEPS } from "./SetupWizard";
 
 const status = (over: object) => ({
   secrets: { anthropicKey: false, anyLlmKey: false },
-  profile: { documentCount: 0, hasResume: false, factsBuiltAt: null, githubUsername: null },
+  profile: { documentCount: 0, hasResume: false, canRebuild: false, factsBuiltAt: null, githubUsername: null },
   search: { configured: false }, sources: { enabledCount: 0 }, complete: false,
   ...over,
 });
@@ -29,6 +29,13 @@ describe("firstIncompleteStep", () => {
         search: { configured: true }, sources: { enabledCount: 2 },
       })),
     ).toBe("finish");
+  });
+
+  it("accepts conversational profile evidence in place of a resume upload", () => {
+    expect(firstIncompleteStep(status({
+      secrets: { anthropicKey: true, anyLlmKey: true },
+      profile: { documentCount: 0, hasResume: false, canRebuild: true, factsBuiltAt: "2026-11-01", githubUsername: null },
+    }))).toBe("search");
   });
   it("exposes exactly four steps", () => {
     expect(STEPS.map((s) => s.slug)).toEqual(["keys", "documents", "search", "sources"]);
