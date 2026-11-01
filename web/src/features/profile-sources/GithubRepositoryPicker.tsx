@@ -59,8 +59,8 @@ function RepositoryBranch({
         </div>
         <p className="text-sm text-muted-foreground">
           {repo.included
-            ? "Branch choice applies to the next sync and profile build."
-            : "Add this repository to Always include repositories to sync its selected branch."}
+            ? "Your selection will be used in the next sync or profile build."
+            : 'To sync this branch, add the repository to "Always include repositories" and remove any exclusions for it.'}
         </p>
         {repo.uploadedOverride ? (
           <p className="text-sm text-muted-foreground">
@@ -176,8 +176,8 @@ export function GithubRepositoryPicker({
         <div>
           <h3 className="font-medium">Repository branches</h3>
           <p className="text-sm text-muted-foreground">
-            Use each repository’s default branch, or choose where your dossier
-            lives.
+            Use the default branch, or choose the branch with your project
+            documents.
           </p>
         </div>
         <Button

@@ -117,13 +117,18 @@
     "employment eligibility or clearance requirement": "工作资格或安全审查许可要求",
     "travel or relocation requirement": "出差或搬迁要求"
   },
+  "githubSyncFailures": {
+    "filenameUsed": "来源文件名已被上传的文档占用，已保留原有文件。",
+    "duplicateUpload": "同步的文档与已上传的来源重复。",
+    "missingBranchDocs": "分支“{{branch}}”上未找到项目档案或 README，原有来源已保留。"
+  },
   "sourceModes": {
-    "literal": "原文",
-    "synthesis": "综合提炼",
-    "project": "项目"
+    "literal": "简历／文本",
+    "synthesis": "提炼并核验",
+    "project": "项目档案"
   },
   "sourceFragmentStatuses": {
-    "cached": "已使用缓存",
+    "cached": "已就绪",
     "extracted": "已提取",
     "source-changed": "待重新构建",
     "missing": "待构建",

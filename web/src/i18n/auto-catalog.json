@@ -12409,25 +12409,25 @@
     "en": "Attach evidence to",
     "zh-CN": "关联证据到"
   },
-  "Auto-detect recognizes resume files and repository dossiers. Choose a type only when you need to override it.": {
-    "key": "ui_ecdd0f1ed7ca",
-    "en": "Auto-detect recognizes resume files and repository dossiers. Choose a type only when you need to override it.",
-    "zh-CN": "自动识别可区分简历文件和仓库项目档案。如需调整，再手动选择类型。"
+  "Auto-detect chooses a type based on file format and repository metadata. Change it if needed.": {
+    "key": "ui_d79be71e98e1",
+    "en": "Auto-detect chooses a type based on file format and repository metadata. Change it if needed.",
+    "zh-CN": "自动识别会根据文件格式和仓库信息选择类型。如有需要，可手动更改。"
   },
-  "Branch choice applies to the next sync and profile build.": {
-    "key": "ui_038277ae39d4",
-    "en": "Branch choice applies to the next sync and profile build.",
-    "zh-CN": "分支设置将在下次同步或构建档案时生效。"
+  "Your selection will be used in the next sync or profile build.": {
+    "key": "ui_774c596bde24",
+    "en": "Your selection will be used in the next sync or profile build.",
+    "zh-CN": "所选分支将在下次同步或构建个人档案时使用。"
   },
   "Branch for {{v0}}": {
     "key": "ui_ebc178dcf03a",
     "en": "Branch for {{v0}}",
     "zh-CN": "{{v0}} 的分支"
   },
-  "Bring your resume and project evidence together, then build the profile behind every tailored application.": {
-    "key": "ui_286b29c22242",
-    "en": "Bring your resume and project evidence together, then build the profile behind every tailored application.",
-    "zh-CN": "汇集简历和项目证据，构建用于定制每份求职材料的个人档案。"
+  "Build your profile from resume and project evidence for your tailored applications.": {
+    "key": "ui_2fe0208e6aa6",
+    "en": "Build your profile from resume and project evidence for your tailored applications.",
+    "zh-CN": "根据简历和项目证据构建个人档案，用于定制求职材料。"
   },
   "Build your profile to include new or updated project evidence.": {
     "key": "ui_a28932bc1cc6",
@@ -12444,15 +12444,15 @@
     "en": "Building your profile from saved evidence. You can follow progress in the build report.",
     "zh-CN": "正在根据已保存的证据构建档案。您可以在构建报告中查看进度。"
   },
-  "Choose a branch for each repository. Sync saves dossiers; building turns them into profile facts.": {
-    "key": "ui_7ef2476ce58b",
-    "en": "Choose a branch for each repository. Sync saves dossiers; building turns them into profile facts.",
-    "zh-CN": "为各仓库选择分支。同步会保存项目档案，构建会将其提取为个人档案事实。"
+  "Choose a branch for each repository. Sync saves project documents; building extracts facts for your profile.": {
+    "key": "ui_01c1f09905f9",
+    "en": "Choose a branch for each repository. Sync saves project documents; building extracts facts for your profile.",
+    "zh-CN": "为各仓库选择分支。同步会保存项目文档，构建档案时会从中提取事实。"
   },
-  "Choose GitHub branches": {
-    "key": "ui_083db5708d96",
-    "en": "Choose GitHub branches",
-    "zh-CN": "选择 GitHub 分支"
+  "Choose GitHub branches (optional)": {
+    "key": "ui_324c7a79ced5",
+    "en": "Choose GitHub branches (optional)",
+    "zh-CN": "选择 GitHub 分支（可选）"
   },
   "Choose repository branches": {
     "key": "ui_fd39feb11d23",
@@ -12489,10 +12489,10 @@
     "en": "Download failed",
     "zh-CN": "下载失败"
   },
-  "Drop files here or use Add source. PDF, Word, Markdown and supporting documents are accepted.": {
-    "key": "ui_248a8f81667c",
-    "en": "Drop files here or use Add source. PDF, Word, Markdown and supporting documents are accepted.",
-    "zh-CN": "将文件拖到此处，或点击“添加来源”。支持 PDF、Word、Markdown 及其他辅助材料。"
+  "Drop files here or select Add source. You can upload PDFs, Word files, Markdown, and other supporting documents.": {
+    "key": "ui_e624a38d5eb4",
+    "en": "Drop files here or select Add source. You can upload PDFs, Word files, Markdown, and other supporting documents.",
+    "zh-CN": "将文件拖到此处，或点击“添加来源”。可上传 PDF、Word、Markdown 和其他辅助材料。"
   },
   "File missing": {
     "key": "ui_f52edea4c267",
@@ -12544,10 +12544,10 @@
     "en": "Optional. Save your username before loading repositories. Builds also sync your saved branch choices.",
     "zh-CN": "选填。请先保存用户名，再加载仓库。构建时也会按已保存的分支设置进行同步。"
   },
-  "Point each repository to its dossier": {
-    "key": "ui_0ca050e99aa9",
-    "en": "Point each repository to its dossier",
-    "zh-CN": "选择各仓库项目档案所在的分支"
+  "Choose the branch with each project's documents": {
+    "key": "ui_8394c9cfbab1",
+    "en": "Choose the branch with each project's documents",
+    "zh-CN": "为每个项目选择存放文档的分支"
   },
   "Primary resume": {
     "key": "ui_f3ea18653b42",
@@ -12649,20 +12649,20 @@
     "en": "Save your GitHub username to load repositories and their branches.",
     "zh-CN": "保存 GitHub 用户名后，即可加载仓库及其分支。"
   },
-  "Saved copies are kept when a repository cannot be read. Check your branch selection and GitHub access, then sync again.": {
-    "key": "ui_f28e94dc5d2a",
-    "en": "Saved copies are kept when a repository cannot be read. Check your branch selection and GitHub access, then sync again.",
-    "zh-CN": "无法读取仓库时，会保留已保存的副本。请检查所选分支及 GitHub 访问权限后重新同步。"
+  "Review the details. If a repository can't be read, its saved copies are kept. Check its branch and GitHub access before syncing again.": {
+    "key": "ui_645bc670a4b2",
+    "en": "Review the details. If a repository can't be read, its saved copies are kept. Check its branch and GitHub access before syncing again.",
+    "zh-CN": "请查看同步详情。如果无法读取仓库，已保存的副本会保留；请检查分支和 GitHub 访问权限后再同步。"
   },
   "Some files could not be added. Check the files and upload them again.": {
     "key": "ui_21212bcfe9f2",
     "en": "Some files could not be added. Check the files and upload them again.",
     "zh-CN": "部分文件添加失败。请检查文件后重新上传。"
   },
-  "Some GitHub sources could not sync": {
-    "key": "ui_1b01d0baceee",
-    "en": "Some GitHub sources could not sync",
-    "zh-CN": "部分 GitHub 来源同步失败"
+  "GitHub sync needs attention": {
+    "key": "ui_6a407b1255bc",
+    "en": "GitHub sync needs attention",
+    "zh-CN": "GitHub 同步有需要注意的问题"
   },
   "Source diagnostics": {
     "key": "ui_cb1e9984394a",
@@ -12709,30 +12709,30 @@
     "en": "This GitHub source will stay excluded from future syncs until you restore it.",
     "zh-CN": "恢复之前，此 GitHub 来源不会在后续同步时重新导入。"
   },
-  "Turn saved evidence into profile facts": {
-    "key": "ui_104b1f2b08fd",
-    "en": "Turn saved evidence into profile facts",
-    "zh-CN": "将已保存的证据提取为档案事实"
+  "Extract facts from your saved sources": {
+    "key": "ui_7e569fcd1720",
+    "en": "Extract facts from your saved sources",
+    "zh-CN": "从已保存的来源中提取事实"
   },
-  "Uploaded override": {
-    "key": "ui_a750bc04881e",
-    "en": "Uploaded override",
-    "zh-CN": "优先使用上传版本"
+  "Uploaded (overrides GitHub)": {
+    "key": "ui_aeb06fed6e74",
+    "en": "Uploaded (overrides GitHub)",
+    "zh-CN": "已上传（优先于 GitHub 来源）"
   },
   "Uploading…": {
     "key": "ui_5ce44dd77dae",
     "en": "Uploading…",
     "zh-CN": "正在上传…"
   },
-  "Use each repository’s default branch, or choose where your dossier lives.": {
-    "key": "ui_505b4c2dde30",
-    "en": "Use each repository’s default branch, or choose where your dossier lives.",
-    "zh-CN": "使用各仓库的默认分支，或选择项目档案所在的分支。"
+  "Use the default branch, or choose the branch with your project documents.": {
+    "key": "ui_5ac71f3273b4",
+    "en": "Use the default branch, or choose the branch with your project documents.",
+    "zh-CN": "使用默认分支，或选择项目文档所在的分支。"
   },
-  "Your resume supplies career history. Project dossiers add evidence from your work.": {
-    "key": "ui_19ec55561ede",
-    "en": "Your resume supplies career history. Project dossiers add evidence from your work.",
-    "zh-CN": "简历提供职业经历，项目档案补充实际工作的证据。"
+  "Your resume provides your career history. Project dossiers add evidence from your work.": {
+    "key": "ui_266d6c1567a3",
+    "en": "Your resume provides your career history. Project dossiers add evidence from your work.",
+    "zh-CN": "简历提供职业经历，项目档案补充工作证据。"
   },
   "Your saved sources are available. Resolve the issue and build your profile again.": {
     "key": "ui_6b6a62877a89",
@@ -12749,10 +12749,10 @@
     "en": "Not selected for sync",
     "zh-CN": "未选入同步范围"
   },
-  "Add this repository to Always include repositories to sync its selected branch.": {
-    "key": "ui_f8cb9d4f7901",
-    "en": "Add this repository to Always include repositories to sync its selected branch.",
-    "zh-CN": "将此仓库加入“始终包含的仓库”，即可同步所选分支。"
+  "To sync this branch, add the repository to \"Always include repositories\" and remove any exclusions for it.": {
+    "key": "ui_741ef99122b4",
+    "en": "To sync this branch, add the repository to \"Always include repositories\" and remove any exclusions for it.",
+    "zh-CN": "要同步此分支，请将仓库加入“始终包含代码仓库”，并解除相关排除。"
   },
   "{{v0}} sources updated · {{v1}} sources removed": {
     "key": "ui_96becdccc742",

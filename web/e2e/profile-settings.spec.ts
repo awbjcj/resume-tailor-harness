@@ -427,7 +427,10 @@ test("profile controls remain usable with enlarged text in English and Chinese",
     await page.evaluate((value) => localStorage.setItem("resume-tailor-harness-language", value), language);
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("lang", language);
-    await expect(page.getByRole("article", { name: "resume.pdf", exact: true })).toBeVisible();
+    const resume = page.getByRole("article", { name: "resume.pdf", exact: true });
+    await expect(resume).toBeVisible();
+    await expect(resume).toContainText(language === "en" ? "Ready" : "已就绪");
+    await expect(page.getByText(language === "en" ? "Choose GitHub branches (optional)" : "选择 GitHub 分支（可选）", { exact: true })).toBeVisible();
     await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
     for (const width of [320, 768, 1280, 1920]) {
       await page.setViewportSize({ width, height: 1000 });

@@ -72,6 +72,7 @@ describe("BuildReportPanel", () => {
             warnings: [
               "skill inference failed: boom",
               "Manual alias 'TS' could not be reattached. Its target skill 'TypeScript' was not found.",
+              "GitHub harvest failed for portfolio: No dossier or README found on branch 'feature/dossier'; saved sources were preserved",
             ],
           },
         },
@@ -86,5 +87,6 @@ describe("BuildReportPanel", () => {
     expect(screen.getByText("summary：保留 'Current'，未采用来自 deck-1 的 'Other'")).toBeInTheDocument();
     expect(screen.getByText("技能推断失败：boom")).toBeInTheDocument();
     expect(screen.getByText("无法恢复手动设置的别名“TS”：未找到对应技能“TypeScript”。")).toBeInTheDocument();
+    expect(screen.getByText("GitHub 仓库同步失败（portfolio）：分支“feature/dossier”上未找到项目档案或 README，原有来源已保留。")).toBeInTheDocument();
   });
 });
