@@ -8,7 +8,7 @@ import { deriveJourney, JOURNEY_STAGES, type JourneyStageId } from "./use-journe
 const emptyStatus: SetupStatus = {
   complete: false,
   secrets: { anthropicKey: false, anyLlmKey: false },
-  profile: { documentCount: 0, hasResume: false, factsBuiltAt: null, githubUsername: null },
+  profile: { documentCount: 0, hasResume: false, canRebuild: false, factsBuiltAt: null, githubUsername: null },
   search: { configured: false },
   sources: { enabledCount: 0 },
 };
@@ -49,6 +49,14 @@ describe("deriveJourney", () => {
     expect(j.currentStep).toBe("sources");
     expect(stateById(j.stages).profile).toBe("done");
     expect(stateById(j.stages).sources).toBe("current");
+  });
+
+  it("recognizes a profile created through conversation without an upload", () => {
+    const journey = deriveJourney({
+      ...emptyStatus,
+      profile: { ...emptyStatus.profile, canRebuild: true, factsBuiltAt: "2026-11-01T00:00:00Z" },
+    }, emptySummary);
+    expect(journey.currentStep).toBe("sources");
   });
 
   it("requires both a search and an enabled source to clear the sources step", () => {

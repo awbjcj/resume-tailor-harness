@@ -90,6 +90,18 @@ describe("DeskHealth", () => {
     );
   });
 
+  it("shows ready with conversational profile evidence and no resume upload", async () => {
+    server.use(http.get("/api/setup/status", () => HttpResponse.json({
+      ...STATUS,
+      profile: { ...STATUS.profile, hasResume: false, canRebuild: true, factsBuiltAt: "2026-11-01" },
+      search: { configured: true },
+      sources: { enabledCount: 1 },
+      complete: true,
+    })));
+    renderHealth();
+    expect(await screen.findByText(/workspace is ready/i)).toBeInTheDocument();
+  });
+
   it("renders nothing when the status endpoint errors", async () => {
     server.use(
       http.get("*/api/setup/status", () =>

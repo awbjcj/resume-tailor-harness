@@ -14,7 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import type { ProfileMatrix } from "@/features/settings/use-matrix";
-import { SKILL_CATEGORY_LABELS, type SkillCategory } from "./skill-categories";
+import {
+  SKILL_CATEGORY_LABELS,
+  skillCategoryValue,
+  type SkillCategory,
+} from "./skill-categories";
 import { useAddSkill, useUpdateSkill } from "./use-profile-skills";
 
 export type LibraryRow = NonNullable<ProfileMatrix["rows"]>[number];
@@ -70,7 +74,7 @@ export function SkillEditorDialog({
   const [name, setName] = useState(row?.display ?? "");
   const [aliases, setAliases] = useState((row?.aliases ?? []).join("\n"));
   const [category, setCategory] = useState<SkillCategory>(
-    row ? row.category ?? "unspecified" : "hard",
+    row ? skillCategoryValue(row.category) : "hard",
   );
   const [group, setGroup] = useState(
     row?.groupSource === "correction"
@@ -161,7 +165,7 @@ export function SkillEditorDialog({
               <LibrarySelect
                 id={`${id}-type`}
                 value={category}
-                onChange={(v) => setCategory(v as SkillCategory)}
+                onChange={(value) => setCategory(skillCategoryValue(value))}
                 disabled={pending || disabled}
               >
                 {Object.entries(SKILL_CATEGORY_LABELS)

@@ -684,7 +684,7 @@ const en = {
     resumeSetup: "Resume setup",
     health: {
       apiKey: "LLM API key",
-      resume: "Resume document",
+      resume: "Profile evidence",
       facts: "Profile facts built",
       search: "Search configured",
       sources: "Sources enabled",
@@ -1498,7 +1498,7 @@ const zhCN = {
     resumeSetup: "继续设置",
     health: {
       apiKey: "大模型 API 密钥",
-      resume: "简历文档",
+      resume: "个人资料依据",
       facts: "个人经历已整理",
       search: "搜索已配置",
       sources: "职位来源已启用",
