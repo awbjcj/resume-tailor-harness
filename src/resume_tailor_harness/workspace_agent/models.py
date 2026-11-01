@@ -46,3 +46,12 @@ class WorkspacePlan(BaseModel):
 
     title: str = Field(min_length=1, max_length=200)
     changes: list[WorkspaceChange] = Field(min_length=1, max_length=20)
+
+
+def is_file_action(operation: str) -> bool:
+    return operation in {
+        "profile.change",
+        "application_profile.update",
+        "search.update",
+        "artifact.delete",
+    }
