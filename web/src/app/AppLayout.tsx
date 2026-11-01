@@ -268,24 +268,23 @@ export function AppLayout() {
             opaque surface under prefers-reduced-transparency / prefers-contrast
             (see index.css) — blur is a material here, not decoration. */}
         <header className="app-chrome sticky top-0 z-10 border-b bg-background/88 backdrop-blur-md">
-          <div className="flex min-h-16 items-center gap-3 px-5 py-3 md:px-8 lg:px-10">
+          <div className="flex min-h-16 flex-wrap items-center gap-3 px-[clamp(1rem,3vw,2.5rem)] py-3">
             <SidebarTrigger className="md:hidden" />
             <div className="min-w-0 md:hidden">
               <div className="truncate text-sm font-semibold leading-tight">{currentLabel}</div>
             </div>
-            <div className="hidden min-w-0 md:block">
+            <div className="hidden min-w-0 flex-1 [overflow-wrap:anywhere] md:block">
               <div className="text-sm font-medium">{currentLabel}</div>
               <div className="text-xs text-muted-foreground">{t("shell.operationsSummary")}</div>
             </div>
-            <RunActions className="ml-auto hidden flex-nowrap xl:flex" />
-            <div className="ml-auto flex shrink-0 items-center gap-1 xl:ml-0">
+            <div className="ml-auto flex max-w-full flex-wrap items-center gap-1">
               <NotificationsBell />
               <LanguageSwitcher persist />
               <ThemeToggle />
               <LogoutButton />
             </div>
           </div>
-          <div className="shell-action-rail border-t border-border/70 px-5 py-2 xl:hidden md:px-8 lg:px-10">
+          <div className="shell-action-rail border-t border-border/70 px-[clamp(1rem,3vw,2.5rem)] py-2">
             <RunActions className="w-max flex-nowrap justify-start" />
           </div>
         </header>
@@ -294,7 +293,7 @@ export function AppLayout() {
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 scroll-mt-28 px-4 py-5 outline-none sm:px-5 sm:py-6 md:px-8 lg:px-10 2xl:px-12"
+          className="flex-1 scroll-mt-28 px-[clamp(1rem,3vw,2.5rem)] py-5 outline-none sm:py-6"
         >
           <div className="mx-auto w-full max-w-[1680px]">
             <Outlet />

@@ -460,6 +460,7 @@ def run_build_with_impact(
     github_allow: tuple[str, ...] = (),
     github_deny: tuple[str, ...] = (),
     github_limit: int = 20,
+    github_branches: dict[str, str] | None = None,
 ) -> dict:
     root = Path(profile_dir)
     before = profile_snapshot(root)
@@ -472,6 +473,7 @@ def run_build_with_impact(
             github_allow=github_allow,
             github_deny=github_deny,
             github_limit=github_limit,
+            github_branches=github_branches,
         )
     except Exception as exc:
         set_impact(root, session_id, {"error": str(exc)})

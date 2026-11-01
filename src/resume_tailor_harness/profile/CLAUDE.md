@@ -21,6 +21,27 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   supersede all harvested docs for the repo. `project_extractor.py` can emit exactly one Project
   plus skills, never Experience or Education. GitHub failures become build
   warnings; rate-limited harvests stop early without deleting existing sources.
+- **GitHub branch choices are per repository.** `github_repo_branches` maps
+  case-insensitive `owner/repo` keys (or legacy short names) to case-sensitive
+  branch names; omitted entries follow the repository default. Contents listing
+  and every dossier/README request use the same `ref`. Explicit-ref failures keep
+  the previous saved files and branch metadata. API sync, ordinary builds, coach
+  rebuilds and CLI operations all pass the same saved mapping. Synced sources
+  retain `github_branch` for display; uploaded overrides remain authoritative.
+- **Source CRUD preserves user intent.** File replacement keeps a source's id,
+  primary/mode/anchor and repository identity, invalidates changed fragments,
+  and converts a replaced GitHub document into an uploaded override. Explicit
+  removals persist exclusions in `sources.json`; removing a repository's last
+  source also excludes its shallow metadata project. Automatic harvest cleanup
+  does not create exclusions. Restore clears them for the next sync. An empty
+  existing manifest is intentional and must not trigger legacy resume migration.
+  Dossiers and synthesis documents may stay registered without a primary resume;
+  adding the next literal resume promotes it automatically. Profile builds require
+  a primary resume, while source management and GitHub sync do not.
+  Source mutations and harvest commits share the per-tenant corpus lock;
+  extraction publishes hash changes onto the latest manifest instead of saving
+  a stale snapshot. `fragment_status=missing` means extraction has not run;
+  the API's separate `file_exists` field indicates whether source bytes exist.
 - **Profile rebuilds regenerate inferred skills.** `profile build` strips and re-derives
   all `inferred=true` skills; durable corrections belong in `data/profile/overrides.yaml`,
   not hand-edits to facts.json.

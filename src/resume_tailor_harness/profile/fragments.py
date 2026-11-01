@@ -20,15 +20,21 @@ from resume_tailor_harness.profile.corpus import (
     SourceDoc,
     SourceManifest,
     doc_path,
-    save_manifest,
+    refresh_source_hashes,
 )
-from resume_tailor_harness.profile.extractor import PROMPT_VERSION, aextract_profile_facts
+from resume_tailor_harness.profile.extractor import (
+    PROMPT_VERSION,
+    aextract_profile_facts,
+)
 from resume_tailor_harness.profile.ids import assign_fact_ids
 from resume_tailor_harness.profile.project_extractor import (
     PROJECT_PROMPT_VERSION,
     aextract_project_facts,
 )
-from resume_tailor_harness.profile.resume_reader import CONVERTER_VERSION, read_document_text
+from resume_tailor_harness.profile.resume_reader import (
+    CONVERTER_VERSION,
+    read_document_text,
+)
 from resume_tailor_harness.profile.synthesis import (
     SYNTHESIS_PROMPT_VERSION,
     asynthesize_document,
@@ -110,10 +116,11 @@ def _synthesis_meta(doc: SourceDoc, sha256: str) -> dict:
     }
 
 
-def _project_meta(sha256: str) -> dict:
+def _project_meta(doc: SourceDoc, sha256: str) -> dict:
     return {
         "sha256": sha256,
         "project_prompt_version": PROJECT_PROMPT_VERSION,
+        "origin": doc.origin,
         "converter_version": CONVERTER_VERSION,
     }
 
@@ -130,7 +137,7 @@ def _expected_meta(doc: SourceDoc, sha256: str) -> dict:
     if doc.mode == "synthesis":
         return _synthesis_meta(doc, sha256)
     if doc.mode == "project":
-        return _project_meta(sha256)
+        return _project_meta(doc, sha256)
     return _literal_meta(sha256)
 
 
@@ -222,7 +229,7 @@ def _walk_fragments(
     profile_dir: str | Path, manifest: SourceManifest, producer: FragmentProducer
 ) -> FragmentResult:
     result = FragmentResult()
-    manifest_changed = False
+    changed_hashes: dict[str, tuple[str, str]] = {}
     pending: list[_Pending] = []
     for doc in manifest.docs:
         if not producer.selects(doc):
@@ -237,8 +244,8 @@ def _walk_fragments(
 
         source_changed = observed_sha != doc.sha256
         if source_changed:
+            changed_hashes[doc.id] = (doc.sha256, observed_sha)
             doc.sha256 = observed_sha
-            manifest_changed = True
         expected = producer.expected_meta(doc, observed_sha)
         if _meta_equals(meta_path, expected):
             cached = load_fragment(profile_dir, doc.id)
@@ -278,8 +285,8 @@ def _walk_fragments(
                 continue
             _apply_produced(result, profile_dir, item, res.value)
 
-    if manifest_changed:
-        save_manifest(manifest, profile_dir)
+    if changed_hashes:
+        refresh_source_hashes(profile_dir, changed_hashes)
     return result
 
 
@@ -323,7 +330,7 @@ def extract_project_fragments(
         manifest,
         FragmentProducer(
             selects=lambda doc: doc.mode == "project",
-            expected_meta=lambda _doc, sha: _project_meta(sha),
+            expected_meta=_project_meta,
             produce=_produce,
             runners=(agent,),
         ),

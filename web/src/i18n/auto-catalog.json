@@ -329,11 +329,6 @@
     "en": "{{v0}} topic{{v1}}",
     "zh-CN": "{{v0}} 个主题"
   },
-  "{{v0}} topics · last session {{v1}}": {
-    "key": "ui_20d673f4c9c1",
-    "en": "{{v0}} topics · last session {{v1}}",
-    "zh-CN": "{{v0}} 个主题 · 上次会话 {{v1}}"
-  },
   "{{v0}} turn{{v1}}": {
     "key": "ui_a90807db4ea2",
     "en": "{{v0}} turn{{v1}}",
@@ -1068,11 +1063,6 @@
     "key": "ui_260c4674f8b9",
     "en": "Analyze job board",
     "zh-CN": "分析招聘列表"
-  },
-  "Anchor": {
-    "key": "ui_a4ae750b610e",
-    "en": "Anchor",
-    "zh-CN": "关联经历"
   },
   "Anchor decisions": {
     "key": "ui_ee15fd62449b",
@@ -3989,11 +3979,6 @@
     "en": "For example: focus on system design and Kubernetes tradeoffs.",
     "zh-CN": "例如：重点练习系统设计，以及 Kubernetes 方案的利弊。"
   },
-  "Fragment": {
-    "key": "ui_393c57bd08a3",
-    "en": "Fragment",
-    "zh-CN": "片段"
-  },
   "from cover letter #": {
     "key": "ui_97851b1dd425",
     "en": "from cover letter #",
@@ -5584,11 +5569,6 @@
     "en": "Modality",
     "zh-CN": "形式"
   },
-  "Mode": {
-    "key": "ui_5e23ec6a300d",
-    "en": "Mode",
-    "zh-CN": "模式"
-  },
   "mode for {{v0}}": {
     "key": "ui_5ee069e882dc",
     "en": "mode for {{v0}}",
@@ -6119,11 +6099,6 @@
     "en": "No skills match these filters",
     "zh-CN": "没有技能符合这些筛选条件"
   },
-  "No sources yet. Add your resume first; it becomes your primary source.": {
-    "key": "ui_9cf51ce702be",
-    "en": "No sources yet. Add your resume first; it becomes your primary source.",
-    "zh-CN": "暂无来源。请先添加简历，它将成为主要来源。"
-  },
   "no sponsor": {
     "key": "ui_49a33760e91c",
     "en": "no sponsor",
@@ -6504,11 +6479,6 @@
     "en": "Optional instructions (e.g. mention the take-home score)",
     "zh-CN": "可选说明（例如提及笔试评分）"
   },
-  "Optional. Adds public repositories to your project facts.": {
-    "key": "ui_21441b86e527",
-    "en": "Optional. Adds public repositories to your project facts.",
-    "zh-CN": "可选。将公开仓库纳入项目经历资料。"
-  },
   "or register with email": {
     "key": "ui_c8c7c5cd25a5",
     "en": "or register with email",
@@ -6882,7 +6852,7 @@
   "Profile build progress": {
     "key": "ui_a9c09e5d56ce",
     "en": "Profile build progress",
-    "zh-CN": "个人资料生成进度"
+    "zh-CN": "个人档案构建进度"
   },
   "Profile built {{v0}}": {
     "key": "ui_efec11a797fd",
@@ -6933,11 +6903,6 @@
     "key": "ui_79d6efe2e3fe",
     "en": "Profile skills grouped by their primary professional use. Click a skill to move it; open any category to add a new one. Corrections are pinned and survive profile rebuilds.",
     "zh-CN": "技能按主要用途分组。点击技能可调整分组，展开分类可添加新技能。手动修改会保留，重建个人资料时也不会被覆盖。"
-  },
-  "Project": {
-    "key": "ui_985959785319",
-    "en": "Project",
-    "zh-CN": "项目"
   },
   "projects": {
     "key": "ui_2577c0f557b2",
@@ -7288,11 +7253,6 @@
     "key": "ui_03389e57d82f",
     "en": "Read every application across the same timeline, then export the complete event history.",
     "zh-CN": "在同一张时间线中查看所有申请，并导出完整的事件记录。"
-  },
-  "Read-only": {
-    "key": "ui_72bb90897ab1",
-    "en": "Read-only",
-    "zh-CN": "只读"
   },
   "Ready": {
     "key": "ui_5fa7aac5375c",
@@ -8008,11 +7968,6 @@
     "key": "ui_17b0ad2c067f",
     "en": "Resume or manage a coaching session.",
     "zh-CN": "继续或管理辅导会话。"
-  },
-  "Resume replaced": {
-    "key": "ui_069069f31a0b",
-    "en": "Resume replaced",
-    "zh-CN": "简历已替换"
   },
   "Resume revision": {
     "key": "ui_378528ca3817",
@@ -9499,11 +9454,6 @@
     "en": "Start with a provider and model the app has billed for. Past records cannot be changed.",
     "zh-CN": "先选择应用曾计费的服务商和模型。历史记录不可更改。"
   },
-  "Find evidence for your profile in your first coaching session.": {
-    "key": "ui_35c3aee99efd",
-    "en": "Find evidence for your profile in your first coaching session.",
-    "zh-CN": "开始第一次资料梳理，整理可用于个人资料的真实经历。"
-  },
   "Started": {
     "key": "ui_ecbc89cd37a0",
     "en": "Started",
@@ -9618,11 +9568,6 @@
     "key": "ui_ae5078b2eeaa",
     "en": "Sync Gmail",
     "zh-CN": "同步 Gmail"
-  },
-  "Synced": {
-    "key": "ui_5da22fe4f7ac",
-    "en": "Synced",
-    "zh-CN": "已同步"
   },
   "System backup": {
     "key": "ui_d9eb3633f346",
@@ -10018,11 +9963,6 @@
     "key": "ui_356821c2b5ab",
     "en": "The research did not find a matching historical filing record.",
     "zh-CN": "未找到匹配的历史申报记录。"
-  },
-  "Your resume, documents, and skills form the basis for every tailored application.": {
-    "key": "ui_e2096f15c59a",
-    "en": "Your resume, documents, and skills form the basis for every tailored application.",
-    "zh-CN": "每份定制申请所依据的简历、文档和技能。"
   },
   "The Scout could not finish that step": {
     "key": "ui_a29f2dd19b16",
@@ -10668,11 +10608,6 @@
     "key": "ui_6efc5d27f30b",
     "en": "Upload failed",
     "zh-CN": "上传失败"
-  },
-  "Upload files, add notes or public pages, and sync GitHub projects. Your profile keeps the source evidence.": {
-    "key": "ui_0b5e5c1af2f5",
-    "en": "Upload files, add notes or public pages, and sync GitHub projects. Your profile keeps the source evidence.",
-    "zh-CN": "上传文件，添加笔记或公开页面，并同步 GitHub 项目。个人资料会保留这些来源证据。"
   },
   "Upload Typst template": {
     "key": "ui_4aa19173b3e4",
@@ -12443,5 +12378,390 @@
     "key": "ui_401cbdd3064b",
     "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Choose one or two pages in Rendering. One-page drafts use lower bullet limits and preserve space for experience and projects.",
     "zh-CN": "供撰写助手、修改助手和评分评审参考。最低要求以个人资料中的事实为限，不要求编造内容。请在“渲染”中选择一页或两页。单页草稿的要点上限较低，会为工作经历和项目留出空间。"
+  },
+  "{{v0}} of {{v1}} sources ready": {
+    "key": "ui_47e283f51df8",
+    "en": "{{v0}} of {{v1}} sources ready",
+    "zh-CN": "{{v1}} 个来源中有 {{v0}} 个已就绪"
+  },
+  "Add a resume to build your profile. Your other sources stay saved.": {
+    "key": "ui_db19a11cc922",
+    "en": "Add a resume to build your profile. Your other sources stay saved.",
+    "zh-CN": "请添加简历后再构建档案。其他来源会继续保留。"
+  },
+  "Add a resume, then connect GitHub or upload project dossiers to enrich your profile.": {
+    "key": "ui_5f572ef87ad1",
+    "en": "Add a resume, then connect GitHub or upload project dossiers to enrich your profile.",
+    "zh-CN": "先添加简历，再连接 GitHub 或上传项目档案，丰富个人档案。"
+  },
+  "Add your evidence": {
+    "key": "ui_1353ea6e750c",
+    "en": "Add your evidence",
+    "zh-CN": "添加证据材料"
+  },
+  "An uploaded dossier takes priority over synced files for this repository.": {
+    "key": "ui_9b2540af5fbc",
+    "en": "An uploaded dossier takes priority over synced files for this repository.",
+    "zh-CN": "此仓库会优先使用已上传的项目档案，而非同步文件。"
+  },
+  "Attach evidence to": {
+    "key": "ui_0d1e0eb06b99",
+    "en": "Attach evidence to",
+    "zh-CN": "关联证据到"
+  },
+  "Auto-detect recognizes resume files and repository dossiers. Choose a type only when you need to override it.": {
+    "key": "ui_ecdd0f1ed7ca",
+    "en": "Auto-detect recognizes resume files and repository dossiers. Choose a type only when you need to override it.",
+    "zh-CN": "自动识别可区分简历文件和仓库项目档案。如需调整，再手动选择类型。"
+  },
+  "Branch choice applies to the next sync and profile build.": {
+    "key": "ui_038277ae39d4",
+    "en": "Branch choice applies to the next sync and profile build.",
+    "zh-CN": "分支设置将在下次同步或构建档案时生效。"
+  },
+  "Branch for {{v0}}": {
+    "key": "ui_ebc178dcf03a",
+    "en": "Branch for {{v0}}",
+    "zh-CN": "{{v0}} 的分支"
+  },
+  "Bring your resume and project evidence together, then build the profile behind every tailored application.": {
+    "key": "ui_286b29c22242",
+    "en": "Bring your resume and project evidence together, then build the profile behind every tailored application.",
+    "zh-CN": "汇集简历和项目证据，构建用于定制每份求职材料的个人档案。"
+  },
+  "Build your profile to include new or updated project evidence.": {
+    "key": "ui_a28932bc1cc6",
+    "en": "Build your profile to include new or updated project evidence.",
+    "zh-CN": "构建个人档案，以纳入新增或更新的项目证据。"
+  },
+  "Building profile": {
+    "key": "ui_856e5d213075",
+    "en": "Building profile",
+    "zh-CN": "正在构建个人档案"
+  },
+  "Building your profile from saved evidence. You can follow progress in the build report.": {
+    "key": "ui_4ad8f699d65c",
+    "en": "Building your profile from saved evidence. You can follow progress in the build report.",
+    "zh-CN": "正在根据已保存的证据构建档案。您可以在构建报告中查看进度。"
+  },
+  "Choose a branch for each repository. Sync saves dossiers; building turns them into profile facts.": {
+    "key": "ui_7ef2476ce58b",
+    "en": "Choose a branch for each repository. Sync saves dossiers; building turns them into profile facts.",
+    "zh-CN": "为各仓库选择分支。同步会保存项目档案，构建会将其提取为个人档案事实。"
+  },
+  "Choose GitHub branches": {
+    "key": "ui_083db5708d96",
+    "en": "Choose GitHub branches",
+    "zh-CN": "选择 GitHub 分支"
+  },
+  "Choose repository branches": {
+    "key": "ui_fd39feb11d23",
+    "en": "Choose repository branches",
+    "zh-CN": "选择仓库分支"
+  },
+  "Could not load branches. Check repository access and try again.": {
+    "key": "ui_a0eaafb5e9a2",
+    "en": "Could not load branches. Check repository access and try again.",
+    "zh-CN": "无法加载分支。请检查仓库访问权限后重试。"
+  },
+  "Could not load repositories. Check your saved username and GitHub access, then refresh.": {
+    "key": "ui_07fe80b59b81",
+    "en": "Could not load repositories. Check your saved username and GitHub access, then refresh.",
+    "zh-CN": "无法加载仓库。请检查已保存的用户名及 GitHub 访问权限，然后刷新。"
+  },
+  "Default ({{v0}})": {
+    "key": "ui_f7164c05e330",
+    "en": "Default ({{v0}})",
+    "zh-CN": "默认（{{v0}}）"
+  },
+  "Default branch": {
+    "key": "ui_411aa61aea55",
+    "en": "Default branch",
+    "zh-CN": "默认分支"
+  },
+  "Download {{v0}}": {
+    "key": "ui_ac3a0cac247d",
+    "en": "Download {{v0}}",
+    "zh-CN": "下载 {{v0}}"
+  },
+  "Download failed": {
+    "key": "ui_eae34ccbc443",
+    "en": "Download failed",
+    "zh-CN": "下载失败"
+  },
+  "Drop files here or use Add source. PDF, Word, Markdown and supporting documents are accepted.": {
+    "key": "ui_248a8f81667c",
+    "en": "Drop files here or use Add source. PDF, Word, Markdown and supporting documents are accepted.",
+    "zh-CN": "将文件拖到此处，或点击“添加来源”。支持 PDF、Word、Markdown 及其他辅助材料。"
+  },
+  "File missing": {
+    "key": "ui_f52edea4c267",
+    "en": "File missing",
+    "zh-CN": "来源文件缺失"
+  },
+  "GitHub projects": {
+    "key": "ui_4acb47188a39",
+    "en": "GitHub projects",
+    "zh-CN": "GitHub 项目"
+  },
+  "GitHub sources restored. Sync GitHub to import them again.": {
+    "key": "ui_fbf059810cc7",
+    "en": "GitHub sources restored. Sync GitHub to import them again.",
+    "zh-CN": "已恢复 GitHub 来源。同步 GitHub 后即可重新导入。"
+  },
+  "GitHub sync cancelled": {
+    "key": "ui_7035198b9660",
+    "en": "GitHub sync cancelled",
+    "zh-CN": "GitHub 同步已取消"
+  },
+  "GitHub sync complete": {
+    "key": "ui_057de8084931",
+    "en": "GitHub sync complete",
+    "zh-CN": "GitHub 同步完成"
+  },
+  "Import preferences": {
+    "key": "ui_9481bf9dc922",
+    "en": "Import preferences",
+    "zh-CN": "导入偏好"
+  },
+  "Included": {
+    "key": "ui_ba829a98b799",
+    "en": "Included",
+    "zh-CN": "已纳入"
+  },
+  "Loading branches…": {
+    "key": "ui_55704e8f6004",
+    "en": "Loading branches…",
+    "zh-CN": "正在加载分支…"
+  },
+  "No repositories found for this username.": {
+    "key": "ui_b8ca2ad5b92d",
+    "en": "No repositories found for this username.",
+    "zh-CN": "未找到该用户名下的仓库。"
+  },
+  "Optional. Save your username before loading repositories. Builds also sync your saved branch choices.": {
+    "key": "ui_a785cb1eebc0",
+    "en": "Optional. Save your username before loading repositories. Builds also sync your saved branch choices.",
+    "zh-CN": "选填。请先保存用户名，再加载仓库。构建时也会按已保存的分支设置进行同步。"
+  },
+  "Point each repository to its dossier": {
+    "key": "ui_0ca050e99aa9",
+    "en": "Point each repository to its dossier",
+    "zh-CN": "选择各仓库项目档案所在的分支"
+  },
+  "Primary resume": {
+    "key": "ui_f3ea18653b42",
+    "en": "Primary resume",
+    "zh-CN": "主要简历"
+  },
+  "Profile build cancelled": {
+    "key": "ui_dcd6ca1820ce",
+    "en": "Profile build cancelled",
+    "zh-CN": "个人档案构建已取消"
+  },
+  "Profile build failed": {
+    "key": "ui_97ffa18658bf",
+    "en": "Profile build failed",
+    "zh-CN": "个人档案构建失败"
+  },
+  "Profile build report": {
+    "key": "ui_c80d6a44044d",
+    "en": "Profile build report",
+    "zh-CN": "个人档案构建报告"
+  },
+  "Profile building steps": {
+    "key": "ui_b72d9ae4d16b",
+    "en": "Profile building steps",
+    "zh-CN": "个人档案构建步骤"
+  },
+  "Profile ready": {
+    "key": "ui_3761699ea1e1",
+    "en": "Profile ready",
+    "zh-CN": "个人档案已就绪"
+  },
+  "Project dossier": {
+    "key": "ui_0379c2332c86",
+    "en": "Project dossier",
+    "zh-CN": "项目档案"
+  },
+  "Read this document as": {
+    "key": "ui_1b478e9279d0",
+    "en": "Read this document as",
+    "zh-CN": "文档提取方式"
+  },
+  "Refresh repositories": {
+    "key": "ui_31be4d417759",
+    "en": "Refresh repositories",
+    "zh-CN": "刷新仓库"
+  },
+  "Remove source": {
+    "key": "ui_f55296180370",
+    "en": "Remove source",
+    "zh-CN": "移除来源"
+  },
+  "Remove this source?": {
+    "key": "ui_2ee10bf411a6",
+    "en": "Remove this source?",
+    "zh-CN": "移除此来源？"
+  },
+  "Removed GitHub sources stay excluded from future syncs.": {
+    "key": "ui_564a96cacfd3",
+    "en": "Removed GitHub sources stay excluded from future syncs.",
+    "zh-CN": "已移除的 GitHub 来源不会在后续同步时重新导入。"
+  },
+  "Replace this file to restore its evidence, or remove the source.": {
+    "key": "ui_87f14d2078f3",
+    "en": "Replace this file to restore its evidence, or remove the source.",
+    "zh-CN": "请替换文件以恢复证据，或移除此来源。"
+  },
+  "Replacement failed": {
+    "key": "ui_883e5715641e",
+    "en": "Replacement failed",
+    "zh-CN": "替换失败"
+  },
+  "Repository branches": {
+    "key": "ui_0e5ec668ea9b",
+    "en": "Repository branches",
+    "zh-CN": "仓库分支"
+  },
+  "Restore removed GitHub sources": {
+    "key": "ui_fc3ac3622a3c",
+    "en": "Restore removed GitHub sources",
+    "zh-CN": "恢复已移除的 GitHub 来源"
+  },
+  "Resume and supporting documents": {
+    "key": "ui_197f518f17b7",
+    "en": "Resume and supporting documents",
+    "zh-CN": "简历及辅助材料"
+  },
+  "Retry branches": {
+    "key": "ui_58b855588654",
+    "en": "Retry branches",
+    "zh-CN": "重新加载分支"
+  },
+  "Save your GitHub changes before syncing or building. Your selected branches are not applied until saved.": {
+    "key": "ui_d54a5fff68fd",
+    "en": "Save your GitHub changes before syncing or building. Your selected branches are not applied until saved.",
+    "zh-CN": "请先保存 GitHub 设置，再进行同步或构建。所选分支保存后才会生效。"
+  },
+  "Save your GitHub username to load repositories and their branches.": {
+    "key": "ui_16a36ac1aaa9",
+    "en": "Save your GitHub username to load repositories and their branches.",
+    "zh-CN": "保存 GitHub 用户名后，即可加载仓库及其分支。"
+  },
+  "Saved copies are kept when a repository cannot be read. Check your branch selection and GitHub access, then sync again.": {
+    "key": "ui_f28e94dc5d2a",
+    "en": "Saved copies are kept when a repository cannot be read. Check your branch selection and GitHub access, then sync again.",
+    "zh-CN": "无法读取仓库时，会保留已保存的副本。请检查所选分支及 GitHub 访问权限后重新同步。"
+  },
+  "Some files could not be added. Check the files and upload them again.": {
+    "key": "ui_21212bcfe9f2",
+    "en": "Some files could not be added. Check the files and upload them again.",
+    "zh-CN": "部分文件添加失败。请检查文件后重新上传。"
+  },
+  "Some GitHub sources could not sync": {
+    "key": "ui_1b01d0baceee",
+    "en": "Some GitHub sources could not sync",
+    "zh-CN": "部分 GitHub 来源同步失败"
+  },
+  "Source diagnostics": {
+    "key": "ui_cb1e9984394a",
+    "en": "Source diagnostics",
+    "zh-CN": "来源处理详情"
+  },
+  "Source documents could not be loaded. Try again to manage your evidence.": {
+    "key": "ui_62f5e65eefd3",
+    "en": "Source documents could not be loaded. Try again to manage your evidence.",
+    "zh-CN": "无法加载来源文档。请重试后管理证据材料。"
+  },
+  "Source removed. Rebuild your profile to update its facts.": {
+    "key": "ui_6311edf0e03b",
+    "en": "Source removed. Rebuild your profile to update its facts.",
+    "zh-CN": "来源已移除。请重新构建档案以更新事实。"
+  },
+  "Source replaced. Rebuild your profile to update its facts.": {
+    "key": "ui_52b8dbf0b07f",
+    "en": "Source replaced. Rebuild your profile to update its facts.",
+    "zh-CN": "来源已替换。请重新构建档案以更新事实。"
+  },
+  "Sources are saved. Build your profile to use new or updated evidence.": {
+    "key": "ui_347ca6241e93",
+    "en": "Sources are saved. Build your profile to use new or updated evidence.",
+    "zh-CN": "来源已保存。构建个人档案后，即可使用新增或更新的证据。"
+  },
+  "Start with your resume": {
+    "key": "ui_7a2a1f959f4a",
+    "en": "Start with your resume",
+    "zh-CN": "从添加简历开始"
+  },
+  "Supporting document": {
+    "key": "ui_cacb2035870a",
+    "en": "Supporting document",
+    "zh-CN": "辅助材料"
+  },
+  "The saved file and its extracted evidence will be removed. Rebuild your profile afterward to update its facts.": {
+    "key": "ui_88fa4ee5ad80",
+    "en": "The saved file and its extracted evidence will be removed. Rebuild your profile afterward to update its facts.",
+    "zh-CN": "将移除已保存的文件及其提取的证据。之后请重新构建个人档案，以更新事实。"
+  },
+  "This GitHub source will stay excluded from future syncs until you restore it.": {
+    "key": "ui_96330501df26",
+    "en": "This GitHub source will stay excluded from future syncs until you restore it.",
+    "zh-CN": "恢复之前，此 GitHub 来源不会在后续同步时重新导入。"
+  },
+  "Turn saved evidence into profile facts": {
+    "key": "ui_104b1f2b08fd",
+    "en": "Turn saved evidence into profile facts",
+    "zh-CN": "将已保存的证据提取为档案事实"
+  },
+  "Uploaded override": {
+    "key": "ui_a750bc04881e",
+    "en": "Uploaded override",
+    "zh-CN": "优先使用上传版本"
+  },
+  "Uploading…": {
+    "key": "ui_5ce44dd77dae",
+    "en": "Uploading…",
+    "zh-CN": "正在上传…"
+  },
+  "Use each repository’s default branch, or choose where your dossier lives.": {
+    "key": "ui_505b4c2dde30",
+    "en": "Use each repository’s default branch, or choose where your dossier lives.",
+    "zh-CN": "使用各仓库的默认分支，或选择项目档案所在的分支。"
+  },
+  "Your resume supplies career history. Project dossiers add evidence from your work.": {
+    "key": "ui_19ec55561ede",
+    "en": "Your resume supplies career history. Project dossiers add evidence from your work.",
+    "zh-CN": "简历提供职业经历，项目档案补充实际工作的证据。"
+  },
+  "Your saved sources are available. Resolve the issue and build your profile again.": {
+    "key": "ui_6b6a62877a89",
+    "en": "Your saved sources are available. Resolve the issue and build your profile again.",
+    "zh-CN": "已保存的来源仍然可用。请解决问题后重新构建个人档案。"
+  },
+  "Profile settings could not be loaded. Try again.": {
+    "key": "ui_74c07399ab0d",
+    "en": "Profile settings could not be loaded. Try again.",
+    "zh-CN": "无法加载档案设置，请重试。"
+  },
+  "Not selected for sync": {
+    "key": "ui_d11d1aca95ad",
+    "en": "Not selected for sync",
+    "zh-CN": "未选入同步范围"
+  },
+  "Add this repository to Always include repositories to sync its selected branch.": {
+    "key": "ui_f8cb9d4f7901",
+    "en": "Add this repository to Always include repositories to sync its selected branch.",
+    "zh-CN": "将此仓库加入“始终包含的仓库”，即可同步所选分支。"
+  },
+  "{{v0}} sources updated · {{v1}} sources removed": {
+    "key": "ui_96becdccc742",
+    "en": "{{v0}} sources updated · {{v1}} sources removed",
+    "zh-CN": "已更新 {{v0}} 个来源 · 已移除 {{v1}} 个来源"
+  },
+  "Sync again to finish updating your project sources.": {
+    "key": "ui_e688cc3720a9",
+    "en": "Sync again to finish updating your project sources.",
+    "zh-CN": "请再次同步，以完成项目来源更新。"
   }
 }

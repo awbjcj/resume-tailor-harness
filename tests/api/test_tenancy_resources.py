@@ -90,3 +90,29 @@ def test_new_user_sources_are_loaded_from_their_workspace(mu_app, mu_client):
     assert response.status_code == 200
     remoteok = next(source for source in response.json() if source["id"] == "remoteok")
     assert remoteok["enabled"] is True
+
+
+def test_profile_source_read_replace_and_delete_are_tenant_scoped(mu_app, mu_client):
+    _add_user(mu_app, "alice", "alice-password")
+    _login(mu_client, "alice", "alice-password")
+    created = mu_client.post(
+        "/api/profile/sources",
+        files={"file": ("private.txt", b"alice evidence", "text/plain")},
+    )
+    assert created.status_code == 201, created.text
+    doc_id = created.json()["id"]
+    _login(mu_client, "owner", "owner-password")
+    assert mu_client.get(f"/api/profile/sources/{doc_id}/file").status_code == 404
+    assert (
+        mu_client.put(
+            f"/api/profile/sources/{doc_id}/file",
+            files={"file": ("new.txt", b"owner bytes", "text/plain")},
+        ).status_code
+        == 404
+    )
+    assert mu_client.delete(f"/api/profile/sources/{doc_id}").status_code == 404
+    _login(mu_client, "alice", "alice-password")
+    assert (
+        mu_client.get(f"/api/profile/sources/{doc_id}/file").content
+        == b"alice evidence"
+    )

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { changeLanguage } from "@/i18n";
@@ -15,6 +15,24 @@ describe("BuildReportPanel", () => {
   it("renders nothing without a completed build", () => {
     const { container } = render(<BuildReportPanel />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("shows the running build instead of a previous success and exposes failures", () => {
+    useRunStore.setState({ runs: {
+      old: { runId: "old", kind: "profile-build", status: "succeeded", updatedAt: 1,
+        percent: 100, phase: "done", current: 3, total: 3, etaText: null, result: { projects: 2 } },
+      current: { runId: "current", kind: "profile-build", status: "running", updatedAt: 2,
+        percent: 25, phase: "Extracting and merging source documents", current: 1, total: 3, etaText: null },
+    } });
+    const { unmount } = render(<BuildReportPanel />);
+    expect(screen.getByRole("progressbar", { name: "Profile build progress" })).toHaveAttribute("aria-valuenow", "25");
+    expect(screen.queryByText("Profile ready")).not.toBeInTheDocument();
+    unmount();
+    useRunStore.setState({ runs: { failure: { runId: "failure", kind: "profile-build", status: "failed", updatedAt: 3,
+      percent: 25, phase: "", current: 1, total: 3, etaText: null, error: "Provider unavailable" } } });
+    render(<BuildReportPanel />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Profile build failed");
+    expect(screen.getByRole("alert")).toHaveTextContent("build your profile again");
   });
 
   it("shows anchors, drops, and warnings from the run result", () => {
@@ -34,6 +52,8 @@ describe("BuildReportPanel", () => {
     expect(screen.getByText(/\+2 bullets on Acme\/Engineer/)).toBeInTheDocument();
     expect(screen.getByText(/45%/)).toBeInTheDocument();
     expect(screen.getByText(/skill inference failed/)).toBeInTheDocument();
+    act(() => useRunStore.getState().remove("r1"));
+    expect(screen.getByText("Profile ready")).toBeInTheDocument();
   });
 
   it("uses fixed Chinese copy for known build diagnostics while retaining evidence details", async () => {

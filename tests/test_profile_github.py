@@ -29,6 +29,47 @@ def test_fetch_profile():
     assert profile["followers"] == 42
 
 
+def test_content_requests_keep_selected_branch_in_ref_query():
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        assert request.url.params["ref"] == "feature/dossier"
+        return httpx.Response(
+            200,
+            json=[] if request.url.path.endswith("/contents") else None,
+            text=None if request.url.path.endswith("/contents") else "# Evidence",
+        )
+
+    gh = _client(handler)
+    assert gh.fetch_root_listing("ada", "engine", ref="feature/dossier") == []
+    assert (
+        gh.fetch_raw_file("ada", "engine", "project-dossier.md", ref="feature/dossier")
+        == "# Evidence"
+    )
+    assert len(requests) == 2
+
+
+def test_explicit_missing_branch_is_an_error():
+    gh = _client(lambda request: httpx.Response(404))
+    with pytest.raises(httpx.HTTPStatusError):
+        gh.fetch_root_listing("ada", "engine", ref="deleted-branch")
+
+
+def test_branches_are_paginated_and_keep_slashes():
+    def handler(request):
+        assert request.url.path == "/repos/ada/engine/branches"
+        assert request.url.params["per_page"] == "100"
+        names = (
+            [f"branch-{i}" for i in range(100)]
+            if request.url.params["page"] == "1"
+            else ["feature/dossier"]
+        )
+        return httpx.Response(200, json=[{"name": name} for name in names])
+
+    assert "feature/dossier" in _client(handler).fetch_branches("ada", "engine")
+
+
 def test_fetch_repos():
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/users/ada/repos"

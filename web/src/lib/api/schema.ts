@@ -2990,6 +2990,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile/github/repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Github Repositories */
+        get: operations["get_github_repositories_api_profile_github_repositories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/github/repositories/{owner}/{repo}/branches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Github Branches */
+        get: operations["get_github_branches_api_profile_github_repositories__owner___repo__branches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/matrix": {
         parameters: {
             query?: never;
@@ -3112,6 +3146,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile/sources/github-exclusions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Github Exclusions */
+        get: operations["get_github_exclusions_api_profile_sources_github_exclusions_get"];
+        put?: never;
+        post?: never;
+        /** Clear Github Exclusions */
+        delete: operations["clear_github_exclusions_api_profile_sources_github_exclusions_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/sources/note": {
         parameters: {
             query?: never;
@@ -3162,6 +3214,24 @@ export interface paths {
         head?: never;
         /** Patch Source */
         patch: operations["patch_source_api_profile_sources__doc_id__patch"];
+        trace?: never;
+    };
+    "/api/profile/sources/{doc_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Source File */
+        get: operations["download_source_file_api_profile_sources__doc_id__file_get"];
+        /** Replace Source File */
+        put: operations["replace_source_file_api_profile_sources__doc_id__file_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/profile/suppressed-skills": {
@@ -5864,6 +5934,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_replace_source_file_api_profile_sources__doc_id__file_put */
+        Body_replace_source_file_api_profile_sources__doc_id__file_put: {
+            /** File */
+            file: string;
+        };
         /** Body_transcribe_audio_api_transcribe_post */
         Body_transcribe_audio_api_transcribe_post: {
             /** File */
@@ -7421,6 +7496,29 @@ export interface components {
              * Format: email
              */
             email: string;
+        };
+        /** GithubRepositoryOut */
+        GithubRepositoryOut: {
+            /** Defaultbranch */
+            defaultBranch?: string | null;
+            /** Fullname */
+            fullName: string;
+            /**
+             * Included
+             * @default false
+             */
+            included: boolean;
+            /** Name */
+            name: string;
+            /** Owner */
+            owner: string;
+            /** Selectedbranch */
+            selectedBranch?: string | null;
+            /**
+             * Uploadedoverride
+             * @default false
+             */
+            uploadedOverride: boolean;
         };
         /** GmailConnectOut */
         GmailConnectOut: {
@@ -9271,6 +9369,10 @@ export interface components {
         ProfileConfigDoc: {
             /** Githubrepoallow */
             githubRepoAllow?: string[];
+            /** Githubrepobranches */
+            githubRepoBranches?: {
+                [key: string]: string;
+            };
             /** Githubrepodeny */
             githubRepoDeny?: string[];
             /**
@@ -11828,10 +11930,17 @@ export interface components {
             addedAt: string;
             /** Anchor */
             anchor?: string | null;
+            /**
+             * Fileexists
+             * @default true
+             */
+            fileExists: boolean;
             /** Filename */
             filename: string;
             /** Fragmentstatus */
             fragmentStatus: string;
+            /** Githubbranch */
+            githubBranch?: string | null;
             /** Id */
             id: string;
             /**
@@ -11847,6 +11956,8 @@ export interface components {
             origin: "upload" | "github";
             /** Primary */
             primary: boolean;
+            /** Repourl */
+            repoUrl?: string | null;
         };
         /** SourceOut */
         resume_tailor_harness__api__schemas__sources__SourceOut: {
@@ -19958,6 +20069,71 @@ export interface operations {
             };
         };
     };
+    get_github_repositories_api_profile_github_repositories_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubRepositoryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_github_branches_api_profile_github_repositories__owner___repo__branches_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                owner: string;
+                repo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_profile_matrix_api_profile_matrix_get: {
         parameters: {
             query?: never;
@@ -20288,6 +20464,66 @@ export interface operations {
             };
         };
     };
+    get_github_exclusions_api_profile_sources_github_exclusions_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_github_exclusions_api_profile_sources_github_exclusions_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_note_api_profile_sources_note_post: {
         parameters: {
             query?: never;
@@ -20405,6 +20641,74 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SourcePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["resume_tailor_harness__api__schemas__profile__SourceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_source_file_api_profile_sources__doc_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_source_file_api_profile_sources__doc_id__file_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_replace_source_file_api_profile_sources__doc_id__file_put"];
             };
         };
         responses: {

@@ -78,8 +78,10 @@ describe("dynamic Chinese labels", () => {
 
   it("uses Chinese display labels without changing source protocol values", () => {
     expect(localizeSourceMode("synthesis", "zh-CN")).toBe("综合提炼");
-    expect(localizeSourceFragmentStatus("source-changed", "zh-CN")).toBe("来源已变更");
-    expect(localizeSourceMode("synthesis", "en")).toBe("synthesis");
+    expect(localizeSourceFragmentStatus("source-changed", "zh-CN")).toBe("待重新构建");
+    expect(localizeSourceFragmentStatus("missing", "zh-CN")).toBe("待构建");
+    expect(localizeSourceFragmentStatus("missing", "en")).toBe("Needs build");
+    expect(localizeSourceMode("synthesis", "en")).toBe("Verified synthesis");
   });
 
   it("formats API ETA values in Chinese without leaking English units", () => {

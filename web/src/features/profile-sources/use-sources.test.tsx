@@ -19,7 +19,7 @@ vi.mock("@/features/runs/use-launch-run", () => ({
 }));
 
 import { useSyncGithub } from "./use-sources";
-import { useUploadSources } from "./use-sources";
+import { useDeleteSource, useReplaceSource, useUploadSources } from "./use-sources";
 import { server } from "@/test/server";
 
 const wrapper = ({ children }: { children: ReactNode }) => (
@@ -81,5 +81,39 @@ describe("useUploadSources", () => {
     expect(summary.ok).toBe(2);
     expect(summary.failed).toEqual([["b.md", "unsupported"]]);
     expect(calls).toBe(3);
+  });
+});
+
+describe("source mutations", () => {
+  it("replaces a dossier in one request without uploading a new primary or deleting it", async () => {
+    const calls: string[] = [];
+    server.use(
+      http.put("/api/profile/sources/project/file", async ({ request }) => {
+        calls.push("replace");
+        const form = await request.formData();
+        expect(form.get("file")).toMatchObject({ size: 7 });
+        expect(form.has("mode")).toBe(false);
+        expect(form.has("primary")).toBe(false);
+        return HttpResponse.json({ id: "project", mode: "project", primary: false });
+      }),
+      http.post("/api/profile/sources", () => { calls.push("upload"); return HttpResponse.error(); }),
+      http.delete("/api/profile/sources/project", () => { calls.push("delete"); return HttpResponse.error(); }),
+    );
+    const { result } = renderHook(() => useReplaceSource(), { wrapper });
+    await act(async () => {
+      await result.current.mutateAsync({ oldId: "project", file: new File(["updated"], "dossier.md") });
+    });
+    expect(calls).toEqual(["replace"]);
+  });
+
+  it("purges the stored file when the user removes a source", async () => {
+    let purge: string | null = null;
+    server.use(http.delete("/api/profile/sources/project", ({ request }) => {
+      purge = new URL(request.url).searchParams.get("purge");
+      return new HttpResponse(null, { status: 204 });
+    }));
+    const { result } = renderHook(() => useDeleteSource(), { wrapper });
+    await act(async () => { await result.current.mutateAsync("project"); });
+    expect(purge).toBe("true");
   });
 });

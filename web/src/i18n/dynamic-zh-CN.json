@@ -125,9 +125,9 @@
   "sourceFragmentStatuses": {
     "cached": "已使用缓存",
     "extracted": "已提取",
-    "source-changed": "来源已变更",
-    "missing": "缺失",
-    "stale": "缓存已过期"
+    "source-changed": "待重新构建",
+    "missing": "待构建",
+    "stale": "待重新构建"
   },
   "runStatuses": {
     "queued": "已排队",

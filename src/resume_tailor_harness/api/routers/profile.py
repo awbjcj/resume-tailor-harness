@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import re
 import tempfile
+from urllib.parse import quote
 from pathlib import Path
 from typing import cast
 
 import httpx
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi.responses import Response
 
 from resume_tailor_harness.api.deps import (
     get_config_store,
@@ -34,6 +36,7 @@ from resume_tailor_harness.api.schemas.profile import (
     SkeletonEntryOut,
     SkillEntryOut,
     SourceOut,
+    GithubRepositoryOut,
     SourcePatch,
     SkillGroupOut,
     SuppressedSkillOut,
@@ -44,9 +47,14 @@ from resume_tailor_harness.llm_runner import model_access_available
 from resume_tailor_harness.profile.corpus import (
     _UNSET,
     SourceMode,
+    MANIFEST_NAME,
     add_source,
+    doc_path,
     load_manifest,
     remove_source,
+    replace_source,
+    restore_github_sources,
+    source_lock,
     update_source,
 )
 from resume_tailor_harness.profile.fragments import fragment_cache_status
@@ -55,8 +63,16 @@ from resume_tailor_harness.profile.intake import add_note_source, add_url_source
 from resume_tailor_harness.profile.matrix import load_matrix
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.profile.synthesis import profile_skeleton
-from resume_tailor_harness.services import profile_build, profile_groups, profile_skills
-from resume_tailor_harness.services.profile_documents import DocumentError, DocumentStore
+from resume_tailor_harness.services import (
+    profile_build,
+    profile_groups,
+    profile_skills,
+    profile_github,
+)
+from resume_tailor_harness.services.profile_documents import (
+    DocumentError,
+    DocumentStore,
+)
 from resume_tailor_harness.taxonomy.groups import SKILL_GROUPS
 
 router = APIRouter()
@@ -115,6 +131,12 @@ def _launch_build(
     profile_dir = _profile_dir(request)
     manifest = load_manifest(profile_dir)
     if not manifest.docs:
+        if (profile_dir / MANIFEST_NAME).exists():
+            raise ApiException(
+                400,
+                "SETUP_INCOMPLETE",
+                "Add a resume source before rebuilding the profile",
+            )
         resume_path = _docs(request).latest_resume_path()
         if resume_path is None:
             raise ApiException(
@@ -125,6 +147,12 @@ def _launch_build(
         # One-time migration mirroring the CLI's migrate_legacy: the wizard's
         # newest resume becomes the corpus primary.
         add_source(profile_dir, resume_path, primary=True)
+    elif not any(doc.primary for doc in manifest.docs):
+        raise ApiException(
+            400,
+            "SETUP_INCOMPLETE",
+            "Add a primary resume source before rebuilding the profile",
+        )
     profile_cfg = cast(ProfileConfigDoc, get_config_store(request).get("profile"))
     github_username = profile_cfg.github_username
     facts_out = get_profile_dir(request) / "facts.json"
@@ -138,6 +166,7 @@ def _launch_build(
             github_allow=tuple(profile_cfg.github_repo_allow),
             github_deny=tuple(profile_cfg.github_repo_deny),
             github_limit=profile_cfg.github_repo_limit,
+            github_branches=profile_cfg.github_repo_branches,
         )
 
     return launch(
@@ -167,13 +196,29 @@ def _source_out(profile_dir: Path, doc) -> SourceOut:
         added_at=doc.added_at,
         fragment_status=fragment_cache_status(profile_dir, doc),
         origin=doc.origin,
+        file_exists=doc_path(profile_dir, doc).is_file(),
+        repo_url=doc.repo_url,
+        github_branch=doc.github_branch,
     )
 
 
 @router.get("/profile/sources", response_model=list[SourceOut])
 def list_sources(request: Request):
     profile_dir = _profile_dir(request)
-    return [_source_out(profile_dir, doc) for doc in load_manifest(profile_dir).docs]
+    with source_lock(profile_dir):
+        return [
+            _source_out(profile_dir, doc) for doc in load_manifest(profile_dir).docs
+        ]
+
+
+@router.get("/profile/sources/github-exclusions", response_model=list[str])
+def get_github_exclusions(request: Request):
+    return load_manifest(_profile_dir(request)).excluded_github_sources
+
+
+@router.delete("/profile/sources/github-exclusions", status_code=204)
+def clear_github_exclusions(request: Request):
+    restore_github_sources(_profile_dir(request))
 
 
 @router.post("/profile/sources", response_model=SourceOut, status_code=201)
@@ -205,6 +250,48 @@ async def upload_source(
     except ValueError as exc:
         raise ApiException(422, "VALIDATION_ERROR", str(exc)) from exc
     return _source_out(profile_dir, doc)
+
+
+@router.put("/profile/sources/{doc_id}/file", response_model=SourceOut)
+async def replace_source_file(
+    doc_id: str,
+    request: Request,
+    file: UploadFile = File(...),
+):
+    try:
+        content = await read_upload_async(file, max_bytes=_MAX_SOURCE_BYTES)
+        name = _UNSAFE_CHARS.sub("_", Path(file.filename or "upload").name) or "upload"
+        profile_dir = _profile_dir(request)
+        with tempfile.TemporaryDirectory() as scratch:
+            staged = Path(scratch) / name
+            staged.write_bytes(content)
+            doc = replace_source(profile_dir, doc_id, staged)
+    except (UploadTooLargeError, ValueError) as exc:
+        raise ApiException(422, "VALIDATION_ERROR", str(exc)) from exc
+    if doc is None:
+        raise ApiException(404, "NOT_FOUND", f"No source '{doc_id}'")
+    return _source_out(profile_dir, doc)
+
+
+@router.get("/profile/sources/{doc_id}/file", response_class=Response)
+def download_source_file(doc_id: str, request: Request):
+    profile_dir = _profile_dir(request)
+    with source_lock(profile_dir):
+        doc = next((d for d in load_manifest(profile_dir).docs if d.id == doc_id), None)
+        if doc is None:
+            raise ApiException(404, "NOT_FOUND", f"No source '{doc_id}'")
+        try:
+            content = doc_path(profile_dir, doc).read_bytes()
+        except (OSError, ValueError) as exc:
+            raise ApiException(404, "NOT_FOUND", "Source file is unavailable") from exc
+        return Response(
+            content,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{quote(doc.filename, safe='')}",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
 
 @router.post("/profile/sources/note", response_model=SourceOut, status_code=201)
@@ -251,6 +338,7 @@ def launch_github_sync(
             allow=tuple(profile_config.github_repo_allow),
             deny=tuple(profile_config.github_repo_deny),
             limit=profile_config.github_repo_limit,
+            branches=profile_config.github_repo_branches,
         )
         return {
             "written": report.written,
@@ -261,6 +349,46 @@ def launch_github_sync(
         }
 
     return launch(mgr, "github-sync", work, singleton_key="github-sync")
+
+
+@router.get("/profile/github/repositories", response_model=list[GithubRepositoryOut])
+def get_github_repositories(request: Request):
+    config = cast(ProfileConfigDoc, get_config_store(request).get("profile"))
+    if not config.github_username:
+        raise ApiException(
+            400,
+            "SETUP_INCOMPLETE",
+            "Save a GitHub username before choosing repositories",
+        )
+    try:
+        return profile_github.list_repositories(
+            config.github_username,
+            _profile_dir(request),
+            allow=tuple(config.github_repo_allow),
+            deny=tuple(config.github_repo_deny),
+            limit=config.github_repo_limit,
+            branches=config.github_repo_branches,
+        )
+    except (httpx.HTTPError, ValueError) as error:
+        raise ApiException(
+            422,
+            "GITHUB_UNAVAILABLE",
+            "Could not load repositories. Check the username and GitHub access, then retry.",
+        ) from error
+
+
+@router.get(
+    "/profile/github/repositories/{owner}/{repo}/branches", response_model=list[str]
+)
+def get_github_branches(owner: str, repo: str):
+    try:
+        return profile_github.list_branches(owner, repo)
+    except (httpx.HTTPError, ValueError) as error:
+        raise ApiException(
+            422,
+            "GITHUB_UNAVAILABLE",
+            "Could not load branches. Check repository access, then retry.",
+        ) from error
 
 
 @router.get("/profile/matrix", response_model=MatrixOut)
@@ -300,7 +428,9 @@ def patch_source(doc_id: str, payload: SourcePatch, request: Request):
 @router.delete("/profile/sources/{doc_id}", status_code=204)
 def delete_source(doc_id: str, request: Request, purge: bool = False):
     try:
-        doc = remove_source(_profile_dir(request), doc_id, purge=purge)
+        doc = remove_source(
+            _profile_dir(request), doc_id, purge=purge, exclude_github=True
+        )
     except ValueError as exc:
         raise ApiException(422, "VALIDATION_ERROR", str(exc)) from exc
     if doc is None:

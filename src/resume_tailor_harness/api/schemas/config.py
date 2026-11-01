@@ -261,6 +261,14 @@ class ProfileConfigDoc(CamelModel):
     github_repo_allow: list[str] = Field(default_factory=list)
     github_repo_deny: list[str] = Field(default_factory=list)
     github_repo_limit: int = Field(default=20, ge=1, le=100)
+    github_repo_branches: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("github_repo_branches")
+    @classmethod
+    def validate_repo_branches(cls, value: dict[str, str]) -> dict[str, str]:
+        from resume_tailor_harness.profile.github_harvest import validate_repo_branches
+
+        return validate_repo_branches(value)
 
 
 class ApplicationProfileDoc(CamelModel):

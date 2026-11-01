@@ -84,12 +84,17 @@ export function localizeRunLogMessage(message: string, language: string | null |
 }
 
 export function localizeSourceMode(mode: string, language: string | null | undefined): string {
-  if (!isChinese(language)) return mode;
+  if (!isChinese(language)) return {
+    auto: "Auto-detect", literal: "Resume / text", synthesis: "Verified synthesis", project: "Project dossier",
+  }[mode] ?? mode;
+  if (mode === "auto") return "自动识别";
   return zhCN.sourceModes[mode as keyof typeof zhCN.sourceModes] ?? zhCN.fallbacks.unknownMode;
 }
 
 export function localizeSourceFragmentStatus(status: string, language: string | null | undefined): string {
-  if (!isChinese(language)) return status;
+  if (!isChinese(language)) return {
+    cached: "Ready", missing: "Needs build", stale: "Needs rebuild", "source-changed": "Needs rebuild",
+  }[status] ?? status;
   return zhCN.sourceFragmentStatuses[status as keyof typeof zhCN.sourceFragmentStatuses]
     ?? zhCN.fallbacks.unknownStatus;
 }
