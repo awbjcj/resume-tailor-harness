@@ -172,7 +172,7 @@ export function SkillCompactView({
                   onMoveDone={() => setCategoryMove(null)}
                 />
               </div>
-              <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-start gap-3">
+              <div className="min-w-0 space-y-2">
                 {children.map((child) => {
                   const skills = members.get(child.slug) ?? [];
                   const over =
@@ -183,13 +183,13 @@ export function SkillCompactView({
                       data-skill-drop-group={child.slug}
                       aria-label={child.label}
                       className={cn(
-                        "min-w-0 rounded-xl border border-border bg-card",
+                        "grid min-w-0 grid-cols-1 rounded-xl border border-border bg-card @2xl/library:grid-cols-[12rem_minmax(0,1fr)]",
                         over &&
                           "border-primary bg-primary/5 ring-1 ring-primary/30",
                       )}
                     >
-                      <div className="flex min-w-0 items-center gap-2 px-3 pb-1 pt-2">
-                        <h4 className="min-w-0 flex-1 text-xs font-medium leading-relaxed">
+                      <div className="flex min-w-0 items-center gap-2 px-3 py-2 @2xl/library:items-start @2xl/library:border-r">
+                        <h4 className="min-w-0 flex-1 py-1 text-xs font-medium leading-relaxed">
                           {child.label}{" "}
                           <span className="ml-2 tabular-nums text-muted-foreground">
                             {skills.length}
@@ -204,7 +204,7 @@ export function SkillCompactView({
                           onAddSkill={onAdd}
                         />
                       </div>
-                      <div className="flex min-h-14 flex-wrap items-start gap-1.5 px-3 pb-3 pt-1">
+                      <div className="flex min-w-0 flex-wrap content-start items-start gap-1.5 px-3 pb-3 @2xl/library:py-3">
                         {skills.map((row) => (
                           <div
                             key={row.key}
