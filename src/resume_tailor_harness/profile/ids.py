@@ -21,12 +21,15 @@ class _Assigner:
     def __init__(self, doc_id: str) -> None:
         self.doc_id = doc_id
         self._seen: dict[str, int] = {}
+        self.remapped: dict[str, str] = {}
 
     def assign(self, item: FactItem, *parts: str | None) -> str:
         base = "|".join((self.doc_id, *(_key(part) or "-" for part in parts)))
         count = self._seen.get(base, 0)
         self._seen[base] = count + 1
+        old_id = item.id
         item.id = deterministic_id(base, str(count))
+        self.remapped[old_id] = item.id
         item.source_ref = self.doc_id
         return item.id
 
@@ -65,4 +68,12 @@ def assign_fact_ids(facts: ProfileFacts, doc_id: str) -> ProfileFacts:
             )
     if output.github_profile is not None:
         ids.assign(output.github_profile, "github", output.github_profile.username)
+    for skills in output.skills.values():
+        for skill in skills:
+            skill.evidence_fact_ids = list(
+                dict.fromkeys(
+                    ids.remapped.get(fact_id, fact_id)
+                    for fact_id in skill.evidence_fact_ids
+                )
+            )
     return output

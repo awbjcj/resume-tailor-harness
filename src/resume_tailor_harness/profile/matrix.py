@@ -16,7 +16,7 @@ from pydantic import Field, field_validator
 
 from resume_tailor_harness.models.base import ExtensibleModel
 from resume_tailor_harness.models.job import JobCriteria
-from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.models.profile import Experience, ProfileFacts, Project
 from resume_tailor_harness.profile.group_corrections import (
     corrections_path,
     load_group_corrections,
@@ -53,7 +53,12 @@ class MatrixRow(ExtensibleModel):
     @field_validator("group", mode="before")
     @classmethod
     def validate_group(cls, value: object) -> str | None:
-        return value if isinstance(value, str) and value in SKILL_GROUPS else None
+        return (
+            value
+            if isinstance(value, str)
+            and (value in SKILL_GROUPS or re.fullmatch(r"custom-[a-f0-9]{12}", value))
+            else None
+        )
 
     @field_validator("group_source", mode="before")
     @classmethod
@@ -285,6 +290,10 @@ def _later(first: str | None, second: str | None) -> str | None:
     )
 
 
+def _owner_bullets(owner: Experience | Project):
+    return owner.bullets if isinstance(owner, Experience) else owner.highlights
+
+
 def build_matrix(
     facts: ProfileFacts,
     taxonomy: EffectiveTaxonomy,
@@ -317,6 +326,7 @@ def build_matrix(
             else:
                 literal_keys.add(key)
                 evidence_strength.add(skill.id)
+                evidence_strength.update(skill.evidence_fact_ids)
             row.aliases = sorted(
                 set(row.aliases)
                 | {alias for alias in skill.aliases if normalize_skill(alias) != key}
@@ -340,7 +350,7 @@ def build_matrix(
         for owner in owners
         for fact_id in (
             owner.id,
-            *(bullet.id for bullet in getattr(owner, "bullets", [])),
+            *(bullet.id for bullet in _owner_bullets(owner)),
         )
     }
     for row in rows.values():
@@ -355,13 +365,16 @@ def build_matrix(
             technology = {normalize_skill(item) for item in getattr(owner, "tech", [])}
             technology_hit = bool(needles & technology)
             bullet_hits: list[str] = []
-            for bullet in getattr(owner, "bullets", []):
+            for bullet in _owner_bullets(owner):
                 text = normalize_skill(bullet.text)
                 if any(f" {needle} " in f" {text} " for needle in needles):
                     if bullet.id not in row.evidence_fact_ids:
                         row.evidence_fact_ids.append(bullet.id)
                     bullet_hits.append(bullet.id)
-            if bullet_hits:
+            linked_hits = strength_ids[row.key] & {
+                bullet.id for bullet in _owner_bullets(owner)
+            }
+            if bullet_hits or linked_hits:
                 strength_ids[row.key].update(bullet_hits)
             elif technology_hit:
                 if owner.id not in row.evidence_fact_ids:
@@ -369,7 +382,7 @@ def build_matrix(
                 strength_ids[row.key].add(owner.id)
 
         for owner in owners:
-            bullet_ids = {bullet.id for bullet in getattr(owner, "bullets", [])}
+            bullet_ids = {bullet.id for bullet in _owner_bullets(owner)}
             if owner.id in strength_ids[row.key] and strength_ids[row.key] & bullet_ids:
                 strength_ids[row.key].discard(owner.id)
 
@@ -451,13 +464,29 @@ def decorate_matrix_groups(
     # recorded its import hash in taxonomy_state.json.
     if not group_map and taxonomy.state.legacy_group_map_sha256 is None:
         group_map = load_group_map(group_map_path(profile_dir))
-    corrections = load_group_corrections(corrections_path(profile_dir)).as_map()
+    organization = load_group_corrections(corrections_path(profile_dir))
+    corrections = organization.as_map()
     apply_skill_groups(
         matrix,
         group_map,
         taxonomy.group_overrides,
         corrections=corrections,
     )
+    catalog = organization.group_catalog()
+    for row in matrix.rows:
+        keys = [
+            row.key,
+            normalize_skill(row.display),
+            *map(normalize_skill, row.aliases),
+        ]
+        correction = _lookup_group(corrections, keys)
+        automatic = _lookup_group(organization.automatic, keys)
+        if correction in catalog:
+            row.group, row.group_source = correction, "correction"
+        elif automatic in catalog:
+            row.group, row.group_source = automatic, "taxonomy"
+        elif row.group not in catalog:
+            row.group, row.group_source = None, None
 
 
 def build_decorated_matrix(profile_dir: str | Path, facts: ProfileFacts) -> SkillMatrix:

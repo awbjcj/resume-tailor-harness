@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export const STEPS = [
   { slug: "keys", label: "Keys", done: (s: SetupStatus) => s.secrets.anyLlmKey },
-  { slug: "documents", label: "Documents", done: (s: SetupStatus) => s.profile.hasResume },
+  { slug: "documents", label: "Documents", done: (s: SetupStatus) => s.profile.hasResume || s.profile.canRebuild },
   { slug: "search", label: "Search", done: (s: SetupStatus) => s.search.configured },
   { slug: "sources", label: "Sources", done: (s: SetupStatus) => s.sources.enabledCount > 0 },
 ] as const;

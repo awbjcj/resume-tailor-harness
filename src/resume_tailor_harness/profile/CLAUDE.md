@@ -7,6 +7,20 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   verbatim quotes from the current user turn. The former batch interview API,
   CLI command, and web panel are retired; its history remains read-only input
   for avoiding repeated questions.
+- **Conversational edits are reviewed data changes.** The coach's profile tools
+  only read or preview; `profile/conversation.py` validates closed operations and
+  editable field allowlists. `services/profile_conversation.py` applies the exact
+  stored draft after a revision-bound approval, under the profile process lock,
+  with rollback across the edit ledger, facts, matrix and session receipt. Each
+  proposal quotes the current user turn. `conversation_edits.json` replays after
+  source extraction and manual skills; unknown targets warn instead of guessing.
+  Category operations affect the profile's skill display buckets, never the fixed
+  hard/soft/domain or shared taxonomy vocabularies. Inferred skills keep their
+  evidence-only status when organized. Full removal fences source replay;
+  explicit recreation begins from a blank profile. Conversations can create and
+  rebuild a profile without a primary resume. The hash-verified
+  `profile-conversation` skill ref is retained in influenced coach turn metadata.
+  See `docs/profile-conversation.md` for the API and acceptance cases.
 - **GitHub depth is two-tier; dossiers win.** `profile/github_harvest.py` writes
   qualifying repositories' root docs (README files plus CLAUDE, CONTEXT, and
   AGENTS markdown, capped at 30 KB per file) as deterministic
@@ -45,6 +59,22 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 - **Profile rebuilds regenerate inferred skills.** `profile build` strips and re-derives
   all `inferred=true` skills; durable corrections belong in `data/profile/overrides.yaml`,
   not hand-edits to facts.json.
+- **Profile skill management is durable and source-preserving.** `manual_skills.json`
+  replays additions, edits, merges, and suppressions; suppressions retain snapshots for
+  immediate restore. Restores are exempt from future automatic pruning. Cleanup merges
+  exact names/explicit synonyms and removes only conservative non-skill patterns; it
+  never prunes by popularity or evidence count. Facts, ledger, organization, and matrix
+  mutations share a per-profile thread/process lock and roll back together on errors.
+- **User organization is a display layer.** `group_corrections.json` owns category/group
+  catalogs, deletions, explicit assignments, and automatic reclassifications. Custom
+  groups use stable `custom-` ids; deleting containers moves their contents to Other.
+  The shared matching taxonomy and fact-lock's hard/soft/domain skill types stay closed.
+  Skill-only rebuilds infer from saved facts, classify against the current user catalog,
+  preserve manual assignments, and reject stale results after concurrent edits.
+  Coach category previews and approval use this same catalog; its revision is part of
+  the draft's stale check. `conversation_organization.py` mutates only owned in-memory
+  copies. All profile rebuild paths apply cleanup and reconcile explicit skill snapshots,
+  including renames and restores of skills created through conversation.
 - **Synthesis ingest is text-only.** markitdown converts slide text frames, tables, and
   speaker notes; images/diagrams are skipped, and an LLM image description is never
   verification evidence (it would punch a hole in fact-lock). Put key numbers in slide
@@ -59,6 +89,20 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   and the provenance gate can reject a fabricated project bullet. Its
   `mode="before"` migration accepts stored legacy string lists with deterministic
   non-empty ids; merge retains the full Bullet rather than flattening it to text.
+- **Labeled dossiers retain their complete evidence bank.** `profile/dossier.py`
+  recognizes the project-resume-dossier Name/Context/Evidence format and keeps
+  source wording, aliases, citations, commits, and measurement limits. Each
+  explained, cited skill example becomes a project highlight; skills point to
+  those facts after stable id assignment. Exact repeated examples share a fact.
+  Missing context/citations are reported as verification drops; fenced examples
+  and unsupported model-added skills are excluded. Freeform/older documents keep
+  model extraction. This checks source structure, not repository truth or
+  authorship; ingestion never executes cited paths or measurement commands.
+  Cross-project skill merge unions contexts and source refs. Project dedup
+  remaps evidence ids to retained highlights. The matrix uses project highlights
+  and explicit evidence links, including broad skills absent from tech lists.
+  Increment `PROJECT_PROMPT_VERSION` when this projection changes so cached
+  project fragments rebuild. The bundled project-dossier skill is hash pinned.
 - **Bullet aspects are durable classifications.** New extractors emit the closed
   aspect vocabulary, while profile build backfills only bullets with
   `aspect is None`. A hand-corrected aspect therefore survives rebuilds; an

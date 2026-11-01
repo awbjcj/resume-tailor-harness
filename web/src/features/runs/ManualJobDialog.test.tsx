@@ -24,14 +24,33 @@ async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText("Full job description *"), "Build and maintain Python services.");
 }
 
-it("submits structured fields and refreshes the boards with a saved-job link", async () => {
+it("validates fields, preserves drafts through server failures, and refreshes boards after retry", async () => {
   let body: Record<string, unknown> | undefined;
-  server.use(http.post("/api/jobs", async ({ request }) => {
+  let status = 201;
+  const post = vi.fn(async ({ request }: { request: Request }) => {
     body = await request.json() as Record<string, unknown>;
+    if (status !== 201) {
+      return HttpResponse.json({ error: { code: "FAILED", message: `HTTP ${status}` } }, { status });
+    }
     return HttpResponse.json({ id: 42, title: "Platform Engineer", company: "Acme" }, { status: 201 });
-  }));
+  });
+  server.use(http.post("/api/jobs", post));
   const { user, invalidate } = await openForm();
   await fillRequired(user);
+  await user.clear(screen.getByLabelText("Job title *"));
+  await user.type(screen.getByLabelText("Job title *"), "   ");
+  await user.click(screen.getByRole("button", { name: "Save job" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Enter a job title");
+  await user.type(screen.getByLabelText("Job title *"), "Platform Engineer");
+  await user.type(screen.getByLabelText("Minimum salary"), "200");
+  await user.type(screen.getByLabelText("Maximum salary"), "100");
+  await user.click(screen.getByRole("button", { name: "Save job" }));
+  await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("valid salary range"));
+  expect(post).not.toHaveBeenCalled();
+  await user.clear(screen.getByLabelText("Job title *"));
+  await user.type(screen.getByLabelText("Job title *"), "Platform Engineer");
+  await user.clear(screen.getByLabelText("Minimum salary"));
+  await user.clear(screen.getByLabelText("Maximum salary"));
   await user.type(screen.getByLabelText("Job posting URL"), "https://example.com/jobs/42");
   await user.selectOptions(screen.getByLabelText("Work arrangement"), "hybrid");
   await user.selectOptions(screen.getByLabelText("Employment type"), "full_time");
@@ -40,6 +59,17 @@ it("submits structured fields and refreshes the boards with a saved-job link", a
   await user.type(screen.getByLabelText("Currency (3-letter code)"), "usd");
   await user.selectOptions(screen.getByLabelText("Pay period"), "year");
   await user.type(screen.getByLabelText("Required skills"), "Python\nSQL");
+  for (const [failure, message] of [
+    [409, /already exists/i],
+    [429, /limit|quota/i],
+    [500, /could not|failed|unable/i],
+  ] as const) {
+    status = failure;
+    await user.click(screen.getByRole("button", { name: "Save job" }));
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(message));
+    expect(screen.getByLabelText("Job title *"), `draft after HTTP ${failure}`).toHaveValue("Platform Engineer");
+  }
+  status = 201;
   await user.click(screen.getByRole("button", { name: "Save job" }));
   expect(await screen.findByRole("status")).toHaveTextContent("Job saved: Platform Engineer at Acme (ID 42).");
   expect(body).toMatchObject({ company: "Acme", postedAt: null, details: {
@@ -51,33 +81,4 @@ it("submits structured fields and refreshes the boards with a saved-job link", a
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["dashboard-summary"] });
   await user.click(screen.getByRole("button", { name: "Add another job" }));
   expect(screen.getByLabelText("Job title *")).toHaveValue("");
-});
-
-it.each([409, 429, 500])("keeps entries after a %s response and permits retry", async (status) => {
-  server.use(http.post("/api/jobs", () => HttpResponse.json({ error: { code: "FAILED" } }, { status })));
-  const { user } = await openForm();
-  await fillRequired(user);
-  await user.click(screen.getByRole("button", { name: "Save job" }));
-  expect(await screen.findByRole("alert")).toBeInTheDocument();
-  expect(screen.getByLabelText("Job title *")).toHaveValue("Platform Engineer");
-  server.use(http.post("/api/jobs", () => HttpResponse.json({ id: 42 })));
-  await user.click(screen.getByRole("button", { name: "Save job" }));
-  expect(await screen.findByRole("status")).toHaveTextContent("ID 42");
-});
-
-it("rejects whitespace and an inverted salary without making a request", async () => {
-  const post = vi.fn(() => HttpResponse.json({ id: 1 }));
-  server.use(http.post("/api/jobs", post));
-  const { user } = await openForm();
-  await fillRequired(user);
-  await user.clear(screen.getByLabelText("Job title *"));
-  await user.type(screen.getByLabelText("Job title *"), "   ");
-  await user.click(screen.getByRole("button", { name: "Save job" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent("Enter a job title");
-  await user.type(screen.getByLabelText("Job title *"), "Engineer");
-  await user.type(screen.getByLabelText("Minimum salary"), "200");
-  await user.type(screen.getByLabelText("Maximum salary"), "100");
-  await user.click(screen.getByRole("button", { name: "Save job" }));
-  await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("valid salary range"));
-  expect(post).not.toHaveBeenCalled();
 });

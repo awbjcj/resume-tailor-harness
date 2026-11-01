@@ -35,6 +35,10 @@ from resume_tailor_harness.profile.coach_store import (
     set_impact,
 )
 from resume_tailor_harness.profile.corpus import load_manifest
+from resume_tailor_harness.profile.conversation import (
+    make_profile_tools,
+    prepare_changes,
+)
 from resume_tailor_harness.profile.intake import add_note_source
 from resume_tailor_harness.profile.interview import make_corpus_tools
 from resume_tailor_harness.profile.snapshot import profile_snapshot, snapshot_diff
@@ -43,6 +47,7 @@ from resume_tailor_harness.services.profile_build import run_corpus_build
 from resume_tailor_harness.sessions.stream import Notice, NullSink, StreamSink
 from resume_tailor_harness.sessions.turns import (
     TurnRejected,
+    DraftRejected,
     format_with_retry,
     persona_output,
     user_visible_prose,
@@ -113,6 +118,23 @@ def session_view(profile_dir: Path | str, session_id: str) -> dict:
             }
             for draft in session["draft_notes"]
         ],
+        "changeDrafts": [
+            {
+                "id": draft["id"],
+                "title": draft["title"],
+                "revision": draft["revision"],
+                "status": draft["status"],
+                "previews": draft["previews"],
+                "quotes": list(
+                    dict.fromkeys(
+                        quote
+                        for record in draft["changes"]
+                        for quote in record["change"]["quotes"]
+                    )
+                ),
+            }
+            for draft in session.get("change_drafts", [])
+        ],
         "recap": (
             user_visible_prose(session["recap"])
             if session["recap"] is not None
@@ -159,9 +181,17 @@ def _overview(profile_dir: Path, engine) -> str:
         return profile_overview(profile_dir, database_session)
 
 
-def _agents(profile_dir: Path, coach_agent, formatter_agent, schema):
+def _agents(
+    profile_dir: Path, coach_agent, formatter_agent, schema, *, user_text: str = ""
+):
     return (
-        coach_agent or build_coach_agent(make_corpus_tools(profile_dir)),
+        coach_agent
+        or build_coach_agent(
+            [
+                *make_corpus_tools(profile_dir),
+                *make_profile_tools(profile_dir, user_text=user_text),
+            ]
+        ),
         formatter_agent or build_coach_formatter_agent(schema),
     )
 
@@ -214,6 +244,7 @@ def run_opening_turn(
     validated.coach_turn = validated.coach_turn.model_copy(
         update={
             "text": user_visible_prose(prose or validated.coach_turn.text),
+            "agent_meta": getattr(coach, "run_meta", None),
         }
     )
     reporter.step(1)
@@ -243,12 +274,15 @@ def run_message_turn(
     if session["status"] != "active":
         raise ValueError("session ended")
     reporter.begin(1, "Preparing a response")
-    coach, formatter = _agents(root, coach_agent, formatter_agent, CoachTurn)
+    coach, formatter = _agents(
+        root, coach_agent, formatter_agent, CoachTurn, user_text=text
+    )
     prompt = "\n\n".join(
         [
             _overview(root, engine),
             render_transcript(session),
             render_agenda(session),
+            _change_context(session),
             f"USER'S LATEST MESSAGE (UNTRUSTED):\n{text}",
         ]
     )
@@ -270,12 +304,27 @@ def run_message_turn(
             },
         ],
     }
+
+    def validate(turn: CoachTurn, strict: bool) -> ValidatedTurn:
+        validated = normalize_turn(turn, preview, strict=strict)
+        if validated.profile_changes is not None:
+            try:
+                validated.change_draft = prepare_changes(
+                    root,
+                    validated.profile_changes,
+                    text,
+                    source_ref=f"coach:{session_id}:{len(session['turns'])}",
+                )
+            except ValueError as exc:
+                raise DraftRejected(str(exc)) from exc
+        return validated
+
     try:
         validated = format_with_retry(
             formatter,
             notes,
             CoachTurn,
-            lambda turn, strict: normalize_turn(turn, preview, strict=strict),
+            validate,
             label="COACH NOTES",
         )
     except (TurnRejected, UnparsedAgentOutput) as exc:
@@ -288,6 +337,7 @@ def run_message_turn(
     validated.coach_turn = validated.coach_turn.model_copy(
         update={
             "text": user_visible_prose(prose or validated.coach_turn.text),
+            "agent_meta": getattr(coach, "run_meta", None),
         }
     )
     reporter.step(1)
@@ -299,6 +349,7 @@ def run_message_turn(
         new_topics=validated.new_topics,
         skipped_topic_ids=validated.skipped_topic_ids,
         draft=validated.draft,
+        change_draft=validated.change_draft,
     )
     if validated.notice:
         output_sink.emit(Notice(validated.notice))
@@ -318,7 +369,7 @@ def _degraded_turn(session: dict, prose: str) -> ValidatedTurn:
             "",
         ),
     )
-    notice = "Some turn details could not be read, so no note was attached."
+    notice = "Some turn details could not be read, so no note or profile changes were prepared."
     return ValidatedTurn(
         coach_turn=CoachTurnRecord(
             role="coach",
@@ -334,6 +385,16 @@ def _degraded_turn(session: dict, prose: str) -> ValidatedTurn:
 def _primary_exists(profile_dir: Path) -> bool:
     return any(
         doc.primary and doc.mode == "literal" for doc in load_manifest(profile_dir).docs
+    )
+
+
+def _change_context(session: dict) -> str:
+    return (
+        "PROFILE CHANGE DRAFTS (host status; only applied drafts changed the profile):\n"
+        + "\n".join(
+            f"- {draft['id']} [{draft['status']}] {draft['title']}"
+            for draft in session.get("change_drafts", [])[-20:]
+        )
     )
 
 
@@ -417,6 +478,7 @@ def run_recap_turn(
         [
             render_agenda(session),
             render_transcript(session),
+            _change_context(session),
             "Write the session recap: topics covered, saved notes, open gaps, and one suggested next focus."
             + (f" Mention unsaved drafts: {', '.join(pending)}." if pending else ""),
         ]
@@ -444,7 +506,13 @@ def run_recap_turn(
         recap = prose
     recap = user_visible_prose(recap)
     reporter.step(1)
-    end_session(root, session_id, recap, notice=notice)
+    end_session(
+        root,
+        session_id,
+        recap,
+        notice=notice,
+        agent_meta=getattr(coach, "run_meta", None),
+    )
     if notice:
         output_sink.emit(Notice(notice))
     return session_view(root, session_id)

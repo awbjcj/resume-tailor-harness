@@ -4,6 +4,7 @@ import { billingEn, billingZh } from "./billing";
 import { passwordManagerEn, passwordManagerZh } from "./password-manager";
 import { manualJobEn, manualJobZh } from "./manual-job";
 import { mailboxesEn, mailboxesZh } from "./mailboxes";
+import type { profileChangesEn } from "./profile-changes";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -28,6 +29,8 @@ const en = {
   passwordManager: passwordManagerEn,
   manualJob: manualJobEn,
   mailboxes: mailboxesEn,
+  // Coach-only copy is registered by its lazy route, keeping it out of startup.
+  profileChanges: {} as typeof profileChangesEn,
   agentPrompts: {
     originalLanguage: "Built-in instructions are shown in their original language.",
   },
@@ -681,7 +684,7 @@ const en = {
     resumeSetup: "Resume setup",
     health: {
       apiKey: "LLM API key",
-      resume: "Resume document",
+      resume: "Profile evidence",
       facts: "Profile facts built",
       search: "Search configured",
       sources: "Sources enabled",
@@ -893,6 +896,7 @@ const zhCN = {
   passwordManager: passwordManagerZh,
   manualJob: manualJobZh,
   mailboxes: mailboxesZh,
+  profileChanges: {} as typeof profileChangesEn,
   agentPrompts: {
     originalLanguage: "内置指令以原文显示。",
   },
@@ -1494,7 +1498,7 @@ const zhCN = {
     resumeSetup: "继续设置",
     health: {
       apiKey: "大模型 API 密钥",
-      resume: "简历文档",
+      resume: "个人资料依据",
       facts: "个人经历已整理",
       search: "搜索已配置",
       sources: "职位来源已启用",

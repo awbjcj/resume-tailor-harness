@@ -11,6 +11,9 @@ from resume_tailor_harness.profile.group_corrections import (
     corrections_path,
     load_group_corrections,
     save_group_corrections,
+    GroupCorrections,
+    UnknownGroupError,
+    edit_catalog,
 )
 from resume_tailor_harness.profile.manual_skills import manual_skills_lock
 from resume_tailor_harness.profile.matrix import (
@@ -24,12 +27,8 @@ from resume_tailor_harness.services.profile_skills import (
     ProfileNotBuiltError,
     SkillNotFoundError,
 )
-from resume_tailor_harness.taxonomy.groups import SKILL_GROUPS
+from resume_tailor_harness.rollback import rollback_scope
 from resume_tailor_harness.tracking.match_gap import normalize_skill
-
-
-class UnknownGroupError(ValueError):
-    """Raised when a group slug is outside the fixed vocabulary."""
 
 
 class GroupCorrectionNotFoundError(ValueError):
@@ -63,32 +62,57 @@ def _resolve_row(matrix: SkillMatrix, key: str) -> MatrixRow:
 
 
 def set_group(profile_dir: str | Path, key: str, group: str) -> MatrixRow:
-    if group not in SKILL_GROUPS:
-        raise UnknownGroupError(f"Unknown group '{group}'")
-
     with manual_skills_lock(profile_dir):
         facts = _load_facts_or_raise(profile_dir)
         row = _resolve_row(build_decorated_matrix(profile_dir, facts), key)
         path = corrections_path(profile_dir)
-        ledger = load_group_corrections(path)
+        ledger = load_group_corrections(path, strict=True)
+        if group not in ledger.group_catalog():
+            raise UnknownGroupError(f"Unknown group '{group}'")
         ledger.corrections[row.key] = GroupCorrection(
             group=group,
             corrected_at=_utcnow(),
         )
-        save_group_corrections(ledger, path)
-        return _resolve_row(rebuild_saved_matrix(profile_dir, facts), row.key)
+        with rollback_scope((path, Path(profile_dir) / "matrix.json")):
+            save_group_corrections(ledger, path)
+            return _resolve_row(rebuild_saved_matrix(profile_dir, facts), row.key)
 
 
 def clear_group(profile_dir: str | Path, key: str) -> None:
     with manual_skills_lock(profile_dir):
         facts = _load_facts_or_raise(profile_dir)
         path = corrections_path(profile_dir)
-        ledger = load_group_corrections(path)
+        ledger = load_group_corrections(path, strict=True)
         token = normalize_skill(key)
         if token not in ledger.corrections:
             token = _resolve_row(build_decorated_matrix(profile_dir, facts), key).key
         if token not in ledger.corrections:
             raise GroupCorrectionNotFoundError(f"No group correction for '{key}'")
         del ledger.corrections[token]
-        save_group_corrections(ledger, path)
-        rebuild_saved_matrix(profile_dir, facts)
+        with rollback_scope((path, Path(profile_dir) / "matrix.json")):
+            save_group_corrections(ledger, path)
+            rebuild_saved_matrix(profile_dir, facts)
+
+
+def edit_organization(
+    profile_dir: str | Path,
+    kind: str,
+    *,
+    key: str | None = None,
+    label: str = "",
+    category: str = "other",
+    delete: bool = False,
+) -> GroupCorrections:
+    """CRUD a display category/group without changing the fact-lock skill types."""
+    with manual_skills_lock(profile_dir):
+        directory = Path(profile_dir)
+        path = corrections_path(directory)
+        ledger = load_group_corrections(path, strict=True)
+        edit_catalog(
+            ledger, kind, key=key, label=label, category=category, delete=delete
+        )
+        with rollback_scope((path, directory / "matrix.json")):
+            save_group_corrections(ledger, path)
+            if (directory / "facts.json").is_file():
+                rebuild_saved_matrix(directory, load_facts(directory / "facts.json"))
+        return ledger

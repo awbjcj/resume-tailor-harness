@@ -35,6 +35,7 @@ import { useActiveRun } from "@/features/runs/use-active-run";
 import { launchers, useLaunchRun } from "@/features/runs/use-launch-run";
 import { SaveBar } from "@/features/settings/SaveBar";
 import { SkillGroupsPanel } from "@/features/settings/SkillGroupsPanel";
+import { SKILL_MUTATION_KEY } from "@/features/profile-skills/use-profile-skills";
 import { useConfig, useSaveConfig } from "@/features/settings/use-config";
 import { useDraft } from "@/features/settings/use-draft";
 import { useSetupStatus } from "@/features/settings/use-setup-status";
@@ -109,6 +110,8 @@ export function ProfileWorkspace() {
     (!!buildRun &&
       ["queued", "running", "cancelling"].includes(buildRun.status));
   const syncGithub = useSyncGithub();
+  const skillRun = useActiveRun("profile-skills-rebuild");
+  const skillMutations = useIsMutating({ mutationKey: SKILL_MUTATION_KEY });
   const sourceMutations = useIsMutating({ mutationKey: SOURCE_MUTATION_KEY });
   const activeTab =
     searchParams.get("tab") === "skills" ? "skills" : "documents";
@@ -139,9 +142,10 @@ export function ProfileWorkspace() {
   const limitValid =
     Number.isInteger(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 100;
   const busy =
-    building || syncGithub.isPending || save.isPending || sourceMutations > 0;
-  const buildDisabled =
-    busy || dirty || setupStatus.data?.profile.hasResume === false;
+    building || syncGithub.isPending || save.isPending || sourceMutations > 0 || skillMutations > 0 || !!(skillRun && ["queued", "running", "cancelling"].includes(skillRun.status));
+  const canRebuild = setupStatus.data?.profile.canRebuild ??
+    (setupStatus.data?.profile.hasResume !== false);
+  const buildDisabled = busy || dirty || !canRebuild;
   const rebuild = () => {
     if (buildDisabled) return;
     setLaunchingBuild(true);
@@ -150,6 +154,14 @@ export function ProfileWorkspace() {
       "profile-sources",
       "profile-skeleton",
       "profile-matrix",
+      "profile-skills",
+      "skill-cleanup",
+      "suppressed-skills",
+      "match-gap",
+      "job",
+      "triage",
+      "shortlist",
+      "pipeline",
     ]).finally(() => setLaunchingBuild(false));
   };
 
@@ -160,7 +172,7 @@ export function ProfileWorkspace() {
         icon={<Sparkles />}
         eyebrow="Step 1 · Your profile"
         title="Profile"
-        description="Bring your resume and project evidence together, then build the profile behind every tailored application."
+        description="Build your profile from your resume and project evidence to tailor your applications."
         meta={
           <Badge variant="outline" className="h-auto min-h-5 max-w-full whitespace-normal">
             {factsStatusText(setupStatus.data?.profile.factsBuiltAt)}
@@ -197,7 +209,7 @@ export function ProfileWorkspace() {
         className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-3 [overflow-wrap:anywhere]"
       >
         <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="font-mono text-sm text-muted-foreground">01</span>
+          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">01</span>
           <div>
             <p className="text-sm font-medium">Add your evidence</p>
             <p className="text-sm text-muted-foreground">
@@ -206,20 +218,20 @@ export function ProfileWorkspace() {
           </div>
         </li>
         <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="font-mono text-sm text-muted-foreground">02</span>
+          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">02</span>
           <div>
-            <p className="text-sm font-medium">Choose GitHub branches</p>
+            <p className="text-sm font-medium">Choose GitHub branches (optional)</p>
             <p className="text-sm text-muted-foreground">
-              Point each repository to its dossier
+              Choose the branch with each project's documents
             </p>
           </div>
         </li>
         <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="font-mono text-sm text-muted-foreground">03</span>
+          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">03</span>
           <div>
             <p className="text-sm font-medium">Build your profile</p>
             <p className="text-sm text-muted-foreground">
-              Turn saved evidence into profile facts
+              Extract facts from your saved sources
             </p>
           </div>
         </li>
@@ -262,8 +274,8 @@ export function ProfileWorkspace() {
                   GitHub projects
                 </h2>
                 <p className="max-w-prose text-sm text-muted-foreground">
-                  Choose a branch for each repository. Sync saves dossiers;
-                  building turns them into profile facts.
+                  Choose a branch for each repository. Sync saves project
+                  documents; building extracts facts for your profile.
                 </p>
               </div>
               <Button
@@ -394,7 +406,7 @@ export function ProfileWorkspace() {
         </TabsContent>
 
         <TabsContent value="skills" className="flex flex-col gap-6 pt-2">
-          <SkillGroupsPanel />
+          <SkillGroupsPanel disabled={busy} />
         </TabsContent>
       </Tabs>
     </div>

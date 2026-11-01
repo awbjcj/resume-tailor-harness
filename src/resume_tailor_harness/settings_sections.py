@@ -71,6 +71,7 @@ SETTINGS_SECTIONS: tuple[SettingsSection, ...] = (
         "Skill group corrections",
         ("data/profile/group_corrections.json",),
     ),
+    SettingsSection("profile_skills", "Profile skill edits", ("data/profile/manual_skills.json",)),
     SettingsSection(
         "taxonomy",
         "Taxonomy corrections",

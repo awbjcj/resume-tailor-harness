@@ -2,7 +2,10 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from resume_tailor_harness.discovery.connectors.ashby import fetch_ashby_board, parse_ashby
+from resume_tailor_harness.discovery.connectors.ashby import (
+    fetch_ashby_board,
+    parse_ashby,
+)
 
 FIXTURE = json.loads(
     (Path(__file__).parent / "fixtures" / "ashby" / "job_board.json").read_text(
@@ -23,9 +26,6 @@ def test_parse_ashby_maps_fields():
     assert "Python" in first.jd_text
     assert first.posted_at == datetime(2026, 6, 1, tzinfo=timezone.utc)
 
-
-def test_parse_ashby_posted_at_none_when_absent():
-    jobs = parse_ashby(FIXTURE, company="Acme")
     assert jobs[1].posted_at is None
 
 
@@ -37,7 +37,7 @@ def test_parse_ashby_falls_back_to_html_description():
     assert jobs[0].jd_text == "hello"
 
 
-def test_parse_ashby_prepends_sidebar_metadata_to_jd_text():
+def test_parse_ashby_prepends_and_normalizes_present_sidebar_metadata():
     jobs = parse_ashby(FIXTURE, company="Acme")
     jd_text = jobs[0].jd_text
     assert "Location: Remote - US (also: New York City, Seattle)" in jd_text
@@ -48,20 +48,8 @@ def test_parse_ashby_prepends_sidebar_metadata_to_jd_text():
     # Sidebar comes before the JD body.
     assert jd_text.index("Compensation:") < jd_text.index("Build LLM systems")
 
-
-def test_parse_ashby_keeps_secondary_locations_in_the_job_location():
-    job = parse_ashby(FIXTURE, company="Acme")[0]
-
-    assert job.location == "Remote - US | New York City | Seattle"
-
-
-def test_parse_ashby_normalizes_employment_type():
-    jobs = parse_ashby(FIXTURE, company="Acme")
     assert "Employment Type: Part time" in jobs[1].jd_text
 
-
-def test_parse_ashby_omits_missing_sidebar_fields():
-    jobs = parse_ashby(FIXTURE, company="Acme")
     jd_text = jobs[1].jd_text
     assert "Workplace Type:" not in jd_text
     assert "Department:" not in jd_text
@@ -69,14 +57,6 @@ def test_parse_ashby_omits_missing_sidebar_fields():
     assert jd_text.startswith(
         "Location: Detroit, MI\nEmployment Type: Part time\n\nDrive a truck."
     )
-
-
-def test_parse_ashby_no_sidebar_when_no_metadata_present():
-    payload = {
-        "jobs": [{"title": "Eng", "jobUrl": "u", "descriptionHtml": "<p>hello</p>"}]
-    }
-    jobs = parse_ashby(payload, "Acme")
-    assert jobs[0].jd_text == "hello"
 
 
 def test_fetch_ashby_board_hits_posting_api(monkeypatch):

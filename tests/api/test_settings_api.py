@@ -28,31 +28,23 @@ def _bundle(sections: list[str], files: dict[str, str]) -> bytes:
     return buffer.getvalue()
 
 
-def test_sections_lists_every_section(mu_client):
+def test_settings_bundle_preview_import_and_reset_lifecycle(mu_client):
+    assert mu_client.get("/api/settings/sections").status_code == 401
     _login(mu_client)
     response = mu_client.get("/api/settings/sections")
     assert response.status_code == 200
     body = response.json()
     ids = [section["id"] for section in body["sections"]]
-    assert len(ids) == 13
+    assert len(ids) == 14
     assert "application_profile" in ids
     assert "sources" in ids
     assert all("customized" in section for section in body["sections"])
 
-
-def test_sections_requires_authentication(mu_client):
-    assert mu_client.get("/api/settings/sections").status_code == 401
-
-
-def test_export_returns_a_gzip_archive(mu_client):
-    _login(mu_client)
     response = mu_client.get("/api/settings/bundle")
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/gzip"
 
-
-def test_preview_reports_sections_without_writing(mu_client):
-    _login(mu_client)
+    sections_before = mu_client.get("/api/settings/sections").json()
     response = mu_client.post(
         "/api/settings/bundle/preview",
         files={
@@ -67,20 +59,8 @@ def test_preview_reports_sections_without_writing(mu_client):
     body = response.json()
     assert [section["id"] for section in body["sections"]] == ["sources"]
     assert body["unknownSections"] == []
+    assert mu_client.get("/api/settings/sections").json() == sections_before
 
-
-def test_import_requires_the_confirm_token(mu_client):
-    _login(mu_client)
-    response = mu_client.post(
-        "/api/settings/bundle",
-        files={"file": ("b.tar.gz", _bundle([], {}), "application/gzip")},
-    )
-    assert response.status_code == 400
-    assert response.json()["error"]["code"] == "CONFIRM_REQUIRED"
-
-
-def test_import_applies_the_bundle(mu_client):
-    _login(mu_client)
     response = mu_client.post(
         "/api/settings/bundle?confirm=APPLY",
         files={
@@ -96,22 +76,36 @@ def test_import_applies_the_bundle(mu_client):
     assert response.status_code == 200
     assert response.json()["applied"] == ["sources"]
 
+    response = mu_client.post("/api/settings/sections/sources/reset")
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": "sources",
+        "label": "Company sources",
+        "customized": False,
+    }
 
-def test_import_rejects_a_corrupt_bundle(mu_client):
+
+def test_settings_bundle_errors_leave_sections_unchanged(mu_client, subtests):
     _login(mu_client)
-    response = mu_client.post(
-        "/api/settings/bundle?confirm=APPLY",
-        files={"file": ("b.tar.gz", b"not gzip", "application/gzip")},
-    )
-    assert response.status_code == 400
-    assert response.json()["error"]["code"] == "INVALID_BUNDLE"
+    sections_before = mu_client.get("/api/settings/sections").json()
+    for route, payload, code in (
+        ("/api/settings/bundle", _bundle([], {}), "CONFIRM_REQUIRED"),
+        ("/api/settings/bundle?confirm=APPLY", b"not gzip", "INVALID_BUNDLE"),
+    ):
+        with subtests.test(code=code):
+            response = mu_client.post(
+                route,
+                files={"file": ("b.tar.gz", payload, "application/gzip")},
+            )
+            assert response.status_code == 400
+            assert response.json()["error"]["code"] == code
 
+    with subtests.test(msg="unknown section"):
+        response = mu_client.post("/api/settings/sections/nope/reset")
+        assert response.status_code == 404
+        assert response.json()["error"]["code"] == "NOT_FOUND"
 
-def test_reset_of_an_unknown_section_is_404(mu_client):
-    _login(mu_client)
-    response = mu_client.post("/api/settings/sections/nope/reset")
-    assert response.status_code == 404
-    assert response.json()["error"]["code"] == "NOT_FOUND"
+    assert mu_client.get("/api/settings/sections").json() == sections_before
 
 
 def test_reset_is_refused_while_runs_are_active(mu_client, mu_app, monkeypatch):
@@ -122,26 +116,3 @@ def test_reset_is_refused_while_runs_are_active(mu_client, mu_app, monkeypatch):
     response = mu_client.post("/api/settings/sections/sources/reset")
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "RUNS_ACTIVE"
-
-
-def test_reset_returns_the_section_uncustomized(mu_client):
-    _login(mu_client)
-    mu_client.post(
-        "/api/settings/bundle?confirm=APPLY",
-        files={
-            "file": (
-                "b.tar.gz",
-                _bundle(
-                    ["sources"], {"config/connectors.yaml": "companies:\n  urls: []\n"}
-                ),
-                "application/gzip",
-            )
-        },
-    )
-    response = mu_client.post("/api/settings/sections/sources/reset")
-    assert response.status_code == 200
-    assert response.json() == {
-        "id": "sources",
-        "label": "Company sources",
-        "customized": False,
-    }

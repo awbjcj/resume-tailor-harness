@@ -13,33 +13,20 @@ def client(tmp_path, monkeypatch):
         yield c
 
 
-def test_get_search_defaults(client):
+def test_search_defaults_normalization_and_save(client):
     resp = client.get("/api/config/search")
     assert resp.status_code == 200
     body = resp.json()
     assert body["keywords"] == []
     assert body["sponsorshipRequired"] is False  # camelCase wire
 
+    resp = client.post(
+        "/api/config/search/normalize-locations",
+        json={"raw": ["Austin, tex.", "Remote", "nyc"]},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["normalized"] == ["Austin, TX", "Remote", "New York, NY"]
 
-@pytest.mark.parametrize("document", ["review", "review-deep"])
-def test_review_fact_check_gate_setting_round_trips(client, document):
-    route = f"/api/config/{document}"
-    body = client.get(route).json()
-    body["reviewers"][0].update(gate=False, weight=2, scoreBands=True)
-
-    saved = client.put(route, json=body)
-
-    assert saved.status_code == 200, saved.text
-    assert saved.json()["reviewers"][0]["gate"] is False
-    assert saved.json()["reviewers"][0]["weight"] == 2
-    assert saved.json()["reviewers"][0]["scoreBands"] is True
-    assert client.get(route).json()["reviewers"][0]["gate"] is False
-    body["reviewers"][0]["gate"] = True
-    assert client.put(route, json=body).json()["reviewers"][0]["gate"] is True
-    assert client.get(route).json()["reviewers"][0]["gate"] is True
-
-
-def test_put_search_round_trip(client):
     resp = client.put(
         "/api/config/search",
         json={
@@ -64,13 +51,23 @@ def test_put_search_coerces_legacy_bare_string_remote_policy(client, tmp_path):
     assert client.get("/api/config/search").json()["remotePolicy"] == ["remote"]
 
 
-def test_normalize_locations(client):
-    resp = client.post(
-        "/api/config/search/normalize-locations",
-        json={"raw": ["Austin, tex.", "Remote", "nyc"]},
-    )
-    assert resp.status_code == 200
-    assert resp.json()["normalized"] == ["Austin, TX", "Remote", "New York, NY"]
+def test_review_fact_check_gate_setting_round_trips(client, subtests):
+    for document in ("review", "review-deep"):
+        with subtests.test(document=document):
+            route = f"/api/config/{document}"
+            body = client.get(route).json()
+            body["reviewers"][0].update(gate=False, weight=2, scoreBands=True)
+
+            saved = client.put(route, json=body)
+
+            assert saved.status_code == 200, saved.text
+            assert saved.json()["reviewers"][0]["gate"] is False
+            assert saved.json()["reviewers"][0]["weight"] == 2
+            assert saved.json()["reviewers"][0]["scoreBands"] is True
+            assert client.get(route).json()["reviewers"][0]["gate"] is False
+            body["reviewers"][0]["gate"] = True
+            assert client.put(route, json=body).json()["reviewers"][0]["gate"] is True
+            assert client.get(route).json()["reviewers"][0]["gate"] is True
 
 
 def test_put_invalid_types_is_422(client):
@@ -86,15 +83,12 @@ def test_style_guide_get_put(client):
     assert client.get("/api/config/style-guide").json()["content"] == "# Style"
 
 
-def test_review_reviewers_default_roster(client):
+def test_review_defaults_structural_settings_and_retry_budget_round_trip(client):
     body = client.get("/api/config/review").json()
     names = [r["name"] for r in body["reviewers"]]
     assert names[0] == "fact-check"
     assert body["reviewers"][0]["gate"] is True
 
-
-def test_review_structural_knobs_round_trip(client):
-    body = client.get("/api/config/review").json()
     assert body["mergedAdvisory"] is False
     assert body["tailorTier"] == "premium"
     assert body["reviserTier"] == "premium"
@@ -113,9 +107,6 @@ def test_review_structural_knobs_round_trip(client):
     assert saved["tailorTier"] == "mid"
     assert saved["reviserTier"] == "cheap"
 
-
-def test_review_provenance_retry_budget_survives_unrelated_saves(client):
-    """A save that only touches other knobs must not silently reset this one."""
     body = client.get("/api/config/review").json()
     assert body["provenanceRetryBudget"] == 1  # ReviewConfig's own default
 
@@ -130,15 +121,15 @@ def test_review_provenance_retry_budget_survives_unrelated_saves(client):
     body = client.get("/api/config/review").json()
     response = client.put(
         "/api/config/review",
-        json={**body, "mergedAdvisory": True},
+        json={**body, "mergedAdvisory": False},
     )
     assert response.status_code == 200
     saved = client.get("/api/config/review").json()
     assert saved["provenanceRetryBudget"] == 0
-    assert saved["mergedAdvisory"] is True
+    assert saved["mergedAdvisory"] is False
 
 
-def test_review_length_budget_exposes_depth_controls_on_the_wire(client):
+def test_review_length_budget_round_trips_depth_and_legacy_cap_only_payloads(client):
     """The API carries the complete runtime budget, even without a settings UI."""
     body = client.get("/api/config/review").json()
     response = client.put(
@@ -168,8 +159,6 @@ def test_review_length_budget_exposes_depth_controls_on_the_wire(client):
     assert budget["minBulletsPerProject"] == 4
     assert budget["minAspectsPerOwner"] == 3
 
-
-def test_review_length_budget_accepts_a_legacy_cap_only_payload(client):
     body = client.get("/api/config/review").json()
     response = client.put(
         "/api/config/review",
@@ -232,24 +221,21 @@ def test_profile_repo_filters_round_trip_and_limit_is_bounded(client):
     )
 
 
-def test_render_contract_uses_template_id_only(client):
+def test_render_defaults_invalid_templates_and_round_trip(client, subtests):
     assert client.get("/api/config/render").json() == {
         "template": "classic",
         "fitOnePage": True,
     }
 
-
-def test_render_config_rejects_missing_and_path_like_templates(client):
     for template in ("custom:ghost", "custom:../secret"):
-        response = client.put(
-            "/api/config/render",
-            json={"template": template, "fitOnePage": True},
-        )
-        assert response.status_code == 422
-        assert response.json()["error"]["code"] == "template_not_found"
+        with subtests.test(template=template):
+            response = client.put(
+                "/api/config/render",
+                json={"template": template, "fitOnePage": True},
+            )
+            assert response.status_code == 422
+            assert response.json()["error"]["code"] == "template_not_found"
 
-
-def test_render_config_round_trip(client):
     response = client.put(
         "/api/config/render",
         json={"template": "classic", "fitOnePage": False},

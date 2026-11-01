@@ -44,9 +44,11 @@ def test_matrix_route_serves_rooted_rows_and_ordered_vocabulary(client):
         "inferred": False,
         "strength": 2.5,
         "lastUsed": "current",
+        "aliases": [],
+        "evidenceFactIds": [],
     }
     assert len(body["groups"]) == 20
-    assert body["groups"][-1] == {"slug": "other", "label": "Other"}
+    assert body["groups"][-1] == {"slug": "other", "label": "Other", "category": "other", "customized": False}
 
 
 def test_matrix_route_is_empty_but_self_describing_before_build(client):
@@ -57,4 +59,6 @@ def test_matrix_route_is_empty_but_self_describing_before_build(client):
     assert body["groups"][0] == {
         "slug": "languages",
         "label": "Programming Languages",
+        "category": "technical",
+        "customized": False,
     }

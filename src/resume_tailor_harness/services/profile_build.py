@@ -47,22 +47,46 @@ def run_corpus_build(
     enforce_active_budget()
     profile_dir = resolve_tenant_path(profile_dir)
     facts_out = resolve_tenant_path(facts_out)
+    from resume_tailor_harness.profile.conversation import (
+        capture_skill_overrides,
+        edits_path,
+        load_edits,
+        replay_edits,
+        save_edits,
+    )
+
+    if load_edits(profile_dir).deleted:
+        raise ValueError(
+            "The profile was removed. Create a profile in conversation before rebuilding."
+        )
+    from resume_tailor_harness.profile.corpus import load_manifest
+
+    if load_edits(profile_dir).changes and not any(
+        doc.primary and doc.mode == "literal" for doc in load_manifest(profile_dir).docs
+    ):
+        return _build_conversation_profile(profile_dir, Path(facts_out), reporter)
     from resume_tailor_harness.profile.build import build_corpus_profile
-    from resume_tailor_harness.profile.aspect_classifier import build_aspect_classifier_agent
+    from resume_tailor_harness.profile.aspect_classifier import (
+        build_aspect_classifier_agent,
+    )
     from resume_tailor_harness.profile.inference import build_inference_agent
     from resume_tailor_harness.profile.manual_skills import (
         apply_manual_skills,
         load_manual_skills,
         manual_skills_lock,
+        save_manual_skills,
     )
     from resume_tailor_harness.profile.effective import build_effective_taxonomy
     from resume_tailor_harness.profile.matrix import (
         build_matrix,
         decorate_matrix_groups,
         save_matrix,
+        load_overrides,
     )
     from resume_tailor_harness.profile.merge import build_bullet_dedup_agent
-    from resume_tailor_harness.profile.project_extractor import build_project_extractor_agent
+    from resume_tailor_harness.profile.project_extractor import (
+        build_project_extractor_agent,
+    )
     from resume_tailor_harness.profile.synthesis import (
         build_entailment_agent,
         build_synthesis_agent,
@@ -72,6 +96,8 @@ def run_corpus_build(
     from resume_tailor_harness.taxonomy.custody import TaxonomyCustody
     from resume_tailor_harness.taxonomy.state import mark_legacy_group_map_imported
     from resume_tailor_harness.services.match_gap import refresh_clusters
+    from resume_tailor_harness.profile.skill_cleanup import clean_skills
+    from resume_tailor_harness.services.profile_skills import _utcnow
 
     if reporter is not None:
         reporter.begin(3, "Extracting and merging source documents")
@@ -93,6 +119,20 @@ def run_corpus_build(
         manual_ledger = load_manual_skills(Path(profile_dir) / "manual_skills.json")
         facts, replay_warnings = apply_manual_skills(facts, manual_ledger)
         report.warnings.extend(replay_warnings)
+        facts, edit_warnings = replay_edits(facts, load_edits(profile_dir))
+        report.warnings.extend(edit_warnings)
+        cleanup = None
+        if manual_ledger.auto_cleanup:
+            cleanup_taxonomy = build_effective_taxonomy(profile_dir)
+            facts, cleanup = clean_skills(
+                facts,
+                manual_ledger,
+                aliases=cleanup_taxonomy.cluster_map.aliases,
+                forbid_alias=load_overrides(
+                    Path(profile_dir) / "overrides.yaml"
+                ).forbid_alias,
+                added_at=_utcnow(),
+            )
         if reporter is not None:
             reporter.step(1, label="Prepared profile facts")
         if reporter is not None:
@@ -141,15 +181,39 @@ def run_corpus_build(
         # Classification and the legacy-import marker may both have mutated
         # persisted taxonomy artifacts, so the final matrix must rebind.
         post = build_effective_taxonomy(profile_dir)
+        if manual_ledger.auto_cleanup:
+            facts, final_cleanup = clean_skills(
+                facts,
+                manual_ledger,
+                aliases=post.cluster_map.aliases,
+                forbid_alias=load_overrides(
+                    Path(profile_dir) / "overrides.yaml"
+                ).forbid_alias,
+                added_at=_utcnow(),
+            )
+            if cleanup is not None:
+                cleanup.merges.extend(final_cleanup.merges)
+                cleanup.pruned.extend(final_cleanup.pruned)
+                cleanup.after_count = final_cleanup.after_count
         matrix = build_matrix(facts, post)
         decorate_matrix_groups(matrix, profile_dir, post)
-        _publish_profile_artifacts(
-            facts,
-            matrix,
-            facts_path=facts_path,
-            matrix_path=matrix_path,
-            matrix_writer=save_matrix,
-        )
+        ledger_path = Path(profile_dir) / "manual_skills.json"
+        edits = load_edits(profile_dir)
+        capture_skill_overrides(facts, edits)
+        with rollback_scope(
+            (ledger_path, facts_path, matrix_path, edits_path(profile_dir))
+        ):
+            if cleanup is not None and (cleanup.merges or cleanup.pruned):
+                save_manual_skills(manual_ledger, ledger_path)
+            if edits_path(profile_dir).exists():
+                save_edits(profile_dir, edits)
+            _publish_profile_artifacts(
+                facts,
+                matrix,
+                facts_path=facts_path,
+                matrix_path=matrix_path,
+                matrix_writer=save_matrix,
+            )
     if reporter is not None:
         reporter.step(3, label="Saved matrix.json")
     return {
@@ -163,7 +227,93 @@ def run_corpus_build(
         "verificationDrops": list(report.verification_drops),
         "inferred": list(report.inferred_added),
         "warnings": list(report.warnings),
+        "skillCleanup": cleanup.model_dump(mode="json") if cleanup else None,
         # Diagnostic-only: the regroup's own telemetry, carried through so a
         # slow corpus build can be read without re-running the classification.
         "taxonomy": taxonomy_telemetry,
+    }
+
+
+def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -> dict:
+    """A user-created profile has no corpus requirement or extraction model work."""
+    from resume_tailor_harness.models.profile import Contact
+    from resume_tailor_harness.profile.conversation import (
+        capture_skill_overrides,
+        edits_path,
+        load_edits,
+        replay_edits,
+        save_edits,
+    )
+    from resume_tailor_harness.profile.effective import build_effective_taxonomy
+    from resume_tailor_harness.profile.manual_skills import (
+        apply_manual_skills,
+        load_manual_skills,
+        manual_skills_lock,
+        save_manual_skills,
+    )
+    from resume_tailor_harness.profile.matrix import (
+        build_decorated_matrix,
+        load_overrides,
+        save_matrix,
+    )
+    from resume_tailor_harness.profile.skill_cleanup import clean_skills
+    from resume_tailor_harness.services.profile_skills import _utcnow
+
+    if reporter is not None:
+        reporter.begin(1, "Rebuilding your conversational profile")
+    with manual_skills_lock(profile_dir):
+        ledger_path = profile_dir / "manual_skills.json"
+        manual_ledger = load_manual_skills(ledger_path)
+        facts, manual_warnings = apply_manual_skills(
+            ProfileFacts(contact=Contact(name="")),
+            manual_ledger,
+        )
+        edits = load_edits(profile_dir)
+        facts, warnings = replay_edits(facts, edits)
+        cleanup = None
+        if manual_ledger.auto_cleanup:
+            facts, cleanup = clean_skills(
+                facts,
+                manual_ledger,
+                aliases=build_effective_taxonomy(profile_dir).cluster_map.aliases,
+                forbid_alias=load_overrides(
+                    profile_dir / "overrides.yaml"
+                ).forbid_alias,
+                added_at=_utcnow(),
+            )
+        capture_skill_overrides(facts, edits)
+        matrix = build_decorated_matrix(profile_dir, facts)
+        with rollback_scope(
+            (
+                facts_path,
+                facts_path.with_name("matrix.json"),
+                ledger_path,
+                edits_path(profile_dir),
+            )
+        ):
+            if cleanup is not None and (cleanup.merges or cleanup.pruned):
+                save_manual_skills(manual_ledger, ledger_path)
+            save_edits(profile_dir, edits)
+            _publish_profile_artifacts(
+                facts,
+                matrix,
+                facts_path=facts_path,
+                matrix_path=facts_path.with_name("matrix.json"),
+                matrix_writer=save_matrix,
+            )
+    if reporter is not None:
+        reporter.step(1, label="Saved profile and skill matrix")
+    return {
+        "experiences": len(facts.experience),
+        "projects": len(facts.projects),
+        "matrixRows": len(matrix.rows),
+        "groupedRows": sum(row.group is not None for row in matrix.rows),
+        "docStatus": {},
+        "conflicts": [],
+        "anchorDecisions": [],
+        "verificationDrops": [],
+        "inferred": [],
+        "warnings": [*manual_warnings, *warnings],
+        "skillCleanup": cleanup.model_dump(mode="json") if cleanup else None,
+        "taxonomy": {},
     }

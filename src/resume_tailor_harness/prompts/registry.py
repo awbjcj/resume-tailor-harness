@@ -35,7 +35,7 @@ from resume_tailor_harness.profile import (
 from resume_tailor_harness.prompts.guidance import NON_EDITABLE_KEYS
 from resume_tailor_harness.prompts.quality import with_quality
 from resume_tailor_harness.role_preparation import agents as role_preparation_agents
-from resume_tailor_harness.services import email_writer
+from resume_tailor_harness.services import email_writer, profile_skill_build
 from resume_tailor_harness.suggestions import agents as suggestions_agents
 from resume_tailor_harness.tailor import agents as tailor_agents
 from resume_tailor_harness.tailor import match_plan
@@ -384,7 +384,7 @@ PROMPT_SPECS = (
         "coach",
         "Profile Coach",
         "profile",
-        "Runs evidence-locked profile coaching.",
+        "Builds and manages profile evidence through coaching and reviewed change proposals.",
         coach._COACH_INSTRUCTIONS,
     ),
     _spec(
@@ -400,6 +400,13 @@ PROMPT_SPECS = (
         "profile",
         "Assigns skills to the fixed group vocabulary.",
         groups._GROUP_INSTRUCTIONS,
+    ),
+    _spec(
+        "profile-skill-groups",
+        "Personal skill organizer",
+        "profile",
+        "Organizes profile skills using your categories and groups.",
+        profile_skill_build.PROFILE_GROUP_INSTRUCTIONS,
     ),
     _spec(
         "taxonomy-clusters",

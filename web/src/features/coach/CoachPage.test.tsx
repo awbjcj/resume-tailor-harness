@@ -2,6 +2,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { CoachPage } from "./CoachPage";
 
 const cancelRun = vi.hoisted(() => vi.fn());
@@ -32,6 +33,7 @@ const coachState = vi.hoisted(() => ({
   status: "active",
   recap: null as string | null,
   includeArchived: false,
+  extraPendingChange: false,
   useDefaultSession: true,
   sessions: [] as Array<Record<string, unknown>>,
 }));
@@ -96,6 +98,10 @@ vi.mock("./use-coach", () => ({
           status: "pending",
         },
       ],
+      changeDrafts: coachState.extraPendingChange ? [{
+        id: "change-1", title: "Update profile", status: "pending", revision: "a".repeat(64),
+        previews: [], quotes: [],
+      }] : [],
     } : undefined,
     isLoading: false,
     isError: false,
@@ -106,6 +112,7 @@ vi.mock("./use-coach", () => ({
   useEndCoachSession: () => ({ mutateAsync: endSession, isPending: false }),
   useSaveCoachNote: () => ({ mutateAsync: saveNote, isPending: false }),
   useDiscardCoachNote: () => ({ mutateAsync: discardNote, isPending: false }),
+  useResolveCoachChanges: () => ({ mutate: vi.fn(), isPending: false }),
   useArchiveCoachSession: () => ({ mutate: archiveSession }),
   useUnarchiveCoachSession: () => ({ mutate: unarchiveSession }),
   useDeleteCoachSession: () => ({ mutate: deleteSession, isPending: false }),
@@ -118,6 +125,7 @@ describe("CoachPage", () => {
     coachState.status = "active";
     coachState.recap = null;
     coachState.includeArchived = false;
+    coachState.extraPendingChange = false;
     coachState.useDefaultSession = true;
     coachState.sessions = [];
     FakeEventSource.last = null;
@@ -192,6 +200,7 @@ describe("CoachPage", () => {
 
     await user.click(screen.getByRole("button", { name: "End session" }));
     const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent("1 pending draft will remain unapplied.");
     await user.click(within(dialog).getByRole("button", { name: "End session" }));
     expect(endSession).toHaveBeenCalled();
     await user.keyboard("{Escape}");
@@ -206,6 +215,23 @@ describe("CoachPage", () => {
     act(() => capturedOnDone!({ runId: "run-end", status: "failed", error: "Could not end session" }));
 
     expect(screen.getByText("Could not end session")).toBeInTheDocument();
+  });
+
+  it("describes pending notes and changes in both languages before ending a session", async () => {
+    coachState.extraPendingChange = true;
+    const user = userEvent.setup();
+    render(<CoachPage />);
+
+    await user.click(screen.getByRole("button", { name: "End session" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent("2 pending drafts will remain unapplied.");
+
+    try {
+      await act(() => changeLanguage("zh-CN"));
+      expect(dialog).toHaveTextContent("2 份待处理草稿会保留，但不会应用。");
+    } finally {
+      await act(() => changeLanguage("en"));
+    }
   });
 
   it("renders a completed session read-only after it is selected from history", async () => {

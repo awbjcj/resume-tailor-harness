@@ -75,7 +75,7 @@ export const JOURNEY_STAGES: readonly JourneyStageDef[] = [
     task: "Build your profile",
     hint: "Add your resume and build your profile so tailoring has facts to draw on.",
     cta: { label: "Build your profile", to: "/profile" },
-    done: (s) => s.profile.hasResume && Boolean(s.profile.factsBuiltAt),
+    done: (s) => (s.profile.hasResume || s.profile.canRebuild) && Boolean(s.profile.factsBuiltAt),
     count: (s) => s.profile.documentCount,
   },
   {

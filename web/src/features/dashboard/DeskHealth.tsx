@@ -29,10 +29,10 @@ export const HEALTH_ITEMS: HealthItem[] = [
   },
   {
     key: "resume",
-    label: "Resume document",
+    label: "Profile evidence",
     labelKey: "dashboard.health.resume",
     to: "/profile",
-    ok: (s) => s.profile.hasResume,
+    ok: (s) => s.profile.hasResume || s.profile.canRebuild,
   },
   {
     key: "facts",

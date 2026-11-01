@@ -5,6 +5,7 @@ from resume_tailor_harness.models.profile import (
     Experience,
     ProfileFacts,
     Project,
+    Skill,
 )
 from resume_tailor_harness.models.resume import (
     ResumeContent,
@@ -74,6 +75,16 @@ def test_number_present_in_the_cited_fact_passes():
     assert critique.passed is True
     assert critique.score == 100
     assert critique.issues == []
+
+
+def test_evidence_ids_and_source_references_cannot_supply_quantities():
+    skill = Skill(
+        name="Python",
+        context="Built a worker",
+        evidence_fact_ids=["abc999def"],
+        source_refs=["dossier-888"],
+    )
+    assert fact_numbers(skill) == set()
 
 
 def test_number_absent_from_the_cited_fact_blocks():

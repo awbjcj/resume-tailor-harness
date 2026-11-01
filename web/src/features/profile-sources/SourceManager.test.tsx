@@ -125,8 +125,8 @@ describe("SourceManager", () => {
 
     const mode = screen.getAllByRole("combobox")
       .find((element) => (element as HTMLSelectElement).value === "synthesis") as HTMLSelectElement;
-    expect(mode.selectedOptions[0]?.textContent).toBe("综合提炼");
-    expect(screen.getAllByText("已使用缓存")).not.toHaveLength(0);
+    expect(mode.selectedOptions[0]?.textContent).toBe("提炼并核验");
+    expect(screen.getAllByText("已就绪")).not.toHaveLength(0);
     expect(screen.queryByText("synthesis")).not.toBeInTheDocument();
   });
 

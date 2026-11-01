@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+
+import { githubSyncFailureLabel, profileBuildReportLineLabel } from "@/i18n/profile-build-diagnostics";
 import { useProfileOperation } from "./use-profile-operation";
 
 type SyncReport = {
@@ -8,6 +11,7 @@ type SyncReport = {
 };
 
 export function GithubSyncReport() {
+  const { t, i18n } = useTranslation();
   const run = useProfileOperation("github-sync");
   if (!run || !["succeeded", "failed", "cancelled"].includes(run.status))
     return null;
@@ -23,25 +27,25 @@ export function GithubSyncReport() {
       className="space-y-2 rounded-lg border border-border bg-muted/20 p-4 text-sm"
     >
       <p className="font-medium">
-        {hasIssues
-          ? "Some GitHub sources could not sync"
-          : cancelled
-            ? "GitHub sync cancelled"
+        {cancelled
+          ? "GitHub sync cancelled"
+          : hasIssues
+            ? "GitHub sync needs attention"
             : "GitHub sync complete"}
       </p>
       {run.error ? (
-        <p className="text-destructive [overflow-wrap:anywhere]">{run.error}</p>
+        <p className="text-destructive [overflow-wrap:anywhere]">{githubSyncFailureLabel(run.error, i18n.resolvedLanguage)}</p>
       ) : null}
       {report ? (
         <p className="tabular-nums">{`${report.written?.length ?? 0} sources updated · ${report.removed?.length ?? 0} sources removed`}</p>
       ) : null}
-      {hasIssues ? (
-        <p>
-          Saved copies are kept when a repository cannot be read. Check your
-          branch selection and GitHub access, then sync again.
-        </p>
-      ) : cancelled ? (
+      {cancelled ? (
         <p>Sync again to finish updating your project sources.</p>
+      ) : hasIssues ? (
+        <p>
+          Review the details. If a repository can't be read, its saved copies
+          are kept. Check its branch and GitHub access before syncing again.
+        </p>
       ) : (
         <p>Build your profile to include new or updated project evidence.</p>
       )}
@@ -49,11 +53,11 @@ export function GithubSyncReport() {
         <ul className="space-y-1 text-muted-foreground [overflow-wrap:anywhere]">
           {failures.map(([repo, reason]) => (
             <li key={repo}>
-              {repo}: {reason}
+              {repo}: {githubSyncFailureLabel(reason, i18n.resolvedLanguage)}
             </li>
           ))}
           {warnings.map((warning) => (
-            <li key={warning}>{warning}</li>
+            <li key={warning}>{profileBuildReportLineLabel(t, "warning", warning, i18n.resolvedLanguage)}</li>
           ))}
         </ul>
       ) : null}

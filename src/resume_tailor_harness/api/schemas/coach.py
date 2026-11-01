@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pydantic import Field
+from typing import Any, Literal
 
 from resume_tailor_harness.api.schemas.base import CamelModel
 
@@ -41,6 +42,28 @@ class CoachDraftNoteOut(CamelModel):
     status: str = "pending"
 
 
+class CoachChangePreviewOut(CamelModel):
+    label: str
+    entity: str = ""
+    operation: str = ""
+    before: dict[str, Any] | None = None
+    after: dict[str, Any] | None = None
+
+
+class CoachChangeDraftOut(CamelModel):
+    id: str
+    title: str
+    revision: str
+    status: Literal["pending", "applied", "discarded"]
+    previews: list[CoachChangePreviewOut] = Field(default_factory=list)
+    quotes: list[str] = Field(default_factory=list)
+
+
+class CoachChangeDecisionIn(CamelModel):
+    decision: Literal["apply", "discard"]
+    revision: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 class CoachMetricGainOut(CamelModel):
     experience_id: str
     before: int
@@ -71,6 +94,7 @@ class CoachSessionOut(CamelModel):
     turns: list[CoachTurnOut] = Field(default_factory=list)
     topics: list[CoachTopicOut] = Field(default_factory=list)
     draft_notes: list[CoachDraftNoteOut] = Field(default_factory=list)
+    change_drafts: list[CoachChangeDraftOut] = Field(default_factory=list)
     recap: str | None = None
     impact: CoachImpactOut | None = None
 

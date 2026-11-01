@@ -70,3 +70,36 @@ def test_broken_skill_manifest_is_reported_additively(make_client, tmp_path):
     assert body["complete"] is False
     assert body["capabilities"]["careerSkills"]["available"] == 0
     assert body["capabilities"]["careerSkills"]["unavailable"] >= 1
+
+
+def test_conversation_profile_can_rebuild_without_a_resume(make_client, tmp_path):
+    from resume_tailor_harness.models.profile import Contact, ProfileFacts
+    from resume_tailor_harness.profile.conversation import (
+        AppliedChange,
+        ProfileChange,
+        ProfileEdits,
+        save_edits,
+    )
+    from resume_tailor_harness.profile.store import save_facts
+
+    with make_client() as client:
+        root = tmp_path / "data" / "profile"
+        save_facts(ProfileFacts(contact=Contact(name="Ada")), root / "facts.json")
+        edits = ProfileEdits(
+            changes=[
+                AppliedChange(
+                    change=ProfileChange(
+                        entity="profile",
+                        operation="create",
+                        values={"contact": {"name": "Ada"}},
+                        quotes=["Ada"],
+                    )
+                )
+            ]
+        )
+        save_edits(root, edits)
+        profile = client.get("/api/setup/status").json()["profile"]
+        assert profile["hasResume"] is False and profile["canRebuild"] is True
+        edits.deleted = True
+        save_edits(root, edits)
+        assert client.get("/api/setup/status").json()["profile"]["canRebuild"] is False

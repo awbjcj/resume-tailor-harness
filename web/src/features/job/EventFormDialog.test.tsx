@@ -18,11 +18,19 @@ describe("EventFormDialog", () => {
     await act(() => changeLanguage("en"));
     expect(screen.getByRole("option", { name: "Offer received" })).toBeInTheDocument();
   });
-  it("submits a minimal all-day event", async () => {
+  it("reveals offer fields, validates custom labels, and submits an all-day event", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<EventFormDialog trigger={<button>Add event</button>} onSubmit={onSubmit} />);
     await user.click(screen.getByRole("button", { name: "Add event" }));
+    expect(screen.queryByLabelText(/base salary/i)).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/stage/i), "offer_received");
+    expect(screen.getByLabelText(/base salary/i)).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/stage/i), "custom");
+    await user.click(screen.getByRole("button", { name: /^save event$/i }));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/label is required/i)).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/stage/i), "application_submitted");
     await user.type(screen.getByLabelText(/^date$/i), "2026-03-09");
     await user.click(screen.getByRole("button", { name: /^save event$/i }));
     expect(onSubmit).toHaveBeenCalledWith(
@@ -32,26 +40,6 @@ describe("EventFormDialog", () => {
         allDay: true,
       }),
     );
-  });
-
-  it("requires a custom label", async () => {
-    const onSubmit = vi.fn();
-    const user = userEvent.setup();
-    render(<EventFormDialog trigger={<button>Add event</button>} onSubmit={onSubmit} />);
-    await user.click(screen.getByRole("button", { name: "Add event" }));
-    await user.selectOptions(screen.getByLabelText(/stage/i), "custom");
-    await user.click(screen.getByRole("button", { name: /^save event$/i }));
-    expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByText(/label is required/i)).toBeInTheDocument();
-  });
-
-  it("reveals offer compensation fields", async () => {
-    const user = userEvent.setup();
-    render(<EventFormDialog trigger={<button>Add event</button>} onSubmit={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: "Add event" }));
-    expect(screen.queryByLabelText(/base salary/i)).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText(/stage/i), "offer_received");
-    expect(screen.getByLabelText(/base salary/i)).toBeInTheDocument();
   });
 
   it("prefills an existing event", async () => {
@@ -134,7 +122,7 @@ describe("EventFormDialog", () => {
     expect(screen.getByLabelText(/^date$/i)).toHaveValue("2026-03-09");
   });
 
-  it("shows a validation error for an invalid timed-event timezone", async () => {
+  it("rejects invalid zones and DST gaps before saving with the browser timezone", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(<EventFormDialog trigger={<button>Add timed event</button>} onSubmit={onSubmit} />);
@@ -146,15 +134,8 @@ describe("EventFormDialog", () => {
     await user.click(screen.getByRole("button", { name: /^save event$/i }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(/valid IANA timezone/i);
-  });
-
-  it("rejects a nonexistent spring-forward wall time without submitting", async () => {
-    const user = userEvent.setup();
-    const onSubmit = vi.fn();
-    render(<EventFormDialog trigger={<button>Add timed event</button>} onSubmit={onSubmit} />);
-    await user.click(screen.getByRole("button", { name: "Add timed event" }));
+    await user.clear(screen.getByLabelText(/^date$/i));
     await user.type(screen.getByLabelText(/^date$/i), "2026-03-08");
-    await user.click(screen.getByRole("checkbox", { name: /all day/i }));
     await user.clear(screen.getByLabelText(/^time$/i));
     await user.type(screen.getByLabelText(/^time$/i), "02:30");
     await user.clear(screen.getByLabelText(/timezone/i));
@@ -163,15 +144,8 @@ describe("EventFormDialog", () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(/does not exist/i);
-  });
-
-  it("persists the effective browser timezone when a timed timezone is cleared", async () => {
-    const user = userEvent.setup();
-    const onSubmit = vi.fn();
-    render(<EventFormDialog trigger={<button>Add timed event</button>} onSubmit={onSubmit} />);
-    await user.click(screen.getByRole("button", { name: "Add timed event" }));
+    await user.clear(screen.getByLabelText(/^date$/i));
     await user.type(screen.getByLabelText(/^date$/i), "2026-03-09");
-    await user.click(screen.getByRole("checkbox", { name: /all day/i }));
     await user.clear(screen.getByLabelText(/timezone/i));
     await user.click(screen.getByRole("button", { name: /^save event$/i }));
 

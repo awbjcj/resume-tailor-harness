@@ -45,6 +45,7 @@ EXPECTED_IDS = (
     "profile_sources",
     "skill_overrides",
     "skill_groups",
+    "profile_skills",
     "taxonomy",
 )
 

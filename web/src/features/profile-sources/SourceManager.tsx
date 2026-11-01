@@ -123,8 +123,8 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
         <div className="min-w-0 space-y-1">
           <h2 className="text-lg font-semibold">Source documents</h2>
           <p className="max-w-prose text-sm text-muted-foreground">
-            Your resume supplies career history. Project dossiers add evidence
-            from your work.
+            Your resume provides your career history. Project dossiers add
+            evidence from your work.
           </p>
           <p className="text-sm text-muted-foreground">{`${ready} of ${sources.length} sources ready`}</p>
         </div>
@@ -177,8 +177,8 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
         }}
       >
         <p className="text-sm">
-          Drop files here or use Add source. PDF, Word, Markdown and supporting
-          documents are accepted.
+          Drop files here or select Add source. You can upload PDFs, Word files,
+          Markdown, and other supporting documents.
         </p>
         <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
           <label className="space-y-1.5 text-sm font-medium">
@@ -226,8 +226,8 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
             </label>
           ) : (
             <p className="self-end text-sm text-muted-foreground">
-              Auto-detect recognizes resume files and repository dossiers.
-              Choose a type only when you need to override it.
+              Auto-detect chooses a type based on file format and repository
+              metadata. Change it if needed.
             </p>
           )}
         </div>
@@ -425,7 +425,7 @@ function SourceCard({
               {source.origin === "github" ? (
                 <Badge variant="outline">GitHub</Badge>
               ) : source.repoUrl ? (
-                <Badge variant="outline">Uploaded override</Badge>
+                <Badge variant="outline">Uploaded (overrides GitHub)</Badge>
               ) : null}
               <Badge variant={cached ? "secondary" : "outline"}>
                 <Icon className="mr-1 size-3" aria-hidden="true" />

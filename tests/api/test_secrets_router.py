@@ -10,7 +10,8 @@ from resume_tailor_harness.api.app import create_app
 def env_file(tmp_path):
     p = tmp_path / ".env"
     p.write_text(
-        "ANTHROPIC_API_KEY=sk-ant-test-abcd1234\nUNMANAGED=keepme\n", encoding="utf-8"
+        "ANTHROPIC_API_KEY=sk-ant-test-abcd1234\nUNMANAGED=keepme\nSOME_FLAG=\n",
+        encoding="utf-8",
     )
     return p
 
@@ -24,7 +25,9 @@ def client(tmp_path, env_file):
         yield c
 
 
-def test_get_secrets_returns_status_not_values(client):
+def test_secrets_redact_write_refresh_and_clear_without_losing_other_keys(
+    client, env_file
+):
     body = client.get("/api/secrets").json()
     by_key = {row["key"]: row for row in body}
     assert by_key["anthropicApiKey"]["isSet"] is True
@@ -34,24 +37,30 @@ def test_get_secrets_returns_status_not_values(client):
     dumped = str(body)
     assert "sk-ant-test-abcd1234" not in dumped
 
-
-def test_put_writes_only_provided_keys(client, env_file):
     resp = client.put("/api/secrets", json={"openaiApiKey": "sk-oai-xyz98765"})
     assert resp.status_code == 200
     text = env_file.read_text(encoding="utf-8")
     assert "OPENAI_API_KEY=sk-oai-xyz98765" in text
     assert "ANTHROPIC_API_KEY=sk-ant-test-abcd1234" in text  # untouched
     assert "UNMANAGED=keepme" in text  # unmanaged keys survive
+    assert "SOME_FLAG=" in text
 
+    client.put("/api/secrets", json={"anthropicApiKey": "sk-ant-new-key-5678"})
+    from resume_tailor_harness.api.deps import get_settings_dep
 
-def test_put_null_clears_key(client, env_file):
+    app = client.app
+    assert (
+        app.dependency_overrides[get_settings_dep]().anthropic_api_key
+        == "sk-ant-new-key-5678"
+    )
+
     client.put("/api/secrets", json={"anthropicApiKey": None})
     body = client.get("/api/secrets").json()
     by_key = {row["key"]: row for row in body}
     assert by_key["anthropicApiKey"]["isSet"] is False
 
 
-def test_models_config_readable_round_trip(client):
+def test_models_defaults_round_trip_and_partial_update_preserve_other_fields(client):
     body = client.get("/api/config/models").json()
     assert "cheapModel" in body and body["cheapModel"]  # defaults visible
     assert body["midModel"] == "openai:gpt-6.1-terra"
@@ -68,26 +77,16 @@ def test_models_config_readable_round_trip(client):
     assert client.get("/api/config/models").json()["midModel"] == "claude-sonnet-5"
     assert client.get("/api/config/models").json()["midReasoningEffort"] == "low"
 
-
-def test_put_secret_does_not_clear_unrelated_empty_valued_key(client, env_file):
-    env_file.write_text(
-        "ANTHROPIC_API_KEY=sk-ant-test-abcd1234\nUNMANAGED=keepme\nSOME_FLAG=\n",
-        encoding="utf-8",
-    )
-    resp = client.put("/api/secrets", json={"openaiApiKey": "sk-oai-xyz98765"})
-    assert resp.status_code == 200
-    assert "SOME_FLAG=" in env_file.read_text(encoding="utf-8")
-
-
-def test_put_models_partial_update_preserves_other_fields(client):
-    client.put(
+    put = client.put(
         "/api/config/models",
         json={
             "cheapModel": "custom-cheap-non-default",
             "midModel": "openai:gpt-4.1",
             "premiumModel": "custom-premium-non-default",
+            "midReasoningEffort": None,
         },
     )
+    assert put.status_code == 200, put.text
     put = client.put("/api/config/models", json={"midModel": "gemini:custom"})
     assert put.status_code == 200
     body = client.get("/api/config/models").json()
@@ -100,16 +99,13 @@ def test_put_models_partial_update_preserves_other_fields(client):
     )  # untouched by the partial PUT
 
 
-def test_model_catalog_flags_keyed_providers(client):
+def test_model_catalog_keys_labels_and_capabilities(client):
     body = client.get("/api/config/models/catalog").json()
     by_provider = {row["provider"]: row for row in body}
     assert by_provider["anthropic"]["hasKey"] is True  # env_file sets this key
     assert by_provider["openai"]["hasKey"] is False
     assert {"anthropic", "openai", "gemini", "deepseek"} == set(by_provider)
 
-
-def test_model_catalog_entries_carry_id_label_and_capability_flags(client):
-    body = client.get("/api/config/models/catalog").json()
     anthropic = next(row for row in body if row["provider"] == "anthropic")
     haiku = next(m for m in anthropic["models"] if m["id"] == "claude-haiku-4-5")
     opus = next(m for m in anthropic["models"] if "opus" in m["id"])
@@ -198,15 +194,3 @@ def test_put_models_rejects_capabilities_the_selected_model_does_not_support(cli
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "UNSUPPORTED_MODEL_SETTING"
-
-
-def test_put_secret_refreshes_app_settings(client):
-    client.put("/api/secrets", json={"anthropicApiKey": "sk-ant-new-key-5678"})
-    # settings served to routes must see the new value without an app restart
-    from resume_tailor_harness.api.deps import get_settings_dep  # noqa: PLC0415
-
-    app = client.app
-    assert (
-        app.dependency_overrides[get_settings_dep]().anthropic_api_key
-        == "sk-ant-new-key-5678"
-    )

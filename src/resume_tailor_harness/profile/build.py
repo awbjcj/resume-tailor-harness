@@ -153,6 +153,11 @@ def build_corpus_profile(
         else:
             projection = extract_project_fragments(profile_dir, manifest, project_agent)
             report.doc_status.update(projection.status)
+            report.verification_drops.extend(
+                f"{doc_id}: {drop}"
+                for doc_id, drops in projection.drops.items()
+                for drop in drops
+            )
             fragments.extend(
                 (doc, projection.fragments[doc.id])
                 for doc in project_docs
@@ -175,11 +180,11 @@ def build_corpus_profile(
                 profile_dir, manifest, skeleton, synthesis_agent, entailment_agent
             )
             report.doc_status.update(synthesis.status)
-            report.verification_drops = [
+            report.verification_drops.extend(
                 f"{doc_id}: {drop}"
                 for doc_id, drops in sorted(synthesis.drops.items())
                 for drop in drops
-            ]
+            )
             pairs = [
                 (doc, synthesis.fragments[doc.id])
                 for doc in manifest.docs

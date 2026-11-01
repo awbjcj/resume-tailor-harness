@@ -91,17 +91,112 @@ def _view(sid="s1", status="active"):
 def test_start_guards_and_opening_run(monkeypatch, tmp_path):
     client = _client(tmp_path)
     monkeypatch.setattr(
-        "resume_tailor_harness.llm_runner.resolve_api_key", lambda model, **_kwargs: "key"
+        "resume_tailor_harness.llm_runner.resolve_api_key",
+        lambda model, **_kwargs: None,
     )
     with client:
         assert client.post("/api/profile/coach/sessions").status_code == 400
-        _seed_primary(client)
+        monkeypatch.setattr(
+            "resume_tailor_harness.llm_runner.resolve_api_key",
+            lambda model, **_kwargs: "key",
+        )
         monkeypatch.setattr(
             coach_router, "run_opening_turn", lambda reporter, **kwargs: _view()
         )
         response = client.post("/api/profile/coach/sessions")
         assert response.status_code == 202
         assert _wait(client, response.json()["runId"])["state"] == "done"
+
+
+def test_profile_change_approval_endpoint_is_revision_bound_and_scoped(
+    tmp_path, monkeypatch
+):
+    from resume_tailor_harness.profile.conversation import (
+        ProfileChange,
+        ProfileChangeSet,
+        prepare_changes,
+    )
+
+    client = _client(tmp_path)
+    root = tmp_path / "data" / "profile"
+    with client:
+        create_session(
+            root,
+            "s1",
+            [CoachTopic(id="t1", gap="Profile")],
+            CoachTurnRecord(
+                role="coach", kind="question", text="Your name?", topic_id="t1"
+            ),
+        )
+        proposal = ProfileChangeSet(
+            title="Create profile",
+            changes=[
+                ProfileChange(
+                    entity="profile",
+                    operation="create",
+                    values={"contact": {"name": "Ada"}},
+                    quotes=["My name is Ada"],
+                )
+            ],
+        )
+        draft = prepare_changes(root, proposal, "My name is Ada", source_ref="coach:s1")
+        apply_turn_delta(
+            root,
+            "s1",
+            user_text="My name is Ada",
+            coach_turn=CoachTurnRecord(
+                role="coach", kind="profile_changes", text="Review"
+            ),
+            new_topics=[],
+            skipped_topic_ids=[],
+            draft=None,
+            change_draft=draft,
+        )
+        path = f"/api/profile/coach/sessions/s1/changes/{draft.id}"
+        assert not (root / "facts.json").exists()
+        wrong = client.post(path, json={"decision": "apply", "revision": "0" * 64})
+        assert (
+            wrong.status_code == 409
+            and wrong.json()["error"]["code"] == "PROFILE_STALE"
+        )
+        assert (
+            client.post(
+                path.replace("sessions/s1", "sessions/missing"),
+                json={"decision": "apply", "revision": draft.revision},
+            ).status_code
+            == 404
+        )
+        result = client.post(
+            path, json={"decision": "apply", "revision": draft.revision}
+        )
+        assert result.status_code == 200
+        assert result.json()["changeDrafts"][0]["status"] == "applied"
+        assert (
+            client.post(
+                path, json={"decision": "apply", "revision": draft.revision}
+            ).status_code
+            == 200
+        )
+        # The public build flow must admit a profile with no resume or model key.
+        build = client.post("/api/profile/build")
+        assert build.status_code == 202
+        assert _wait(client, build.json()["runId"])["state"] == "done"
+
+        monkeypatch.setattr(
+            "resume_tailor_harness.llm_runner.resolve_api_key",
+            lambda model, **kwargs: "key",
+        )
+
+        def recap(reporter, **kwargs):
+            end_session(root, "s1", "Profile created.")
+            return coach_router.session_view(root, "s1")
+
+        monkeypatch.setattr(coach_router, "run_recap_turn", recap)
+        ended = client.post("/api/profile/coach/sessions/s1/end", json={"build": True})
+        assert ended.status_code == 202
+        result = _wait(client, ended.json()["runId"])
+        assert result["state"] == "done" and result["result"]["buildRunId"]
+        assert _wait(client, result["result"]["buildRunId"])["state"] == "done"
 
 
 def test_session_fetch_message_and_unknown_mapping(monkeypatch, tmp_path):
@@ -116,7 +211,8 @@ def test_session_fetch_message_and_unknown_mapping(monkeypatch, tmp_path):
     )
     client = TestClient(app)
     monkeypatch.setattr(
-        "resume_tailor_harness.llm_runner.resolve_api_key", lambda model, **_kwargs: "key"
+        "resume_tailor_harness.llm_runner.resolve_api_key",
+        lambda model, **_kwargs: "key",
     )
     with client:
         _seed_primary(client)
@@ -144,7 +240,8 @@ def test_session_fetch_message_and_unknown_mapping(monkeypatch, tmp_path):
 def test_note_save_discard_and_conflicts(monkeypatch, tmp_path):
     client = _client(tmp_path)
     monkeypatch.setattr(
-        "resume_tailor_harness.llm_runner.resolve_api_key", lambda model, **_kwargs: "key"
+        "resume_tailor_harness.llm_runner.resolve_api_key",
+        lambda model, **_kwargs: "key",
     )
     with client:
         _seed_primary(client)
@@ -194,7 +291,8 @@ def test_note_save_discard_and_conflicts(monkeypatch, tmp_path):
 def test_end_run_returns_nested_build_id(monkeypatch, tmp_path):
     client = _client(tmp_path)
     monkeypatch.setattr(
-        "resume_tailor_harness.llm_runner.resolve_api_key", lambda model, **_kwargs: "key"
+        "resume_tailor_harness.llm_runner.resolve_api_key",
+        lambda model, **_kwargs: "key",
     )
     with client:
         _seed_primary(client)

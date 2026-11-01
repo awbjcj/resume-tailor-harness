@@ -10,6 +10,9 @@ from typing import Literal
 from pydantic import Field
 
 from resume_tailor_harness.models.base import ExtensibleModel
+from resume_tailor_harness.career_skills.models import AgentRunMeta
+from resume_tailor_harness.profile.conversation import CoachChangeDraft
+from resume_tailor_harness.profile.manual_skills import manual_skills_lock
 from resume_tailor_harness.profile.interview import ResearchAction
 from resume_tailor_harness.sessions.store import (
     SessionModel,
@@ -39,12 +42,13 @@ class CoachDraftNote(ExtensibleModel):
 
 class CoachTurnRecord(ExtensibleModel):
     role: Literal["coach", "user"] = "user"
-    kind: Literal["question", "draft_note", "recap", ""] = ""
+    kind: Literal["question", "draft_note", "profile_changes", "recap", ""] = ""
     text: str = ""
     topic_id: str = ""
     at: str = ""
     notice: str = ""
     research_actions: list[ResearchAction] = Field(default_factory=list)
+    agent_meta: AgentRunMeta | None = None
 
 
 class CoachSession(SessionModel):
@@ -52,6 +56,7 @@ class CoachSession(SessionModel):
     turns: list[CoachTurnRecord] = Field(default_factory=list)
     topics: list[CoachTopic] = Field(default_factory=list)
     draft_notes: list[CoachDraftNote] = Field(default_factory=list)
+    change_drafts: list[CoachChangeDraft] = Field(default_factory=list)
     recap: str | None = None
     impact: dict | None = None
 
@@ -102,7 +107,7 @@ def create_session(
 ) -> None:
     if not _valid_session_id(session_id):
         raise ValueError("invalid session id")
-    with coach_lock():
+    with coach_lock(), manual_skills_lock(profile_dir):
         if active_session(profile_dir) is not None:
             raise ValueError("active session exists")
         topic_ids = [topic.id for topic in topics]
@@ -127,7 +132,8 @@ def mutate_session(
     session_id: str,
     fn: Callable[[dict], None],
 ) -> dict:
-    return _STORE.mutate(coach_dir(profile_dir), session_id, fn)
+    with coach_lock(), manual_skills_lock(profile_dir):
+        return _STORE.mutate(coach_dir(profile_dir), session_id, fn)
 
 
 def apply_turn_delta(
@@ -139,6 +145,7 @@ def apply_turn_delta(
     new_topics: list[CoachTopic],
     skipped_topic_ids: list[str],
     draft: CoachDraftNote | None,
+    change_draft: CoachChangeDraft | None = None,
 ) -> dict:
     def apply(session: dict) -> None:
         if session["status"] != "active":
@@ -171,6 +178,10 @@ def apply_turn_delta(
                 topic["status"] = "drafted"
         if draft is not None:
             session["draft_notes"].append(draft.model_dump(mode="json"))
+        if change_draft is not None:
+            session.setdefault("change_drafts", []).append(
+                change_draft.model_dump(mode="json")
+            )
 
     return mutate_session(profile_dir, session_id, apply)
 
@@ -201,7 +212,12 @@ def set_draft_status(
 
 
 def end_session(
-    profile_dir: Path | str, session_id: str, recap: str, *, notice: str = ""
+    profile_dir: Path | str,
+    session_id: str,
+    recap: str,
+    *,
+    notice: str = "",
+    agent_meta: AgentRunMeta | None = None,
 ) -> dict:
     def apply(session: dict) -> None:
         if session["status"] != "active":
@@ -212,7 +228,12 @@ def end_session(
         session["recap"] = recap
         session["turns"].append(
             CoachTurnRecord(
-                role="coach", kind="recap", text=recap, at=now, notice=notice
+                role="coach",
+                kind="recap",
+                text=recap,
+                at=now,
+                notice=notice,
+                agent_meta=agent_meta,
             ).model_dump(mode="json")
         )
 
@@ -220,20 +241,24 @@ def end_session(
 
 
 def archive_session(profile_dir: Path | str, session_id: str) -> dict:
-    return _STORE.archive(coach_dir(profile_dir), session_id)
+    with coach_lock(), manual_skills_lock(profile_dir):
+        return _STORE.archive(coach_dir(profile_dir), session_id)
 
 
 def unarchive_session(profile_dir: Path | str, session_id: str) -> dict:
-    return _STORE.unarchive(coach_dir(profile_dir), session_id)
+    with coach_lock(), manual_skills_lock(profile_dir):
+        return _STORE.unarchive(coach_dir(profile_dir), session_id)
 
 
 def delete_session(profile_dir: Path | str, session_id: str) -> None:
     """Remove the transcript record without touching saved profile notes."""
-    _STORE.delete(coach_dir(profile_dir), session_id)
+    with coach_lock(), manual_skills_lock(profile_dir):
+        _STORE.delete(coach_dir(profile_dir), session_id)
 
 
 def rename_session(profile_dir: Path | str, session_id: str, title: str) -> dict:
-    return _STORE.rename(coach_dir(profile_dir), session_id, title)
+    with coach_lock(), manual_skills_lock(profile_dir):
+        return _STORE.rename(coach_dir(profile_dir), session_id, title)
 
 
 def set_impact(profile_dir: Path | str, session_id: str, impact: dict) -> dict:

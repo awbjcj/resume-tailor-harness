@@ -21,14 +21,16 @@ from pathlib import Path
 from typing import Annotated, Literal, Union
 
 from pydantic import Field
+from filelock import FileLock
 
-from resume_tailor_harness.models.base import ExtensibleModel, new_id
+from resume_tailor_harness.models.base import ExtensibleModel, new_id, Source
 from resume_tailor_harness.models.profile import ProfileFacts, Skill
 from resume_tailor_harness.tracking.match_gap import normalize_skill
 
 _DEFAULT_CATEGORY = "hard"
 _MANUAL_SKILLS_LOCKS: dict[Path, threading.RLock] = {}
 _MANUAL_SKILLS_LOCKS_GUARD = threading.Lock()
+_MANUAL_PROCESS_LOCKS: dict[Path, FileLock] = {}
 
 
 @contextmanager
@@ -37,8 +39,13 @@ def manual_skills_lock(profile_dir: str | Path) -> Iterator[None]:
     key = Path(profile_dir).resolve()
     with _MANUAL_SKILLS_LOCKS_GUARD:
         lock = _MANUAL_SKILLS_LOCKS.setdefault(key, threading.RLock())
+        process_lock = _MANUAL_PROCESS_LOCKS.setdefault(
+            key, FileLock(key / ".profile-mutations.lock")
+        )
     with lock:
-        yield
+        key.mkdir(parents=True, exist_ok=True)
+        with process_lock:
+            yield
 
 
 class ManualSkillEntry(ExtensibleModel):
@@ -46,6 +53,7 @@ class ManualSkillEntry(ExtensibleModel):
     kind: Literal["new_skill"] = "new_skill"
     name: str
     category: Literal["hard", "soft", "domain"] | None = None
+    aliases: list[str] = Field(default_factory=list)
     added_at: str = ""
 
 
@@ -64,22 +72,53 @@ class ManualSuppressEntry(ExtensibleModel):
     token: str
     display: str
     added_at: str = ""
+    skills: list[Skill] = Field(default_factory=list)
+    reason: str | None = None
+
+
+class ManualEditEntry(ExtensibleModel):
+    id: str = Field(default_factory=new_id)
+    kind: Literal["edit"] = "edit"
+    target_token: str
+    name: str
+    aliases: list[str] = Field(default_factory=list)
+    category: Literal["hard", "soft", "domain"] | None = None
+    added_at: str = ""
+
+
+class ManualMergeEntry(ExtensibleModel):
+    id: str = Field(default_factory=new_id)
+    kind: Literal["merge"] = "merge"
+    tokens: list[str]
+    target_token: str
+    added_at: str = ""
 
 
 ManualEntry = Annotated[
-    Union[ManualSkillEntry, ManualAliasEntry, ManualSuppressEntry],
+    Union[
+        ManualSkillEntry,
+        ManualAliasEntry,
+        ManualSuppressEntry,
+        ManualEditEntry,
+        ManualMergeEntry,
+    ],
     Field(discriminator="kind"),
 ]
 
 
 class ManualSkillsLedger(ExtensibleModel):
     entries: list[ManualEntry] = Field(default_factory=list)
+    auto_cleanup: bool = True
+    cleanup_exempt: list[str] = Field(default_factory=list)
 
 
 def _find_skill(facts: ProfileFacts, token: str) -> tuple[str, Skill] | None:
     for bucket, skills in facts.skills.items():
         for skill in skills:
-            if normalize_skill(skill.name) == token:
+            if token in {
+                normalize_skill(skill.name),
+                *map(normalize_skill, skill.aliases),
+            }:
                 return bucket, skill
     return None
 
@@ -88,14 +127,22 @@ def _drop_token(facts: ProfileFacts, token: str) -> None:
     """Remove any skill matching ``token`` from every bucket, pruning empties."""
     for bucket_name in list(facts.skills):
         bucket = facts.skills[bucket_name]
-        bucket[:] = [s for s in bucket if normalize_skill(s.name) != token]
+        bucket[:] = [
+            s
+            for s in bucket
+            if (
+                token not in {normalize_skill(s.name), *map(normalize_skill, s.aliases)}
+                if token
+                else bool(s.name.strip())
+            )
+        ]
         if not bucket:
             del facts.skills[bucket_name]
 
 
 def apply_manual_skill_entry(
     facts: ProfileFacts,
-    entry: ManualSkillEntry | ManualAliasEntry | ManualSuppressEntry,
+    entry: ManualEntry,
 ) -> tuple[ProfileFacts, str | None]:
     """Apply one ledger entry to ``facts``, returning (facts, warning|None).
 
@@ -105,6 +152,59 @@ def apply_manual_skill_entry(
     updated = facts.model_copy(deep=True)
     if isinstance(entry, ManualSuppressEntry):
         _drop_token(updated, normalize_skill(entry.token))
+        for skill in entry.skills:
+            _drop_token(updated, normalize_skill(skill.name))
+        return updated, None
+
+    if isinstance(entry, ManualMergeEntry):
+        from resume_tailor_harness.profile.skill_cleanup import merge_skill_records
+
+        target = _find_skill(updated, entry.target_token)
+        if target is None:
+            return updated, None
+        tokens = set(entry.tokens)
+        selected = {
+            id(skill): skill
+            for bucket in updated.skills.values()
+            for skill in bucket
+            if tokens
+            & {normalize_skill(skill.name), *map(normalize_skill, skill.aliases)}
+        }
+        selected[id(target[1])] = target[1]
+        merged = merge_skill_records(list(selected.values()), target[1])
+        for bucket in list(updated.skills):
+            updated.skills[bucket] = [
+                s for s in updated.skills[bucket] if id(s) not in selected
+            ]
+            if not updated.skills[bucket]:
+                del updated.skills[bucket]
+        updated.skills.setdefault(target[0], []).append(merged)
+        remapped = {skill.id: merged.id for skill in selected.values()}
+        for bucket in updated.skills.values():
+            for skill in bucket:
+                skill.evidence_fact_ids = list(
+                    dict.fromkeys(
+                        remapped.get(key, key) for key in skill.evidence_fact_ids
+                    )
+                )
+        return updated, None
+
+    if isinstance(entry, ManualEditEntry):
+        found = _find_skill(updated, entry.target_token) or _find_skill(
+            updated, normalize_skill(entry.name)
+        )
+        if found is None:
+            return updated, None
+        bucket, skill = found
+        skill.name = entry.name
+        skill.aliases = list(entry.aliases)
+        skill.category = entry.category
+        destination = entry.category or bucket
+        if destination != bucket:
+            updated.skills[bucket].remove(skill)
+            if not updated.skills[bucket]:
+                del updated.skills[bucket]
+            updated.skills.setdefault(destination, []).append(skill)
         return updated, None
 
     if isinstance(entry, ManualSkillEntry):
@@ -119,7 +219,15 @@ def apply_manual_skill_entry(
             return updated, None
         category = entry.category or _DEFAULT_CATEGORY
         bucket = updated.skills.setdefault(category, [])
-        bucket.append(Skill(name=entry.name, category=category))
+        bucket.append(
+            Skill(
+                id=entry.id,
+                name=entry.name,
+                category=category,
+                aliases=entry.aliases,
+                source=Source.manual,
+            )
+        )
         return updated, None
 
     found = _find_skill(updated, entry.target_skill_token)

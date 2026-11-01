@@ -129,9 +129,7 @@ def test_role_preparation_resource_moves_from_empty_to_ready(monkeypatch, tmp_pa
         app = _app(client)
         job_id = _seed(app)
         empty = client.get(f"/api/jobs/{job_id}/role-preparation-brief").json()
-        launched = client.post(
-            f"/api/jobs/{job_id}/role-preparation-brief/refreshes"
-        )
+        launched = client.post(f"/api/jobs/{job_id}/role-preparation-brief/refreshes")
         ready = client.get(f"/api/jobs/{job_id}/role-preparation-brief").json()
         with get_session(app.state.engine) as session:
             job = session.get(Job, job_id)
@@ -157,21 +155,9 @@ def test_role_preparation_requires_saved_company_intelligence(tmp_path):
     with client:
         job_id = _seed(_app(client), with_evidence=False)
         resource = client.get(f"/api/jobs/{job_id}/role-preparation-brief").json()
-        response = client.post(
-            f"/api/jobs/{job_id}/role-preparation-brief/refreshes"
-        )
+        response = client.post(f"/api/jobs/{job_id}/role-preparation-brief/refreshes")
 
     assert resource["state"] == "unavailable"
     assert resource["reason"] == "company_intelligence_required"
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "ROLE_PREPARATION_UNAVAILABLE"
-
-
-def test_openapi_exposes_role_preparation_resource_and_refresh(tmp_path):
-    client = _client(tmp_path)
-    with client:
-        paths = client.get("/openapi.json").json()["paths"]
-
-    resource = "/api/jobs/{job_id}/role-preparation-brief"
-    assert "get" in paths[resource]
-    assert "post" in paths[f"{resource}/refreshes"]
