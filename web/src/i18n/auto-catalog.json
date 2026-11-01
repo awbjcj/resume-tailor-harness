@@ -294,11 +294,6 @@
     "en": "{{v0}} runs finished while you were away{{v1}}.",
     "zh-CN": "你离开期间，{{v0}} 个任务已完成{{v1}}。"
   },
-  "{{v0}} saved": {
-    "key": "ui_0afd0f83b7a4",
-    "en": "{{v0}} saved",
-    "zh-CN": "已保存 {{v0}}"
-  },
   "{{v0}} score bands": {
     "key": "ui_9c36b1724317",
     "en": "{{v0}} score bands",
@@ -313,11 +308,6 @@
     "key": "ui_a55eacbc9e7e",
     "en": "{{v0}} skills restored",
     "zh-CN": "已恢复 {{v0}} 项技能"
-  },
-  "{{v0}} topic{{v1}}": {
-    "key": "ui_7c486bd0f5f3",
-    "en": "{{v0}} topic{{v1}}",
-    "zh-CN": "{{v0}} 个主题"
   },
   "{{v0}} turn{{v1}}": {
     "key": "ui_a90807db4ea2",
@@ -1463,11 +1453,6 @@
     "key": "ui_5cf9734d8a0f",
     "en": "Avoid",
     "zh-CN": "避免"
-  },
-  "awaiting approval": {
-    "key": "ui_84e3eb92c7a8",
-    "en": "awaiting approval",
-    "zh-CN": "等待批准"
   },
   "Awaiting review": {
     "key": "ui_4848885e3fc4",
@@ -2974,11 +2959,6 @@
     "en": "Discard and switch",
     "zh-CN": "放弃更改并切换"
   },
-  "Discard this draft permanently?": {
-    "key": "ui_2f454d5d2e77",
-    "en": "Discard this draft permanently?",
-    "zh-CN": "永久删除这份草稿？"
-  },
   "Discard unsaved changes?": {
     "key": "ui_470e7ee2a579",
     "en": "Discard unsaved changes?",
@@ -3263,11 +3243,6 @@
     "key": "ui_54303c034fe2",
     "en": "Edit or relearn",
     "zh-CN": "编辑或重新学习"
-  },
-  "Edit profile note": {
-    "key": "ui_7d8447ef4a00",
-    "en": "Edit profile note",
-    "zh-CN": "编辑个人资料备注"
   },
   "Effective from": {
     "key": "ui_4f86b19b388a",
@@ -4264,11 +4239,6 @@
     "en": "Hard",
     "zh-CN": "困难"
   },
-  "Hard skill": {
-    "key": "ui_6d1e12cce316",
-    "en": "Hard skill",
-    "zh-CN": "硬技能"
-  },
   "Help me compare these offers and draft a decision checklist…": {
     "key": "ui_cceb05a7a9ce",
     "en": "Help me compare these offers and draft a decision checklist…",
@@ -4779,11 +4749,6 @@
     "en": "Karat",
     "zh-CN": "Karat"
   },
-  "Keep": {
-    "key": "ui_183f00f483d3",
-    "en": "Keep",
-    "zh-CN": "保留"
-  },
   "Keep {{v0}}": {
     "key": "ui_beb29ea5afd0",
     "en": "Keep {{v0}}",
@@ -4828,11 +4793,6 @@
     "key": "ui_2e23763f07c0",
     "en": "Keep session",
     "zh-CN": "保留会话"
-  },
-  "Keep the claim specific and supported by your words below.": {
-    "key": "ui_ca43d336c972",
-    "en": "Keep the claim specific and supported by your words below.",
-    "zh-CN": "请写明具体内容，并在下方提供能支持这项表述的文字。"
   },
   "Keep this device signed in and revoke every other session.": {
     "key": "ui_de600e94d66b",
@@ -5644,11 +5604,6 @@
     "en": "Needed for tailoring. Everything else works without it.",
     "zh-CN": "定制简历需要此项，其他功能不受影响。"
   },
-  "Needs approval": {
-    "key": "ui_db0e960b68b5",
-    "en": "Needs approval",
-    "zh-CN": "待批准"
-  },
   "Needs review": {
     "key": "ui_07297fa94a99",
     "en": "Needs review",
@@ -6138,16 +6093,6 @@
     "key": "ui_068109fd3f73",
     "en": "Not stated",
     "zh-CN": "未说明"
-  },
-  "Not sure": {
-    "key": "ui_dca5fa430c12",
-    "en": "Not sure",
-    "zh-CN": "不确定"
-  },
-  "Note {{v0}}.": {
-    "key": "ui_455e3271a1eb",
-    "en": "Note {{v0}}.",
-    "zh-CN": "备注 {{v0}}。"
   },
   "Note added": {
     "key": "ui_a7886ebc4ffd",
@@ -8069,11 +8014,6 @@
     "en": "Review these sample jobs and their evidence. Corrections stay with each job; extraction rules are reused for future pulls.",
     "zh-CN": "检查这些职位样本及其证据。字段修正会保存在对应职位中；提取规则将用于后续抓取。"
   },
-  "Review this note and its evidence before adding it to your profile.": {
-    "key": "ui_d17e84a4a81c",
-    "en": "Review this note and its evidence before adding it to your profile.",
-    "zh-CN": "添加到个人资料前，请先核对这条笔记及其依据。"
-  },
   "Review updated rules": {
     "key": "ui_fc8c37ce8335",
     "en": "Review updated rules",
@@ -8378,11 +8318,6 @@
     "key": "ui_ed167e45a44d",
     "en": "Save to Gmail drafts",
     "zh-CN": "保存到 Gmail 草稿"
-  },
-  "saved": {
-    "key": "ui_d81c55f49c5b",
-    "en": "saved",
-    "zh-CN": "已保存"
   },
   "Saved": {
     "key": "ui_b5c120b316c2",
@@ -9129,11 +9064,6 @@
     "en": "SmartRecruiters",
     "zh-CN": "SmartRecruiters"
   },
-  "Soft skill": {
-    "key": "ui_e2595464e4ca",
-    "en": "Soft skill",
-    "zh-CN": "软技能"
-  },
   "Software Engineer…": {
     "key": "ui_12018317f2d1",
     "en": "Software Engineer…",
@@ -9443,11 +9373,6 @@
     "key": "ui_527f6bc857ad",
     "en": "Suggestion",
     "zh-CN": "建议"
-  },
-  "Summary": {
-    "key": "ui_8e76a94ac832",
-    "en": "Summary",
-    "zh-CN": "摘要"
   },
   "Supported": {
     "key": "ui_c165800065d1",
@@ -10239,11 +10164,6 @@
     "en": "Tool fee (USD / unit)",
     "zh-CN": "工具费用（美元/单位）"
   },
-  "topics": {
-    "key": "ui_f013aa4b8daf",
-    "en": "topics",
-    "zh-CN": "主题"
-  },
   "Total effect": {
     "key": "ui_c201c766be5b",
     "en": "Total effect",
@@ -10983,11 +10903,6 @@
     "key": "ui_73825fa60094",
     "en": "Your edits to the",
     "zh-CN": "你对以下内容的编辑"
-  },
-  "Your evidence": {
-    "key": "ui_7e98d6995816",
-    "en": "Your evidence",
-    "zh-CN": "你的证据"
   },
   "Your guidance for": {
     "key": "ui_e86efe0288bc",
@@ -12718,95 +12633,5 @@
     "key": "ui_575784e36c75",
     "en": "Skill updated",
     "zh-CN": "技能已更新"
-  },
-  "Update job": {
-    "key": "ui_9e1a4896df69",
-    "en": "Update job",
-    "zh-CN": "更新职位"
-  },
-  "Update application": {
-    "key": "ui_c24f1ba41004",
-    "en": "Update application",
-    "zh-CN": "更新申请"
-  },
-  "Update note": {
-    "key": "ui_275a66b6dc4c",
-    "en": "Update note",
-    "zh-CN": "更新笔记"
-  },
-  "Remove note": {
-    "key": "ui_c06bd11ad0f6",
-    "en": "Remove note",
-    "zh-CN": "移除笔记"
-  },
-  "Save preparation": {
-    "key": "ui_e283ef6283e0",
-    "en": "Save preparation",
-    "zh-CN": "保存准备资料"
-  },
-  "Update profile": {
-    "key": "ui_34540d1107b7",
-    "en": "Update profile",
-    "zh-CN": "更新个人资料"
-  },
-  "Save question": {
-    "key": "ui_7f94c0ba49b2",
-    "en": "Save question",
-    "zh-CN": "保存问题"
-  },
-  "Update answer": {
-    "key": "ui_63a2c3e0caac",
-    "en": "Update answer",
-    "zh-CN": "更新答案"
-  },
-  "Delete question": {
-    "key": "ui_1d1979df7a81",
-    "en": "Delete question",
-    "zh-CN": "删除问题"
-  },
-  "Select document": {
-    "key": "ui_1bef0e8f0bf9",
-    "en": "Select document",
-    "zh-CN": "选择文档"
-  },
-  "Update search preferences": {
-    "key": "ui_1dd6301da7bf",
-    "en": "Update search preferences",
-    "zh-CN": "更新搜索偏好"
-  },
-  "None": {
-    "key": "ui_dc937b598926",
-    "en": "None",
-    "zh-CN": "无"
-  },
-  "Deleting this job also removes its practice conversations.": {
-    "key": "ui_9cf94f432697",
-    "en": "Deleting this job also removes its practice conversations.",
-    "zh-CN": "删除此职位也会删除相关的练习对话。"
-  },
-  "Before": {
-    "key": "ui_9bb725005055",
-    "en": "Before",
-    "zh-CN": "变更前"
-  },
-  "After": {
-    "key": "ui_7b68fe551085",
-    "en": "After",
-    "zh-CN": "变更后"
-  },
-  "Changes discarded": {
-    "key": "ui_6fb7a4651054",
-    "en": "Changes discarded",
-    "zh-CN": "变更已放弃"
-  },
-  "This proposal expired. Ask the agent for a fresh preview.": {
-    "key": "ui_f99362cf4b43",
-    "en": "This proposal expired. Ask the agent for a fresh preview.",
-    "zh-CN": "此提案已过期，请让助手重新生成预览。"
-  },
-  "Unable to load proposed changes.": {
-    "key": "ui_bbbf3c2b2499",
-    "en": "Unable to load proposed changes.",
-    "zh-CN": "无法加载变更提案。"
   }
 }

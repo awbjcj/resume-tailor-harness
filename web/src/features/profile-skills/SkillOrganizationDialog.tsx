@@ -70,10 +70,10 @@ export function SkillOrganizationDialog({
           >
             <h3 className="font-medium">
               {edit.remove
-                ? copy.delete_container
+                ? edit.kind === "group" ? copy.deleteGroup : copy.deleteCategory
                 : edit.key
-                  ? copy.edit_container
-                  : copy.new_container}
+                  ? edit.kind === "group" ? copy.editGroup : copy.editCategory
+                  : edit.kind === "group" ? copy.createGroup : copy.createCategory}
             </h3>
             {edit.remove ? (
               <p className="text-sm text-muted-foreground">
@@ -138,7 +138,7 @@ export function SkillOrganizationDialog({
                 {mutation.isPending
                   ? "Saving…"
                   : edit.remove
-                    ? copy.delete_container
+                    ? edit.kind === "group" ? copy.deleteGroup : copy.deleteCategory
                     : "Save changes"}
               </Button>
             </div>

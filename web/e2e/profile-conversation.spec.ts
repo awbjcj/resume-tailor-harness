@@ -10,17 +10,22 @@ for (const language of ["en", "zh-CN"] as const) {
       await page.route("**/api/transcribe/availability", (route) => route.fulfill({ json: { available: false } }));
       await page.route("**/api/notifications", (route) => route.fulfill({ json: [] }));
       await page.route("**/api/run-completions?*", (route) => route.fulfill({ json: [] }));
+      await page.route("**/api/workspace-agent/proposals?*", (route) => route.fulfill({ json: { proposals: [], nextOffset: null } }));
       await page.route("**/api/setup/status", (route) => route.fulfill({ json: {
         complete: false, secrets: { anyLlmKey: true }, profile: { documentCount: 0, hasResume: false },
         search: { configured: false }, sources: { enabledCount: 0 },
       } }));
       let applied = false;
       let approvals = 0;
+      let noteSaved = false;
+      let noteTitle = "Migration ownership";
+      let noteSummary = "Led the platform migration.";
       const revision = "a".repeat(64);
       const session = () => ({
         sessionId: "s1", startedAt: "2026-11-01T12:00:00Z", status: "active",
         turns: [{ role: "coach", kind: "profile_changes", text: "Review your requested change.", at: "2026-11-01T12:00:01Z" }],
-        topics: [{ id: "t1", gap: "Profile", status: "open" }], draftNotes: [],
+        topics: [{ id: "t1", gap: "Profile", status: "open" }],
+        draftNotes: [{ topicId: "t1", title: noteTitle, summary: noteSummary, quotes: ["I led the platform migration."], status: noteSaved ? "saved" : "pending" }],
         changeDrafts: [{ id: "d1", title: "Update your headline", revision, status: applied ? "applied" : "pending",
           quotes: ["Change my headline to Backend Engineer"],
           previews: [{ entity: "profile", operation: "update", label: "Update profile",
@@ -37,6 +42,14 @@ for (const language of ["en", "zh-CN"] as const) {
         applied = true;
         await route.fulfill({ json: session() });
       });
+      await page.route("**/api/profile/coach/sessions/s1/notes/t1", async (route) => {
+        const body = route.request().postDataJSON();
+        expect(body).toEqual({ title: "Migration lead", summary: "Led the migration and handover.", quotes: ["I led the platform migration."] });
+        noteTitle = body.title;
+        noteSummary = body.summary;
+        noteSaved = true;
+        await route.fulfill({ json: session() });
+      });
       await page.goto("/coach");
       await expect(page).toHaveURL(/\/coach$/);
       await expect(page.getByText("Update your headline", { exact: true })).toBeVisible();
@@ -48,9 +61,16 @@ for (const language of ["en", "zh-CN"] as const) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
       await page.screenshot({ path: testInfo.outputPath("profile-changes.png"), fullPage: true });
       await apply.click();
-      await expect(page.getByText(language === "en" ? "Applied" : "已应用", { exact: true })).toBeVisible();
+      await expect(page.getByText(language === "en" ? "Saved" : "已保存", { exact: true })).toBeVisible();
       expect(approvals).toBe(1);
       await expect(apply).toHaveCount(0);
+      await page.getByRole("button", { name: language === "en" ? "Edit note" : "编辑笔记", exact: true }).click();
+      await page.getByRole("textbox", { name: language === "en" ? "Title" : "标题", exact: true }).fill("Migration lead");
+      await page.getByRole("textbox", { name: language === "en" ? "Summary" : "摘要", exact: true }).fill("Led the migration and handover.");
+      expect(noteSaved).toBe(false);
+      await page.getByRole("button", { name: language === "en" ? "Save note" : "保存笔记", exact: true }).click();
+      await expect(page.getByText(language === "en" ? "Added to profile" : "已加入个人资料", { exact: true })).toBeVisible();
+      await expect(page.getByRole("textbox", { name: language === "en" ? "Summary" : "摘要", exact: true })).toHaveCount(0);
     });
   }
 }
