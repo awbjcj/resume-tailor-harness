@@ -39,6 +39,7 @@ from resume_tailor_harness.api.schemas.profile import (
     GithubRepositoryOut,
     SourcePatch,
     SkillGroupOut,
+    SkillCategoryOut,
     SuppressedSkillOut,
     UrlIn,
 )
@@ -61,6 +62,10 @@ from resume_tailor_harness.profile.fragments import fragment_cache_status
 from resume_tailor_harness.profile.github_harvest import sync_github_sources
 from resume_tailor_harness.profile.intake import add_note_source, add_url_source
 from resume_tailor_harness.profile.matrix import load_matrix
+from resume_tailor_harness.profile.group_corrections import (
+    load_group_corrections,
+    corrections_path,
+)
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.profile.synthesis import profile_skeleton
 from resume_tailor_harness.services import (
@@ -73,9 +78,12 @@ from resume_tailor_harness.services.profile_documents import (
     DocumentError,
     DocumentStore,
 )
-from resume_tailor_harness.taxonomy.groups import SKILL_GROUPS
+from resume_tailor_harness.api.routers.profile_skills import (
+    router as skill_library_router,
+)
 
 router = APIRouter()
+router.include_router(skill_library_router)
 
 
 def _docs(request: Request) -> DocumentStore:
@@ -405,11 +413,25 @@ def get_github_branches(owner: str, repo: str):
 @router.get("/profile/matrix", response_model=MatrixOut)
 def get_profile_matrix(request: Request):
     matrix = load_matrix(_profile_dir(request) / "matrix.json")
+    organization = load_group_corrections(corrections_path(_profile_dir(request)))
     return MatrixOut(
         generated_at=matrix.generated_at if matrix is not None else "",
         groups=[
-            SkillGroupOut(slug=slug, label=label)
-            for slug, label in SKILL_GROUPS.items()
+            SkillGroupOut(
+                slug=slug,
+                label=group.label,
+                category=group.category,
+                customized=group.custom_label,
+            )
+            for slug, group in organization.group_catalog().items()
+        ],
+        categories=[
+            SkillCategoryOut(
+                slug=slug,
+                label=category.label,
+                customized=slug in organization.categories,
+            )
+            for slug, category in organization.category_catalog().items()
         ],
         rows=[MatrixRowOut.model_validate(row) for row in matrix.rows]
         if matrix is not None
@@ -469,21 +491,29 @@ def _manual_entry_out(entry) -> ManualEntryOut:
 @router.get("/profile/skills", response_model=list[SkillEntryOut])
 def get_profile_skills(request: Request):
     try:
-        rows = profile_skills.list_skills(_profile_dir(request))
+        facts = profile_skills._load_facts_or_raise(_profile_dir(request))
     except profile_skills.ProfileNotBuiltError:
         return []
-    return [SkillEntryOut.model_validate(row) for row in rows]
+    return [
+        SkillEntryOut.model_validate(skill)
+        for skills in facts.skills.values()
+        for skill in skills
+    ]
 
 
 @router.post("/profile/skills", response_model=ManualEntryOut, status_code=201)
 def post_profile_skill(payload: AddSkillIn, request: Request):
     try:
         entry = profile_skills.add_skill(
-            _profile_dir(request), payload.name, payload.category
+            _profile_dir(request),
+            payload.name,
+            payload.category,
+            aliases=payload.aliases,
+            group=payload.group,
         )
     except profile_skills.ProfileNotBuiltError as exc:
         raise ApiException(400, "SETUP_INCOMPLETE", str(exc)) from exc
-    except profile_skills.SkillAlreadyExistsError as exc:
+    except ValueError as exc:
         raise ApiException(422, "VALIDATION_ERROR", str(exc)) from exc
     return _manual_entry_out(entry)
 
@@ -516,7 +546,9 @@ def delete_profile_skill(key: str, request: Request):
 @router.get("/profile/suppressed-skills", response_model=list[SuppressedSkillOut])
 def get_suppressed_skills(request: Request):
     return [
-        SuppressedSkillOut(token=e.token, display=e.display, added_at=e.added_at)
+        SuppressedSkillOut(
+            token=e.token, display=e.display, added_at=e.added_at, reason=e.reason
+        )
         for e in profile_skills.list_suppressed(_profile_dir(request))
     ]
 

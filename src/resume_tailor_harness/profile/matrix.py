@@ -53,7 +53,12 @@ class MatrixRow(ExtensibleModel):
     @field_validator("group", mode="before")
     @classmethod
     def validate_group(cls, value: object) -> str | None:
-        return value if isinstance(value, str) and value in SKILL_GROUPS else None
+        return (
+            value
+            if isinstance(value, str)
+            and (value in SKILL_GROUPS or re.fullmatch(r"custom-[a-f0-9]{12}", value))
+            else None
+        )
 
     @field_validator("group_source", mode="before")
     @classmethod
@@ -451,13 +456,29 @@ def decorate_matrix_groups(
     # recorded its import hash in taxonomy_state.json.
     if not group_map and taxonomy.state.legacy_group_map_sha256 is None:
         group_map = load_group_map(group_map_path(profile_dir))
-    corrections = load_group_corrections(corrections_path(profile_dir)).as_map()
+    organization = load_group_corrections(corrections_path(profile_dir))
+    corrections = organization.as_map()
     apply_skill_groups(
         matrix,
         group_map,
         taxonomy.group_overrides,
         corrections=corrections,
     )
+    catalog = organization.group_catalog()
+    for row in matrix.rows:
+        keys = [
+            row.key,
+            normalize_skill(row.display),
+            *map(normalize_skill, row.aliases),
+        ]
+        correction = _lookup_group(corrections, keys)
+        automatic = _lookup_group(organization.automatic, keys)
+        if correction in catalog:
+            row.group, row.group_source = correction, "correction"
+        elif automatic in catalog:
+            row.group, row.group_source = automatic, "taxonomy"
+        elif row.group not in catalog:
+            row.group, row.group_source = None, None
 
 
 def build_decorated_matrix(profile_dir: str | Path, facts: ProfileFacts) -> SkillMatrix:

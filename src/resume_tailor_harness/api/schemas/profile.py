@@ -72,23 +72,37 @@ class MatrixRowOut(CamelModel):
     inferred: bool = False
     strength: float = 0.0
     last_used: str | None = None
+    aliases: list[str] = Field(default_factory=list)
+    evidence_fact_ids: list[str] = Field(default_factory=list)
 
 
 class SkillGroupOut(CamelModel):
     slug: str
     label: str
+    category: str = "other"
+    customized: bool = False
+
+
+class SkillCategoryOut(CamelModel):
+    slug: str
+    label: str
+    customized: bool = False
 
 
 class MatrixOut(CamelModel):
     generated_at: str = ""
     groups: list[SkillGroupOut] = Field(default_factory=list)
     rows: list[MatrixRowOut] = Field(default_factory=list)
+    categories: list[SkillCategoryOut] = Field(default_factory=list)
 
 
 class SkillEntryOut(CamelModel):
     id: str
     name: str
     category: Literal["hard", "soft", "domain"] | None = None
+    aliases: list[str] = Field(default_factory=list)
+    inferred: bool = False
+    evidence_fact_ids: list[str] = Field(default_factory=list)
 
 
 class AddSkillIn(CamelModel):
@@ -96,12 +110,61 @@ class AddSkillIn(CamelModel):
         str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)
     ]
     category: Literal["hard", "soft", "domain"] | None = None
+    aliases: list[
+        Annotated[
+            str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)
+        ]
+    ] = Field(default_factory=list, max_length=50)
+    group: str | None = None
 
 
 class AddAliasIn(CamelModel):
     alias: Annotated[
         str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)
     ]
+
+
+class UpdateProfileSkillIn(AddSkillIn):
+    pass
+
+
+class MergeProfileSkillsIn(CamelModel):
+    keys: list[str] = Field(min_length=1, max_length=100)
+    into: str = Field(min_length=1, max_length=200)
+
+
+class SkillCleanupMergeOut(CamelModel):
+    into: str
+    names: list[str]
+
+
+class SkillCleanupPruneOut(CamelModel):
+    token: str
+    display: str
+    reason: str
+
+
+class SkillCleanupOut(CamelModel):
+    enabled: bool
+    before_count: int
+    after_count: int
+    merges: list[SkillCleanupMergeOut]
+    pruned: list[SkillCleanupPruneOut]
+
+
+class SkillCleanupPolicyIn(CamelModel):
+    enabled: bool
+
+
+class RebuildProfileSkillsIn(CamelModel):
+    reclassify_only: bool = False
+
+
+class SkillOrganizationIn(CamelModel):
+    label: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)
+    ]
+    category: str = "other"
 
 
 class SetGroupIn(CamelModel):
@@ -124,3 +187,4 @@ class SuppressedSkillOut(CamelModel):
     token: str
     display: str
     added_at: str
+    reason: str | None = None

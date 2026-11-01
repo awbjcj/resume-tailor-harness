@@ -25,6 +25,7 @@ from resume_tailor_harness.api.schemas.config import ApplicationProfileDoc, Prof
 from resume_tailor_harness.discovery.connectors.config import ConnectorsConfig
 from resume_tailor_harness.discovery.search_config import SearchConfig
 from resume_tailor_harness.profile.group_corrections import GroupCorrections
+from resume_tailor_harness.profile.manual_skills import ManualSkillsLedger
 from resume_tailor_harness.profile.matrix import load_overrides
 from resume_tailor_harness.prompts.guidance import MAX_GUIDANCE_CHARS
 from resume_tailor_harness.render.render_config import RenderConfig
@@ -158,6 +159,10 @@ def _check_group_corrections(path: Path) -> None:
     GroupCorrections.model_validate_json(path.read_text(encoding="utf-8"))
 
 
+def _check_manual_skills(path: Path) -> None:
+    ManualSkillsLedger.model_validate_json(path.read_text(encoding="utf-8"))
+
+
 def _check_taxonomy_corrections(path: Path) -> None:
     # NOT load_taxonomy_corrections, for the same reason. Semantic
     # unfamiliarity is fine -- dangling references are inert by design and are
@@ -178,6 +183,7 @@ _VALIDATORS: dict[str, Callable[[Path], None]] = {
     "config/style_guide.md": _check_text,
     "data/profile/overrides.yaml": _check_overrides,
     "data/profile/group_corrections.json": _check_group_corrections,
+    "data/profile/manual_skills.json": _check_manual_skills,
     "data/taxonomy/taxonomy_corrections.json": _check_taxonomy_corrections,
 }
 

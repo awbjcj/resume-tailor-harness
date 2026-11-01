@@ -13,18 +13,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
-from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.models.profile import ProfileFacts, Skill
 from resume_tailor_harness.profile.manual_skills import (
     ManualAliasEntry,
     ManualSkillEntry,
     ManualSuppressEntry,
+    ManualEditEntry,
+    ManualMergeEntry,
     ManualSkillsLedger,
     apply_manual_skills,
     load_manual_skills,
     manual_skills_lock,
     save_manual_skills,
 )
-from resume_tailor_harness.profile.matrix import rebuild_saved_matrix
+from resume_tailor_harness.profile.matrix import rebuild_saved_matrix, load_overrides
 from resume_tailor_harness.profile.store import load_facts, save_facts
 from resume_tailor_harness.profile.conversation import (
     capture_skill_overrides,
@@ -64,30 +66,6 @@ def _ledger_path(profile_dir: str | Path) -> Path:
     return Path(profile_dir) / "manual_skills.json"
 
 
-def _commit_skill_mutation(
-    profile_dir: str | Path,
-    facts: ProfileFacts,
-    ledger: ManualSkillsLedger,
-    *,
-    restoring_token: str = "",
-) -> None:
-    root = Path(profile_dir)
-    edits = load_edits(root)
-    capture_skill_overrides(facts, edits, restoring_token=restoring_token)
-    paths = (
-        _facts_path(root),
-        _ledger_path(root),
-        root / "matrix.json",
-        edits_path(root),
-    )
-    with rollback_scope(paths):
-        save_facts(facts, _facts_path(root))
-        save_manual_skills(ledger, _ledger_path(root))
-        if edits_path(root).exists():
-            save_edits(root, edits)
-        rebuild_saved_matrix(root, facts)
-
-
 def _load_facts_or_raise(profile_dir: str | Path) -> ProfileFacts:
     try:
         return load_facts(_facts_path(profile_dir))
@@ -104,6 +82,196 @@ def _known_tokens(facts: ProfileFacts) -> set[str]:
     }
 
 
+def _publish(
+    profile_dir: str | Path,
+    facts: ProfileFacts,
+    ledger: ManualSkillsLedger,
+    *,
+    group: str | None = None,
+    skill_key: str = "",
+    restoring_token: str = "",
+) -> None:
+    from resume_tailor_harness.profile.group_corrections import (
+        corrections_path,
+        load_group_corrections,
+        save_group_corrections,
+        GroupCorrection,
+    )
+
+    directory = Path(profile_dir)
+    organization_path = corrections_path(directory)
+    edits = load_edits(directory)
+    capture_skill_overrides(facts, edits, restoring_token=restoring_token)
+    with rollback_scope(
+        (
+            directory / "facts.json",
+            directory / "manual_skills.json",
+            directory / "matrix.json",
+            organization_path,
+            edits_path(directory),
+        )
+    ):
+        if group is not None:
+            organization = load_group_corrections(organization_path, strict=True)
+            if group:
+                if group not in organization.group_catalog():
+                    raise ValueError("Choose an existing skill group")
+                organization.corrections[normalize_skill(skill_key)] = GroupCorrection(
+                    group=group, corrected_at=_utcnow()
+                )
+            else:
+                for skill in _resolve_skills(directory, facts, skill_key):
+                    for name in (skill.name, *skill.aliases):
+                        organization.corrections.pop(normalize_skill(name), None)
+            save_group_corrections(organization, organization_path)
+        save_facts(facts, directory / "facts.json")
+        save_manual_skills(ledger, directory / "manual_skills.json")
+        if edits_path(directory).exists():
+            save_edits(directory, edits)
+        rebuild_saved_matrix(directory, facts)
+
+
+def _resolve_skills(
+    profile_dir: str | Path, facts: ProfileFacts, key: str
+) -> list[Skill]:
+    from resume_tailor_harness.profile.effective import build_effective_taxonomy
+
+    taxonomy = build_effective_taxonomy(profile_dir)
+    token = normalize_skill(key)
+    canonical = taxonomy.cluster_map.aliases.get(token, token)
+    matched = [
+        skill
+        for skills in facts.skills.values()
+        for skill in skills
+        if skill.id == key
+        or any(
+            taxonomy.cluster_map.aliases.get(t, t) == canonical
+            for name in (skill.name, *skill.aliases)
+            if (t := normalize_skill(name))
+        )
+    ]
+    if not matched:
+        raise SkillNotFoundError(f"No skill '{key}'")
+    return matched
+
+
+def update_skill(
+    profile_dir: str | Path,
+    key: str,
+    name: str,
+    aliases: list[str],
+    category: Literal["hard", "soft", "domain"] | None,
+    *,
+    group: str | None = None,
+) -> None:
+    with manual_skills_lock(profile_dir):
+        facts = _load_facts_or_raise(profile_dir)
+        selected = _resolve_skills(profile_dir, facts, key)
+        name = name.strip()
+        if not normalize_skill(name):
+            raise ValueError("Skill name is required")
+        selected_ids = {s.id for s in selected}
+        other_tokens = {
+            normalize_skill(n)
+            for skills in facts.skills.values()
+            for s in skills
+            if s.id not in selected_ids
+            for n in (s.name, *s.aliases)
+        }
+        if any(normalize_skill(n) in other_tokens for n in (name, *aliases)):
+            raise SkillAlreadyExistsError(
+                "A name or alias already belongs to another skill. Merge the skills instead."
+            )
+        if category is None and any(s.inferred for s in selected):
+            raise ValueError("Choose a skill type for an inferred skill")
+        ledger = load_manual_skills(_ledger_path(profile_dir))
+        if len(selected) > 1:
+            ledger.entries.append(
+                ManualMergeEntry(
+                    tokens=[normalize_skill(s.name) for s in selected],
+                    target_token=normalize_skill(selected[0].name),
+                    added_at=_utcnow(),
+                )
+            )
+        # The previous names remain aliases so future source builds can reattach edits.
+        names = list(
+            dict.fromkeys(
+                [
+                    *aliases,
+                    *(
+                        s.name
+                        for s in selected
+                        if normalize_skill(s.name) != normalize_skill(name)
+                    ),
+                ]
+            )
+        )
+        for skill in selected[:1]:
+            ledger.entries.append(
+                ManualEditEntry(
+                    target_token=normalize_skill(skill.name),
+                    name=name,
+                    aliases=names,
+                    category=category,
+                    added_at=_utcnow(),
+                )
+            )
+        updated, _ = apply_manual_skills(facts, ledger)
+        _publish(profile_dir, updated, ledger, group=group, skill_key=name)
+
+
+def merge_skills(profile_dir: str | Path, keys: list[str], into: str) -> None:
+    with manual_skills_lock(profile_dir):
+        facts = _load_facts_or_raise(profile_dir)
+        target = _resolve_skills(profile_dir, facts, into)[0]
+        selected = {
+            s.id: s
+            for key in [into, *keys]
+            for s in _resolve_skills(profile_dir, facts, key)
+        }
+        if len(selected) < 2:
+            raise ValueError("Choose at least two different skills to merge")
+        ledger = load_manual_skills(_ledger_path(profile_dir))
+        ledger.entries.append(
+            ManualMergeEntry(
+                tokens=[normalize_skill(s.name) for s in selected.values()],
+                target_token=normalize_skill(target.name),
+                added_at=_utcnow(),
+            )
+        )
+        updated, _ = apply_manual_skills(facts, ledger)
+        _publish(profile_dir, updated, ledger)
+
+
+def cleanup_skills(profile_dir: str | Path, *, apply: bool = False):
+    from resume_tailor_harness.profile.effective import build_effective_taxonomy
+    from resume_tailor_harness.profile.skill_cleanup import clean_skills
+
+    with manual_skills_lock(profile_dir):
+        facts = _load_facts_or_raise(profile_dir)
+        ledger = load_manual_skills(_ledger_path(profile_dir))
+        taxonomy = build_effective_taxonomy(profile_dir)
+        updated, report = clean_skills(
+            facts,
+            ledger,
+            aliases=taxonomy.cluster_map.aliases,
+            added_at=_utcnow(),
+            forbid_alias=load_overrides(
+                Path(profile_dir) / "overrides.yaml"
+            ).forbid_alias,
+        )
+        if apply:
+            _publish(profile_dir, updated, ledger)
+        return report
+
+
+def set_cleanup_policy(profile_dir: str | Path, enabled: bool) -> None:
+    with manual_skills_lock(profile_dir):
+        ledger = load_manual_skills(_ledger_path(profile_dir))
+        ledger.auto_cleanup = enabled
+        save_manual_skills(ledger, _ledger_path(profile_dir))
+
+
 def list_skills(profile_dir: str | Path) -> list[dict[str, str | None]]:
     facts = _load_facts_or_raise(profile_dir)
     return [
@@ -117,6 +285,9 @@ def add_skill(
     profile_dir: str | Path,
     name: str,
     category: Literal["hard", "soft", "domain"] | None,
+    *,
+    aliases: list[str] | None = None,
+    group: str | None = None,
 ) -> ManualSkillEntry:
     with manual_skills_lock(profile_dir):
         facts = _load_facts_or_raise(profile_dir)
@@ -138,10 +309,18 @@ def add_skill(
             for e in ledger.entries
             if not (e.kind == "suppress" and normalize_skill(e.token) == token)
         ]
-        entry = ManualSkillEntry(name=name, category=category, added_at=_utcnow())
+        known = _known_tokens(facts)
+        if any(normalize_skill(alias) in known for alias in aliases or []):
+            raise SkillAlreadyExistsError("An alias already belongs to another skill")
+        entry = ManualSkillEntry(
+            name=name.strip(),
+            category=category,
+            aliases=aliases or [],
+            added_at=_utcnow(),
+        )
         ledger.entries.append(entry)
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        _commit_skill_mutation(profile_dir, updated_facts, ledger)
+        _publish(profile_dir, updated_facts, ledger, group=group, skill_key=name)
         return entry
 
 
@@ -174,7 +353,7 @@ def add_alias(profile_dir: str | Path, skill_id: str, alias: str) -> ManualAlias
         ledger = load_manual_skills(_ledger_path(profile_dir))
         ledger.entries.append(entry)
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        _commit_skill_mutation(profile_dir, updated_facts, ledger)
+        _publish(profile_dir, updated_facts, ledger)
         return entry
 
 
@@ -196,19 +375,8 @@ def delete_skill(profile_dir: str | Path, key: str) -> None:
     """
     with manual_skills_lock(profile_dir):
         facts = _load_facts_or_raise(profile_dir)
-        key_token = normalize_skill(key)
-        match = next(
-            (
-                skill
-                for skills in facts.skills.values()
-                for skill in skills
-                if normalize_skill(skill.name) == key_token
-                or key_token in {normalize_skill(a) for a in skill.aliases}
-            ),
-            None,
-        )
-        if match is None:
-            raise SkillNotFoundError(f"No skill '{key}'")
+        matches = _resolve_skills(profile_dir, facts, key)
+        match = matches[0]
         # Key the suppression on the skill's own name, not the (possibly alias)
         # lookup token — replay matches skills by name, and restore uses this token.
         token = normalize_skill(match.name)
@@ -218,10 +386,12 @@ def delete_skill(profile_dir: str | Path, key: str) -> None:
             for e in ledger.entries
         ):
             ledger.entries.append(
-                ManualSuppressEntry(token=token, display=match.name, added_at=_utcnow())
+                ManualSuppressEntry(
+                    token=token, display=match.name, skills=matches, added_at=_utcnow()
+                )
             )
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        _commit_skill_mutation(profile_dir, updated_facts, ledger)
+        _publish(profile_dir, updated_facts, ledger)
 
 
 def restore_skill(profile_dir: str | Path, token: str) -> None:
@@ -235,12 +405,20 @@ def restore_skill(profile_dir: str | Path, token: str) -> None:
             for e in ledger.entries
         ):
             raise SuppressedSkillNotFoundError(f"'{token}' is not suppressed")
-        ledger.entries = [
+        removed = [
             e
             for e in ledger.entries
-            if not (e.kind == "suppress" and normalize_skill(e.token) == norm)
+            if isinstance(e, ManualSuppressEntry) and normalize_skill(e.token) == norm
         ]
+        for entry in removed:
+            for saved in entry.skills:
+                if normalize_skill(saved.name) not in _known_tokens(facts):
+                    facts.skills.setdefault(saved.category or "hard", []).append(
+                        saved.model_copy(deep=True)
+                    )
+        ledger.cleanup_exempt = list(dict.fromkeys([*ledger.cleanup_exempt, norm]))
+        ledger.entries = [e for e in ledger.entries if e not in removed]
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        _commit_skill_mutation(
+        _publish(
             profile_dir, updated_facts, ledger, restoring_token=token
         )

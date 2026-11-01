@@ -68,7 +68,11 @@
     "Checking extraction rules": "正在检查提取规则",
     "Checking public job board": "正在检查公开招聘列表",
     "Rebuilding your conversational profile": "正在重新构建通过对话创建的个人资料",
-    "Saved profile and skill matrix": "已保存个人资料和技能矩阵"
+    "Saved profile and skill matrix": "已保存个人资料和技能矩阵",
+    "Rebuilding profile skills": "正在重新构建个人技能",
+    "Prepared profile skills": "已准备个人技能",
+    "Reclassified profile skills": "已重新分类个人技能",
+    "Saved profile skills": "已保存个人技能"
   },
   "displayValues": {
     "experience": "工作经历",
@@ -117,7 +121,8 @@
     "years-of-experience requirement": "工作年限要求",
     "education or degree requirement": "教育或学位要求",
     "employment eligibility or clearance requirement": "工作资格或安全审查许可要求",
-    "travel or relocation requirement": "出差或搬迁要求"
+    "travel or relocation requirement": "出差或搬迁要求",
+    "profile skill edits": "个人技能修改"
   },
   "githubSyncFailures": {
     "filenameUsed": "来源文件名已被上传的文档占用，已保留原有文件。",

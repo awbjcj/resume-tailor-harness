@@ -3075,6 +3075,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile/skill-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Category */
+        post: operations["create_category_api_profile_skill_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/skill-categories/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Category */
+        put: operations["update_category_api_profile_skill_categories__key__put"];
+        post?: never;
+        /** Delete Category */
+        delete: operations["delete_category_api_profile_skill_categories__key__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/skill-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Group */
+        post: operations["create_group_api_profile_skill_groups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/skill-groups/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Group */
+        put: operations["update_group_api_profile_skill_groups__key__put"];
+        post?: never;
+        /** Delete Group */
+        delete: operations["delete_group_api_profile_skill_groups__key__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/skills": {
         parameters: {
             query?: never;
@@ -3093,7 +3163,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/profile/skills/{key}": {
+    "/api/profile/skills/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview Cleanup */
+        get: operations["preview_cleanup_api_profile_skills_cleanup_get"];
+        put?: never;
+        /** Cleanup Skills */
+        post: operations["cleanup_skills_api_profile_skills_cleanup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Cleanup Policy */
+        patch: operations["cleanup_policy_api_profile_skills_cleanup_patch"];
+        trace?: never;
+    };
+    "/api/profile/skills/merge": {
         parameters: {
             query?: never;
             header?: never;
@@ -3102,6 +3191,41 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** Merge Skills */
+        post: operations["merge_skills_api_profile_skills_merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/skills/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rebuild Skills */
+        post: operations["rebuild_skills_api_profile_skills_rebuild_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profile/skills/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Skill */
+        put: operations["update_skill_api_profile_skills__key__put"];
         post?: never;
         /** Delete Profile Skill */
         delete: operations["delete_profile_skill_api_profile_skills__key__delete"];
@@ -8855,6 +8979,8 @@ export interface components {
         };
         /** MatrixOut */
         MatrixOut: {
+            /** Categories */
+            categories?: components["schemas"]["SkillCategoryOut"][];
             /**
              * Generatedat
              * @default
@@ -8867,10 +8993,14 @@ export interface components {
         };
         /** MatrixRowOut */
         MatrixRowOut: {
+            /** Aliases */
+            aliases?: string[];
             /** Category */
             category?: string | null;
             /** Display */
             display: string;
+            /** Evidencefactids */
+            evidenceFactIds?: string[];
             /** Group */
             group?: string | null;
             /** Groupsource */
@@ -8918,6 +9048,13 @@ export interface components {
             role?: ("admin" | "user") | null;
             /** Username */
             username?: string | null;
+        };
+        /** MergeProfileSkillsIn */
+        MergeProfileSkillsIn: {
+            /** Into */
+            into: string;
+            /** Keys */
+            keys: string[];
         };
         /** ModelOption */
         ModelOption: {
@@ -9893,6 +10030,14 @@ export interface components {
             name?: string | null;
             /** Reason */
             reason: string;
+        };
+        /** RebuildProfileSkillsIn */
+        RebuildProfileSkillsIn: {
+            /**
+             * Reclassifyonly
+             * @default false
+             */
+            reclassifyOnly: boolean;
         };
         /**
          * RedoParams
@@ -11140,17 +11285,82 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** SkillCategoryOut */
+        SkillCategoryOut: {
+            /**
+             * Customized
+             * @default false
+             */
+            customized: boolean;
+            /** Label */
+            label: string;
+            /** Slug */
+            slug: string;
+        };
+        /** SkillCleanupMergeOut */
+        SkillCleanupMergeOut: {
+            /** Into */
+            into: string;
+            /** Names */
+            names: string[];
+        };
+        /** SkillCleanupOut */
+        SkillCleanupOut: {
+            /** Aftercount */
+            afterCount: number;
+            /** Beforecount */
+            beforeCount: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Merges */
+            merges: components["schemas"]["SkillCleanupMergeOut"][];
+            /** Pruned */
+            pruned: components["schemas"]["SkillCleanupPruneOut"][];
+        };
+        /** SkillCleanupPolicyIn */
+        SkillCleanupPolicyIn: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** SkillCleanupPruneOut */
+        SkillCleanupPruneOut: {
+            /** Display */
+            display: string;
+            /** Reason */
+            reason: string;
+            /** Token */
+            token: string;
+        };
         /** SkillEntryOut */
         SkillEntryOut: {
+            /** Aliases */
+            aliases?: string[];
             /** Category */
             category?: ("hard" | "soft" | "domain") | null;
+            /** Evidencefactids */
+            evidenceFactIds?: string[];
             /** Id */
             id: string;
+            /**
+             * Inferred
+             * @default false
+             */
+            inferred: boolean;
             /** Name */
             name: string;
         };
         /** SkillGroupOut */
         SkillGroupOut: {
+            /**
+             * Category
+             * @default other
+             */
+            category: string;
+            /**
+             * Customized
+             * @default false
+             */
+            customized: boolean;
             /** Label */
             label: string;
             /** Slug */
@@ -11185,6 +11395,16 @@ export interface components {
             skill: string;
             /** Tech */
             tech: number;
+        };
+        /** SkillOrganizationIn */
+        SkillOrganizationIn: {
+            /**
+             * Category
+             * @default other
+             */
+            category: string;
+            /** Label */
+            label: string;
         };
         /** SkillTagOut */
         SkillTagOut: {
@@ -11460,6 +11680,8 @@ export interface components {
             addedAt: string;
             /** Display */
             display: string;
+            /** Reason */
+            reason?: string | null;
             /** Token */
             token: string;
         };
@@ -11874,6 +12096,17 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** UpdateProfileSkillIn */
+        UpdateProfileSkillIn: {
+            /** Aliases */
+            aliases?: string[];
+            /** Category */
+            category?: ("hard" | "soft" | "domain") | null;
+            /** Group */
+            group?: string | null;
+            /** Name */
+            name: string;
+        };
         /** UrlIn */
         UrlIn: {
             /**
@@ -11989,8 +12222,12 @@ export interface components {
         };
         /** AddSkillIn */
         resume_tailor_harness__api__schemas__profile__AddSkillIn: {
+            /** Aliases */
+            aliases?: string[];
             /** Category */
             category?: ("hard" | "soft" | "domain") | null;
+            /** Group */
+            group?: string | null;
             /** Name */
             name: string;
         };
@@ -20304,6 +20541,208 @@ export interface operations {
             };
         };
     };
+    create_category_api_profile_skill_categories_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillOrganizationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_category_api_profile_skill_categories__key__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillOrganizationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_category_api_profile_skill_categories__key__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_group_api_profile_skill_groups_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillOrganizationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_group_api_profile_skill_groups__key__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillOrganizationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_group_api_profile_skill_groups__key__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_profile_skills_api_profile_skills_get: {
         parameters: {
             query?: never;
@@ -20358,6 +20797,204 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ManualEntryOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_cleanup_api_profile_skills_cleanup_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillCleanupOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cleanup_skills_api_profile_skills_cleanup_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillCleanupOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cleanup_policy_api_profile_skills_cleanup_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillCleanupPolicyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_skills_api_profile_skills_merge_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeProfileSkillsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rebuild_skills_api_profile_skills_rebuild_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RebuildProfileSkillsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_skill_api_profile_skills__key__put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileSkillIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

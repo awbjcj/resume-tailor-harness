@@ -20,6 +20,14 @@ it("uses the per-kind map for a run it never saw launched", () => {
     "profile-sources",
     "match-gap",
     "setup-status",
+    "profile-matrix",
+    "profile-skills",
+    "skill-cleanup",
+    "suppressed-skills",
+    "job",
+    "shortlist",
+    "pipeline",
+    "triage",
   ]);
 });
 
@@ -35,6 +43,14 @@ it("forgets an override so a recycled id cannot inherit it", () => {
     "profile-sources",
     "match-gap",
     "setup-status",
+    "profile-matrix",
+    "profile-skills",
+    "skill-cleanup",
+    "suppressed-skills",
+    "job",
+    "shortlist",
+    "pipeline",
+    "triage",
   ]);
 });
 
@@ -42,4 +58,8 @@ it("returns a fresh array so callers cannot mutate the shared tables", () => {
   const first = invalidationKeys("r1", "refreshClusters");
   first.push("mutated");
   expect(invalidationKeys("r2", "refreshClusters")).toEqual(["match-gap"]);
+});
+
+it("refreshes skill CRUD surfaces after a skill rebuild discovered on reload", () => {
+  expect(invalidationKeys("r1", "profile-skills-rebuild")).toEqual(expect.arrayContaining(["profile-matrix", "profile-skills", "skill-cleanup", "suppressed-skills", "job", "match-gap"]));
 });
