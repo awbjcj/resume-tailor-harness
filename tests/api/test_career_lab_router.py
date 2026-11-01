@@ -95,7 +95,8 @@ def test_skill_capability_contract(tmp_path):
         response = client.get("/api/career-lab/skills")
         assert response.status_code == 200
         names = {row["name"] for row in response.json()["skills"]}
-        assert len(names) == 12
+        assert len(names) == 13
+        assert "workspace-management" in names
         assert "salary-negotiation-prep" in names
         assert all("directory" not in row for row in response.json()["skills"])
 

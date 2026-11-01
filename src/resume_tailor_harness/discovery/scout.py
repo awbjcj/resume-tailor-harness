@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal
@@ -10,12 +11,18 @@ from agno.agent import Agent
 from pydantic import Field
 from pydantic.config import JsonDict
 
+from resume_tailor_harness.workspace_agent.runtime import (
+    workspace_tools,
+    workspace_instructions,
+)
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.discovery.scout_models import Citation, is_http_url
 from resume_tailor_harness.discovery.source_resolution.catalog import (
     render_supported_board_guidance,
 )
-from resume_tailor_harness.discovery.source_resolution.models import CompanySourceResolution
+from resume_tailor_harness.discovery.source_resolution.models import (
+    CompanySourceResolution,
+)
 from resume_tailor_harness.discovery.source_resolution.resolver import (
     CompanySourceResolver,
     CompanySourceResolverLike,
@@ -369,15 +376,20 @@ def build_scout_agent(
     return AgentRunner(
         Agent(
             model=model,
-            tools=[
-                *search_tools,
-                resolve_company_source,
-                company_intelligence_tool,
-            ],
+            tools=workspace_tools(
+                [
+                    *search_tools,
+                    resolve_company_source,
+                    company_intelligence_tool,
+                ]
+            ),
             description="Research company sources and search conditions conversationally.",
             instructions=with_guidance(
                 "discovery-scout",
-                scout_instructions(max_search_uses=budget.max_uses),
+                [
+                    *scout_instructions(max_search_uses=budget.max_uses),
+                    *workspace_instructions(),
+                ],
             ),
             **tool_kwargs(),
             **retry_kwargs(),

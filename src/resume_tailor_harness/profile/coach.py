@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
 from agno.agent import Agent
+from resume_tailor_harness.workspace_agent.runtime import (
+    workspace_tools,
+    workspace_instructions,
+)
 from resume_tailor_harness.career_skills.agno import skill_kwargs
 from resume_tailor_harness.career_skills.models import AgentFamily, AgentRunMeta
 from resume_tailor_harness.career_skills.registry import VerifiedSkill, resolve_skill
@@ -516,9 +521,11 @@ def build_coach_agent(tools, *, skill: VerifiedSkill | None = None) -> Runner:
     return AgentRunner(
         Agent(
             model=model,
-            tools=list(tools),
+            tools=workspace_tools(tools),
             description="Coach one conversational turn against a profile corpus.",
-            instructions=with_guidance("coach", _COACH_INSTRUCTIONS),
+            instructions=with_guidance(
+                "coach", [*_COACH_INSTRUCTIONS, *workspace_instructions()]
+            ),
             **tool_kwargs(),
             **skill_kwargs(resolved_skill),
             **retry_kwargs(),

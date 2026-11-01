@@ -1,3 +1,4 @@
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -322,6 +323,7 @@ export function CareerLabPage() {
                 </div>
               ) : null}
             </CardContent>
+          <WorkspaceReview surface="career-lab" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
             {canCompose ? <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
               <ChatRunProgress runId={runId} status={stream.status} reconnecting={stream.reconnecting} />
               <CareerLabContextSummary context={context} onChange={setContext} disabled={busy} />

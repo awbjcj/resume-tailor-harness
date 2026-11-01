@@ -556,3 +556,107 @@ async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, mo
         assert row["cacheWriteTokens"] == 20
         assert row["toolCalls"] == 1
         assert "opaque-reasoning-fixture" not in trace.read_text(encoding="utf-8")
+
+
+def test_workspace_preview_runs_through_real_agno_without_applying(tmp_path):
+    from sqlmodel import Session, select
+    from resume_tailor_harness.db import init_db, make_engine
+    from resume_tailor_harness.services.config_store import YamlConfigStore
+    from resume_tailor_harness.tracking.tables import Job
+    from resume_tailor_harness.workspace_agent.runtime import WorkspaceTools
+    from resume_tailor_harness.workspace_agent.tables import (
+        WorkspaceNote,
+        WorkspaceProposal,
+    )
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        session.add(Job(source="manual", title="Engineer", jd_text="Build APIs"))
+        session.commit()
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_api_key="offline-key",
+        openai_base_url="https://provider.invalid/v1",
+        openai_route_mode="api",
+        llm_retries=0,
+    )
+    model = build_model("openai:gpt-6.1-terra", settings=settings)
+    toolkit = WorkspaceTools(
+        engine,
+        tmp_path,
+        YamlConfigStore(tmp_path / "config"),
+        "Save a preparation note",
+    )
+    requests = []
+    plan = {
+        "title": "Save preparation",
+        "changes": [
+            {
+                "operation": "preparation.save",
+                "job_id": 1,
+                "values": {"title": "APIs", "body": "Review trade-offs"},
+                "reason": "Keep practice material",
+            }
+        ],
+    }
+
+    def respond(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        assert len(requests) <= 2
+        if len(requests) == 1:
+            output = [
+                {
+                    "type": "function_call",
+                    "id": "fc1",
+                    "call_id": "c1",
+                    "name": "preview_workspace_changes",
+                    "arguments": json.dumps({"plan": plan}),
+                    "status": "completed",
+                }
+            ]
+        else:
+            output = [
+                {
+                    "type": "message",
+                    "id": "m1",
+                    "role": "assistant",
+                    "status": "completed",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": "Review the proposed preparation note.",
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ]
+        return httpx.Response(200, json=_response(model.id, output))
+
+    runner = AgentRunner(
+        Agent(
+            model=model,
+            tools=toolkit.functions(),
+            telemetry=False,
+            **retry_kwargs(),
+            **tool_kwargs(),
+        ),
+        settings=settings,
+    )
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        model.http_client = client
+        result = runner.run("Save a preparation note")
+    assert result.content == "Review the proposed preparation note."
+    assert len(toolkit.plans) == 1
+    tool_output = next(
+        item["output"]
+        for item in requests[1]["input"]
+        if item.get("type") == "function_call_output"
+    )
+    observed = ast.literal_eval(tool_output)
+    assert observed["saved"] is False and observed["requires_human_approval"] is True
+    with Session(engine) as session:
+        assert session.exec(select(WorkspaceNote)).all() == []
+        assert session.exec(select(WorkspaceProposal)).all() == []
+    engine.dispose()

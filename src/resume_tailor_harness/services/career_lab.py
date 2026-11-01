@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+
 import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+from resume_tailor_harness.workspace_agent.runtime import workspace_turn
 from resume_tailor_harness.career_lab.agents import (
     build_formatter_agent,
     build_persona_agent,
@@ -503,6 +505,7 @@ def _start_or_message(
     return session_view(root, session["session_id"])
 
 
+@workspace_turn("career-lab")
 def run_start_turn(
     reporter,
     *,
@@ -589,6 +592,7 @@ def run_start_turn(
     return session_view(root, created["session_id"])
 
 
+@workspace_turn("career-lab")
 def run_message_turn(
     reporter,
     *,

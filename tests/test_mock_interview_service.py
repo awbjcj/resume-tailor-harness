@@ -24,7 +24,12 @@ from resume_tailor_harness.services.mock_interview import (
     session_view,
     sessions_view,
 )
-from resume_tailor_harness.sessions.stream import Completed, Notice, TextDelta, ToolStarted
+from resume_tailor_harness.sessions.stream import (
+    Completed,
+    Notice,
+    TextDelta,
+    ToolStarted,
+)
 from resume_tailor_harness.tracking.tables import (
     Application,
     ApplicationEvent,
@@ -650,10 +655,14 @@ def test_load_context_snapshots_only_nonempty_interview_reflections(engine):
     assert [row.kind for row in context.reflections] == ["behavioral"]
     assert context.reflections[0].label == "Behavioral"
     assert context.reflections[0].result == "advanced"
-    assert context.reflections[0].reflection == "I should quantify the result next time."
+    assert (
+        context.reflections[0].reflection == "I should quantify the result next time."
+    )
 
 
-def test_open_session_keeps_company_intelligence_snapshot_after_refresh(tmp_path, engine):
+def test_open_session_keeps_company_intelligence_snapshot_after_refresh(
+    tmp_path, engine
+):
     job_id, version_id = _ids
     now = datetime.now(timezone.utc)
     with get_session(engine) as db:
@@ -704,3 +713,51 @@ def test_open_session_keeps_company_intelligence_snapshot_after_refresh(tmp_path
 
     saved = load_session(tmp_path, view["sessionId"])
     assert saved["context"]["company_intelligence"]["overview"] == "Original overview"
+
+
+def test_workspace_request_keeps_practice_plan_and_does_not_count_as_answer(
+    tmp_path, engine
+):
+    from resume_tailor_harness.services.config_store import YamlConfigStore
+    from resume_tailor_harness.workspace_agent.runtime import (
+        WorkspaceTools,
+        use_workspace_tools,
+    )
+    from resume_tailor_harness.interview.agent import render_transcript
+
+    opened = _open(tmp_path, engine)
+    sid = opened["sessionId"]
+    original = load_session(tmp_path, sid)
+    toolkit = WorkspaceTools(
+        engine, tmp_path, YamlConfigStore(tmp_path / "config"), "Show my job notes"
+    )
+
+    class MaintenanceRunner(FakeRunner):
+        def run(self, prompt):
+            tools = {f.__name__: f for f in toolkit.functions()}
+            tools["begin_workspace_request"]()
+            return SimpleNamespace(content="You have no saved notes for this job.")
+
+    with use_workspace_tools(toolkit):
+        run_answer_turn(
+            FakeReporter(),
+            interview_dir=tmp_path,
+            session_id=sid,
+            message="Show my job notes",
+            interviewer_agent=MaintenanceRunner([]),
+            formatter_agent=FakeRunner([]),
+        )
+    saved = load_session(tmp_path, sid)
+    assert saved["plan"] == original["plan"]
+    assert saved["concluded"] is False
+    assert len(saved["turns"]) == len(original["turns"]) + 2
+    assert saved["turns"][-1]["workspace_request"] is True
+    assert "Show my job notes" not in render_transcript(saved)
+    result = run_debrief_turn(
+        FakeReporter(),
+        interview_dir=tmp_path,
+        session_id=sid,
+        interviewer_agent=FakeRunner([]),
+        formatter_agent=FakeRunner([]),
+    )
+    assert "before answering" in result["debrief"]["summary"]

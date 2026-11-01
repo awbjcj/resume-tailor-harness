@@ -12,6 +12,7 @@ from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.mail import tables as mail_tables  # noqa: F401
 from resume_tailor_harness.gmail import tables as gmail_tables  # noqa: F401
 from resume_tailor_harness.tracking import tables  # noqa: F401
+from resume_tailor_harness.workspace_agent import tables as workspace_tables  # noqa: F401
 from resume_tailor_harness.discovery.scraper import tables as scrape_tables  # noqa: F401
 from resume_tailor_harness.tracking.migrate import (
     ensure_application_cover_letter_id_column,

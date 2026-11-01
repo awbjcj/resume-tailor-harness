@@ -1,3 +1,4 @@
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bot, Clock3, FileCheck2, MessageCircleQuestion, SearchCheck, Sparkles, SquareCheckBig } from "lucide-react";
@@ -410,6 +411,7 @@ export function CoachPage() {
                   />
                 ) : null}
               </div>
+          <WorkspaceReview surface="coach" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
               {active.status === "active" ? (
                 <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
                   <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />

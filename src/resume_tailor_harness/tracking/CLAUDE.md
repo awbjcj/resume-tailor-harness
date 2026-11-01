@@ -9,7 +9,7 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 (trash-binned) duplicate never blocks re-ingesting the same job as a fresh active row.
 `has_progress(session, job_id)` — status in
 {approved, tailored, rendered} OR any ResumeVersion/CoverLetter OR an
-Application carrying real investment — is
+Application carrying real investment OR an active WorkspaceNote — is
 the single gate for irreversible paths. `delete_job` refuses jobs with progress and
 cascades incidental children in FK-safe order otherwise.
 

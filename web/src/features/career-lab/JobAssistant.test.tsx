@@ -1,3 +1,4 @@
+import { withQueryClient } from "@/test/utils";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -32,14 +33,14 @@ beforeEach(() => {
 });
 
 it("starts a draft with only explicitly selected job context", async () => {
-  render(view());
+  render(view(), { wrapper: withQueryClient });
   await userEvent.type(screen.getByRole("textbox", { name: "Ask about this job" }), "Help with this role");
   await userEvent.click(screen.getByRole("button", { name: "Send message" }));
   expect(mocks.start).toHaveBeenCalledWith(expect.objectContaining({ message: "Help with this role", context: { jobId: 7, resumeVersionId: undefined, profileSnapshot: undefined, offerApplicationIds: [] } }));
 });
 
 it("preserves a new composer draft typed while the previous response is saving", async () => {
-  const { rerender } = render(view());
+  const { rerender } = render(view(), { wrapper: withQueryClient });
   const input = screen.getByRole("textbox", { name: "Ask about this job" });
   await userEvent.type(input, "First question");
   await userEvent.click(screen.getByRole("button", { name: "Send message" }));
@@ -54,7 +55,7 @@ it("preserves a new composer draft typed while the previous response is saving",
 });
 
 it("accepts successful completion when it wins the race with Stop", async () => {
-  render(view());
+  render(view(), { wrapper: withQueryClient });
   await userEvent.type(screen.getByRole("textbox", { name: "Ask about this job" }), "First question");
   await userEvent.click(screen.getByRole("button", { name: "Send message" }));
   await userEvent.click(await screen.findByRole("button", { name: "Stop generating" }));

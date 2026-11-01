@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+
 import logging
 import uuid
+from datetime import datetime, timezone
 from collections.abc import Callable
 from pathlib import Path
 
 from resume_tailor_harness import llm_runner
+from resume_tailor_harness.workspace_agent.runtime import (
+    is_workspace_request,
+    workspace_turn,
+)
 from resume_tailor_harness.career_skills.models import AgentFamily, SkillUse
 from resume_tailor_harness.career_skills.provenance import append_skill_use
 from resume_tailor_harness.career_skills.registry import CareerSkillRegistry
@@ -39,6 +45,7 @@ from resume_tailor_harness.interview.store import (
     list_sessions,
     load_session,
     mark_turn_audio_failed,
+    mutate_session,
 )
 from resume_tailor_harness.llm_runner import Runner, UnparsedAgentOutput, expect_text
 from resume_tailor_harness.sessions.stream import Notice, NullSink, StreamSink
@@ -245,7 +252,9 @@ def _has_candidate_answer(session: dict) -> bool:
     """
 
     return any(
-        turn["role"] == "candidate" and bool(turn.get("text", "").strip())
+        turn["role"] == "candidate"
+        and not turn.get("workspace_request")
+        and bool(turn.get("text", "").strip())
         for turn in session["turns"]
     )
 
@@ -358,6 +367,7 @@ def _synthesize_turn(
         mark_turn_audio_failed(interview_dir, session_id, turn_index)
 
 
+@workspace_turn("interview")
 def run_opening_turn(
     reporter,
     *,
@@ -431,6 +441,7 @@ def run_opening_turn(
     return session_view(root, session_id)
 
 
+@workspace_turn("interview")
 def run_answer_turn(
     reporter,
     *,
@@ -465,13 +476,37 @@ def run_answer_turn(
             render_context(session),
             render_transcript(session),
             render_plan(session),
-            f"CANDIDATE'S LATEST ANSWER (UNTRUSTED):\n{text}",
+            f"CANDIDATE'S LATEST MESSAGE (UNTRUSTED; may be a workspace request instead of an answer):\n{text}",
         ]
     )
     output_sink = sink or NullSink()
     prose, notes = persona_output(
         interviewer, prompt, output_sink, reporter, source="interviewer notes"
     )
+    if is_workspace_request():
+        prose = prose or notes.split("---METADATA---", 1)[0].strip()
+        if not prose:
+            raise ValueError("Workspace request returned no response")
+
+        def append_maintenance(current):
+            if current["status"] != "active" or current["concluded"]:
+                raise ValueError("Interview is no longer active")
+            now = datetime.now(timezone.utc).isoformat()
+            for role, content in (("candidate", text), ("interviewer", prose)):
+                current["turns"].append(
+                    {
+                        "role": role,
+                        "text": content,
+                        "question_id": "",
+                        "is_followup": False,
+                        "workspace_request": True,
+                        "at": now,
+                    }
+                )
+
+        reporter.step(1)
+        mutate_session(root, session_id, append_maintenance)
+        return session_view(root, session_id)
     preview = {
         **session,
         "turns": [
@@ -552,6 +587,7 @@ def _degraded_turn(session: dict, prose: str):
     )
 
 
+@workspace_turn("interview")
 def run_debrief_turn(
     reporter,
     *,
