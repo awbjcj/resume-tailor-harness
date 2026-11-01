@@ -78,6 +78,13 @@ ruff check
 All agent calls and the Playwright browser are faked in tests. Connector backends
 are tested against fixture JSON payloads, not live endpoints.
 
+On Windows, skill installers may replace directories under `skills/` with
+junctions into `.agents/skills/`. The runtime registry rejects these paths
+because they escape the configured root. Run
+`.venv/Scripts/python.exe scripts/repair_skill_junctions.py` to replace those
+junctions with independent copies, preserving all current contents and the
+original target directories. Hash and path verification still apply afterward.
+
 ---
 
 ## Architecture map
