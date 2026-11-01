@@ -37,7 +37,17 @@ _EDGE_PUNCTUATION = "\"'`()[]{}<>,.;:!?—–-$€£¥"
 # Identity and structure, not evidence. `bullets` is excluded so citing a parent
 # Experience does not inherit the numbers stated by its child bullets -- the
 # writer is required to cite the narrowest supporting fact.
-_SKIP_FIELDS = frozenset({"id", "schema_version", "source", "source_ref", "bullets"})
+_SKIP_FIELDS = frozenset(
+    {
+        "id",
+        "schema_version",
+        "source",
+        "source_ref",
+        "source_refs",
+        "evidence_fact_ids",
+        "bullets",
+    }
+)
 
 
 def claim_numbers(text: str) -> list[str]:

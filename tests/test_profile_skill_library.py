@@ -102,7 +102,14 @@ def test_edit_preserves_identity_evidence_and_replays_after_rebuild(library):
         next(s for s in replay.skills["domain"] if s.id == "python").name
         == updated.name
     )
-    assert _matrix(directory).rows[0].group == "languages"
+    # Explicit evidence links now affect strength; grouping belongs to the
+    # edited skill regardless of which equally strong row sorts first.
+    assert (
+        next(
+            row for row in _matrix(directory).rows if "python" in row.evidence_fact_ids
+        ).group
+        == "languages"
+    )
 
 
 def test_merge_keeps_aliases_sources_and_evidence_and_survives_replay(library):

@@ -22,7 +22,7 @@ this contract:
 | `description` | `## Summary` |
 | `role` | `Role:` line |
 | `tech[]` | `## Tech stack` (load-bearing — see mechanic 2) |
-| `highlights[]` | `## Architecture highlights` + `## Quantified outcomes` |
+| `highlights[]` | Architecture highlights, quantified outcomes, and each cited skill application; stored as independently addressable Bullet facts |
 | `repo_url`, `url`, `homepage_url` | `Repository:` / `Live:` lines |
 | `start`, `end` | `Timeline:` line, from `git log` |
 | `skills{category: [name, aliases, context]}` | `## Skills demonstrated` |
@@ -30,7 +30,7 @@ this contract:
 Employment, job titles, education, and certifications are unreachable by
 design. Writing them wastes space and produces a worse project record.
 
-## Five mechanics that decide whether the dossier lands
+## Six mechanics that decide whether the dossier lands
 
 **1. A skill's name is the whole match token.** `matrix.py` keys each row on
 `normalize_skill(skill.name)` — the entire string, never split. The job
@@ -44,16 +44,14 @@ miss:
 | `AWS (EC2, S3, Lambda)` | `aws ec2 s3 lambda` | never |
 | `Kubernetes` + alias `k8s` | `kubernetes` | yes |
 
-One atomic technology per entry, canonical name alone, synonyms in a labeled
-alias field: `Cloud & Infra: Kubernetes (aliases: k8s), Docker, AWS Lambda`.
+One atomic skill per entry, canonical name alone, synonyms in a separate
+`Aliases:` field. Keep usage context and evidence outside the name.
 
-**2. A technology earns project evidence only through the tech stack.** A
-`Project` has no `bullets` field — its highlights are plain strings. The matrix
-links a skill to the project by testing whether the skill token appears in
-`tech`, exact-match after normalization. A technology discussed in the
-highlights but missing from `## Tech stack` gets no evidence link and drops in
-strength ranking. Every technology named anywhere in the dossier must also
-appear in the tech stack, spelled identically.
+**2. Keep technology coverage explicit.** List every evidenced technology in
+`## Tech stack` using the same canonical name as its skill entry. The matrix
+uses technology names, project highlight text, and explicit skill-to-example
+links. Broader skills such as concurrency need their own explained examples;
+they do not need to be forced into the tech stack.
 
 **3. An omitted end date claims the project is current.** `_recency(None)`
 returns `1.0` — full strength, no decay. Correct for live work, quietly false
@@ -67,11 +65,11 @@ git log -1 --format=%as                    # last commit
 Emit `Timeline: 2024-03 – present` for active work (end left open), and
 `Timeline: 2023-01 – 2024-06` for dormant or archived work.
 
-**4. All highlights ride under one fact id.** The project is a single fact;
-highlights are not independently citable or rejectable. A reviewer cannot
-strike one weak bullet — the whole record carries whatever you wrote. Each
-highlight must stand alone, and a doubtful one contaminates a solid record.
-When in doubt, cut it.
+**4. Every example can become its own fact.** Project highlights and labeled
+skill evidence are stored as independently citable Bullet facts with stable
+source-derived ids. Keep each example self-contained, with its citation,
+measurement scope, and attribution. Repeated text is one fact shared by its
+supporting skills. Do not inflate one action into several achievements.
 
 **5. Identity decides whether the file is read as a project at all.** The
 `repo_url:` frontmatter key is the switch into project mode. Missing or
@@ -80,6 +78,13 @@ the resume extractor will try to read employment and education out of it — the
 worst possible failure. The value must be a public `http(s)` URL with a path,
 no embedded credentials, no `localhost` or private address. The block must
 start at byte zero: `---` on line 1, no BOM, no blank line above it.
+
+**6. No skill without demonstrated usage.** Every skill needs a usage summary
+and at least one explained, cited application. Prefer multiple distinct examples
+from implementation, tests, migrations, and operations. A dependency, unused
+import, bare path, scaffold, or roadmap mention alone is insufficient. Code
+presence establishes behavior, not personal authorship: use the stated role and
+contribution history to distinguish the user's work from inherited code.
 
 ## Monorepos need distinct repository links
 
@@ -110,8 +115,10 @@ fallback match key.
    tree alone.
 5. Draft the required structure below, citing repository-relative paths and
    commit hashes where they support architecture or quantified claims.
-6. Reconcile tech coverage: every technology named in the summary or highlights
-   also appears in `## Tech stack`.
+6. Build a skill evidence map: every claimed skill has a usage summary and
+   cited examples attributable to the user's work. Every technology named in
+   the summary or highlights also appears in `## Tech stack`. Seek distinct
+   applications rather than stopping at the first citation.
 7. Re-read every sentence and remove anything the repository cannot prove.
 
 ## Output contract
@@ -188,12 +195,33 @@ checked-in benchmark artifacts, and commit-visible before/after values.
 
 ### `## Skills demonstrated`
 
-Use `Category: skill, skill, ...` lines with the categories a technical resume
-uses — Languages, Frameworks, Databases, Cloud & Infra, Testing, Architecture,
-Tooling — which become the bucket labels the skills are stored under. Keep each
-entry atomic with synonyms in `(aliases: ...)` (mechanic 1). Include a skill
-only when repository work demonstrates it, not when a roadmap merely names it,
-and only if you could discuss it in an interview.
+Use category headings: Languages, Frameworks, Databases, Cloud & Infra, Testing,
+Architecture, Tooling. Omit empty categories and duplicate names. Use this exact
+labeled shape, omitting Aliases if unnecessary:
+
+```markdown
+### Languages
+- Name: Python
+  - Aliases: Python 3
+  - Context: Implemented bounded concurrent requests and regression tests.
+  - Evidence:
+    - Limited in-flight requests while isolating failures — `src/worker.py:run`.
+    - Tested cancellation without losing completed results — `tests/test_worker.py:test_cancel`.
+```
+
+This is an illustrative shape, not verified repository evidence. For real
+entries cite relevant repository-relative files with symbols or line ranges,
+and commit hashes for personal attribution or historical outcomes. Every example
+explains the action and what it enabled or verified. Include all distinct,
+supported applications within the file-size limit; no resume bullet quota
+applies to this evidence bank. Never emit bare comma-separated skill lists or
+`None evidenced` skills. Preserve uncertainty and measured scope verbatim.
+
+During extraction, retain the complete usage summary and every cited example
+in skill context. The application preserves labeled source examples as project
+highlight facts and assigns their evidence ids. Do not generate ids yourself.
+These are source-backed claims, not an independent verification of the cited
+repository; no command or path from the document is executed during ingestion.
 
 ## Rules
 

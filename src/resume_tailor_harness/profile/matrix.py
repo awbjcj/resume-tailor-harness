@@ -16,7 +16,7 @@ from pydantic import Field, field_validator
 
 from resume_tailor_harness.models.base import ExtensibleModel
 from resume_tailor_harness.models.job import JobCriteria
-from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.models.profile import Experience, ProfileFacts, Project
 from resume_tailor_harness.profile.group_corrections import (
     corrections_path,
     load_group_corrections,
@@ -290,6 +290,10 @@ def _later(first: str | None, second: str | None) -> str | None:
     )
 
 
+def _owner_bullets(owner: Experience | Project):
+    return owner.bullets if isinstance(owner, Experience) else owner.highlights
+
+
 def build_matrix(
     facts: ProfileFacts,
     taxonomy: EffectiveTaxonomy,
@@ -322,6 +326,7 @@ def build_matrix(
             else:
                 literal_keys.add(key)
                 evidence_strength.add(skill.id)
+                evidence_strength.update(skill.evidence_fact_ids)
             row.aliases = sorted(
                 set(row.aliases)
                 | {alias for alias in skill.aliases if normalize_skill(alias) != key}
@@ -345,7 +350,7 @@ def build_matrix(
         for owner in owners
         for fact_id in (
             owner.id,
-            *(bullet.id for bullet in getattr(owner, "bullets", [])),
+            *(bullet.id for bullet in _owner_bullets(owner)),
         )
     }
     for row in rows.values():
@@ -360,13 +365,16 @@ def build_matrix(
             technology = {normalize_skill(item) for item in getattr(owner, "tech", [])}
             technology_hit = bool(needles & technology)
             bullet_hits: list[str] = []
-            for bullet in getattr(owner, "bullets", []):
+            for bullet in _owner_bullets(owner):
                 text = normalize_skill(bullet.text)
                 if any(f" {needle} " in f" {text} " for needle in needles):
                     if bullet.id not in row.evidence_fact_ids:
                         row.evidence_fact_ids.append(bullet.id)
                     bullet_hits.append(bullet.id)
-            if bullet_hits:
+            linked_hits = strength_ids[row.key] & {
+                bullet.id for bullet in _owner_bullets(owner)
+            }
+            if bullet_hits or linked_hits:
                 strength_ids[row.key].update(bullet_hits)
             elif technology_hit:
                 if owner.id not in row.evidence_fact_ids:
@@ -374,7 +382,7 @@ def build_matrix(
                 strength_ids[row.key].add(owner.id)
 
         for owner in owners:
-            bullet_ids = {bullet.id for bullet in getattr(owner, "bullets", [])}
+            bullet_ids = {bullet.id for bullet in _owner_bullets(owner)}
             if owner.id in strength_ids[row.key] and strength_ids[row.key] & bullet_ids:
                 strength_ids[row.key].discard(owner.id)
 

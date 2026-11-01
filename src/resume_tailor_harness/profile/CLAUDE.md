@@ -89,6 +89,20 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   and the provenance gate can reject a fabricated project bullet. Its
   `mode="before"` migration accepts stored legacy string lists with deterministic
   non-empty ids; merge retains the full Bullet rather than flattening it to text.
+- **Labeled dossiers retain their complete evidence bank.** `profile/dossier.py`
+  recognizes the project-resume-dossier Name/Context/Evidence format and keeps
+  source wording, aliases, citations, commits, and measurement limits. Each
+  explained, cited skill example becomes a project highlight; skills point to
+  those facts after stable id assignment. Exact repeated examples share a fact.
+  Missing context/citations are reported as verification drops; fenced examples
+  and unsupported model-added skills are excluded. Freeform/older documents keep
+  model extraction. This checks source structure, not repository truth or
+  authorship; ingestion never executes cited paths or measurement commands.
+  Cross-project skill merge unions contexts and source refs. Project dedup
+  remaps evidence ids to retained highlights. The matrix uses project highlights
+  and explicit evidence links, including broad skills absent from tech lists.
+  Increment `PROJECT_PROMPT_VERSION` when this projection changes so cached
+  project fragments rebuild. The bundled project-dossier skill is hash pinned.
 - **Bullet aspects are durable classifications.** New extractors emit the closed
   aspect vocabulary, while profile build backfills only bullets with
   `aspect is None`. A hand-corrected aspect therefore survives rebuilds; an

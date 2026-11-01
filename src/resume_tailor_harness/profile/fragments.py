@@ -322,8 +322,11 @@ def extract_project_fragments(
 
     async def _produce(doc: SourceDoc, text: str, sem: asyncio.Semaphore) -> Produced:
         source = Source.github if doc.origin == "github" else Source.manual
-        facts = await aextract_project_facts(text, agent, source=source, sem=sem)
-        return Produced(facts=assign_fact_ids(facts, doc.id))
+        drops: list[str] = []
+        facts = await aextract_project_facts(
+            text, agent, source=source, sem=sem, drops=drops
+        )
+        return Produced(facts=assign_fact_ids(facts, doc.id), drops=drops)
 
     return _walk_fragments(
         profile_dir,

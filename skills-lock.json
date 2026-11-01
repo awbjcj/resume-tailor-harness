@@ -262,8 +262,8 @@
       "sourceType": "local",
       "reviewedRef": "57a1db26c67dd3835d84510fe615ff42329986a8",
       "skillPath": "skills/project-dossier/SKILL.md",
-      "computedHash": "73a275b87ecbeef5f1f483bb6ddcabf6bae6b011caebff169803ff44d89e132c",
-      "localVersion": "2026-08-02",
+      "computedHash": "ba9b31c47d7323d62315ab58ba6182ad2cfe53daa645a7f9cb571462605bb244",
+      "localVersion": "2026-11-01",
       "family": "internal_profile",
       "uses": ["profile_project"],
       "visibility": "internal"

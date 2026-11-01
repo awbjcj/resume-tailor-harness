@@ -28,6 +28,7 @@ from resume_tailor_harness.models.profile import (
 from resume_tailor_harness.profile.corpus import SourceDoc
 from resume_tailor_harness.profile.github_ingest import normalize_repo_url
 from resume_tailor_harness.profile.ids import deterministic_id
+from resume_tailor_harness.profile.skill_cleanup import merge_skill_records
 from resume_tailor_harness.tracking.match_gap import normalize_skill
 
 
@@ -254,14 +255,19 @@ def _merge_experience(
             base.bullets.append(bullet.model_copy(deep=True))
 
 
-def _merge_highlights(base: Project, other: Project) -> None:
+def _merge_highlights(base: Project, other: Project) -> dict[str, str]:
     """Merge project evidence by text while retaining each fact's provenance."""
-    seen = {normalize_skill(highlight.text) for highlight in base.highlights}
+    seen = {
+        normalize_skill(highlight.text): highlight.id for highlight in base.highlights
+    }
+    remapped: dict[str, str] = {}
     for highlight in other.highlights:
         key = normalize_skill(highlight.text)
         if key not in seen:
-            seen.add(key)
+            seen[key] = highlight.id
             base.highlights.append(highlight.model_copy(deep=True))
+        remapped[highlight.id] = seen[key]
+    return remapped
 
 
 def _merge_entity_list(
@@ -301,7 +307,8 @@ def _merge_projects(
     *,
     doc: SourceDoc,
     report: MergeReport,
-) -> None:
+) -> dict[str, str]:
+    remapped: dict[str, str] = {}
     for project in extra:
         twin = _find_project(target, project)
         if twin is None:
@@ -319,7 +326,9 @@ def _merge_projects(
             doc=doc,
             report=report,
         )
-        _merge_highlights(twin, candidate)
+        remapped[candidate.id] = twin.id
+        remapped.update(_merge_highlights(twin, candidate))
+    return remapped
 
 
 def _dedup_bullets(
@@ -407,7 +416,9 @@ def merge_fragments(
             else:
                 _merge_experience(twin, experience, doc, report)
 
-        _merge_projects(merged.projects, fragment.projects, doc=doc, report=report)
+        remapped = _merge_projects(
+            merged.projects, fragment.projects, doc=doc, report=report
+        )
         _merge_entity_list(
             merged.education,
             fragment.education,
@@ -474,7 +485,7 @@ def merge_fragments(
             doc=doc,
             report=report,
         )
-        _merge_skills(merged, fragment.skills, doc, report)
+        _merge_skills(merged, fragment.skills, doc, report, remapped)
         for section in fragment.additional_sections:
             existing = next(
                 (
@@ -511,10 +522,17 @@ def _merge_skills(
     skills_by_category: dict[str, list[Skill]],
     doc: SourceDoc,
     report: MergeReport,
+    remapped: dict[str, str] | None = None,
 ) -> None:
     for category, skills in skills_by_category.items():
         bucket = merged.skills.setdefault(category, [])
         for skill in skills:
+            skill = skill.model_copy(deep=True)
+            skill.evidence_fact_ids = list(
+                dict.fromkeys(
+                    (remapped or {}).get(fid, fid) for fid in skill.evidence_fact_ids
+                )
+            )
             twin = next(
                 (
                     existing
@@ -530,12 +548,21 @@ def _merge_skills(
                 _merge_record(
                     twin,
                     skill,
-                    scalar_fields=("context", "category", "inferred"),
-                    collection_fields=("aliases", "evidence_fact_ids"),
+                    scalar_fields=("category",),
+                    collection_fields=(),
                     label=f"skill {twin.name}",
                     doc=doc,
                     report=report,
                 )
+                combined = merge_skill_records([twin, skill], twin)
+                for name in (
+                    "context",
+                    "aliases",
+                    "evidence_fact_ids",
+                    "source_refs",
+                    "inferred",
+                ):
+                    setattr(twin, name, getattr(combined, name))
 
 
 def dedup_experience_bullets(
@@ -603,6 +630,8 @@ def apply_synthesis_fragments(
             anchor_decisions.append(
                 f"{doc.id}: +{appended} bullets on {target.company}/{target.title}"
             )
-        _merge_projects(merged.projects, fragment.projects, doc=doc, report=report)
-        _merge_skills(merged, fragment.skills, doc, report)
+        remapped = _merge_projects(
+            merged.projects, fragment.projects, doc=doc, report=report
+        )
+        _merge_skills(merged, fragment.skills, doc, report, remapped)
     return anchor_decisions, touched

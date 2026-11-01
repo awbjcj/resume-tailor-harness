@@ -23,8 +23,9 @@ from resume_tailor_harness.llm_runner import (
 )
 from resume_tailor_harness.models.base import ExtensibleModel, Source
 from resume_tailor_harness.models.profile import Contact, ProfileFacts, Project, Skill
+from resume_tailor_harness.profile.dossier import parse_dossier, retain_dossier_evidence
 
-PROJECT_PROMPT_VERSION = 5
+PROJECT_PROMPT_VERSION = 6
 
 
 class ProjectDocFacts(ExtensibleModel):
@@ -69,6 +70,8 @@ _INSTRUCTIONS = [
     "List only skills genuinely evidenced by the document. Ignore employment, education, certification, hiring, and biographical claims; this schema describes a project, not a career.",
     "Skill dictionary keys may be human-readable groups, but each nested skill category must be hard, soft, or domain (or null). A tool or tooling skill must use hard; never copy a group label such as Tooling into category.",
     "Project skills are explicit source claims: set inferred false and leave evidence_fact_ids empty. The application assigns stable evidence IDs; never invent or copy an evidence ID.",
+    "Build a reusable evidence bank, not a shortened resume. Preserve every distinct supported architecture highlight, quantified outcome, and skill application, including repository citations, symbols, commits, measurement scope and limitations. There is no resume bullet quota during extraction. Never turn code presence into personal authorship; retain the stated role and contribution boundaries.",
+    "For Skills demonstrated entries, keep the canonical Name atomic, Aliases separate, and the complete Context plus every explained Evidence example together in skill context. Broader skills such as API design and concurrency need their usage evidence too. Dependency names, roadmaps and bare paths alone do not demonstrate personal usage. Preserve body Repository deep links and explicit Timeline end dates.",
     "Leave unsupported nullable fields null and collections empty. Never emit undeclared fields.",
 ]
 
@@ -99,7 +102,7 @@ def build_project_extractor_agent(
         ),
         run_meta=AgentRunMeta(
             agent_family=AgentFamily.INTERNAL_PROFILE,
-            prompt_policy_version="project-dossier-v4",
+            prompt_policy_version="project-dossier-v6",
             model_id=resolved_model_id,
             skill_ref=resolved_skill.ref,
         ),
@@ -146,7 +149,17 @@ async def aextract_project_facts(
     *,
     source: Source,
     sem: asyncio.Semaphore,
+    drops: list[str] | None = None,
 ) -> ProfileFacts:
-    result = await acall(agent, text, sem=sem)
+    dossier = parse_dossier(text)
+    # The model handles project metadata. Labeled evidence is copied from the
+    # complete source below, so a large dossier cannot exhaust output tokens by
+    # repeating every example in both highlights and skill contexts.
+    result = await acall(agent, dossier.extraction_text if dossier else text, sem=sem)
     doc_facts = expect_schema(result, ProjectDocFacts, source="project-extract")
-    return project_facts_to_profile(doc_facts, source=source)
+    facts = project_facts_to_profile(doc_facts, source=source)
+    if dossier is not None:
+        if drops is not None:
+            drops.extend(dossier.drops)
+        facts = retain_dossier_evidence(facts, dossier)
+    return facts

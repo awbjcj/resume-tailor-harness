@@ -16,7 +16,12 @@ from resume_tailor_harness.models.evidence_portfolio import (
     PortfolioSelection,
 )
 from resume_tailor_harness.models.job import JobCriteria
-from resume_tailor_harness.models.profile import Experience, ProfileFacts, Project, Skill
+from resume_tailor_harness.models.profile import (
+    Experience,
+    ProfileFacts,
+    Project,
+    Skill,
+)
 from resume_tailor_harness.profile.matrix import SkillMatch, SkillMatchContext
 from resume_tailor_harness.tailor.provenance import index_facts, renderable_profile
 from resume_tailor_harness.tailor.numeric_evidence import claim_numbers
@@ -165,7 +170,7 @@ def build_evidence_catalog(
     project_offset = len(facts.experience)
     for source_order, project in enumerate(facts.projects):
         text = _project_text(project)
-        ids = {project.id}
+        ids = {project.id, *(highlight.id for highlight in project.highlights)}
         direct = _requirements_for_ids(ids, context, "covered")
         adjacent = _requirements_for_ids(ids, context, "adjacent")
         strength = sum(
@@ -173,7 +178,7 @@ def build_evidence_catalog(
             for match in (context.matches if context else [])
             if match.row is not None
             and match.requirement in direct
-            and project.id in match.row.evidence_fact_ids
+            and ids & set(match.row.evidence_fact_ids)
         )
         owners.append(
             EvidenceOwnerCandidate(
