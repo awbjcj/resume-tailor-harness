@@ -47,13 +47,16 @@ function RepositoryBranch({
     ...new Set([...(branches.data ?? []), ...(value ? [value] : [])]),
   ];
   return (
-    <li className="grid min-w-0 gap-4 border-t border-border py-4 lg:grid-cols-2 lg:items-center">
+    <li className="grid min-w-0 gap-x-6 gap-y-3 border-t border-border py-3 @3xl/repositories:grid-cols-[minmax(0,1fr)_minmax(14rem,20rem)] @3xl/repositories:items-center">
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium [overflow-wrap:anywhere]">
+          <span className="min-w-0 font-medium [overflow-wrap:anywhere]">
             {repo.fullName}
           </span>
-          <Badge variant={repo.included ? "secondary" : "outline"}>
+          <Badge
+            variant={repo.included ? "secondary" : "outline"}
+            className="h-auto min-h-5 max-w-full whitespace-normal text-left"
+          >
             {repo.included ? "Included" : "Not selected for sync"}
           </Badge>
         </div>
@@ -71,10 +74,9 @@ function RepositoryBranch({
       </div>
       <div className="min-w-0 space-y-2">
         <label
-          className="flex items-center gap-2 text-sm font-medium"
+          className="sr-only"
           htmlFor={`branch-${repo.fullName}`}
         >
-          <GitBranch className="size-4" aria-hidden="true" />
           {`Branch for ${repo.fullName}`}
         </label>
         <Select
@@ -92,6 +94,10 @@ function RepositoryBranch({
             style={{ height: "auto" }}
             className="min-h-11 w-full min-w-0 whitespace-normal [&_[data-slot=select-value]]:line-clamp-none"
           >
+            <GitBranch
+              className="size-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <SelectValue className="min-w-0 [overflow-wrap:anywhere]">
               {value ||
                 (repo.defaultBranch
@@ -171,7 +177,7 @@ export function GithubRepositoryPicker({
     queryFn: () => unwrap(api.GET("/api/profile/github/repositories")),
   });
   return (
-    <div className="space-y-4">
+    <div className="@container/repositories min-w-0 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="font-medium">Repository branches</h3>
