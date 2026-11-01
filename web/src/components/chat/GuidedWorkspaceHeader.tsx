@@ -31,12 +31,12 @@ export function GuidedWorkspaceHeader({
         className,
       )}
     >
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-current/10 bg-background/75 text-(--workspace-tone) shadow-sm [&_svg]:size-4" aria-hidden="true">
+      <div className="relative flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-[1_1_24rem] items-center gap-3">
+          <div className="hidden size-9 shrink-0 items-center justify-center rounded-lg border border-current/10 bg-background/75 text-(--workspace-tone) shadow-sm sm:flex [&_svg]:size-4" aria-hidden="true">
             {icon}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 [overflow-wrap:anywhere]">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <h1 className="text-xl leading-tight font-semibold tracking-[-0.025em] sm:text-2xl">{title}</h1>
               <p className="text-[11px] font-semibold tracking-[0.14em] text-(--workspace-tone) uppercase">{eyebrow}</p>
@@ -45,7 +45,7 @@ export function GuidedWorkspaceHeader({
             {meta ? <div className="mt-2 flex flex-wrap items-center gap-1.5">{meta}</div> : null}
           </div>
         </div>
-        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">{actions}</div> : null}
+        {actions ? <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 [&>[data-slot=button]]:h-auto [&>[data-slot=button]]:min-h-10 [&>[data-slot=button]]:max-w-full [&>[data-slot=button]]:whitespace-normal">{actions}</div> : null}
       </div>
     </header>
   );

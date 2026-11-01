@@ -40,6 +40,7 @@ def run_corpus_build(
     github_allow: tuple[str, ...] = (),
     github_deny: tuple[str, ...] = (),
     github_limit: int = 20,
+    github_branches: dict[str, str] | None = None,
 ) -> dict:
     if not 1 <= github_limit <= 100:
         raise ValueError("github repo limit must be between 1 and 100")
@@ -86,6 +87,7 @@ def run_corpus_build(
         github_allow=github_allow,
         github_deny=github_deny,
         github_limit=github_limit,
+        github_branches=github_branches,
     )
     with manual_skills_lock(profile_dir):
         manual_ledger = load_manual_skills(Path(profile_dir) / "manual_skills.json")

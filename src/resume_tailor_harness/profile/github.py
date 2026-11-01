@@ -13,6 +13,7 @@ _REPO_OPTIONAL_STRINGS = (
     "homepage",
     "pushed_at",
     "updated_at",
+    "default_branch",
 )
 _REPO_COUNTS = ("stargazers_count", "forks_count")
 
@@ -157,22 +158,47 @@ class GitHubClient:
         resp.raise_for_status()
         return resp.text
 
-    def fetch_root_listing(self, owner: str, repo: str) -> list[dict]:
+    def fetch_branches(self, owner: str, repo: str) -> list[str]:
+        names: list[str] = []
+        page = 1
+        while True:
+            resp = self._client.get(
+                f"/repos/{quote(owner, safe='')}/{quote(repo, safe='')}/branches",
+                params={"per_page": 100, "page": page},
+            )
+            resp.raise_for_status()
+            batch = self._objects(resp, "branches")
+            for branch in batch:
+                name = branch.get("name")
+                if not isinstance(name, str) or not name.strip():
+                    raise ValueError("GitHub branch name must be a non-empty string")
+                names.append(name)
+            if len(batch) < 100:
+                return sorted(set(names), key=str.casefold)
+            page += 1
+
+    def fetch_root_listing(
+        self, owner: str, repo: str, *, ref: str | None = None
+    ) -> list[dict]:
         resp = self._client.get(
-            f"/repos/{quote(owner, safe='')}/{quote(repo, safe='')}/contents"
+            f"/repos/{quote(owner, safe='')}/{quote(repo, safe='')}/contents",
+            params={"ref": ref} if ref else None,
         )
-        if resp.status_code == 404:
+        if resp.status_code == 404 and ref is None:
             return []
         resp.raise_for_status()
         return self._objects(resp, "contents")
 
-    def fetch_raw_file(self, owner: str, repo: str, path: str) -> str | None:
+    def fetch_raw_file(
+        self, owner: str, repo: str, path: str, *, ref: str | None = None
+    ) -> str | None:
         resp = self._client.get(
             f"/repos/{quote(owner, safe='')}/{quote(repo, safe='')}/contents/"
             f"{quote(path, safe='/')}",
             headers={"Accept": "application/vnd.github.raw"},
+            params={"ref": ref} if ref else None,
         )
-        if resp.status_code == 404:
+        if resp.status_code == 404 and ref is None:
             return None
         resp.raise_for_status()
         return resp.text

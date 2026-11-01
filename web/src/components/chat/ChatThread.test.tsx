@@ -126,8 +126,14 @@ describe("ChatThread", () => {
     act(() => { while (frames.length) frames.shift()!(0); });
     expect(viewport.scrollTop).toBe(1400);
 
-    viewport.scrollTop = 100;
-    fireEvent.scroll(viewport);
+    act(() => {
+      resized();
+      viewport.scrollTop = 100;
+      fireEvent.scroll(viewport);
+      // Simulate an already queued frame before the effect can unsubscribe.
+      while (frames.length) frames.shift()!(0);
+    });
+    expect(viewport.scrollTop).toBe(100);
     expect(disconnected).toHaveBeenCalledOnce();
     expect(screen.getByRole("button", { name: /jump to latest/i })).toBeInTheDocument();
     Object.defineProperty(viewport, "scrollHeight", { value: 1800, configurable: true });

@@ -3735,6 +3735,20 @@
         "title": "Body_preview_bundle_api_settings_bundle_preview_post",
         "type": "object"
       },
+      "Body_replace_source_file_api_profile_sources__doc_id__file_put": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_replace_source_file_api_profile_sources__doc_id__file_put",
+        "type": "object"
+      },
       "Body_transcribe_audio_api_transcribe_post": {
         "properties": {
           "file": {
@@ -7764,6 +7778,61 @@
           "email"
         ],
         "title": "ForgotPasswordRequest",
+        "type": "object"
+      },
+      "GithubRepositoryOut": {
+        "properties": {
+          "defaultBranch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaultbranch"
+          },
+          "fullName": {
+            "title": "Fullname",
+            "type": "string"
+          },
+          "included": {
+            "default": false,
+            "title": "Included",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "selectedBranch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selectedbranch"
+          },
+          "uploadedOverride": {
+            "default": false,
+            "title": "Uploadedoverride",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "owner",
+          "name",
+          "fullName"
+        ],
+        "title": "GithubRepositoryOut",
         "type": "object"
       },
       "GmailConnectOut": {
@@ -13002,6 +13071,13 @@
             },
             "title": "Githubrepoallow",
             "type": "array"
+          },
+          "githubRepoBranches": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Githubrepobranches",
+            "type": "object"
           },
           "githubRepoDeny": {
             "items": {
@@ -20108,6 +20184,11 @@
             ],
             "title": "Anchor"
           },
+          "fileExists": {
+            "default": true,
+            "title": "Fileexists",
+            "type": "boolean"
+          },
           "filename": {
             "title": "Filename",
             "type": "string"
@@ -20115,6 +20196,17 @@
           "fragmentStatus": {
             "title": "Fragmentstatus",
             "type": "string"
+          },
+          "githubBranch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Githubbranch"
           },
           "id": {
             "title": "Id",
@@ -20141,6 +20233,17 @@
           "primary": {
             "title": "Primary",
             "type": "boolean"
+          },
+          "repoUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repourl"
           }
         },
         "required": [
@@ -33886,6 +33989,124 @@
         "summary": "Delete Document"
       }
     },
+    "/api/profile/github/repositories": {
+      "get": {
+        "operationId": "get_github_repositories_api_profile_github_repositories_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GithubRepositoryOut"
+                  },
+                  "title": "Response Get Github Repositories Api Profile Github Repositories Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Github Repositories"
+      }
+    },
+    "/api/profile/github/repositories/{owner}/{repo}/branches": {
+      "get": {
+        "operationId": "get_github_branches_api_profile_github_repositories__owner___repo__branches_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "owner",
+            "required": true,
+            "schema": {
+              "title": "Owner",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "repo",
+            "required": true,
+            "schema": {
+              "title": "Repo",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Get Github Branches Api Profile Github Repositories  Owner   Repo  Branches Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Github Branches"
+      }
+    },
     "/api/profile/matrix": {
       "get": {
         "operationId": "get_profile_matrix_api_profile_matrix_get",
@@ -34414,6 +34635,93 @@
         "summary": "Upload Source"
       }
     },
+    "/api/profile/sources/github-exclusions": {
+      "delete": {
+        "operationId": "clear_github_exclusions_api_profile_sources_github_exclusions_delete",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clear Github Exclusions"
+      },
+      "get": {
+        "operationId": "get_github_exclusions_api_profile_sources_github_exclusions_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Get Github Exclusions Api Profile Sources Github Exclusions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Github Exclusions"
+      }
+    },
     "/api/profile/sources/note": {
       "post": {
         "operationId": "add_note_api_profile_sources_note_post",
@@ -34645,6 +34953,117 @@
           }
         },
         "summary": "Patch Source"
+      }
+    },
+    "/api/profile/sources/{doc_id}/file": {
+      "get": {
+        "operationId": "download_source_file_api_profile_sources__doc_id__file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Source File"
+      },
+      "put": {
+        "operationId": "replace_source_file_api_profile_sources__doc_id__file_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_replace_source_file_api_profile_sources__doc_id__file_put"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/resume_tailor_harness__api__schemas__profile__SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Replace Source File"
       }
     },
     "/api/profile/suppressed-skills": {

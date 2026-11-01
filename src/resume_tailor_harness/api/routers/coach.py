@@ -255,6 +255,7 @@ def end_coach_session(
                         github_allow=tuple(profile_config.github_repo_allow),
                         github_deny=tuple(profile_config.github_repo_deny),
                         github_limit=profile_config.github_repo_limit,
+                        github_branches=profile_config.github_repo_branches,
                     ),
                     singleton_key="profile-build",
                     singleton_conflict="raise",

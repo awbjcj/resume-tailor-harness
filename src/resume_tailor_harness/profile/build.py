@@ -7,15 +7,25 @@ from resume_tailor_harness.llm_runner import Runner
 from resume_tailor_harness.models.base import ExtensibleModel
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.profile.corpus import load_manifest
-from resume_tailor_harness.profile.extractor import build_extractor_agent, extract_profile_facts
+from resume_tailor_harness.profile.extractor import (
+    build_extractor_agent,
+    extract_profile_facts,
+)
 from resume_tailor_harness.profile.fragments import (
     extract_fragments,
     extract_project_fragments,
     extract_synthesis_fragments,
 )
 from resume_tailor_harness.profile.github import GitHubClient
-from resume_tailor_harness.profile.github_harvest import HarvestReport, sync_github_sources
-from resume_tailor_harness.profile.github_ingest import build_github_profile, repo_to_project
+from resume_tailor_harness.profile.github_harvest import (
+    HarvestReport,
+    sync_github_sources,
+)
+from resume_tailor_harness.profile.github_ingest import (
+    build_github_profile,
+    normalize_repo_url,
+    repo_to_project,
+)
 from resume_tailor_harness.profile.inference import apply_inferred, infer_skills
 from resume_tailor_harness.profile.merge import (
     apply_synthesis_fragments,
@@ -90,6 +100,7 @@ def build_corpus_profile(
     github_allow: tuple[str, ...] = (),
     github_deny: tuple[str, ...] = (),
     github_limit: int = 20,
+    github_branches: dict[str, str] | None = None,
 ) -> tuple[ProfileFacts, BuildReport]:
     """Build merged, inference-enriched facts from the registered source corpus."""
     harvest: HarvestReport | None = None
@@ -101,12 +112,15 @@ def build_corpus_profile(
             allow=github_allow,
             deny=github_deny,
             limit=github_limit,
+            branches=github_branches,
         )
     manifest = load_manifest(profile_dir)
     if not manifest.docs:
         raise ValueError(
             "No sources are registered. Run 'resume-tailor-harness profile add <file>' first."
         )
+    if not any(doc.primary for doc in manifest.docs):
+        raise ValueError("Add a primary resume source before building the profile")
     agent = extractor_agent if extractor_agent is not None else build_extractor_agent()
     extraction = extract_fragments(profile_dir, manifest, agent)
     report = BuildReport(doc_status=extraction.status)
@@ -192,6 +206,7 @@ def build_corpus_profile(
                 else github.fetch_repos(github_username)
             )
             languages = harvest.languages if harvest is not None else {}
+            excluded_repos = set(load_manifest(profile_dir).excluded_github_repos)
             merged = merge_facts(
                 merged,
                 github_projects=[
@@ -202,6 +217,7 @@ def build_corpus_profile(
                         else None,
                     )
                     for repo in repos
+                    if normalize_repo_url(repo.get("html_url")) not in excluded_repos
                 ],
                 github_profile=build_github_profile(profile_data, repos),
             )

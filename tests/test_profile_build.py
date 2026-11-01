@@ -12,8 +12,11 @@ from resume_tailor_harness.models.profile import (
     Skill,
 )
 from resume_tailor_harness.profile.build import build_corpus_profile, build_profile
-from resume_tailor_harness.profile.aspect_classifier import AspectAssignment, AspectAssignments
-from resume_tailor_harness.profile.corpus import add_source
+from resume_tailor_harness.profile.aspect_classifier import (
+    AspectAssignment,
+    AspectAssignments,
+)
+from resume_tailor_harness.profile.corpus import add_source, remove_source
 from resume_tailor_harness.profile.inference import InferredSkill, InferredSkills
 from resume_tailor_harness.profile.synthesis import (
     ClaimVerdict,
@@ -119,6 +122,27 @@ def test_build_profile_skips_github_when_no_username(tmp_path):
     assert facts.projects == []
 
 
+def test_removed_github_source_is_not_reintroduced_by_metadata_merge(tmp_path):
+    profile_dir = tmp_path / "profile"
+    resume = tmp_path / "resume.txt"
+    resume.write_text("Ada resume", encoding="utf-8")
+    add_source(profile_dir, resume)
+    dossier = tmp_path / "engine-dossier.md"
+    dossier.write_text(
+        "---\nrepo_url: https://github.com/ada/engine\n---\n# Engine", encoding="utf-8"
+    )
+    doc = add_source(profile_dir, dossier, mode="project", origin="github")
+    remove_source(profile_dir, doc.id, purge=True, exclude_github=True)
+    facts, _ = build_corpus_profile(
+        profile_dir,
+        github_username="ada",
+        extractor_agent=_FakeAgent(ProfileFacts(contact=Contact(name="Ada"))),
+        github_client=_FakeGitHub(),
+    )
+    assert facts.projects == []
+    assert facts.github_profile is not None
+
+
 def test_build_profile_closes_the_github_client_it_creates(tmp_path, monkeypatch):
     resume = tmp_path / "resume.txt"
     resume.write_text("Ada", encoding="utf-8")
@@ -130,7 +154,9 @@ def test_build_profile_closes_the_github_client_it_creates(tmp_path, monkeypatch
             self.closed = True
 
     github = OwnedGitHub()
-    monkeypatch.setattr("resume_tailor_harness.profile.build.GitHubClient", lambda: github)
+    monkeypatch.setattr(
+        "resume_tailor_harness.profile.build.GitHubClient", lambda: github
+    )
 
     build_profile(
         resume_path=resume,
