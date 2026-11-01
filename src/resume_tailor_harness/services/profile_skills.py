@@ -18,6 +18,7 @@ from resume_tailor_harness.profile.manual_skills import (
     ManualAliasEntry,
     ManualSkillEntry,
     ManualSuppressEntry,
+    ManualSkillsLedger,
     apply_manual_skills,
     load_manual_skills,
     manual_skills_lock,
@@ -25,6 +26,13 @@ from resume_tailor_harness.profile.manual_skills import (
 )
 from resume_tailor_harness.profile.matrix import rebuild_saved_matrix
 from resume_tailor_harness.profile.store import load_facts, save_facts
+from resume_tailor_harness.profile.conversation import (
+    capture_skill_overrides,
+    edits_path,
+    load_edits,
+    save_edits,
+)
+from resume_tailor_harness.rollback import rollback_scope
 from resume_tailor_harness.tracking.match_gap import normalize_skill
 
 
@@ -54,6 +62,30 @@ def _facts_path(profile_dir: str | Path) -> Path:
 
 def _ledger_path(profile_dir: str | Path) -> Path:
     return Path(profile_dir) / "manual_skills.json"
+
+
+def _commit_skill_mutation(
+    profile_dir: str | Path,
+    facts: ProfileFacts,
+    ledger: ManualSkillsLedger,
+    *,
+    restoring_token: str = "",
+) -> None:
+    root = Path(profile_dir)
+    edits = load_edits(root)
+    capture_skill_overrides(facts, edits, restoring_token=restoring_token)
+    paths = (
+        _facts_path(root),
+        _ledger_path(root),
+        root / "matrix.json",
+        edits_path(root),
+    )
+    with rollback_scope(paths):
+        save_facts(facts, _facts_path(root))
+        save_manual_skills(ledger, _ledger_path(root))
+        if edits_path(root).exists():
+            save_edits(root, edits)
+        rebuild_saved_matrix(root, facts)
 
 
 def _load_facts_or_raise(profile_dir: str | Path) -> ProfileFacts:
@@ -109,9 +141,7 @@ def add_skill(
         entry = ManualSkillEntry(name=name, category=category, added_at=_utcnow())
         ledger.entries.append(entry)
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        save_facts(updated_facts, _facts_path(profile_dir))
-        save_manual_skills(ledger, _ledger_path(profile_dir))
-        rebuild_saved_matrix(profile_dir, updated_facts)
+        _commit_skill_mutation(profile_dir, updated_facts, ledger)
         return entry
 
 
@@ -144,9 +174,7 @@ def add_alias(profile_dir: str | Path, skill_id: str, alias: str) -> ManualAlias
         ledger = load_manual_skills(_ledger_path(profile_dir))
         ledger.entries.append(entry)
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        save_facts(updated_facts, _facts_path(profile_dir))
-        save_manual_skills(ledger, _ledger_path(profile_dir))
-        rebuild_saved_matrix(profile_dir, updated_facts)
+        _commit_skill_mutation(profile_dir, updated_facts, ledger)
         return entry
 
 
@@ -193,9 +221,7 @@ def delete_skill(profile_dir: str | Path, key: str) -> None:
                 ManualSuppressEntry(token=token, display=match.name, added_at=_utcnow())
             )
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        save_facts(updated_facts, _facts_path(profile_dir))
-        save_manual_skills(ledger, _ledger_path(profile_dir))
-        rebuild_saved_matrix(profile_dir, updated_facts)
+        _commit_skill_mutation(profile_dir, updated_facts, ledger)
 
 
 def restore_skill(profile_dir: str | Path, token: str) -> None:
@@ -215,6 +241,6 @@ def restore_skill(profile_dir: str | Path, token: str) -> None:
             if not (e.kind == "suppress" and normalize_skill(e.token) == norm)
         ]
         updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        save_facts(updated_facts, _facts_path(profile_dir))
-        save_manual_skills(ledger, _ledger_path(profile_dir))
-        rebuild_saved_matrix(profile_dir, updated_facts)
+        _commit_skill_mutation(
+            profile_dir, updated_facts, ledger, restoring_token=token
+        )

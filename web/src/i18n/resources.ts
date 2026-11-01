@@ -4,6 +4,7 @@ import { billingEn, billingZh } from "./billing";
 import { passwordManagerEn, passwordManagerZh } from "./password-manager";
 import { manualJobEn, manualJobZh } from "./manual-job";
 import { mailboxesEn, mailboxesZh } from "./mailboxes";
+import type { profileChangesEn } from "./profile-changes";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -28,6 +29,8 @@ const en = {
   passwordManager: passwordManagerEn,
   manualJob: manualJobEn,
   mailboxes: mailboxesEn,
+  // Coach-only copy is registered by its lazy route, keeping it out of startup.
+  profileChanges: {} as typeof profileChangesEn,
   agentPrompts: {
     originalLanguage: "Built-in instructions are shown in their original language.",
   },
@@ -893,6 +896,7 @@ const zhCN = {
   passwordManager: passwordManagerZh,
   manualJob: manualJobZh,
   mailboxes: mailboxesZh,
+  profileChanges: {} as typeof profileChangesEn,
   agentPrompts: {
     originalLanguage: "内置指令以原文显示。",
   },

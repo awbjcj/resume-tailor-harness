@@ -66,7 +66,9 @@
     "Saved matrix.json": "已保存 matrix.json",
     "Inspecting public job page": "正在检查公开职位页面",
     "Checking extraction rules": "正在检查提取规则",
-    "Checking public job board": "正在检查公开招聘列表"
+    "Checking public job board": "正在检查公开招聘列表",
+    "Rebuilding your conversational profile": "正在重新构建通过对话创建的个人资料",
+    "Saved profile and skill matrix": "已保存个人资料和技能矩阵"
   },
   "displayValues": {
     "experience": "工作经历",

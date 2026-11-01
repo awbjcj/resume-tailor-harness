@@ -2886,6 +2886,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile/coach/sessions/{session_id}/changes/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Profile Changes */
+        post: operations["resolve_profile_changes_api_profile_coach_sessions__session_id__changes__draft_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/coach/sessions/{session_id}/end": {
         parameters: {
             query?: never;
@@ -6307,6 +6324,57 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** CoachChangeDecisionIn */
+        CoachChangeDecisionIn: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "apply" | "discard";
+            /** Revision */
+            revision: string;
+        };
+        /** CoachChangeDraftOut */
+        CoachChangeDraftOut: {
+            /** Id */
+            id: string;
+            /** Previews */
+            previews?: components["schemas"]["CoachChangePreviewOut"][];
+            /** Quotes */
+            quotes?: string[];
+            /** Revision */
+            revision: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "applied" | "discarded";
+            /** Title */
+            title: string;
+        };
+        /** CoachChangePreviewOut */
+        CoachChangePreviewOut: {
+            /** After */
+            after?: {
+                [key: string]: unknown;
+            } | null;
+            /** Before */
+            before?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Entity
+             * @default
+             */
+            entity: string;
+            /** Label */
+            label: string;
+            /**
+             * Operation
+             * @default
+             */
+            operation: string;
+        };
         /** CoachDraftNoteOut */
         CoachDraftNoteOut: {
             /** Quotes */
@@ -6397,6 +6465,8 @@ export interface components {
         CoachSessionOut: {
             /** Archivedat */
             archivedAt?: string | null;
+            /** Changedrafts */
+            changeDrafts?: components["schemas"]["CoachChangeDraftOut"][];
             /** Draftnotes */
             draftNotes?: components["schemas"]["CoachDraftNoteOut"][];
             /** Endedat */
@@ -19772,6 +19842,44 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoachSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_profile_changes_api_profile_coach_sessions__session_id__changes__draft_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoachChangeDecisionIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

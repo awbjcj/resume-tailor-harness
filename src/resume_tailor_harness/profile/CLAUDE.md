@@ -7,6 +7,20 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   verbatim quotes from the current user turn. The former batch interview API,
   CLI command, and web panel are retired; its history remains read-only input
   for avoiding repeated questions.
+- **Conversational edits are reviewed data changes.** The coach's profile tools
+  only read or preview; `profile/conversation.py` validates closed operations and
+  editable field allowlists. `services/profile_conversation.py` applies the exact
+  stored draft after a revision-bound approval, under the profile process lock,
+  with rollback across the edit ledger, facts, matrix and session receipt. Each
+  proposal quotes the current user turn. `conversation_edits.json` replays after
+  source extraction and manual skills; unknown targets warn instead of guessing.
+  Category operations affect the profile's skill display buckets, never the fixed
+  hard/soft/domain or shared taxonomy vocabularies. Inferred skills keep their
+  evidence-only status when organized. Full removal fences source replay;
+  explicit recreation begins from a blank profile. Conversations can create and
+  rebuild a profile without a primary resume. The hash-verified
+  `profile-conversation` skill ref is retained in influenced coach turn metadata.
+  See `docs/profile-conversation.md` for the API and acceptance cases.
 - **GitHub depth is two-tier; dossiers win.** `profile/github_harvest.py` writes
   qualifying repositories' root docs (README files plus CLAUDE, CONTEXT, and
   AGENTS markdown, capped at 30 KB per file) as deterministic

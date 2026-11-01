@@ -38,6 +38,7 @@ import { useRunStore } from "@/lib/runs/store";
 
 import { AgendaRail } from "./AgendaRail";
 import { DraftNoteCard } from "./DraftNoteCard";
+import { ProfileChangeCard } from "./ProfileChangeCard";
 import { ImpactCard } from "./ImpactCard";
 import { ResearchActionCard } from "./ResearchActionCard";
 import {
@@ -49,6 +50,7 @@ import {
   useEndCoachSession,
   useRenameCoachSession,
   useSaveCoachNote,
+  useResolveCoachChanges,
   useSendCoachMessage,
   useStartCoachSession,
   useUnarchiveCoachSession,
@@ -74,7 +76,7 @@ function RunError({ message, onRetry }: { message: string; onRetry: () => void }
 }
 
 export function CoachPage() {
-  useTranslation();
+  const { t } = useTranslation();
   const [showArchived, setShowArchived] = useState(false);
   const sessions = useCoachSessions(showArchived);
   const activeSummary = sessions.data?.sessions?.find((session) => session.status === "active");
@@ -86,6 +88,7 @@ export function CoachPage() {
   const end = useEndCoachSession();
   const saveNote = useSaveCoachNote();
   const discardNote = useDiscardCoachNote();
+  const resolveChanges = useResolveCoachChanges();
   const archive = useArchiveCoachSession();
   const unarchive = useUnarchiveCoachSession();
   const remove = useDeleteCoachSession();
@@ -228,6 +231,7 @@ export function CoachPage() {
 
   const active = session.data;
   const pendingDrafts = active?.draftNotes?.filter((note) => note.status === "pending") ?? [];
+  const pendingCount = pendingDrafts.length + (active?.changeDrafts?.filter((draft) => draft.status === "pending").length ?? 0);
   const savedDrafts = active?.draftNotes?.filter((note) => note.status === "saved") ?? [];
   const historyItems: ChatSessionHistoryItem[] = (sessions.data?.sessions ?? []).map((row) => {
     const date = formatUserDate(row.startedAt);
@@ -282,11 +286,11 @@ export function CoachPage() {
         icon={<Sparkles />}
         eyebrow="Guided evidence discovery"
         title="Profile Coach"
-        description="Use overlooked results, the scope of your work, and project evidence to create fact-based profile notes."
+        description={t("profileChanges.description")}
         meta={<>
           <Badge variant={active?.status === "active" ? "secondary" : "outline"}>{active?.status === "active" ? "Session live" : active?.status === "ended" ? "Session complete" : "Ready when you are"}</Badge>
           {active ? <Badge variant="outline">{active.topics?.length ?? 0} topics</Badge> : null}
-          {active ? <Badge variant="outline">{pendingDrafts.length} awaiting approval</Badge> : null}
+          {active ? <Badge variant="outline">{pendingCount} awaiting approval</Badge> : null}
           {active ? <Badge variant="outline">{savedDrafts.length} saved</Badge> : null}
         </>}
         actions={<>{active?.status === "active" ? (
@@ -295,7 +299,7 @@ export function CoachPage() {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Finish this coaching session?</AlertDialogTitle>
-                <AlertDialogDescription>{pendingDrafts.length ? `${pendingDrafts.length} pending draft note${pendingDrafts.length === 1 ? "" : "s"} will remain unsaved.` : "The coach will prepare a recap and close the thread."}</AlertDialogDescription>
+                <AlertDialogDescription>{pendingCount ? t("profileChanges.pendingEnd", { count: pendingCount }) : "The coach will prepare a recap and close the thread."}</AlertDialogDescription>
               </AlertDialogHeader>
               <label className="flex items-center gap-3 rounded-lg border p-3 text-sm">
                 <Checkbox checked={build} onCheckedChange={(checked) => setBuild(checked === true)} />
@@ -405,20 +409,6 @@ export function CoachPage() {
                     }}
                   />
                 ) : null}
-                <div className="space-y-4">
-                  {(active.draftNotes ?? []).map((note) => (
-                    <DraftNoteCard
-                      key={`${note.topicId}-${note.status}`}
-                      note={note}
-                      saving={saveNote.isPending}
-                      discarding={discardNote.isPending}
-                      onSave={(draft) => void saveNote.mutateAsync({ sessionId: active.sessionId, topicId: draft.topicId, title: draft.title, summary: draft.summary, quotes: draft.quotes ?? [] })}
-                      onDiscard={() => void discardNote.mutateAsync({ sessionId: active.sessionId, topicId: note.topicId })}
-                    />
-                  ))}
-                  {active.recap ? <Card className="bg-muted/30"><CardHeader><CardTitle className="text-lg">Session recap</CardTitle></CardHeader><CardContent className="text-base leading-7"><ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{active.recap}</ReactMarkdown></CardContent></Card> : null}
-                  {active.impact ? <ImpactCard impact={active.impact} /> : null}
-                </div>
               </div>
               {active.status === "active" ? (
                 <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
@@ -431,8 +421,30 @@ export function CoachPage() {
                     busy={busy}
                     settling={stream.status === "settled"}
                     ariaLabel="Message your Profile Coach"
-                    placeholder="Share the situation, what you did, and what changed…"
+                    placeholder={t("profileChanges.composer")}
                   />
+                </div>
+              ) : null}
+              {Boolean(active.changeDrafts?.length || active.draftNotes?.length || active.recap || active.impact) ? (
+                <div className="space-y-4 border-t p-4 sm:p-6">
+                  {(active.changeDrafts ?? []).map((draft) => (
+                    <ProfileChangeCard key={`${draft.id}-${draft.status}`} draft={draft}
+                      busy={busy || resolveChanges.isPending}
+                      onResolve={(decision) => resolveChanges.mutate({ sessionId: active.sessionId, draftId: draft.id, revision: draft.revision, decision })}
+                    />
+                  ))}
+                  {(active.draftNotes ?? []).map((note) => (
+                    <DraftNoteCard
+                      key={`${note.topicId}-${note.status}`}
+                      note={note}
+                      saving={saveNote.isPending}
+                      discarding={discardNote.isPending}
+                      onSave={(draft) => void saveNote.mutateAsync({ sessionId: active.sessionId, topicId: draft.topicId, title: draft.title, summary: draft.summary, quotes: draft.quotes ?? [] })}
+                      onDiscard={() => void discardNote.mutateAsync({ sessionId: active.sessionId, topicId: note.topicId })}
+                    />
+                  ))}
+                  {active.recap ? <Card className="bg-muted/30"><CardHeader><CardTitle className="text-lg">Session recap</CardTitle></CardHeader><CardContent className="text-base leading-7"><ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{active.recap}</ReactMarkdown></CardContent></Card> : null}
+                  {active.impact ? <ImpactCard impact={active.impact} /> : null}
                 </div>
               ) : null}
             </CardContent>

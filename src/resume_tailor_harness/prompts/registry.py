@@ -384,7 +384,7 @@ PROMPT_SPECS = (
         "coach",
         "Profile Coach",
         "profile",
-        "Runs evidence-locked profile coaching.",
+        "Builds and manages profile evidence through coaching and reviewed change proposals.",
         coach._COACH_INSTRUCTIONS,
     ),
     _spec(

@@ -6,6 +6,7 @@ must survive the model parser and run aggregation into our operational trace.
 """
 
 import json
+import ast
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
@@ -43,6 +44,89 @@ def _response(model_id: str, output: list[dict[str, Any]]) -> dict[str, Any]:
             "output_tokens_details": {"reasoning_tokens": 5},
         },
     }
+
+
+def test_profile_preview_tool_accepts_typed_proposals_without_writing(tmp_path):
+    from resume_tailor_harness.profile.conversation import make_profile_tools
+
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_api_key="offline-key",
+        openai_base_url="https://provider.invalid/v1",
+        openai_route_mode="api",
+        llm_retries=0,
+    )
+    model = build_model("openai:gpt-6.1-terra", settings=settings)
+    requests = []
+    proposal = {
+        "title": "Create profile",
+        "changes": [
+            {
+                "entity": "profile",
+                "operation": "create",
+                "values": {"contact": {"name": "Ada"}},
+                "quotes": ["My name is Ada"],
+            }
+        ],
+    }
+
+    def respond(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        assert len(requests) <= 2
+        if len(requests) == 1:
+            output = [
+                {
+                    "type": "function_call",
+                    "id": "fc_preview",
+                    "call_id": "preview1",
+                    "name": "preview_profile_changes",
+                    "arguments": json.dumps({"proposal": proposal}),
+                    "status": "completed",
+                }
+            ]
+        else:
+            output = [
+                {
+                    "type": "message",
+                    "id": "msg_preview",
+                    "role": "assistant",
+                    "status": "completed",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": "Review the proposed profile.",
+                            "annotations": [],
+                        }
+                    ],
+                }
+            ]
+        return httpx.Response(200, json=_response(model.id, output))
+
+    runner = AgentRunner(
+        Agent(
+            model=model,
+            tools=make_profile_tools(tmp_path, user_text="My name is Ada"),
+            telemetry=False,
+            **retry_kwargs(),
+            **tool_kwargs(),
+        ),
+        settings=settings,
+    )
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        model.http_client = client
+        result = runner.run("Preview my requested profile.")
+    assert result.content == "Review the proposed profile."
+    tool_output = next(
+        item["output"]
+        for item in requests[1]["input"]
+        if item.get("type") == "function_call_output"
+    )
+    # Agno stringifies dictionary tool observations as Python literals.
+    observed = ast.literal_eval(tool_output)
+    assert observed["valid"] is True and observed["saved"] is False
+    assert not (tmp_path / "facts.json").exists()
+    assert not (tmp_path / "conversation_edits.json").exists()
 
 
 def _sse_response(response: dict[str, Any]) -> httpx.Response:
@@ -238,7 +322,9 @@ async def test_h1b_tool_evidence_reaches_cache_and_api(monkeypatch, surface):
     engine = make_engine("sqlite://")
     init_db(engine)
     monkeypatch.setattr(service, "h1b_tools", fake_tools)
-    monkeypatch.setattr(service, "Agent", lambda **kwargs: Agent(telemetry=False, **kwargs))
+    monkeypatch.setattr(
+        service, "Agent", lambda **kwargs: Agent(telemetry=False, **kwargs)
+    )
     async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
 
         def offline_model(model_id, **kwargs):
@@ -346,7 +432,9 @@ async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, mo
         requests.append(body)
         assert str(request.url) == "https://provider.invalid/v1/responses"
         assert request.headers["authorization"] == "Bearer offline-key"
-        assert len(requests) <= 2, "The read-only tool loop must finish after one lookup"
+        assert len(requests) <= 2, (
+            "The read-only tool loop must finish after one lookup"
+        )
         output_format = body["text"]["format"]
         if output_format.get("strict"):
             schema = output_format["schema"]
@@ -410,16 +498,22 @@ async def test_reasoning_tool_loop_preserves_schema_and_usage(tmp_path, mode, mo
             async with httpx.AsyncClient(transport=transport) as client:
                 model.http_client = client
                 try:
-                    result = await runner.arun("Look up the contact name and format it.")
+                    result = await runner.arun(
+                        "Look up the contact name and format it."
+                    )
                 finally:
                     await runner.aclose()
         else:
             with httpx.Client(transport=transport) as client:
                 model.http_client = client
                 if mode == "stream":
-                    events = list(runner.stream("Look up the contact name and format it."))
+                    events = list(
+                        runner.stream("Look up the contact name and format it.")
+                    )
                     assert not any(isinstance(event, Failed) for event in events)
-                    assert sum(isinstance(event, ToolCompleted) for event in events) == 1
+                    assert (
+                        sum(isinstance(event, ToolCompleted) for event in events) == 1
+                    )
                     assert isinstance(events[-1], Completed)
                     result = events[-1].response
                 else:

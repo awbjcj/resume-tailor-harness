@@ -11,6 +11,7 @@ export type CoachSession = components["schemas"]["CoachSessionOut"];
 export type CoachSessionSummary = components["schemas"]["CoachSessionSummaryOut"];
 export type CoachSessions = components["schemas"]["CoachSessionsOut"];
 export type CoachDraftNote = components["schemas"]["CoachDraftNoteOut"];
+export type CoachChangeDraft = components["schemas"]["CoachChangeDraftOut"];
 export type CoachResearchAction = components["schemas"]["CoachResearchActionOut"];
 
 type RunOut = components["schemas"]["RunOut"];
@@ -262,6 +263,21 @@ export function useDiscardCoachNote() {
         queryClient.invalidateQueries({ queryKey: ["coach-sessions"] }),
       ]);
     },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useResolveCoachChanges() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sessionId, draftId, decision, revision }: {
+      sessionId: string; draftId: string; decision: "apply" | "discard"; revision: string;
+    }) => unwrap(api.POST("/api/profile/coach/sessions/{session_id}/changes/{draft_id}", {
+      params: { path: { session_id: sessionId, draft_id: draftId } },
+      body: { decision, revision },
+    })),
+    // Profile evidence affects the matrix, matching, setup and application views.
+    onSuccess: () => queryClient.invalidateQueries(),
     onError: (error: Error) => toast.error(error.message),
   });
 }

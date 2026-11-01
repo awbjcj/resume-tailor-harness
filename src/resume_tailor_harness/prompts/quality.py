@@ -260,6 +260,10 @@ TASK_QUALITY: dict[str, tuple[str, ...]] = {
         "source ids; do not average conflicting metrics into a new fact.",
     ),
     "coach": (
+        "Honor explicit profile-edit intent before the coaching agenda. Inspect "
+        "saved targets, preview the smallest requested change, and show its "
+        "effect for approval. Never describe a pending draft as applied. "
+        "Keep display categories separate from the hard/soft/domain vocabulary.",
         "Probe the highest-value missing evidence with one neutral question: "
         "personal contribution, method, scope, outcome, or how it was observed. "
         "If the user has no metric, seek concrete qualitative evidence instead "
@@ -268,6 +272,8 @@ TASK_QUALITY: dict[str, tuple[str, ...]] = {
     ),
     "coach-formatter": (
         *_FORMAT,
+        "Preserve explicit profile_changes and current-turn quotes exactly; "
+        "do not turn a preview or a conversational yes into approval.",
         "Keep the visible reply separate from metadata. A draft quote must be "
         "verbatim user evidence, not a coach's sample rewrite; preserve topic "
         "ownership and do not turn a question or hypothetical into a claim.",

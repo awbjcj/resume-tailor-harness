@@ -274,11 +274,6 @@
     "en": "{{v0}} overage ·",
     "zh-CN": "超额 {{v0}} ·"
   },
-  "{{v0}} pending draft note{{v1}} will remain unsaved.": {
-    "key": "ui_393fb0ecc147",
-    "en": "{{v0}} pending draft note{{v1}} will remain unsaved.",
-    "zh-CN": "{{v0}} 条待确认的草稿笔记不会保存。"
-  },
   "{{v0}} Refreshing updates every job at this company.": {
     "key": "ui_9b2cf7267887",
     "en": "{{v0}} Refreshing updates every job at this company.",
@@ -8934,11 +8929,6 @@
     "en": "Share roles, locations, industries, and boundaries in plain language.",
     "zh-CN": "说说你想找的职位、地点、行业，以及需要排除的条件。"
   },
-  "Share the situation, what you did, and what changed…": {
-    "key": "ui_4dd96593b499",
-    "en": "Share the situation, what you did, and what changed…",
-    "zh-CN": "说说当时的情况、你做了什么，以及结果如何…"
-  },
   "Shared / BYOK": {
     "key": "ui_bdb89a442df5",
     "en": "Shared / BYOK",
@@ -10423,11 +10413,6 @@
     "key": "ui_6b0718a3f5dc",
     "en": "Turn a career question into a useful draft",
     "zh-CN": "围绕求职问题，写出可用的草稿"
-  },
-  "Use overlooked results, the scope of your work, and project evidence to create fact-based profile notes.": {
-    "key": "ui_be4ea093d4d6",
-    "en": "Use overlooked results, the scope of your work, and project evidence to create fact-based profile notes.",
-    "zh-CN": "梳理容易遗漏的成果、职责范围和项目细节，补充到个人资料中。"
   },
   "Type": {
     "key": "ui_baaddf70fb5d",
