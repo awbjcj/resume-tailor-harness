@@ -1,5 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
@@ -42,5 +44,42 @@ describe("WorkspaceReview", () => {
     expect(await screen.findByRole("button", { name: "Approve and save" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Discard" }));
     await waitFor(() => expect(requests).toEqual([{ digest: saved.digest, actionIds: ["a1", "a2"], decision: "discard" }]));
+  });
+
+  it("preserves deselected actions when another chat turn finishes", async () => {
+    const user = userEvent.setup();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    let reads = 0;
+    server.use(http.get("/api/workspace-agent/proposals", () => {
+      reads += 1;
+      return HttpResponse.json({ proposals: [proposal()], nextOffset: null });
+    }));
+    const view = render(<WorkspaceReview surface="coach" sessionId="s1" turnCount={1} />, {
+      wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    await screen.findByText("Recruiter preparation");
+    await user.click(screen.getAllByRole("checkbox")[1]);
+    expect(screen.getAllByRole("checkbox")[1]).not.toBeChecked();
+    const previousReads = reads;
+    view.rerender(<WorkspaceReview surface="coach" sessionId="s1" turnCount={2} />);
+    await waitFor(() => expect(reads).toBeGreaterThan(previousReads));
+    await screen.findByText("Recruiter preparation");
+    expect(screen.getAllByRole("checkbox")[1]).not.toBeChecked();
+  });
+
+  it("lets the user choose which expired actions to discard", async () => {
+    const user = userEvent.setup();
+    const saved = proposal("2020-01-01T00:00:00Z");
+    const requests: unknown[] = [];
+    server.use(
+      http.get("/api/workspace-agent/proposals", () => HttpResponse.json({ proposals: [saved], nextOffset: null })),
+      http.post("/api/workspace-agent/proposals/p1/review", async ({ request }) => { requests.push(await request.json()); return HttpResponse.json(saved); }),
+    );
+    render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
+    await screen.findByText("Recruiter preparation");
+    expect(screen.getAllByRole("checkbox")[1]).toBeEnabled();
+    await user.click(screen.getAllByRole("checkbox")[1]);
+    await user.click(screen.getByRole("button", { name: "Discard" }));
+    await waitFor(() => expect(requests).toEqual([{ digest: saved.digest, actionIds: ["a1"], decision: "discard" }]));
   });
 });
