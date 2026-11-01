@@ -115,13 +115,16 @@ def _execute_database(session: Session, change: WorkspaceChange, actor: str) -> 
     if op == "job.delete":
         if not board.delete(session, job_id):
             raise ValueError("Job has progress and cannot be deleted")
-        for note in session.exec(
-            select(WorkspaceNote).where(WorkspaceNote.job_id == job_id)
-        ).all():
-            session.delete(note)
         return {"job_id": job_id, "deleted": True}
     if op == "application.update":
-        return record(board.upsert_application(session, job_id, **v))
+        application = board.upsert_application(session, job_id, **v)
+        # The legacy board helper treats None as omission. The reviewed command
+        # distinguishes an omitted field from an explicitly approved clear.
+        if "notes" in v:
+            application.notes = v["notes"]
+            session.add(application)
+            session.flush()
+        return record(application)
     if op.startswith("event."):
         if op == "event.create":
             return record(

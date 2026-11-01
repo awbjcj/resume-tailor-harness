@@ -43,3 +43,5 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   excludes it from answer detection and the scored transcript. Research or a
   practice answer never advances employer-side application status; that requires
   a separately reviewed workspace action.
+  `interview/store.py::append_workspace_exchange` owns maintenance persistence
+  and retains skill provenance just like a practice turn.

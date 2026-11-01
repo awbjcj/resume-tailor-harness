@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, col, select
 
-from resume_tailor_harness.services import application_events
+from resume_tailor_harness.services import application_events, board
 from resume_tailor_harness.services.config_store import YamlConfigStore
 from resume_tailor_harness.tracking.tables import (
     ApplicationQuestion,
@@ -74,9 +74,7 @@ def schemas() -> dict[str, Any]:
 
     return {
         "job.create": JobInput.model_json_schema(),
-        "job.update": {
-            "oneOf": [JobInput.model_json_schema(), StageInput.model_json_schema()]
-        },
+        "job.update": TypeAdapter(JobInput | StageInput).json_schema(),
         "application.update": ApplicationInput.model_json_schema(),
         "note.create": NoteInput.model_json_schema(),
         "note.update": NoteInput.model_json_schema(),
@@ -135,7 +133,9 @@ def _global_snapshot(
         return [
             record(row)
             for row in session.exec(
-                select(ApplicationQuestion).order_by(col(ApplicationQuestion.id))
+                select(ApplicationQuestion)
+                .where(col(ApplicationQuestion.job_id).is_(None))
+                .order_by(col(ApplicationQuestion.id))
             ).all()
         ]
     if operation == "job.create":
@@ -157,6 +157,29 @@ def snapshot_for(
     }:
         return job_snapshot(session, change.job_id)
     return _global_snapshot(session, root, config, change.operation)
+
+
+def review_revision(snapshot: Any, change: WorkspaceChange) -> str:
+    """Bind approval to the records used by this preview, not unrelated notes."""
+    if change.operation.startswith("note.") or change.operation == "preparation.save":
+        snapshot = {
+            "job": snapshot["job"],
+            "note": _target(snapshot["notes"], change.target_id)
+            if change.operation in {"note.update", "note.delete"}
+            else None,
+        }
+    elif change.operation == "artifact.select":
+        kind = change.values["kind"]
+        field = "resume_version_id" if kind == "resume" else "cover_letter_id"
+        snapshot = {
+            "job": snapshot["job"],
+            "selected": snapshot["application"].get(field),
+            "document": _target(
+                snapshot["resumes" if kind == "resume" else "cover_letters"],
+                change.target_id,
+            ),
+        }
+    return revision(snapshot)
 
 
 def prepare_change(
@@ -259,8 +282,12 @@ def prepare_change(
                 else ApplicationEventUpdate
             )
             values = _validate_values(model, values)
-            merged = {**(before or {}), **values}
-            payload = ApplicationEventCreate.model_validate(merged).model_dump()
+            # Only the incoming fields cross the API boundary. SQLite returns
+            # stored UTC timestamps without an offset; they are not user input.
+            payload = {
+                **(before or {}),
+                **model.model_validate(values).model_dump(exclude_unset=True),
+            }
             try:
                 application_events._validate(payload)
             except application_events.EventValidationError as exc:
@@ -336,6 +363,10 @@ def prepare_change(
         after = {"archived": op == "job.archive"}
     elif op.endswith(".delete"):
         after = {"deleted": True}
+    elif op == "artifact.select":
+        field = "resume_version_id" if values["kind"] == "resume" else "cover_letter_id"
+        before = {field: snap["application"].get(field)}
+        after = {field: change.target_id}
     elif op == "profile.change":
         before = [p["before"] for p in prepared["profile_draft"]["previews"]]
         after = [p["after"] for p in prepared["profile_draft"]["previews"]]
@@ -354,7 +385,10 @@ def prepare_change(
             if implied
             else current_status,
         }
-    elif op == "job.update" and "status" not in values:
+    elif op == "job.update" and "status" in values:
+        after = board.stage_changes(snap["job"]["status"], values["status"])
+        before = {key: snap["job"].get(key) for key in after}
+    elif op == "job.update":
         after = {
             **values,
             "status": "raw",
@@ -371,7 +405,7 @@ def prepare_change(
     return {
         "id": uuid.uuid4().hex,
         "change": change.model_copy(update={"values": values}).model_dump(mode="json"),
-        "expected_revision": revision(snap),
+        "expected_revision": review_revision(snap, change),
         "before": before,
         "after": after,
         **prepared,
@@ -401,7 +435,12 @@ def prepare_plan(
         if sum(c.job_id == job_id for c in plan.changes) > 1:
             raise ValueError("Review a job deletion without other changes to that job")
     targets = [
-        (c.operation.split(".")[0], c.job_id, c.target_id)
+        (
+            c.operation.split(".")[0],
+            c.values.get("kind") if c.operation.startswith("artifact.") else None,
+            c.job_id,
+            c.target_id,
+        )
         for c in plan.changes
         if c.target_id is not None
     ]

@@ -353,6 +353,35 @@ def apply_answer_delta(
     return mutate_session(interview_dir, session_id, apply)
 
 
+def append_workspace_exchange(
+    interview_dir: Path | str,
+    session_id: str,
+    *,
+    message: str,
+    response: str,
+    skill_uses: list[SkillUse],
+) -> dict:
+    """Persist maintenance and provenance without touching the practice plan."""
+
+    def apply(session: dict) -> None:
+        if session["status"] != "active" or session["concluded"]:
+            raise ValueError("Interview is no longer active")
+        now = _now()
+        session["turns"].extend(
+            [
+                InterviewTurnRecord(
+                    role="candidate", text=message, workspace_request=True, at=now
+                ).model_dump(mode="json"),
+                InterviewTurnRecord(
+                    role="interviewer", text=response, workspace_request=True, at=now
+                ).model_dump(mode="json"),
+            ]
+        )
+        session["skill_uses"].extend(use.model_dump(mode="json") for use in skill_uses)
+
+    return mutate_session(interview_dir, session_id, apply)
+
+
 def end_with_debrief(
     interview_dir: Path | str,
     session_id: str,
@@ -397,12 +426,16 @@ def rename_session(interview_dir: Path | str, session_id: str, title: str) -> di
     return _STORE.rename(interview_dir, session_id, title)
 
 
-def delete_sessions_for_job(interview_dir: Path | str, job_id: int) -> int:
+def delete_sessions_for_job(
+    interview_dir: Path | str, job_id: int, *, session_ids: set[str] | None = None
+) -> int:
     """Remove all interview session files for a deleted job. Returns count removed."""
     removed = 0
     with interview_lock():
         for session in list_sessions(interview_dir, include_archived=True):
-            if session["job_id"] != job_id:
+            if session["job_id"] != job_id or (
+                session_ids is not None and session["session_id"] not in session_ids
+            ):
                 continue
             _STORE.delete(interview_dir, session["session_id"])
             _delete_audio_artifacts(interview_dir, session)

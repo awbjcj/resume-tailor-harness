@@ -715,8 +715,9 @@ def test_open_session_keeps_company_intelligence_snapshot_after_refresh(
     assert saved["context"]["company_intelligence"]["overview"] == "Original overview"
 
 
+@pytest.mark.parametrize("with_skill_metadata", [False, True])
 def test_workspace_request_keeps_practice_plan_and_does_not_count_as_answer(
-    tmp_path, engine
+    tmp_path, engine, with_skill_metadata
 ):
     from resume_tailor_harness.services.config_store import YamlConfigStore
     from resume_tailor_harness.workspace_agent.runtime import (
@@ -724,6 +725,12 @@ def test_workspace_request_keeps_practice_plan_and_does_not_count_as_answer(
         use_workspace_tools,
     )
     from resume_tailor_harness.interview.agent import render_transcript
+    from resume_tailor_harness.career_skills.models import AgentFamily, AgentRunMeta
+    from resume_tailor_harness.career_skills.registry import CareerSkillRegistry
+
+    skill = CareerSkillRegistry.from_paths("skills", "skills-lock.json").require(
+        "mock-interview-coach", family=AgentFamily.INTERVIEW, use="interview_turn"
+    )
 
     opened = _open(tmp_path, engine)
     sid = opened["sessionId"]
@@ -733,6 +740,17 @@ def test_workspace_request_keeps_practice_plan_and_does_not_count_as_answer(
     )
 
     class MaintenanceRunner(FakeRunner):
+        run_meta = (
+            AgentRunMeta(
+                agent_family=AgentFamily.INTERVIEW,
+                model_id="offline-interviewer",
+                prompt_policy_version="test",
+                skill_ref=skill.ref,
+            )
+            if with_skill_metadata
+            else None
+        )
+
         def run(self, prompt):
             tools = {f.__name__: f for f in toolkit.functions()}
             tools["begin_workspace_request"]()
@@ -752,6 +770,9 @@ def test_workspace_request_keeps_practice_plan_and_does_not_count_as_answer(
     assert saved["concluded"] is False
     assert len(saved["turns"]) == len(original["turns"]) + 2
     assert saved["turns"][-1]["workspace_request"] is True
+    if with_skill_metadata:
+        assert saved["skill_uses"][-1]["skill_ref"] == skill.ref.model_dump(mode="json")
+        assert saved["skill_uses"][-1]["stage"] == "turn"
     assert "Show my job notes" not in render_transcript(saved)
     result = run_debrief_turn(
         FakeReporter(),

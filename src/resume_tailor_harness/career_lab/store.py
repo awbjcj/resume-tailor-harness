@@ -69,9 +69,15 @@ def active_session_for_job(root: Path | str, job_id: int | None) -> dict | None:
     )
 
 
-def delete_sessions_for_job(root: Path | str, job_id: int) -> int:
+def delete_sessions_for_job(
+    root: Path | str, job_id: int, *, session_ids: set[str] | None = None
+) -> int:
     """Drop every thread anchored to a deleted job. Returns how many were removed."""
-    return store.delete_where(root, lambda row: row.get("job_id") == job_id)
+    return store.delete_where(
+        root,
+        lambda row: row.get("job_id") == job_id
+        and (session_ids is None or row["session_id"] in session_ids),
+    )
 
 
 def rename_session(root: Path | str, session_id: str, title: str) -> dict:
