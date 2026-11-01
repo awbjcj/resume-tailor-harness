@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+
 import asyncio
 import logging
 from pathlib import Path
 from collections.abc import Callable
 from typing import cast
 
+from resume_tailor_harness.workspace_agent.runtime import workspace_turn
 from resume_tailor_harness.api.schemas.config import SearchConfigDoc
 from resume_tailor_harness.concurrency import gather_isolated
 from resume_tailor_harness.discovery.scout import (
@@ -23,7 +25,9 @@ from resume_tailor_harness.discovery.scout import (
     normalize_turn,
 )
 from resume_tailor_harness.discovery.scout_models import Citation
-from resume_tailor_harness.discovery.source_resolution.models import CompanySourceResolution
+from resume_tailor_harness.discovery.source_resolution.models import (
+    CompanySourceResolution,
+)
 from resume_tailor_harness.discovery.source_resolution.resolver import (
     CompanySourceResolver,
     CompanySourceResolverLike,
@@ -52,7 +56,9 @@ from resume_tailor_harness.discovery.scout_store import (
 from resume_tailor_harness.llm_runner import Runner, UnparsedAgentOutput
 from resume_tailor_harness.security.outbound import validate_public_url
 from resume_tailor_harness.services.config_store import ConfigStore
-from resume_tailor_harness.services.scout_intelligence import ScoutCompanyIntelligenceLookup
+from resume_tailor_harness.services.scout_intelligence import (
+    ScoutCompanyIntelligenceLookup,
+)
 from resume_tailor_harness.services.scout_context import (
     _EXISTING_FIELD,
     _candidate_keys,
@@ -73,7 +79,11 @@ from resume_tailor_harness.services.sources import (
 )
 from resume_tailor_harness.sessions.stream import Notice, NullSink, StreamSink
 from resume_tailor_harness.sessions.store import now_iso
-from resume_tailor_harness.sessions.turns import TurnRejected, format_with_retry, persona_output
+from resume_tailor_harness.sessions.turns import (
+    TurnRejected,
+    format_with_retry,
+    persona_output,
+)
 from resume_tailor_harness.taxonomy.industries import normalize_company
 
 logger = logging.getLogger(__name__)
@@ -482,6 +492,7 @@ def _run_turn(
     return session_view(workspace_root, session_id, browser_enabled=browser_enabled)
 
 
+@workspace_turn("scout")
 def run_start_turn(
     reporter,
     *,
@@ -514,6 +525,7 @@ def run_start_turn(
     )
 
 
+@workspace_turn("scout")
 def run_message_turn(
     reporter,
     *,
@@ -546,6 +558,7 @@ def run_message_turn(
     )
 
 
+@workspace_turn("scout")
 def run_recap_turn(
     reporter,
     *,

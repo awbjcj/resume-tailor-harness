@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+
 from agno.agent import Agent
 
+from resume_tailor_harness.workspace_agent.runtime import (
+    workspace_tools,
+    workspace_instructions,
+)
 from resume_tailor_harness.career_lab.models import (
     CareerLabArtifactMeta,
     CareerLabRoute,
@@ -84,7 +89,12 @@ def build_persona_agent(
         Agent(
             model=model,
             description="Draft one Career Lab response using one verified skill.",
-            instructions=with_guidance("career-lab-persona", _PERSONA_INSTRUCTIONS),
+            tools=workspace_tools() or None,
+            tool_call_limit=15,
+            instructions=with_guidance(
+                "career-lab-persona",
+                [*_PERSONA_INSTRUCTIONS, *workspace_instructions()],
+            ),
             **skill_kwargs(skill),
             **retry_kwargs(),
         ),

@@ -71,6 +71,7 @@ class InterviewTurnRecord(ExtensibleModel):
     text: str = ""
     question_id: str = ""
     is_followup: bool = False
+    workspace_request: bool = False
     at: str = ""
     notice: str = ""
     hints: list[str] = Field(default_factory=list)

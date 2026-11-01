@@ -205,7 +205,7 @@
       "sourceType": "local",
       "reviewedRef": "fb34e2f26f597bcd90306d9f949ac25a96f6469d",
       "skillPath": "skills/mock-interview-coach/SKILL.md",
-      "computedHash": "75c421bd94f5e7df02f76918d9feaec238677d23ca3915c464cf74af91985b58",
+      "computedHash": "cec77351bce214d86e13f03a93a425f85236be924c47bf9a1f399f3e179b3375",
       "localVersion": "2026-08-02",
       "family": "interview",
       "uses": ["interview_turn", "debrief"],
@@ -252,9 +252,7 @@
       "computedHash": "341f8be7dc58063812e6ac7c7c7a2abf4aafcdbcd929065c42805ea83c4ab85d",
       "localVersion": "2026-11-01",
       "family": "internal_profile",
-      "uses": [
-        "profile_coach"
-      ],
+      "uses": ["profile_coach"],
       "visibility": "internal"
     },
     "project-dossier": {
@@ -398,6 +396,17 @@
       "localVersion": "2026-08-02",
       "family": "resume_authoring",
       "uses": ["tailor", "revision"],
+      "visibility": "public"
+    },
+    "workspace-management": {
+      "source": "local",
+      "sourceType": "local",
+      "reviewedRef": "workspace-management-v1",
+      "skillPath": "skills/workspace-management/SKILL.md",
+      "computedHash": "b0aa4c01a30827c2e327f9b24364b958136792e9470914739c544d778d67a31c",
+      "localVersion": "2026-11-01",
+      "family": "career_lab",
+      "uses": ["career_lab"],
       "visibility": "public"
     }
   }

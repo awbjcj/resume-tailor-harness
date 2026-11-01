@@ -53,7 +53,7 @@ def _write_manifest(path: Path, entries: dict[str, dict]) -> None:
 def test_shipped_manifest_covers_every_skill_once():
     registry = registry_for_paths(Path("skills"), Path("skills-lock.json"))
 
-    assert len(registry.all()) == 36
+    assert len(registry.all()) == 37
     assert (
         registry.require(
             "profile-conversation",
@@ -62,7 +62,7 @@ def test_shipped_manifest_covers_every_skill_once():
         ).ref.name
         == "profile-conversation"
     )
-    assert len(registry.public_capabilities()) == 34
+    assert len(registry.public_capabilities()) == 35
     assert (
         registry.require(
             "project-dossier",

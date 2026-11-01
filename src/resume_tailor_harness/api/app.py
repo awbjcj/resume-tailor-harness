@@ -75,6 +75,7 @@ from resume_tailor_harness.api.routers import scout as scout_router
 from resume_tailor_harness.api.routers import secrets as secrets_router
 from resume_tailor_harness.api.routers import settings as settings_router
 from resume_tailor_harness.api.routers import setup as setup_router
+from resume_tailor_harness.api.routers import workspace_agent as workspace_agent_router
 from resume_tailor_harness.api.routers import sources as sources_router
 from resume_tailor_harness.api.routers import scrape as scrape_router
 from resume_tailor_harness.api.routers import suggestions as suggestions_router
@@ -485,6 +486,7 @@ def create_app(
     app.include_router(secrets_router.router, prefix="/api", dependencies=guarded)
     app.include_router(profile_router.router, prefix="/api", dependencies=guarded)
     app.include_router(coach_router.router, prefix="/api", dependencies=guarded)
+    app.include_router(workspace_agent_router.router, prefix="/api", dependencies=guarded)
     app.include_router(career_lab_router.router, prefix="/api", dependencies=guarded)
     app.include_router(interview_router.router, prefix="/api", dependencies=guarded)
     app.include_router(transcribe_router.router, prefix="/api", dependencies=guarded)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+
 import json
 from dataclasses import dataclass
 from typing import Literal
@@ -9,6 +10,10 @@ from typing import Literal
 from agno.agent import Agent
 from pydantic import Field
 
+from resume_tailor_harness.workspace_agent.runtime import (
+    workspace_tools,
+    workspace_instructions,
+)
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.career_skills.agno import skill_kwargs
 from resume_tailor_harness.career_skills.models import AgentFamily, AgentRunMeta
@@ -276,7 +281,7 @@ def render_transcript(session: dict, char_cap: int = TRANSCRIPT_CHAR_CAP) -> str
     active = [
         f"{turn['role'].upper()} ({turn['question_id'] or '-'}): {turn['text']}"
         for turn in session["turns"]
-        if turn["question_id"] not in done
+        if turn["question_id"] not in done and not turn.get("workspace_request")
     ]
     prefix = "TRANSCRIPT:\n"
     collapsed_text = "\n".join(collapsed)
@@ -411,7 +416,11 @@ def build_interviewer_agent(
         Agent(
             model=model,
             description="Conduct one mock interview turn in character.",
-            instructions=with_guidance("interviewer", persona_instructions(style)),
+            tools=workspace_tools() or None,
+            tool_call_limit=15,
+            instructions=with_guidance(
+                "interviewer", [*persona_instructions(style), *workspace_instructions()]
+            ),
             **skill_kwargs(resolved_skill),
             **retry_kwargs(),
         ),
@@ -446,7 +455,11 @@ def build_debrief_agent(*, skill: VerifiedSkill | None = None) -> Runner:
         Agent(
             model=model,
             description="Write a structured mock interview debrief.",
-            instructions=with_guidance("interview-debrief", _DEBRIEF_INSTRUCTIONS),
+            tools=workspace_tools() or None,
+            tool_call_limit=15,
+            instructions=with_guidance(
+                "interview-debrief", [*_DEBRIEF_INSTRUCTIONS, *workspace_instructions()]
+            ),
             **skill_kwargs(resolved_skill),
             **retry_kwargs(),
         ),

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+
 import logging
 import uuid
 from functools import partial
 from pathlib import Path
 
+from resume_tailor_harness.workspace_agent.runtime import workspace_turn
 from resume_tailor_harness.llm_runner import Runner, UnparsedAgentOutput
 from resume_tailor_harness.profile.coach import (
     AGENDA_CAP,
@@ -196,6 +198,7 @@ def _agents(
     )
 
 
+@workspace_turn("coach")
 def run_opening_turn(
     reporter,
     *,
@@ -253,6 +256,7 @@ def run_opening_turn(
     return session_view(root, session_id)
 
 
+@workspace_turn("coach")
 def run_message_turn(
     reporter,
     *,
@@ -446,6 +450,7 @@ def discard_draft(profile_dir: Path | str, session_id: str, topic_id: str) -> No
     set_draft_status(Path(profile_dir), session_id, topic_id, "discarded")
 
 
+@workspace_turn("coach")
 def run_recap_turn(
     reporter,
     *,

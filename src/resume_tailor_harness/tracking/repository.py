@@ -6,6 +6,7 @@ from typing import Any, TypeVar, cast
 from sqlalchemy import and_, func, or_
 from sqlmodel import Session, col, select
 
+from resume_tailor_harness.workspace_agent.tables import WorkspaceNote
 from resume_tailor_harness.tracking.dedup import (
     compute_content_fingerprint,
     locations_compatible,
@@ -544,6 +545,7 @@ def delete_job_row(session: Session, job: Job, *, commit: bool = True) -> None:
     Unguarded: callers must have already applied the has_progress gate.
     """
     for model in (
+        WorkspaceNote,
         ApplicationQuestion,
         CoverLetter,
         Application,
@@ -671,6 +673,15 @@ def has_progress(session: Session, job_id: int) -> bool:
             is not None
         ):
             return True
+    if (
+        session.exec(
+            select(WorkspaceNote).where(
+                WorkspaceNote.job_id == job_id, col(WorkspaceNote.deleted).is_(False)
+            )
+        ).first()
+        is not None
+    ):
+        return True
     return False
 
 
@@ -688,11 +699,13 @@ def progressed_job_ids(
     if job_ids is not None and not job_ids:
         return set()
     progressed: set[int] = set()
-    for model in (Application, ResumeVersion, CoverLetter):
+    for model in (Application, ResumeVersion, CoverLetter, WorkspaceNote):
         job_id = cast(Any, model.job_id)
         statement = select(job_id)
         if model is Application:
             statement = statement.where(_application_investment_clause())
+        if model is WorkspaceNote:
+            statement = statement.where(col(WorkspaceNote.deleted).is_(False))
         if job_ids is not None:
             statement = statement.where(job_id.in_(job_ids))
         progressed.update(session.exec(statement).all())

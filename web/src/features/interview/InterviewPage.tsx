@@ -1,3 +1,4 @@
+import { WorkspaceReview } from "@/components/chat/WorkspaceReview";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { localizeDisplayValue } from "@/i18n/dynamic-labels";
@@ -332,6 +333,7 @@ export function InterviewPage() {
             ) : null}
           </div>
 
+          <WorkspaceReview surface="interview" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
           {canAnswer ? (
             <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
               <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />

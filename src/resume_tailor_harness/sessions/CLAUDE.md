@@ -5,7 +5,7 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
 - **Mock Interviews are practice artifacts, not progress.** `interview/store.py`
   keeps one durable session JSON per interview under `data/interview/`
   (turn-per-run, ADR 0006), with the JD + tailored-resume snapshot frozen at
-  opening. The interviewer stays in character (no mid-session coaching); the
+  opening. The interviewer stays in character for practice answers; the
   debrief run scores only questions actually asked. No corpus writes — fact-lock
   untouched — and sessions never gate job deletion (`has_progress` unchanged);
   the job delete endpoint removes the job's session files. Voice input rides
@@ -35,3 +35,11 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   to `""` so older session JSON remains readable. On approval a non-empty owner
   id becomes the synthesis-mode corpus anchor for the coach note; model-added
   topics retain the unanchored literal path.
+
+
+- **Interview maintenance requests are not answers.** `begin_workspace_request`
+  and workspace previews mark the current turn as maintenance. The service saves
+  the exchange with `workspace_request=true`, preserves the practice plan, and
+  excludes it from answer detection and the scored transcript. Research or a
+  practice answer never advances employer-side application status; that requires
+  a separately reviewed workspace action.

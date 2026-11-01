@@ -12718,5 +12718,110 @@
     "key": "ui_575784e36c75",
     "en": "Skill updated",
     "zh-CN": "技能已更新"
+  },
+  "Update job": {
+    "key": "ui_9e1a4896df69",
+    "en": "Update job",
+    "zh-CN": "更新职位"
+  },
+  "Update application": {
+    "key": "ui_c24f1ba41004",
+    "en": "Update application",
+    "zh-CN": "更新申请"
+  },
+  "Update note": {
+    "key": "ui_275a66b6dc4c",
+    "en": "Update note",
+    "zh-CN": "更新笔记"
+  },
+  "Remove note": {
+    "key": "ui_c06bd11ad0f6",
+    "en": "Remove note",
+    "zh-CN": "移除笔记"
+  },
+  "Save preparation": {
+    "key": "ui_e283ef6283e0",
+    "en": "Save preparation",
+    "zh-CN": "保存准备资料"
+  },
+  "Update profile": {
+    "key": "ui_34540d1107b7",
+    "en": "Update profile",
+    "zh-CN": "更新个人资料"
+  },
+  "Save question": {
+    "key": "ui_7f94c0ba49b2",
+    "en": "Save question",
+    "zh-CN": "保存问题"
+  },
+  "Update answer": {
+    "key": "ui_63a2c3e0caac",
+    "en": "Update answer",
+    "zh-CN": "更新答案"
+  },
+  "Delete question": {
+    "key": "ui_1d1979df7a81",
+    "en": "Delete question",
+    "zh-CN": "删除问题"
+  },
+  "Select document": {
+    "key": "ui_1bef0e8f0bf9",
+    "en": "Select document",
+    "zh-CN": "选择文档"
+  },
+  "Update search preferences": {
+    "key": "ui_1dd6301da7bf",
+    "en": "Update search preferences",
+    "zh-CN": "更新搜索偏好"
+  },
+  "None": {
+    "key": "ui_dc937b598926",
+    "en": "None",
+    "zh-CN": "无"
+  },
+  "Review the exact changes below. Nothing is applied until you approve.": {
+    "key": "ui_c1ba7c9ab39f",
+    "en": "Review the exact changes below. Nothing is applied until you approve.",
+    "zh-CN": "请核对以下具体变更。批准后才会执行。"
+  },
+  "· #{{v0}}": {
+    "key": "ui_a93c3d4043c6",
+    "en": "· #{{v0}}",
+    "zh-CN": "· #{{v0}}"
+  },
+  "Deleting this job also removes its practice conversations.": {
+    "key": "ui_9cf94f432697",
+    "en": "Deleting this job also removes its practice conversations.",
+    "zh-CN": "删除此职位也会删除相关的练习对话。"
+  },
+  "Before": {
+    "key": "ui_9bb725005055",
+    "en": "Before",
+    "zh-CN": "变更前"
+  },
+  "After": {
+    "key": "ui_7b68fe551085",
+    "en": "After",
+    "zh-CN": "变更后"
+  },
+  "Changes discarded": {
+    "key": "ui_6fb7a4651054",
+    "en": "Changes discarded",
+    "zh-CN": "变更已放弃"
+  },
+  "Outcome unconfirmed — do not retry": {
+    "key": "ui_d6687fbfc057",
+    "en": "Outcome unconfirmed — do not retry",
+    "zh-CN": "执行结果尚未确认，请勿重试"
+  },
+  "This proposal expired. Ask the agent for a fresh preview.": {
+    "key": "ui_f99362cf4b43",
+    "en": "This proposal expired. Ask the agent for a fresh preview.",
+    "zh-CN": "此提案已过期，请让助手重新生成预览。"
+  },
+  "Unable to load proposed changes.": {
+    "key": "ui_bbbf3c2b2499",
+    "en": "Unable to load proposed changes.",
+    "zh-CN": "无法加载变更提案。"
   }
 }
