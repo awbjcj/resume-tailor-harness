@@ -32,24 +32,13 @@ function renderHarness() {
 }
 
 describe("SearchConfigForm", () => {
-  it("adds a keyword tag on Enter", async () => {
+  it("adds and removes keywords and toggles multiple remote policies", async () => {
     const user = userEvent.setup();
     renderHarness();
     await user.type(screen.getByLabelText("Keywords"), "python{Enter}");
     expect(screen.getByTestId("keywords")).toHaveTextContent("python");
-  });
-
-  it("removes a tag via its remove button", async () => {
-    const user = userEvent.setup();
-    renderHarness();
-    await user.type(screen.getByLabelText("Keywords"), "python{Enter}");
     await user.click(screen.getByRole("button", { name: "Remove python" }));
-    expect(screen.getByTestId("keywords")).toHaveTextContent("");
-  });
-
-  it("selects multiple remote policy options and can deselect one back off", async () => {
-    const user = userEvent.setup();
-    renderHarness();
+    expect(screen.getByTestId("keywords")).toBeEmptyDOMElement();
     await user.click(screen.getByRole("button", { name: "Remote" }));
     expect(screen.getByTestId("remote-policy")).toHaveTextContent("remote");
     await user.click(screen.getByRole("button", { name: "Hybrid" }));

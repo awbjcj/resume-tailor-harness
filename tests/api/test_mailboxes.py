@@ -55,25 +55,24 @@ def test_create_list_disconnect_redacts_secrets(client):
     assert client.get("/api/mailboxes").json()["accounts"] == []
 
 
-@pytest.mark.parametrize(
-    "changes",
-    [
+def test_invalid_input_does_not_echo_password(client, subtests):
+    for changes in [
         {"port": 0},
         {"security": "none"},
         {"host": "https://imap.example.com"},
         {"host": "x\r\npassword=private-password"},
         {"password": ""},
-    ],
-)
-def test_invalid_input_does_not_echo_password(client, changes):
-    response = client.post(
-        "/api/mailboxes", json={**PAYLOAD, "imap": {**PAYLOAD["imap"], **changes}}
-    )
-    assert response.status_code == 422
-    assert "private-password" not in response.text
-    details = response.json()["error"]["details"]
-    assert details[0]["loc"] == ["body", "imap", next(iter(changes))]
-    assert set(details[0]) == {"loc", "type"}
+    ]:
+        with subtests.test(changes=changes):
+            response = client.post(
+                "/api/mailboxes",
+                json={**PAYLOAD, "imap": {**PAYLOAD["imap"], **changes}},
+            )
+            assert response.status_code == 422
+            assert "private-password" not in response.text
+            details = response.json()["error"]["details"]
+            assert details[0]["loc"] == ["body", "imap", next(iter(changes))]
+            assert set(details[0]) == {"loc", "type"}
 
 
 def test_failed_verification_never_persists(client, monkeypatch):

@@ -466,20 +466,19 @@ def test_managed_checkout_lets_stripe_control_presentment(billing, mu_client, pr
         assert snapshot.allowance_micros == 20_000_000
 
 
-@pytest.mark.parametrize("price_id", ["price_credit", "price_plan"])
-@pytest.mark.parametrize("tax_behavior", [None, "unspecified", "exclusive"])
-def test_managed_checkout_rejects_noninclusive_prices(
-    billing, mu_client, price_id, tax_behavior
-):
+def test_managed_checkout_rejects_noninclusive_prices(billing, mu_client, subtests):
     _, settings, fake = billing
     settings.stripe_managed_payments_enabled = True
-    fake.prices[price_id]["tax_behavior"] = tax_behavior
-    response = mu_client.post(
-        "/api/account/billing/checkout",
-        json={"priceId": price_id, "idempotencyKey": "purchase-12345"},
-    )
-    assert response.status_code == 503
-    assert not fake.checkout_calls
+    for price_id in ("price_credit", "price_plan"):
+        for tax_behavior in (None, "unspecified", "exclusive"):
+            with subtests.test(price_id=price_id, tax_behavior=tax_behavior):
+                fake.prices[price_id]["tax_behavior"] = tax_behavior
+                response = mu_client.post(
+                    "/api/account/billing/checkout",
+                    json={"priceId": price_id, "idempotencyKey": "purchase-12345"},
+                )
+                assert response.status_code == 503
+                assert not fake.checkout_calls
 
 
 @pytest.mark.parametrize("managed", [False, True])
@@ -508,9 +507,10 @@ def test_pending_checkout_preserves_managed_mode_when_settings_change(
     assert fake.checkout_calls[0][0] == attempts[0]
 
 
-@pytest.mark.parametrize(
-    "change",
-    [
+def test_invalid_credit_price_never_starts_checkout(billing, mu_client, subtests):
+    _, _, fake = billing
+    original = copy.deepcopy(fake.prices["price_credit"])
+    for change in (
         {"active": False},
         {"currency": "eur"},
         {"unit_amount": None},
@@ -518,19 +518,21 @@ def test_pending_checkout_preserves_managed_mode_when_settings_change(
         {"billing_scheme": "tiered"},
         {"transform_quantity": {"divide_by": 5, "round": "down"}},
         {"recurring": {"interval": "month"}},
-    ],
-)
-def test_invalid_credit_price_never_starts_checkout(billing, mu_client, change):
-    _, _, fake = billing
-    fake.prices["price_credit"].update(change)
-    assert (
-        mu_client.post(
-            "/api/account/billing/checkout",
-            json={"priceId": "price_credit", "idempotencyKey": "purchase-12345"},
-        ).status_code
-        == 503
-    )
-    assert not fake.checkout_calls
+    ):
+        with subtests.test(change=change):
+            # Restore every field so each rejection exercises its own input.
+            fake.prices["price_credit"] = {**copy.deepcopy(original), **change}
+            assert (
+                mu_client.post(
+                    "/api/account/billing/checkout",
+                    json={
+                        "priceId": "price_credit",
+                        "idempotencyKey": "purchase-12345",
+                    },
+                ).status_code
+                == 503
+            )
+            assert not fake.checkout_calls
 
 
 def test_price_allowlist_cycle_and_missing_config(billing, mu_app, mu_client):
@@ -1351,7 +1353,11 @@ def test_subscription_webhook_notices_are_atomic_and_idempotent(billing, mu_clie
         now=NOW,
     )
     with Session(engine) as session:
-        assert list(session.scalars(select(AccountEmail.event).order_by(AccountEmail.created_at))) == [
+        assert list(
+            session.scalars(
+                select(AccountEmail.event).order_by(AccountEmail.created_at)
+            )
+        ) == [
             "SUBSCRIPTION_ACTIVATED",
             "subscription_cancellation",
             "SUBSCRIPTION_REVOKED",

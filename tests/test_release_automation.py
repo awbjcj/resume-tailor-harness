@@ -132,6 +132,20 @@ class FakeGitHub(automation.GitHub):
         return {}
 
 
+class ReleasePolicyTests(unittest.TestCase):
+    def test_cooldown_boundary_and_drafts(self):
+        releases = [
+            {
+                "draft": False,
+                "prerelease": False,
+                "published_at": (NOW - timedelta(days=7)).isoformat(),
+            },
+            {"draft": True, "prerelease": False, "published_at": None},
+            {"draft": False, "prerelease": True, "published_at": NOW.isoformat()},
+        ]
+        self.assertFalse(automation.cooldown(releases, NOW))
+
+
 class GitReleaseTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="release tests ")
@@ -207,7 +221,7 @@ class GitReleaseTests(unittest.TestCase):
         )
         return path
 
-    def test_real_git_reads_range_and_annotated_tags(self):
+    def test_real_git_preview_and_idempotent_publish_use_exact_main_sha(self):
         self.tag("v0.4.0", self.first, annotated=True)
         self.assertEqual(self.repository.tags(self.target), ["v0.4.0", "v0.5.0"])
         self.assertEqual(self.repository.remote_tags()["v0.4.0"], self.first)
@@ -215,13 +229,11 @@ class GitReleaseTests(unittest.TestCase):
         self.assertEqual(len(commits), 1)
         self.assertIn("More context.", commits[0].body)
 
-    def test_preview_is_read_only(self):
         result = automation.release(self.repository, self.github, now=NOW)
         self.assertIn("Preview v0.5.1", result)
         self.assertEqual(self.github.posts, [])
         self.assertNotIn("v0.5.1", self.repository.remote_tags())
 
-    def test_publish_uses_exact_main_sha_and_latest_once(self):
         result = automation.release(self.repository, self.github, publish=True, now=NOW)
         self.assertIn("Published v0.5.1", result)
         payload = self.github.posts[0][1]
@@ -252,12 +264,10 @@ class GitReleaseTests(unittest.TestCase):
             automation.release(self.repository, self.github, publish=True, now=NOW)
         self.assertEqual(self.github.posts, [])
 
-    def test_newer_failed_run_cannot_fall_back_to_old_success(self):
-        self.github.runs.append(
-            {**self.github.runs[0], "id": 11, "conclusion": "failure"}
-        )
+        self.github.runs = [original, {**original, "id": 11, "conclusion": "failure"}]
         with self.assertRaises(ValueError):
             automation.release(self.repository, self.github, publish=True, now=NOW)
+        self.assertEqual(self.github.posts, [])
 
     def test_unreleased_dev_commits_are_not_tagged(self):
         self.repository.git("switch", "-c", "dev")
@@ -287,18 +297,6 @@ class GitReleaseTests(unittest.TestCase):
                 self.repository, self.github, bump="patch", publish=True, now=NOW
             ),
         )
-
-    def test_cooldown_boundary_and_drafts(self):
-        releases = [
-            {
-                "draft": False,
-                "prerelease": False,
-                "published_at": (NOW - timedelta(days=7)).isoformat(),
-            },
-            {"draft": True, "prerelease": False, "published_at": None},
-            {"draft": False, "prerelease": True, "published_at": NOW.isoformat()},
-        ]
-        self.assertFalse(automation.cooldown(releases, NOW))
 
     def test_documentation_only_waits(self):
         self.tag("v0.5.1", self.target)
@@ -358,7 +356,7 @@ class GitReleaseTests(unittest.TestCase):
         automation.backfill(self.repository, self.github, manifest, publish=True)
         self.assertEqual(len(self.github.posts), before)
 
-    def test_backfill_validates_whole_manifest_before_first_mutation(self):
+    def test_backfill_validates_manifest_dates_and_existing_tags_before_writes(self):
         manifest = self.manifest()
         data = json.loads(manifest.read_text(encoding="utf-8"))
         data["milestones"][-1]["sha"] = "f" * 40
@@ -368,7 +366,6 @@ class GitReleaseTests(unittest.TestCase):
         self.assertEqual(self.github.posts, [])
         self.assertNotIn("v0.1.0", self.repository.remote_tags())
 
-    def test_backfill_rejects_date_and_existing_tag_mismatch(self):
         manifest = self.manifest()
         data = json.loads(manifest.read_text(encoding="utf-8"))
         data["milestones"][-1]["date"] = "2000-01-01"

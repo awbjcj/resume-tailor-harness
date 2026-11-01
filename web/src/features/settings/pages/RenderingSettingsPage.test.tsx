@@ -34,7 +34,8 @@ describe("RenderingSettingsPage", () => {
     remove.mockClear();
   });
 
-  it("names each reset so the two are not confusable", () => {
+  it("labels resets, saves template and fit choices, and manages custom templates", async () => {
+    const user = userEvent.setup();
     render(<RenderingSettingsPage />, { wrapper: withQueryClient });
     expect(
       screen.getByRole("button", { name: /reset options/i }),
@@ -45,26 +46,19 @@ describe("RenderingSettingsPage", () => {
     expect(
       screen.queryByRole("button", { name: /^reset to defaults$/i }),
     ).not.toBeInTheDocument();
-  });
-
-  it("selects templates and saves the new path-free contract", async () => {
-    render(<RenderingSettingsPage />, { wrapper: withQueryClient });
     expect(screen.queryByLabelText(/path|directory/i)).not.toBeInTheDocument();
-    await userEvent.click(screen.getByText("mine"));
-    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
-    expect(save).toHaveBeenCalledWith({ template: "custom:mine", fitOnePage: true });
-  });
-
-  it("toggles one-page fit, uploads, and deletes custom templates", async () => {
-    render(<RenderingSettingsPage />, { wrapper: withQueryClient });
-    await userEvent.click(screen.getByRole("switch", { name: /fit resume to one page/i }));
-    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
-    expect(save).toHaveBeenCalledWith({ template: "classic", fitOnePage: false });
+    await user.click(screen.getByText("mine"));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(save).toHaveBeenLastCalledWith({ template: "custom:mine", fitOnePage: true });
+    await user.click(screen.getByText("Classic"));
+    await user.click(screen.getByRole("switch", { name: /fit resume to one page/i }));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(save).toHaveBeenLastCalledWith({ template: "classic", fitOnePage: false });
 
     const file = new File(["hello"], "fresh.typ", { type: "text/plain" });
-    await userEvent.upload(screen.getByLabelText("Upload Typst template"), file);
+    await user.upload(screen.getByLabelText("Upload Typst template"), file);
     expect(upload).toHaveBeenCalledWith(file);
-    await userEvent.click(screen.getByRole("button", { name: "Delete mine template" }));
+    await user.click(screen.getByRole("button", { name: "Delete mine template" }));
     expect(remove).toHaveBeenCalledWith("mine");
   });
 });

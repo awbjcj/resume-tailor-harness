@@ -123,9 +123,11 @@ def test_registration_is_durable_resumable_and_reused_only_after_authentication(
         assert session.get(Application, 1) is None
 
 
-@pytest.mark.parametrize(
-    "url",
-    [
+def test_untrusted_sites_never_create_or_retrieve_credentials(setup, subtests):
+    _, client = setup
+    enable(client)
+    account = prepare(client).json()["account"]
+    for url in [
         "http://acme.wd1.myworkdayjobs.com/login",
         "https://acme.wd1.myworkdayjobs.com.evil.com/login",
         "https://acme.wd1.myworkdayjobs.com@evil.com/login",
@@ -134,15 +136,11 @@ def test_registration_is_durable_resumable_and_reused_only_after_authentication(
         "https://acme.wd1.myworkdayjobs.com./login",
         "https://evil.com/#https://acme.wd1.myworkdayjobs.com",
         "https://acme.wd1.myworkdayjobs.com\n.evil.com",
-    ],
-)
-def test_untrusted_sites_never_create_or_retrieve_credentials(setup, url):
-    _, client = setup
-    enable(client)
-    account = prepare(client).json()["account"]
-    assert access(client, account, url=url).status_code in {403, 422}
-    assert prepare(client, browserUrl=url).status_code in {409, 422}
-    assert len(client.get("/api/application-accounts").json()["accounts"]) == 1
+    ]:
+        with subtests.test(url=url):
+            assert access(client, account, url=url).status_code in {403, 422}
+            assert prepare(client, browserUrl=url).status_code in {409, 422}
+            assert len(client.get("/api/application-accounts").json()["accounts"]) == 1
 
 
 def test_scope_eligibility_stale_state_failure_and_user_repair(setup):
@@ -243,7 +241,8 @@ def test_browser_origin_matches_canonical_deployment_url(setup, base_url, origin
     )
     assert response.status_code == 200, response.text
     response = client.patch(
-        "/api/application-accounts/policy", json={**body, "revision": 1},
+        "/api/application-accounts/policy",
+        json={**body, "revision": 1},
         headers={"Origin": "https://other.example.com"},
     )
     assert response.status_code == 403

@@ -91,9 +91,8 @@ def test_minimal_legacy_request_still_works(client):
     assert response.json()["url"] is None
 
 
-@pytest.mark.parametrize(
-    "change",
-    [
+def test_invalid_manual_fields_do_not_create_a_job(client, subtests):
+    for change in [
         {"jdText": " \n\t "},
         {"url": "javascript:alert(1)"},
         {"url": "https://name:secret@example.com/job"},
@@ -113,13 +112,12 @@ def test_minimal_legacy_request_still_works(client):
         {"details": {"applicationUrl": "file:///secret"}},
         {"details": {"closesAt": "2026-02-30"}},
         {"details": {"yoeMin": 1.5}},
-    ],
-)
-def test_invalid_manual_fields_do_not_create_a_job(client, change):
-    response = client.post("/api/jobs", json={**full_job(), **change})
-    assert response.status_code == 422, response.text
-    with get_session(client.app.state.engine) as session:
-        assert session.exec(select(Job)).all() == []
+    ]:
+        with subtests.test(change=change):
+            response = client.post("/api/jobs", json={**full_job(), **change})
+            assert response.status_code == 422, response.text
+            with get_session(client.app.state.engine) as session:
+                assert session.exec(select(Job)).all() == []
 
 
 def test_duplicate_keeps_progress_and_metadata(client):

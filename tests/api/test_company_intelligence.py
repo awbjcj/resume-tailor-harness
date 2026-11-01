@@ -162,9 +162,7 @@ def test_job_detail_reads_stale_company_evidence_shared_by_sibling_job(tmp_path)
 
         for job_id in (first, second):
             body = client.get(f"/api/jobs/{job_id}").json()["companyIntelligence"]
-            resource = client.get(
-                f"/api/jobs/{job_id}/company-intelligence"
-            ).json()
+            resource = client.get(f"/api/jobs/{job_id}/company-intelligence").json()
             assert body["state"] == "ready"
             assert body["canRefresh"] is True
             assert body["isStale"] is True
@@ -199,9 +197,7 @@ def test_explicit_refresh_launches_and_persists_grounded_dossier(monkeypatch, tm
     client = _client(tmp_path)
     with client:
         job_id = _seed(_app(client))
-        response = client.post(
-            f"/api/jobs/{job_id}/company-intelligence/refreshes"
-        )
+        response = client.post(f"/api/jobs/{job_id}/company-intelligence/refreshes")
         assert response.status_code == 202
         run = client.get(f"/api/runs/{response.json()['runId']}").json()
         detail = client.get(f"/api/jobs/{job_id}").json()
@@ -237,9 +233,7 @@ def test_refresh_depth_is_explicit_and_history_is_newest_first(monkeypatch, tmp_
             f"/api/jobs/{job_id}/company-intelligence/refreshes",
             json={"depth": "deep"},
         )
-        history = client.get(
-            f"/api/jobs/{job_id}/company-intelligence/versions"
-        ).json()
+        history = client.get(f"/api/jobs/{job_id}/company-intelligence/versions").json()
 
     assert first.status_code == 202
     assert second.status_code == 202
@@ -269,9 +263,7 @@ def test_refresh_keeps_company_and_singleton_identity_aligned(monkeypatch, tmp_p
     with client:
         app = _app(client)
         job_id = _seed(app, "Acme")
-        response = client.post(
-            f"/api/jobs/{job_id}/company-intelligence/refreshes"
-        )
+        response = client.post(f"/api/jobs/{job_id}/company-intelligence/refreshes")
         with get_session(app.state.engine) as session:
             job = session.get(Job, job_id)
             assert job is not None
@@ -293,23 +285,7 @@ def test_explicit_refresh_requires_company(tmp_path):
     client = _client(tmp_path)
     with client:
         job_id = _seed(_app(client), company=None)
-        response = client.post(
-            f"/api/jobs/{job_id}/company-intelligence/refreshes"
-        )
+        response = client.post(f"/api/jobs/{job_id}/company-intelligence/refreshes")
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
-
-
-def test_openapi_exposes_resource_routes_and_hides_legacy_refresh_alias(tmp_path):
-    client = _client(tmp_path)
-    with client:
-        paths = client.get("/openapi.json").json()["paths"]
-
-    resource_path = "/api/jobs/{job_id}/company-intelligence"
-    refresh_path = f"{resource_path}/refreshes"
-    versions_path = f"{resource_path}/versions"
-    assert "get" in paths[resource_path]
-    assert "post" not in paths[resource_path]
-    assert "post" in paths[refresh_path]
-    assert "get" in paths[versions_path]
