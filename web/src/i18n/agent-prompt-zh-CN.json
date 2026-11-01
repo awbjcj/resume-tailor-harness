@@ -86,7 +86,6 @@
   "Fact deduplicator": "事实去重助手",
   "Groups duplicate profile facts.": "将重复的个人经历事实归为一组。",
   "Profile Coach": "个人资料助手",
-  "Runs evidence-locked profile coaching.": "围绕有事实依据的内容梳理个人经历。",
   "Coach formatter": "个人资料辅导格式整理助手",
   "Formats coach notes into a structured turn.": "将辅导笔记整理成结构化对话回复。",
   "Skill-group classifier": "技能分组分类助手",
@@ -108,5 +107,6 @@
   "Email writer": "邮件写作助手",
   "Drafts fact-grounded job-search emails.": "根据事实依据起草求职邮件。",
   "Recruiting email classifier": "招聘邮件分类助手",
-  "Classifies recruiting email outcomes.": "对招聘邮件的结果进行分类。"
+  "Classifies recruiting email outcomes.": "对招聘邮件的结果进行分类。",
+  "Builds and manages profile evidence through coaching and reviewed change proposals.": "通过辅导对话及经审核的更改建议构建和管理个人资料证据。"
 }

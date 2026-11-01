@@ -47,8 +47,22 @@ def run_corpus_build(
     enforce_active_budget()
     profile_dir = resolve_tenant_path(profile_dir)
     facts_out = resolve_tenant_path(facts_out)
+    from resume_tailor_harness.profile.conversation import load_edits, replay_edits
+
+    if load_edits(profile_dir).deleted:
+        raise ValueError(
+            "The profile was removed. Create a profile in conversation before rebuilding."
+        )
+    from resume_tailor_harness.profile.corpus import load_manifest
+
+    if load_edits(profile_dir).changes and not any(
+        doc.primary and doc.mode == "literal" for doc in load_manifest(profile_dir).docs
+    ):
+        return _build_conversation_profile(profile_dir, Path(facts_out), reporter)
     from resume_tailor_harness.profile.build import build_corpus_profile
-    from resume_tailor_harness.profile.aspect_classifier import build_aspect_classifier_agent
+    from resume_tailor_harness.profile.aspect_classifier import (
+        build_aspect_classifier_agent,
+    )
     from resume_tailor_harness.profile.inference import build_inference_agent
     from resume_tailor_harness.profile.manual_skills import (
         apply_manual_skills,
@@ -62,7 +76,9 @@ def run_corpus_build(
         save_matrix,
     )
     from resume_tailor_harness.profile.merge import build_bullet_dedup_agent
-    from resume_tailor_harness.profile.project_extractor import build_project_extractor_agent
+    from resume_tailor_harness.profile.project_extractor import (
+        build_project_extractor_agent,
+    )
     from resume_tailor_harness.profile.synthesis import (
         build_entailment_agent,
         build_synthesis_agent,
@@ -93,6 +109,8 @@ def run_corpus_build(
         manual_ledger = load_manual_skills(Path(profile_dir) / "manual_skills.json")
         facts, replay_warnings = apply_manual_skills(facts, manual_ledger)
         report.warnings.extend(replay_warnings)
+        facts, edit_warnings = replay_edits(facts, load_edits(profile_dir))
+        report.warnings.extend(edit_warnings)
         if reporter is not None:
             reporter.step(1, label="Prepared profile facts")
         if reporter is not None:
@@ -166,4 +184,48 @@ def run_corpus_build(
         # Diagnostic-only: the regroup's own telemetry, carried through so a
         # slow corpus build can be read without re-running the classification.
         "taxonomy": taxonomy_telemetry,
+    }
+
+
+def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -> dict:
+    """A user-created profile has no corpus requirement or extraction model work."""
+    from resume_tailor_harness.models.profile import Contact
+    from resume_tailor_harness.profile.conversation import load_edits, replay_edits
+    from resume_tailor_harness.profile.manual_skills import (
+        apply_manual_skills,
+        load_manual_skills,
+        manual_skills_lock,
+    )
+    from resume_tailor_harness.profile.matrix import build_decorated_matrix, save_matrix
+
+    if reporter is not None:
+        reporter.begin(1, "Rebuilding your conversational profile")
+    with manual_skills_lock(profile_dir):
+        facts, manual_warnings = apply_manual_skills(
+            ProfileFacts(contact=Contact(name="")),
+            load_manual_skills(profile_dir / "manual_skills.json"),
+        )
+        facts, warnings = replay_edits(facts, load_edits(profile_dir))
+        matrix = build_decorated_matrix(profile_dir, facts)
+        _publish_profile_artifacts(
+            facts,
+            matrix,
+            facts_path=facts_path,
+            matrix_path=facts_path.with_name("matrix.json"),
+            matrix_writer=save_matrix,
+        )
+    if reporter is not None:
+        reporter.step(1, label="Saved profile and skill matrix")
+    return {
+        "experiences": len(facts.experience),
+        "projects": len(facts.projects),
+        "matrixRows": len(matrix.rows),
+        "groupedRows": sum(row.group is not None for row in matrix.rows),
+        "docStatus": {},
+        "conflicts": [],
+        "anchorDecisions": [],
+        "verificationDrops": [],
+        "inferred": [],
+        "warnings": [*manual_warnings, *warnings],
+        "taxonomy": {},
     }

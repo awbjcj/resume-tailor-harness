@@ -106,6 +106,7 @@ vi.mock("./use-coach", () => ({
   useEndCoachSession: () => ({ mutateAsync: endSession, isPending: false }),
   useSaveCoachNote: () => ({ mutateAsync: saveNote, isPending: false }),
   useDiscardCoachNote: () => ({ mutateAsync: discardNote, isPending: false }),
+  useResolveCoachChanges: () => ({ mutate: vi.fn(), isPending: false }),
   useArchiveCoachSession: () => ({ mutate: archiveSession }),
   useUnarchiveCoachSession: () => ({ mutate: unarchiveSession }),
   useDeleteCoachSession: () => ({ mutate: deleteSession, isPending: false }),

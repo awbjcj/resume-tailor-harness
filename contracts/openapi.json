@@ -4850,6 +4850,123 @@
         "title": "CleanupCandidateOut",
         "type": "object"
       },
+      "CoachChangeDecisionIn": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "apply",
+              "discard"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "revision": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Revision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "revision"
+        ],
+        "title": "CoachChangeDecisionIn",
+        "type": "object"
+      },
+      "CoachChangeDraftOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "previews": {
+            "items": {
+              "$ref": "#/components/schemas/CoachChangePreviewOut"
+            },
+            "title": "Previews",
+            "type": "array"
+          },
+          "quotes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quotes",
+            "type": "array"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "applied",
+              "discarded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "revision",
+          "status"
+        ],
+        "title": "CoachChangeDraftOut",
+        "type": "object"
+      },
+      "CoachChangePreviewOut": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "entity": {
+            "default": "",
+            "title": "Entity",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "operation": {
+            "default": "",
+            "title": "Operation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "CoachChangePreviewOut",
+        "type": "object"
+      },
       "CoachDraftNoteOut": {
         "properties": {
           "quotes": {
@@ -5058,6 +5175,13 @@
               }
             ],
             "title": "Archivedat"
+          },
+          "changeDrafts": {
+            "items": {
+              "$ref": "#/components/schemas/CoachChangeDraftOut"
+            },
+            "title": "Changedrafts",
+            "type": "array"
           },
           "draftNotes": {
             "items": {
@@ -33514,6 +33638,80 @@
           }
         },
         "summary": "Archive Coach Session"
+      }
+    },
+    "/api/profile/coach/sessions/{session_id}/changes/{draft_id}": {
+      "post": {
+        "operationId": "resolve_profile_changes_api_profile_coach_sessions__session_id__changes__draft_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoachChangeDecisionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoachSessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Profile Changes"
       }
     },
     "/api/profile/coach/sessions/{session_id}/end": {

@@ -164,7 +164,7 @@ export const router = createBrowserRouter([
       { path: "applications", element: <SetupGate>{page(<ApplicationsPage />)}</SetupGate> },
       { path: "match-gap", element: <SetupGate>{page(<MatchGapPage />)}</SetupGate> },
       { path: "profile", element: <SetupGate>{page(<ProfileWorkspace />)}</SetupGate> },
-      { path: "coach", element: <SetupGate>{page(<CoachPage />)}</SetupGate> },
+      { path: "coach", element: page(<CoachPage />) },
       { path: "scout", element: <SetupGate>{page(<ScoutPage />)}</SetupGate> },
       { path: "interview", element: <SetupGate>{page(<InterviewPage />)}</SetupGate> },
       { path: "career-lab", element: <SetupGate>{page(<CareerLabPage />)}</SetupGate> },

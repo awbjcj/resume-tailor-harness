@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Annotated, Literal, Union
 
 from pydantic import Field
+from filelock import FileLock
 
 from resume_tailor_harness.models.base import ExtensibleModel, new_id
 from resume_tailor_harness.models.profile import ProfileFacts, Skill
@@ -29,6 +30,7 @@ from resume_tailor_harness.tracking.match_gap import normalize_skill
 _DEFAULT_CATEGORY = "hard"
 _MANUAL_SKILLS_LOCKS: dict[Path, threading.RLock] = {}
 _MANUAL_SKILLS_LOCKS_GUARD = threading.Lock()
+_MANUAL_PROCESS_LOCKS: dict[Path, FileLock] = {}
 
 
 @contextmanager
@@ -37,8 +39,13 @@ def manual_skills_lock(profile_dir: str | Path) -> Iterator[None]:
     key = Path(profile_dir).resolve()
     with _MANUAL_SKILLS_LOCKS_GUARD:
         lock = _MANUAL_SKILLS_LOCKS.setdefault(key, threading.RLock())
+        process_lock = _MANUAL_PROCESS_LOCKS.setdefault(
+            key, FileLock(key / ".profile-mutations.lock")
+        )
     with lock:
-        yield
+        key.mkdir(parents=True, exist_ok=True)
+        with process_lock:
+            yield
 
 
 class ManualSkillEntry(ExtensibleModel):
