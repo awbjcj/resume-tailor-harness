@@ -21,6 +21,10 @@ def corrections_path(profile_dir: str | Path) -> Path:
     return Path(profile_dir) / "group_corrections.json"
 
 
+class UnknownGroupError(ValueError):
+    """A group or category id is absent from the user's current catalog."""
+
+
 class GroupCorrection(ExtensibleModel):
     group: str
     corrected_at: str = ""
@@ -108,7 +112,7 @@ def edit_catalog(
         raise ValueError("Unknown organization type")
     catalog = ledger.group_catalog() if kind == "group" else ledger.category_catalog()
     if key is not None and key not in catalog:
-        raise ValueError(f"Unknown {kind} '{key}'")
+        raise UnknownGroupError(f"Unknown {kind} '{key}'")
     if delete:
         if key is None or key == "other":
             raise ValueError("Other is the fallback and cannot be deleted")
@@ -138,7 +142,7 @@ def edit_catalog(
     key = key or new_key or f"custom-{new_id()}"
     if kind == "group":
         if category not in ledger.category_catalog():
-            raise ValueError(f"Unknown category '{category}'")
+            raise UnknownGroupError(f"Unknown category '{category}'")
         ledger.groups[key] = SkillGroupDefinition(
             label=label, category=category, custom_label=True
         )

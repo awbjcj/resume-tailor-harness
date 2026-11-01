@@ -631,7 +631,6 @@ def capture_skill_overrides(
     ledger: ProfileEdits,
     *,
     records: Sequence[AppliedChange] = (),
-    restoring_token: str = "",
 ) -> None:
     """Let later explicit skill edits on either surface supersede earlier ones.
 
@@ -660,9 +659,6 @@ def capture_skill_overrides(
         for skill in bucket:
             if tokens.intersection(map(normalize_skill, skill.aliases)):
                 tokens.add(normalize_skill(skill.name))
-    restoring = normalize_skill(restoring_token)
-    if restoring in ledger.skill_overrides:
-        tokens.add(restoring)
     for token in tokens - {""}:
         found = next(
             (
