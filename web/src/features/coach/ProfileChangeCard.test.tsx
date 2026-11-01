@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -50,7 +50,7 @@ describe("ProfileChangeCard", () => {
     await userEvent.click(screen.getByRole("button", { name: "Discard" }));
     expect(resolve).toHaveBeenCalledWith("discard");
     rerender(<ProfileChangeCard draft={{ ...draft, status: "applied" }} busy={false} onResolve={resolve} />);
-    expect(screen.getByText("Applied")).toBeInTheDocument();
+    expect(screen.getByText("Saved")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
@@ -61,5 +61,33 @@ describe("ProfileChangeCard", () => {
     expect(screen.getByText("更改前")).toBeInTheDocument();
     expect(screen.getAllByText("个人标题")).toHaveLength(2);
     expect(screen.getByText("Backend Engineer")).toBeInTheDocument();
+  });
+
+  it("keeps a failed draft available, blocks repeat decisions while saving, and shows recovery feedback", async () => {
+    const user = userEvent.setup();
+    let reject!: (cause: Error) => void;
+    const resolve = vi.fn(() => new Promise<void>((_done, fail) => { reject = fail; }));
+    render(<ProfileChangeCard draft={draft} busy={false} onResolve={resolve} />);
+    await user.click(screen.getByRole("button", { name: "Apply changes" }));
+    expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Apply changes" }));
+    expect(resolve).toHaveBeenCalledTimes(1);
+    await act(async () => reject(new Error("Unavailable")));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your draft is kept");
+    expect(screen.getByRole("button", { name: "Apply changes" })).toBeEnabled();
+    expect(screen.getByText("Backend Engineer")).toBeInTheDocument();
+  });
+
+  it("asks for a final confirmation before applying profile removals", async () => {
+    const user = userEvent.setup();
+    const resolve = vi.fn().mockResolvedValue(undefined);
+    render(<ProfileChangeCard draft={{ ...draft, previews: [{ entity: "skill", operation: "delete", label: "Remove skill", before: { name: "Python" }, after: null }] }} busy={false} onResolve={resolve} />);
+    await user.click(screen.getByRole("button", { name: "Apply changes" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(resolve).not.toHaveBeenCalled();
+    expect(within(dialog).getByText("Python")).toBeInTheDocument();
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Back to review" })).toHaveFocus());
+    await user.click(within(dialog).getByRole("button", { name: "Apply and remove" }));
+    expect(resolve).toHaveBeenCalledExactlyOnceWith("apply");
   });
 });

@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { skillTypesEn, skillTypesZh } from "./skill-types";
 
 // Loaded with the Skills screen, keeping its copy out of public-route startup.
 const en = {
@@ -29,6 +30,7 @@ const en = {
   unselectMerge: "Remove from selection",
   resetGrouping: "Reset to automatic",
   type: "Type",
+  skillTypes: skillTypesEn,
   evidence: "Evidence",
   details: "Skill actions",
   cancel: "Cancel",
@@ -158,6 +160,7 @@ const zh: typeof en = {
   unselectMerge: "取消选择",
   resetGrouping: "恢复自动分组",
   type: "类型",
+  skillTypes: skillTypesZh,
   evidence: "证据",
   details: "技能操作",
   cancel: "取消",

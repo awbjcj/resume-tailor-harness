@@ -244,7 +244,7 @@ export function useSaveCoachNote() {
         queryClient.invalidateQueries({ queryKey: ["profile-sources"] }),
       ]);
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: () => queryClient.invalidateQueries({ queryKey: ["coach-session"] }),
   });
 }
 
@@ -263,7 +263,7 @@ export function useDiscardCoachNote() {
         queryClient.invalidateQueries({ queryKey: ["coach-sessions"] }),
       ]);
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: () => queryClient.invalidateQueries({ queryKey: ["coach-session"] }),
   });
 }
 
@@ -278,6 +278,6 @@ export function useResolveCoachChanges() {
     })),
     // Profile evidence affects the matrix, matching, setup and application views.
     onSuccess: () => queryClient.invalidateQueries(),
-    onError: (error: Error) => toast.error(error.message),
+    onError: () => queryClient.invalidateQueries({ queryKey: ["coach-session"] }),
   });
 }

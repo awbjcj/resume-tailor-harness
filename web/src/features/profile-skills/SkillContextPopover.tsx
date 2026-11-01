@@ -24,7 +24,7 @@ import {
   type LibraryGroup,
   type LibraryRow,
 } from "./SkillEditorDialog";
-import { SKILL_CATEGORY_LABELS, skillCategoryValue } from "./skill-categories";
+import { skillCategoryValue } from "./skill-categories";
 import { useMoveSkillGroup } from "./use-profile-skills";
 
 export const skillPopoverClass =
@@ -198,7 +198,7 @@ export function SkillContextPopover({
         ) : null}
         <dl className="flex flex-wrap items-center justify-between gap-2 text-xs">
           <dt className="text-muted-foreground">{copy.type}</dt>
-          <dd>{SKILL_CATEGORY_LABELS[kind]}</dd>
+          <dd>{copy.skillTypes[kind]}</dd>
         </dl>
         <SkillMoveForm
           row={row}

@@ -78,7 +78,8 @@ describe("workspace review interactions", () => {
     render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
     await user.click(await screen.findByRole("checkbox", { name: /Add note.*#2/ }));
     await user.click(screen.getByRole("button", { name: "Approve and save" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("The preview changed");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Ask the agent for a new preview");
+    expect(screen.getByRole("button", { name: "Approve and save" })).toBeDisabled();
     expect(screen.getByRole("checkbox", { name: /Add note.*#2/ })).not.toBeChecked();
     expect(screen.queryByText("Saved")).not.toBeInTheDocument();
   });
@@ -106,9 +107,9 @@ describe("workspace review interactions", () => {
     render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
     const review = await screen.findByRole("region", { name: "工作区更改" });
     expect(await within(review).findByText("Original title")).toBeInTheDocument();
-    expect(within(review).getByText("false")).toBeInTheDocument();
+    expect(within(review).getByText("否")).toBeInTheDocument();
     expect(within(review).getByText("0")).toBeInTheDocument();
-    expect(within(review).getByText("空列表")).toBeInTheDocument();
+    expect(within(review).getByText("无条目")).toBeInTheDocument();
     expect(within(review).getByText("空文本")).toBeInTheDocument();
     expect(within(review).getByText("无字段")).toBeInTheDocument();
     expect(within(review).getByText("已选择 1 项更改，共 1 项")).toBeInTheDocument();
@@ -140,8 +141,92 @@ describe("workspace review interactions", () => {
     saved.actions[0].receipt = { state: "unconfirmed", result: {}, approvedBy: "local-user", createdAt: saved.createdAt };
     serve(saved);
     render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
-    expect(await screen.findByText("Outcome unconfirmed — do not retry")).toBeInTheDocument();
+    expect((await screen.findAllByText("Outcome unconfirmed. Check the saved record; do not retry this change.")).length).toBeGreaterThan(0);
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Approve and save" })).not.toBeInTheDocument();
+  });
+
+  it("leaves deletions unselected and requires confirmation before sending the exact selected actions", async () => {
+    const user = userEvent.setup();
+    const saved = proposal();
+    saved.actions[1].change.operation = "job.delete";
+    saved.actions[1].before = { title: "Duplicate role" };
+    saved.actions[1].after = { deleted: true };
+    serve(saved);
+    const requests: unknown[] = [];
+    server.use(http.post("/api/workspace-agent/proposals/p1/review", async ({ request }) => {
+      requests.push(await request.json());
+      for (const action of saved.actions) action.receipt = { state: "applied", result: {}, approvedBy: "local-user", createdAt: saved.createdAt };
+      return HttpResponse.json(saved);
+    }));
+    render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
+    const deletion = await screen.findByRole("checkbox", { name: /Delete job.*#2/ });
+    expect(deletion).not.toBeChecked();
+    expect(screen.getByText("Selected 1 of 2 changes")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Select all" }));
+    expect(deletion).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Approve and save" }));
+    let dialog = await screen.findByRole("alertdialog");
+    expect(requests).toEqual([]);
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Back to review" })).toHaveFocus());
+    await user.click(within(dialog).getByRole("button", { name: "Back to review" }));
+    expect(deletion).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Approve and save" }));
+    dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("Duplicate role")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Save and remove" }));
+    await waitFor(() => expect(requests).toEqual([{ digest: saved.digest, actionIds: ["a1", "a2"], decision: "apply" }]));
+    expect(await screen.findByText("All changes have been reviewed.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve and save" })).not.toBeInTheDocument();
+  });
+
+  it("clears and restores selection without submitting a review", async () => {
+    const user = userEvent.setup();
+    serve();
+    render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
+    await user.click(await screen.findByRole("button", { name: "Clear selection" }));
+    for (const checkbox of screen.getAllByRole("checkbox")) expect(checkbox).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Approve and save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Select all" }));
+    for (const checkbox of screen.getAllByRole("checkbox")) expect(checkbox).toBeChecked();
+  });
+
+  it("also leaves profile-content removals unselected", async () => {
+    const saved = proposal();
+    saved.actions = [saved.actions[0]];
+    saved.actions[0].change.operation = "profile.change";
+    saved.actions[0].before = [{ name: "Python" }];
+    saved.actions[0].after = [null];
+    serve(saved);
+    render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
+    expect(await screen.findByRole("checkbox", { name: /Update profile/ })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Approve and save" })).toBeDisabled();
+    expect(screen.getByText(/removes profile content/)).toBeInTheDocument();
+  });
+
+  it("translates nested schema fields and known enums while retaining user-authored values", async () => {
+    await changeLanguage("zh-CN");
+    const saved = proposal();
+    saved.actions = [saved.actions[0]];
+    const after = {
+      legalName: { givenName: "Alex", familyName: "Li" },
+      work_eligibility: [{ authorized_to_work: false, sponsorship_now: true }],
+      employer_answers: [{ category: "role_requirement", answer: "general" }],
+      experienceRanges: [{ minimumYears: 0, maximumYears: 3 }],
+    };
+    saved.actions[0].change.operation = "application_profile.update";
+    saved.actions[0].after = after;
+    serve(saved);
+    render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
+    expect(await screen.findByText("法定姓名")).toBeInTheDocument();
+    expect(screen.getByText("具有合法工作资格")).toBeInTheDocument();
+    expect(screen.getByText("否")).toBeInTheDocument();
+    expect(screen.getByText("答案类别")).toBeInTheDocument();
+    expect(screen.getByText("职位要求")).toBeInTheDocument();
+    expect(screen.getByText("general")).toBeInTheDocument();
+    expect(screen.getByText("最少年数")).toBeInTheDocument();
+    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(saved.actions[0].after).toEqual(after);
   });
 });

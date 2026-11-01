@@ -42,8 +42,8 @@ export default function WorkspaceReviewPanel({ surface, sessionId, turnCount = 0
       {query.isPending ? <p role="status" className="text-sm text-muted-foreground">{copy.loading}</p> : null}
       {query.isError ? (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
-          <p role="alert" className="min-w-0 flex-1 text-sm text-destructive">Unable to load proposed changes.</p>
-          <Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>Retry</Button>
+          <p role="alert" className="min-w-0 flex-1 text-sm text-destructive">{copy.loadFailed}</p>
+          <Button variant="outline" disabled={query.isFetching} onClick={() => void query.refetch()}>{copy.retry}</Button>
         </div>
       ) : null}
       {query.data?.proposals.map((proposal) => (
@@ -54,8 +54,8 @@ export default function WorkspaceReviewPanel({ surface, sessionId, turnCount = 0
       ) : null}
       {offset > 0 || query.data?.nextOffset != null ? (
         <nav aria-label={copy.pages} className="flex flex-wrap items-center justify-between gap-2">
-          <Button variant="outline" disabled={!offset || query.isFetching} onClick={() => setOffset(Math.max(0, offset - 20))}>Previous</Button>
-          <Button variant="outline" disabled={query.data?.nextOffset == null || query.isFetching} onClick={() => setOffset(query.data!.nextOffset!)}>Next</Button>
+          <Button variant="outline" disabled={!offset || query.isFetching} onClick={() => setOffset(Math.max(0, offset - 20))}>{copy.previous}</Button>
+          <Button variant="outline" disabled={query.data?.nextOffset == null || query.isFetching} onClick={() => setOffset(query.data!.nextOffset!)}>{copy.next}</Button>
         </nav>
       ) : null}
     </section>

@@ -236,8 +236,8 @@ export function CoachPage() {
   const savedDrafts = active?.draftNotes?.filter((note) => note.status === "saved") ?? [];
   const historyItems: ChatSessionHistoryItem[] = (sessions.data?.sessions ?? []).map((row) => {
     const date = formatUserDate(row.startedAt);
-    const topicLabel = `${row.topicCount} topic${row.topicCount === 1 ? "" : "s"}`;
-    const savedLabel = `${row.savedNoteCount} saved`;
+    const topicLabel = t("profileChanges.topics", { count: row.topicCount });
+    const savedLabel = t("profileChanges.savedNotes", { count: row.savedNoteCount });
     return {
       id: row.sessionId,
       title: row.sessionTitle || `Coaching · ${date}`,
@@ -290,9 +290,9 @@ export function CoachPage() {
         description={t("profileChanges.description")}
         meta={<>
           <Badge variant={active?.status === "active" ? "secondary" : "outline"}>{active?.status === "active" ? "Session live" : active?.status === "ended" ? "Session complete" : "Ready when you are"}</Badge>
-          {active ? <Badge variant="outline">{active.topics?.length ?? 0} topics</Badge> : null}
-          {active ? <Badge variant="outline">{pendingCount} awaiting approval</Badge> : null}
-          {active ? <Badge variant="outline">{savedDrafts.length} saved</Badge> : null}
+          {active ? <Badge variant="outline">{t("profileChanges.topics", { count: active.topics?.length ?? 0 })}</Badge> : null}
+          {active && pendingCount > 0 ? <Badge variant="outline">{t("profileChanges.drafts", { count: pendingCount })}</Badge> : null}
+          {active ? <Badge variant="outline">{t("profileChanges.savedNotes", { count: savedDrafts.length })}</Badge> : null}
         </>}
         actions={<>{active?.status === "active" ? (
           <AlertDialog>
@@ -429,20 +429,22 @@ export function CoachPage() {
               ) : null}
               {(active.changeDrafts?.length || active.draftNotes?.length || active.recap || active.impact) ? (
                 <div className="space-y-4 border-t p-4 sm:p-6">
+                  {active.changeDrafts?.length || active.draftNotes?.length ? <h2 className="text-sm font-semibold">{t("profileChanges.reviewTitle")}</h2> : null}
                   {(active.changeDrafts ?? []).map((draft) => (
-                    <ProfileChangeCard key={`${draft.id}-${draft.status}`} draft={draft}
-                      busy={busy || resolveChanges.isPending}
-                      onResolve={(decision) => resolveChanges.mutate({ sessionId: active.sessionId, draftId: draft.id, revision: draft.revision, decision })}
+                    <ProfileChangeCard key={`${draft.id}-${draft.revision}`} draft={draft}
+                      busy={busy || resolveChanges.isPending || saveNote.isPending || discardNote.isPending}
+                      onResolve={(decision) => resolveChanges.mutateAsync({ sessionId: active.sessionId, draftId: draft.id, revision: draft.revision, decision })}
                     />
                   ))}
                   {(active.draftNotes ?? []).map((note) => (
                     <DraftNoteCard
                       key={`${note.topicId}-${note.status}`}
                       note={note}
-                      saving={saveNote.isPending}
-                      discarding={discardNote.isPending}
-                      onSave={(draft) => void saveNote.mutateAsync({ sessionId: active.sessionId, topicId: draft.topicId, title: draft.title, summary: draft.summary, quotes: draft.quotes ?? [] })}
-                      onDiscard={() => void discardNote.mutateAsync({ sessionId: active.sessionId, topicId: note.topicId })}
+                      saving={saveNote.isPending && saveNote.variables?.topicId === note.topicId}
+                      discarding={discardNote.isPending && discardNote.variables?.topicId === note.topicId}
+                      busy={busy || resolveChanges.isPending || saveNote.isPending || discardNote.isPending}
+                      onSave={(draft) => saveNote.mutateAsync({ sessionId: active.sessionId, topicId: draft.topicId, title: draft.title, summary: draft.summary, quotes: draft.quotes ?? [] })}
+                      onDiscard={() => discardNote.mutateAsync({ sessionId: active.sessionId, topicId: note.topicId })}
                     />
                   ))}
                   {active.recap ? <Card className="bg-muted/30"><CardHeader><CardTitle className="text-lg">Session recap</CardTitle></CardHeader><CardContent className="text-base leading-7"><ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{active.recap}</ReactMarkdown></CardContent></Card> : null}
