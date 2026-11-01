@@ -325,23 +325,28 @@ def bulk_apply(
 # --- mutations (preserve current job/application semantics) ---------------
 
 
+def stage_changes(current_status: str, status: str) -> dict[str, Any]:
+    """Exact fields changed by a manual stage override, also used in previews."""
+    changes: dict[str, Any] = {"status": status}
+    if (
+        current_status == JobStatus.rejected.value
+        and status not in _DISCOVERY_STAGE_STATUSES
+    ):
+        # The prior rejection no longer applies once the job is promoted; a
+        # stale reason would otherwise linger and be matched by the triage
+        # reject-reason filter. Mirrors reprocess().
+        changes.update(gate_override=True, reject_reason=None, reject_category=None)
+    elif status in _DISCOVERY_STAGE_STATUSES:
+        changes["gate_override"] = False
+    return changes
+
+
 def set_stage(session: Session, job_id: int, status: str) -> Job | None:
     job = get_job(session, job_id)
     if job is None:
         return None
-    if (
-        job.status == JobStatus.rejected.value
-        and status not in _DISCOVERY_STAGE_STATUSES
-    ):
-        job.gate_override = True
-        # The prior rejection no longer applies once the job is promoted; a
-        # stale reason would otherwise linger and be matched by the triage
-        # reject-reason filter. Mirrors reprocess().
-        job.reject_reason = None
-        job.reject_category = None
-    elif status in _DISCOVERY_STAGE_STATUSES:
-        job.gate_override = False
-    job.status = status
+    for key, value in stage_changes(job.status, status).items():
+        setattr(job, key, value)
     return save_job(session, job)
 
 

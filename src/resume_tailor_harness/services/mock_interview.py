@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
 from collections.abc import Callable
 from pathlib import Path
 
@@ -39,13 +38,13 @@ from resume_tailor_harness.interview.store import (
     InterviewReflection,
     InterviewStyle,
     apply_answer_delta,
+    append_workspace_exchange,
     attach_turn_audio,
     create_session,
     end_with_debrief,
     list_sessions,
     load_session,
     mark_turn_audio_failed,
-    mutate_session,
 )
 from resume_tailor_harness.llm_runner import Runner, UnparsedAgentOutput, expect_text
 from resume_tailor_harness.sessions.stream import Notice, NullSink, StreamSink
@@ -483,29 +482,21 @@ def run_answer_turn(
     prose, notes = persona_output(
         interviewer, prompt, output_sink, reporter, source="interviewer notes"
     )
+    skill_uses = []
+    if getattr(interviewer, "run_meta", None) is not None:
+        skill_uses = [
+            SkillUse.model_validate(use)
+            for use in append_skill_use(None, interviewer, "turn")
+        ]
     if is_workspace_request():
         prose = prose or notes.split("---METADATA---", 1)[0].strip()
         if not prose:
             raise ValueError("Workspace request returned no response")
 
-        def append_maintenance(current):
-            if current["status"] != "active" or current["concluded"]:
-                raise ValueError("Interview is no longer active")
-            now = datetime.now(timezone.utc).isoformat()
-            for role, content in (("candidate", text), ("interviewer", prose)):
-                current["turns"].append(
-                    {
-                        "role": role,
-                        "text": content,
-                        "question_id": "",
-                        "is_followup": False,
-                        "workspace_request": True,
-                        "at": now,
-                    }
-                )
-
         reporter.step(1)
-        mutate_session(root, session_id, append_maintenance)
+        append_workspace_exchange(
+            root, session_id, message=text, response=prose, skill_uses=skill_uses
+        )
         return session_view(root, session_id)
     preview = {
         **session,
@@ -537,12 +528,6 @@ def run_answer_turn(
         validated = _degraded_turn(session, fallback_text)
     if prose:
         validated.turn = validated.turn.model_copy(update={"text": prose})
-    skill_uses = []
-    if getattr(interviewer, "run_meta", None) is not None:
-        skill_uses = [
-            SkillUse.model_validate(use)
-            for use in append_skill_use(None, interviewer, "turn")
-        ]
     reporter.step(1)
     updated = apply_answer_delta(
         root,

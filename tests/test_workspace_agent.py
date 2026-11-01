@@ -659,3 +659,284 @@ def test_application_profile_patch_keeps_unrelated_answers(workspace):
     saved = read_profile(workspace[2]).profile
     assert saved.full_name == "Alex Example"
     assert saved.email == "alex@example.com"
+
+
+def test_search_settings_reads_saved_connector_config(workspace):
+    config_dir = workspace[1] / "config"
+    config_dir.mkdir()
+    (config_dir / "connectors.yaml").write_text(
+        "greenhouse:\n  boards:\n    - token: acme\n", encoding="utf-8"
+    )
+    toolkit = WorkspaceTools(
+        workspace[0], workspace[1], workspace[2], "Read my search preferences"
+    )
+    tools = {f.__name__: f for f in toolkit.functions()}
+    result = tools["read_search_settings"]()
+    assert result["search"] == workspace[2].get("search").model_dump(mode="json")
+    assert result["connectors"]["greenhouse"]["boards"][0]["token"] == "acme"
+
+
+def test_edit_saved_event_without_resupplying_timestamp(workspace):
+    created = decide(
+        workspace,
+        propose(
+            workspace,
+            WorkspaceChange(
+                operation="event.create",
+                job_id=1,
+                values={
+                    "kind": "application_submitted",
+                    "occurred_at": "2026-11-01T10:00:00-05:00",
+                },
+                reason="Record submission",
+            ),
+        ),
+    )
+    event_id = created["actions"][0]["receipt"]["result"]["id"]
+    plan = propose(
+        workspace,
+        WorkspaceChange(
+            operation="event.update",
+            job_id=1,
+            target_id=event_id,
+            values={"notes": "Recruiter confirmed receipt"},
+            reason="Add detail",
+        ),
+    )
+    decide(workspace, plan)
+    with Session(workspace[0]) as session:
+        saved = session.get(ApplicationEvent, event_id)
+        assert saved is not None
+        assert saved.notes == "Recruiter confirmed receipt"
+        assert saved.occurred_at is not None and saved.occurred_at.hour == 15
+    with pytest.raises(ValueError, match="UTC offset"):
+        propose(
+            workspace,
+            WorkspaceChange(
+                operation="event.update",
+                job_id=1,
+                target_id=event_id,
+                values={"occurred_at": "2026-11-02T10:00:00"},
+                reason="Invalid time",
+            ),
+        )
+
+
+def test_application_notes_omission_preserves_but_null_clears(workspace):
+    with Session(workspace[0]) as session:
+        session.add(Application(job_id=1, notes="Old note"))
+        session.commit()
+    for values, expected in (
+        ({"status": "interview"}, "Old note"),
+        ({"status": "interview", "notes": None}, None),
+    ):
+        plan = propose(
+            workspace,
+            WorkspaceChange(
+                operation="application.update",
+                job_id=1,
+                values=values,
+                reason="Update tracking",
+            ),
+        )
+        result = decide(workspace, plan)
+        assert result["actions"][0]["receipt"]["result"]["notes"] == expected
+        with Session(workspace[0]) as session:
+            assert session.exec(select(Application)).one().notes == expected
+
+
+def test_document_selection_previews_old_and_new_selection(workspace):
+    from resume_tailor_harness.tracking.tables import ResumeVersion, CoverLetter
+
+    with Session(workspace[0]) as session:
+        session.add(ResumeVersion(id=1, job_id=1))
+        session.add(ResumeVersion(id=2, job_id=1))
+        session.add(CoverLetter(id=2, job_id=1, content_json={"body": "Cover letter"}))
+        session.add(Application(job_id=1, resume_version_id=1))
+        session.commit()
+    plan = propose(
+        workspace,
+        *[
+            WorkspaceChange(
+                operation="artifact.select",
+                job_id=1,
+                target_id=2,
+                values={"kind": kind},
+                reason="Select document",
+            )
+            for kind in ("resume", "cover_letter")
+        ],
+    )
+    resume, letter = plan["actions"]
+    assert resume["before"]["resume_version_id"] == 1
+    assert resume["after"]["resume_version_id"] == 2
+    assert letter["before"]["cover_letter_id"] is None
+    assert letter["after"]["cover_letter_id"] == 2
+    decide(workspace, plan, ids=[resume["id"]])
+    decide(workspace, plan, ids=[letter["id"]])
+
+
+def test_stage_preview_includes_cleared_rejection_and_gate_override(workspace):
+    with Session(workspace[0]) as session:
+        job = session.get(Job, 1)
+        assert job is not None
+        job.status, job.reject_reason, job.reject_category = (
+            "rejected",
+            "Location",
+            "filter",
+        )
+        session.add(job)
+        session.commit()
+    plan = propose(
+        workspace,
+        WorkspaceChange(
+            operation="job.update",
+            job_id=1,
+            values={"status": "approved"},
+            reason="Override rejection",
+        ),
+    )
+    assert plan["actions"][0]["after"] == {
+        "status": "approved",
+        "gate_override": True,
+        "reject_reason": None,
+        "reject_category": None,
+    }
+    result = decide(workspace, plan)["actions"][0]["receipt"]["result"]
+    assert all(
+        result[key] == value for key, value in plan["actions"][0]["after"].items()
+    )
+
+
+def test_unscoped_question_cannot_preview_a_job_question(workspace):
+    created = decide(
+        workspace,
+        propose(
+            workspace,
+            WorkspaceChange(
+                operation="question.create",
+                job_id=1,
+                values={"question": "Why this role?", "jobId": 1},
+                reason="Save question",
+            ),
+        ),
+    )
+    target_id = created["actions"][0]["receipt"]["result"]["id"]
+    with pytest.raises(ValueError, match="belong"):
+        propose(
+            workspace,
+            WorkspaceChange(
+                operation="question.delete",
+                target_id=target_id,
+                reason="Missing job scope",
+            ),
+        )
+
+
+def test_change_schemas_have_resolvable_local_references():
+    for schema in actions.schemas().values():
+        if not isinstance(schema, dict):
+            continue
+
+        def check(value):
+            if isinstance(value, dict):
+                if "$ref" in value:
+                    target = schema
+                    for part in value["$ref"].removeprefix("#/").split("/"):
+                        target = target[part]
+                for child in value.values():
+                    check(child)
+            elif isinstance(value, list):
+                for child in value:
+                    check(child)
+
+        check(schema)
+
+
+@pytest.mark.parametrize("interrupt_cleanup", [False, True])
+def test_replayed_job_delete_preserves_sessions_for_reused_job_id(
+    workspace, monkeypatch, interrupt_cleanup
+):
+    from resume_tailor_harness.career_lab import store
+
+    root = workspace[1] / "career-lab"
+    store.create_session(root, session_id="old-session", job_id=2)
+    plan = propose(
+        workspace,
+        WorkspaceChange(
+            operation="job.delete",
+            job_id=2,
+            reason="Remove old posting",
+        ),
+    )
+    original_cleanup = store.delete_sessions_for_job
+    if interrupt_cleanup:
+
+        def fail(*args, **kwargs):
+            raise RuntimeError("cleanup interrupted")
+
+        monkeypatch.setattr(store, "delete_sessions_for_job", fail)
+        with pytest.raises(RuntimeError, match="interrupted"):
+            decide(workspace, plan)
+        monkeypatch.setattr(store, "delete_sessions_for_job", original_cleanup)
+        store.end_session(root, "old-session")
+    else:
+        decide(workspace, plan)
+    with Session(workspace[0]) as session:
+        replacement = Job(source="manual", title="Replacement", jd_text="New posting")
+        session.add(replacement)
+        session.commit()
+        assert replacement.id == 2  # SQLite reuses the largest deleted row id.
+    store.create_session(root, session_id="new-session", job_id=2)
+    decide(workspace, plan)
+    assert [row["session_id"] for row in store.list_sessions(root)] == ["new-session"]
+
+
+def test_independent_notes_on_one_job_can_be_approved_separately(workspace):
+    plan = propose(workspace, note(), note())
+    first, second = [action["id"] for action in plan["actions"]]
+    decide(workspace, plan, ids=[first])
+    decide(workspace, plan, ids=[second])
+    with Session(workspace[0]) as session:
+        assert len(session.exec(select(WorkspaceNote)).all()) == 2
+
+
+def test_editing_another_note_does_not_stale_the_reviewed_target(workspace):
+    result = decide(workspace, propose(workspace, note(), note()))
+    first, second = [
+        action["receipt"]["result"]["note_id"] for action in result["actions"]
+    ]
+    plan = propose(
+        workspace,
+        WorkspaceChange(
+            operation="note.update",
+            job_id=1,
+            target_id=first,
+            values={"title": "Reviewed title", "body": "Reviewed body"},
+            reason="Correct note",
+        ),
+    )
+    with Session(workspace[0]) as session:
+        other = session.get(WorkspaceNote, second)
+        assert other is not None
+        other.body = "Unrelated edit"
+        session.add(other)
+        session.commit()
+    decide(workspace, plan)
+    stale = propose(
+        workspace,
+        WorkspaceChange(
+            operation="note.delete",
+            job_id=1,
+            target_id=first,
+            reason="Remove note",
+        ),
+    )
+    with Session(workspace[0]) as session:
+        target = session.get(WorkspaceNote, first)
+        assert target is not None
+        target.body = "Concurrent edit to reviewed note"
+        session.add(target)
+        session.commit()
+    with pytest.raises(ValueError, match="changed"):
+        decide(workspace, stale)

@@ -28,6 +28,25 @@ def record(value: Any) -> dict:
     return value.model_dump(mode="json") if value is not None else {}
 
 
+def job_session_ids(root: Path, job_id: int) -> dict[str, list[str]]:
+    """Capture file identities before deleting a job; numeric job ids can be reused."""
+    from resume_tailor_harness.career_lab.store import list_sessions as lab_sessions
+    from resume_tailor_harness.interview.store import (
+        list_sessions as interview_sessions,
+    )
+
+    return {
+        kind: [
+            row["session_id"]
+            for row in reader(root / kind, job_id=job_id, include_archived=True)
+        ]
+        for kind, reader in (
+            ("career-lab", lab_sessions),
+            ("interview", interview_sessions),
+        )
+    }
+
+
 def job_snapshot(session: Session, job_id: int) -> dict:
     job = session.get(Job, job_id)
     if job is None:
