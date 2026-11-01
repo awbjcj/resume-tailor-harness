@@ -172,7 +172,7 @@ export function ProfileWorkspace() {
         icon={<Sparkles />}
         eyebrow="Step 1 · Your profile"
         title="Profile"
-        description="Build your profile from resume and project evidence for your tailored applications."
+        description="Build your profile from your resume and project evidence to tailor your applications."
         meta={
           <Badge variant="outline" className="h-auto min-h-5 max-w-full whitespace-normal">
             {factsStatusText(setupStatus.data?.profile.factsBuiltAt)}

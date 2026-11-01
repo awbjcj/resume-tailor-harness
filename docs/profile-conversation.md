@@ -1,21 +1,21 @@
 # Conversational profile management
 
-Profile Coach can create, inspect, update and remove the active workspace's
-personal resume profile, facts, skills and skill display categories. This is one
-profile per workspace; it does not create accounts or alternate resume personas.
-Users can start at `/coach` without uploading a resume. Model credentials are
-still required for conversation turns.
+Profile Coach can create, inspect, update and remove the resume profile in the
+active workspace, including its facts, skills and skill display categories. Each
+workspace has one profile; the coach does not create accounts or alternate
+resume personas. Users can start at `/coach` without uploading a resume. Model
+credentials are still required for conversation turns.
 
 Examples include “Change my headline to Backend Engineer”, “Remove this project
 highlight”, “Rename Python to Python 3”, and “Move Python into Programming”.
-The coach inspects exact saved records, asks when a target is ambiguous, and
-produces a change card with before/after values and the user's current words.
-Apply changes commits that stored proposal; Discard leaves the profile unchanged.
+The coach inspects saved records, asks when a target is ambiguous, and produces
+a change card with before/after values and the user's current words. Selecting
+Apply changes commits the stored proposal; Discard leaves the profile unchanged.
 Existing evidence-coaching notes and their approval flow remain available.
 
 ## Runtime boundary
 
-The Agno coach has the existing read-only corpus tools plus:
+In addition to the existing read-only corpus tools, the Agno coach can use:
 
 | Tool | Purpose |
 | --- | --- |
@@ -27,8 +27,8 @@ The persona produces prose and metadata; the existing cheap formatter parses a
 `CoachTurn` with `action=changes` and a `ProfileChangeSet`. Application code
 revalidates every operation, exact current-turn quote, editable field and target
 before storing a pending draft. Tool results and model text cannot approve it.
-Record ids, source metadata and inference evidence are host-owned. Moving an
-inferred skill preserves its inferred status and supporting evidence.
+The host controls record ids, source metadata and inference evidence. Moving
+an inferred skill preserves its inferred status and supporting evidence.
 
 The single, hash-verified `profile-conversation` skill loads through the existing
 career-skill registry and Agno `Skills` adapter. The model never selects a local
@@ -47,7 +47,8 @@ remain projected by the normal prompt registry and guidance/quality composition.
 endpoint accepts a draft identifier and revision, never replacement change data.
 It returns the session with `changeDrafts`, whose statuses are `pending`,
 `applied` or `discarded`. Repeating the same decision is idempotent. Applying an
-outdated profile revision returns `409 PROFILE_STALE`; inspect and draft again.
+outdated profile revision returns `409 PROFILE_STALE`; inspect the profile and
+create a new draft.
 Pending drafts remain reviewable after ending the conversation. Archived sessions
 must be restored before applying changes.
 
@@ -84,8 +85,9 @@ to publish after concurrent profile, organization, override or taxonomy changes.
 Setup status exposes `profile.canRebuild` so a conversational profile can rebuild
 from the Profile workspace without an uploaded resume.
 
-Whole-profile removal is reviewed alone. It deletes saved facts and matrix,
-retains source documents and conversation history, and fences source replay.
+Whole-profile removal is reviewed alone. It deletes saved facts and the matrix,
+retains source documents and conversation history, and prevents old sources
+from being replayed.
 Recreation starts with a blank profile and explicit new conversational records.
 Previously registered source ids and fact ids stay excluded; newly added sources
 can contribute new evidence. The old manual-skill ledger is removed as well.
