@@ -31,6 +31,42 @@ def test_build_without_resume_is_400(client):
     assert resp.json()["error"]["code"] == "SETUP_INCOMPLETE"
 
 
+def test_build_with_only_project_sources_requires_a_resume(client):
+    created = client.post(
+        "/api/profile/sources",
+        files={
+            "file": (
+                "dossier.md",
+                b"---\nrepo_url: https://github.com/me/project\n---\n# Project",
+                "text/markdown",
+            )
+        },
+    )
+    assert created.status_code == 201
+    response = client.post("/api/profile/build")
+    assert response.status_code == 400
+    assert "primary resume" in response.json()["error"]["message"]
+
+
+def test_build_does_not_reimport_a_deleted_legacy_resume(client):
+    client.post(
+        "/api/profile/documents",
+        files={"file": ("resume.txt", b"old wizard resume", "text/plain")},
+        data={"docType": "resume"},
+    )
+    created = client.post(
+        "/api/profile/sources",
+        files={"file": ("resume.txt", b"corpus resume", "text/plain")},
+    )
+    assert created.status_code == 201
+    assert (
+        client.delete(f"/api/profile/sources/{created.json()['id']}").status_code == 204
+    )
+    response = client.post("/api/profile/build")
+    assert response.status_code == 400
+    assert client.get("/api/profile/sources").json() == []
+
+
 def test_build_without_key_is_400(tmp_path):
     app = create_app(
         db_url="sqlite://",
@@ -102,6 +138,34 @@ def test_build_launches_run(client, monkeypatch):
     body = resp.json()
     assert body["kind"] == "profile-build"
     assert body["runId"]
+
+
+def test_profile_build_uses_saved_repository_branch_choices(client, monkeypatch):
+    import threading
+    from resume_tailor_harness.services import profile_build
+
+    client.post(
+        "/api/profile/sources", files={"file": ("resume.txt", b"resume", "text/plain")}
+    )
+    client.put(
+        "/api/config/profile",
+        json={
+            "githubUsername": "ada",
+            "githubRepoBranches": {"ada/engine": "feature/dossier"},
+        },
+    )
+    seen = {}
+    finished = threading.Event()
+
+    def build(reporter, **kwargs):
+        seen.update(kwargs)
+        finished.set()
+        return {"experiences": 1, "projects": 1, "warnings": []}
+
+    monkeypatch.setattr(profile_build, "run_corpus_build", build)
+    assert client.post("/api/profile/build").status_code == 202
+    assert finished.wait(2)
+    assert seen["github_branches"] == {"ada/engine": "feature/dossier"}
 
 
 def test_build_registers_wizard_resume_as_primary_source(client, monkeypatch):

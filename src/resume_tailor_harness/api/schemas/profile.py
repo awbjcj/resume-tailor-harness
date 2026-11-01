@@ -27,6 +27,19 @@ class SourceOut(CamelModel):
     added_at: str
     fragment_status: str
     origin: SourceOrigin = "upload"
+    file_exists: bool = True
+    repo_url: str | None = None
+    github_branch: str | None = None
+
+
+class GithubRepositoryOut(CamelModel):
+    owner: str
+    name: str
+    full_name: str
+    default_branch: str | None = None
+    selected_branch: str | None = None
+    included: bool = False
+    uploaded_override: bool = False
 
 
 class SourcePatch(CamelModel):

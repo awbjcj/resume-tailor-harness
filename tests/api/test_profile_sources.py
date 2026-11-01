@@ -6,7 +6,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from resume_tailor_harness.api.app import create_app
-from resume_tailor_harness.models.profile import Contact, Experience, ProfileFacts, Project
+from resume_tailor_harness.models.profile import (
+    Contact,
+    Experience,
+    ProfileFacts,
+    Project,
+)
 from resume_tailor_harness.profile.store import save_facts
 
 
@@ -38,6 +43,9 @@ def test_upload_and_list_with_defaults(client):
     assert body["mode"] == "literal"
     assert body["primary"] is True  # first source auto-promotes
     assert body["origin"] == "upload"
+    status = c.get("/api/setup/status").json()["profile"]
+    assert status["hasResume"] is True
+    assert status["documentCount"] == 1
 
     deck = _upload(c, name="deck.md", content=b"Cut latency 30%", mode="synthesis")
     assert deck.status_code == 201
@@ -48,12 +56,12 @@ def test_upload_and_list_with_defaults(client):
     assert all("fragmentStatus" in s for s in listed)
 
 
-def test_first_source_cannot_be_synthesis(client):
+def test_synthesis_can_be_saved_before_a_primary_resume(client):
     c, _ = client
     resp = _upload(c, name="deck.md", mode="synthesis")
-    assert resp.status_code == 422
-    assert resp.json()["error"]["code"] == "VALIDATION_ERROR"
-    assert c.get("/api/profile/sources").json() == []
+    assert resp.status_code == 201
+    assert resp.json()["primary"] is False
+    assert len(c.get("/api/profile/sources").json()) == 1
 
 
 def test_bad_extension_and_oversize_rejected(client):
@@ -106,6 +114,105 @@ def test_delete_source(client):
 
     remaining = c.get("/api/profile/sources").json()
     assert [s["id"] for s in remaining] == [primary_id]
+
+
+def test_primary_resume_can_be_removed_while_project_sources_stay_saved(client):
+    c, _ = client
+    resume = _upload(c).json()
+    dossier = _upload(
+        c, "dossier.md", b"---\nrepo_url: https://github.com/me/project\n---\n# Project"
+    ).json()
+    response = c.delete(f"/api/profile/sources/{resume['id']}?purge=true")
+    assert response.status_code == 204, response.text
+    remaining = c.get("/api/profile/sources").json()
+    assert [s["id"] for s in remaining] == [dossier["id"]]
+    assert remaining[0]["primary"] is False
+    assert c.get("/api/setup/status").json()["profile"]["hasResume"] is False
+    new_resume = _upload(c, "new.txt", b"new resume").json()
+    assert new_resume["primary"] is True
+
+
+def _replace(client, doc_id, name, content):
+    return client.put(
+        f"/api/profile/sources/{doc_id}/file",
+        files={"file": (name, content, "application/octet-stream")},
+    )
+
+
+def test_replace_source_preserves_identity_role_and_other_files(client):
+    c, data_dir = client
+    primary = _upload(c).json()
+    deck = _upload(
+        c, "deck.md", b"old evidence", mode="synthesis", anchor="exp1"
+    ).json()
+    response = _replace(c, deck["id"], "resume.txt", b"updated evidence")
+    assert response.status_code == 200, response.text
+    updated = response.json()
+    assert (updated["id"], updated["mode"], updated["anchor"], updated["primary"]) == (
+        deck["id"],
+        "synthesis",
+        "exp1",
+        False,
+    )
+    assert updated["fileExists"] is True
+    assert updated["filename"] != primary["filename"]
+    sources = data_dir / "profile" / "sources"
+    assert (sources / primary["filename"]).read_bytes() == b"experience text"
+    assert (sources / updated["filename"]).read_bytes() == b"updated evidence"
+    assert not (sources / deck["filename"]).exists()
+    assert len(c.get("/api/profile/sources").json()) == 2
+
+
+def test_replace_primary_is_atomic_and_can_repair_missing_file(client):
+    c, data_dir = client
+    doc = _upload(c).json()
+    invalid = _replace(c, doc["id"], "bad.exe", b"invalid")
+    assert invalid.status_code == 422
+    assert c.get("/api/profile/sources").json()[0]["primary"] is True
+    path = data_dir / "profile" / "sources" / doc["filename"]
+    path.unlink()
+    assert c.get("/api/profile/sources").json()[0]["fileExists"] is False
+    repaired = _replace(c, doc["id"], "new.pdf", b"replacement")
+    assert repaired.status_code == 200, repaired.text
+    assert repaired.json()["primary"] is True
+    assert repaired.json()["id"] == doc["id"]
+    assert repaired.json()["fileExists"] is True
+    assert _replace(c, "absent", "resume.txt", b"x").status_code == 404
+
+
+def test_source_download_and_delete_missing_file(client):
+    c, data_dir = client
+    doc = _upload(c).json()
+    response = c.get(f"/api/profile/sources/{doc['id']}/file")
+    assert response.status_code == 200
+    assert response.content == b"experience text"
+    assert "attachment" in response.headers["content-disposition"]
+    (data_dir / "profile" / "sources" / doc["filename"]).unlink()
+    assert c.get(f"/api/profile/sources/{doc['id']}/file").status_code == 404
+    assert c.delete(f"/api/profile/sources/{doc['id']}").status_code == 204
+    status = c.get("/api/setup/status").json()["profile"]
+    assert status["hasResume"] is False
+    assert status["documentCount"] == 0
+
+
+def test_removed_github_dossier_exclusions_can_be_restored(client):
+    c, data_dir = client
+    _upload(c)
+    from resume_tailor_harness.profile.corpus import add_source, load_manifest
+
+    dossier = data_dir / "project-dossier.md"
+    dossier.write_text(
+        "---\nrepo_url: https://github.com/me/project\n---\n# Project", encoding="utf-8"
+    )
+    doc = add_source(data_dir / "profile", dossier, origin="github", mode="project")
+    assert c.delete(f"/api/profile/sources/{doc.id}?purge=true").status_code == 204
+    assert c.get("/api/profile/sources/github-exclusions").json() == [doc.filename]
+    assert load_manifest(data_dir / "profile").excluded_github_repos == [
+        "github.com/me/project"
+    ]
+    assert c.delete("/api/profile/sources/github-exclusions").status_code == 204
+    assert c.get("/api/profile/sources/github-exclusions").json() == []
+    assert load_manifest(data_dir / "profile").excluded_github_repos == []
 
 
 def test_skeleton_lists_anchor_candidates(client):
@@ -172,3 +279,49 @@ def test_sync_github_launches_tracked_run_and_requires_username(client, monkeypa
     response = c.post("/api/profile/sync-github")
     assert response.status_code == 202, response.text
     assert response.json()["kind"] == "github-sync"
+
+
+def test_github_branch_config_roundtrip_and_choices(client, monkeypatch):
+    c, _ = client
+    config = {
+        "githubUsername": "ada",
+        "githubRepoBranches": {"Ada/Engine": "feature/dossier"},
+    }
+    saved = c.put("/api/config/profile", json=config)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["githubRepoBranches"] == {"ada/engine": "feature/dossier"}
+    assert (
+        c.put(
+            "/api/config/profile", json={"githubRepoBranches": {"engine": "../bad"}}
+        ).status_code
+        == 422
+    )
+    from resume_tailor_harness.services import profile_github
+
+    monkeypatch.setattr(
+        profile_github, "list_branches", lambda owner, repo: ["main", "feature/dossier"]
+    )
+    assert c.get("/api/profile/github/repositories/ada/engine/branches").json() == [
+        "main",
+        "feature/dossier",
+    ]
+    seen = {}
+
+    def list_repos(username, profile_dir, **kwargs):
+        seen.update(kwargs)
+        return [
+            {
+                "owner": "ada",
+                "name": "engine",
+                "full_name": "ada/engine",
+                "default_branch": "main",
+                "selected_branch": "feature/dossier",
+                "included": True,
+            }
+        ]
+
+    monkeypatch.setattr(profile_github, "list_repositories", list_repos)
+    repositories = c.get("/api/profile/github/repositories")
+    assert repositories.status_code == 200
+    assert repositories.json()[0]["selectedBranch"] == "feature/dossier"
+    assert seen["branches"] == {"ada/engine": "feature/dossier"}

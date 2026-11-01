@@ -252,11 +252,13 @@ def test_profile_build_delegates_to_the_service(tmp_path, monkeypatch):
         github_allow,
         github_deny,
         github_limit,
+        github_branches,
     ):
         calls["reporter"] = reporter
         calls["github_username"] = github_username
         calls["facts_out"] = str(facts_out)
         calls["github_options"] = (github_allow, github_deny, github_limit)
+        calls["github_branches"] = github_branches
         return {
             "experiences": 0,
             "projects": 0,
@@ -301,6 +303,7 @@ def test_profile_build_delegates_to_the_service(tmp_path, monkeypatch):
     assert calls["github_username"] == "ada"
     assert calls["facts_out"] == str(out)
     assert calls["github_options"] == ((), (), 20)
+    assert calls["github_branches"] == {}
 
 
 def test_profile_add_note_url_and_sync_github_commands(tmp_path, monkeypatch):

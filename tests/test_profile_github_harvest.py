@@ -1,8 +1,17 @@
 import httpx
+import pytest
 
-from resume_tailor_harness.profile.corpus import add_source, load_manifest
+from resume_tailor_harness.profile.corpus import (
+    add_source,
+    doc_path,
+    load_manifest,
+    remove_source,
+    replace_source,
+    restore_github_sources,
+)
 from resume_tailor_harness.profile.fragments import fragment_cache_status
 from resume_tailor_harness.profile.github import GitHubClient
+from resume_tailor_harness.profile import github_harvest
 from resume_tailor_harness.profile.github_harvest import (
     GITHUB_DOC_PREFIX,
     _dossier_filename,
@@ -426,6 +435,131 @@ def test_sync_removes_delisted_or_docless_sources(tmp_path):
     assert [doc.origin for doc in load_manifest(profile_dir).docs] == ["upload"]
     first_http.close()
     empty_http.close()
+
+
+def test_explicit_removal_survives_sync_until_restored(tmp_path):
+    profile_dir = profile(tmp_path)
+    gh, http = github(standard_handler([repo("mine"), repo("keep")]))
+    sync_github_sources(profile_dir, "me", client=gh)
+    doc = next(
+        d for d in load_manifest(profile_dir).docs if d.filename == "github--mine.md"
+    )
+    remove_source(profile_dir, doc.id, purge=True, exclude_github=True)
+    sync_github_sources(profile_dir, "me", client=gh)
+    assert not doc_path(profile_dir, doc).exists()
+    assert [
+        d.filename for d in load_manifest(profile_dir).docs if d.origin == "github"
+    ] == ["github--keep.md"]
+    restore_github_sources(profile_dir)
+    sync_github_sources(profile_dir, "me", client=gh)
+    assert doc_path(profile_dir, doc).is_file()
+    http.close()
+
+
+def test_sync_does_not_overwrite_a_concurrent_upload(tmp_path, monkeypatch):
+    profile_dir = profile(tmp_path)
+    original_filename_for = github_harvest._filename_for
+
+    def upload_after_naming(item, root):
+        filename = original_filename_for(item, root)
+        upload = tmp_path / filename
+        upload.write_text("user evidence", encoding="utf-8")
+        add_source(root, upload)
+        return filename
+
+    monkeypatch.setattr(github_harvest, "_filename_for", upload_after_naming)
+    gh, http = github(standard_handler([repo("mine")]))
+    report = sync_github_sources(profile_dir, "me", client=gh)
+    uploaded = next(d for d in load_manifest(profile_dir).docs if d.filename == "github--mine.md")
+    assert uploaded.origin == "upload"
+    assert doc_path(profile_dir, uploaded).read_text() == "user evidence"
+    assert "mine" in report.failures
+    http.close()
+
+
+@pytest.mark.parametrize("branch", ["dev/.hidden", "dev/old.lock/work", "dev/\x7f"])
+def test_invalid_branch_components_are_rejected(branch):
+    with pytest.raises(ValueError, match="valid GitHub branch"):
+        github_harvest.validate_repo_branches({"me/repo": branch})
+
+
+def test_replaced_github_dossier_is_preserved_on_sync(tmp_path):
+    profile_dir = profile(tmp_path)
+    gh, http = github(
+        mono_handler([repo("mine")], {"project-dossier.md": dossier("mine", "Old")})
+    )
+    sync_github_sources(profile_dir, "me", client=gh)
+    original = next(d for d in load_manifest(profile_dir).docs if d.origin == "github")
+    replacement = tmp_path / "updated-dossier.md"
+    replacement.write_text(
+        "# Revised project evidence without frontmatter", encoding="utf-8"
+    )
+    updated = replace_source(profile_dir, original.id, replacement)
+    assert updated is not None
+    assert updated.mode == "project"
+    assert updated.origin == "upload"
+    sync_github_sources(profile_dir, "me", client=gh)
+    docs = load_manifest(profile_dir).docs
+    assert len(docs) == 2
+    assert next(d for d in docs if d.id == original.id).origin == "upload"
+    assert (
+        doc_path(profile_dir, updated)
+        .read_text(encoding="utf-8")
+        .startswith("# Revised")
+    )
+    http.close()
+
+
+def test_selected_branch_refreshes_dossier_and_invalid_branch_keeps_saved_copy(
+    tmp_path,
+):
+    profile_dir = profile(tmp_path)
+
+    def handler(request):
+        if request.url.path == "/users/me/repos":
+            return httpx.Response(200, json=[repo("mine", default_branch="main")])
+        if "/contents" in request.url.path:
+            ref = request.url.params.get("ref", "main")
+            if ref == "gone":
+                return httpx.Response(404)
+            if ref == "empty":
+                return httpx.Response(200, json=[])
+            if request.url.path.endswith("/contents"):
+                return httpx.Response(200, json=listing("project-dossier.md"))
+            return httpx.Response(200, text=dossier("mine", ref))
+        if request.url.path.endswith("/languages"):
+            return httpx.Response(200, json={})
+        return httpx.Response(404)
+
+    gh, http = github(handler)
+    sync_github_sources(profile_dir, "me", client=gh)
+    original = next(d for d in load_manifest(profile_dir).docs if d.origin == "github")
+    sync_github_sources(
+        profile_dir, "me", client=gh, branches={"me/mine": "feature/dossier"}
+    )
+    updated = next(d for d in load_manifest(profile_dir).docs if d.origin == "github")
+    assert updated.id == original.id
+    assert updated.github_branch == "feature/dossier"
+    assert "feature/dossier" in doc_path(profile_dir, updated).read_text(
+        encoding="utf-8"
+    )
+    failed = sync_github_sources(
+        profile_dir, "me", client=gh, branches={"me/mine": "gone"}
+    )
+    assert "mine" in failed.failures
+    assert failed.removed == []
+    empty = sync_github_sources(
+        profile_dir, "me", client=gh, branches={"me/mine": "empty"}
+    )
+    assert "No dossier or README" in empty.failures["mine"]
+    assert empty.removed == []
+    assert (
+        next(
+            d for d in load_manifest(profile_dir).docs if d.origin == "github"
+        ).github_branch
+        == "feature/dossier"
+    )
+    http.close()
 
 
 def test_dossier_supersedes_locally_even_when_remote_rate_limits(tmp_path):

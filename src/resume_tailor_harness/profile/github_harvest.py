@@ -7,6 +7,7 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass, field
+from collections.abc import Mapping
 from pathlib import Path
 
 import httpx
@@ -17,7 +18,9 @@ from resume_tailor_harness.profile.corpus import (
     frontmatter_repo_url,
     load_manifest,
     remove_source,
+    save_manifest,
     sources_dir,
+    source_lock,
 )
 from resume_tailor_harness.profile.github import GitHubClient
 from resume_tailor_harness.profile.github_ingest import normalize_repo_url
@@ -28,6 +31,40 @@ _MAX_DOC_BYTES = 120_000
 _SAFE_REPO_NAME = re.compile(r"[^a-z0-9._-]+")
 _CONTEXT_DOC_NAMES = frozenset({"claude.md", "context.md", "agent.md", "agents.md"})
 _MAX_DOSSIERS = 5
+
+
+def validate_repo_branches(value: Mapping[str, str]) -> dict[str, str]:
+    """Normalize repository keys without changing case-sensitive Git refs."""
+    if len(value) > 100:
+        raise ValueError("Configure at most 100 repository branches")
+    result: dict[str, str] = {}
+    for key, branch in value.items():
+        key = key.strip().casefold()
+        branch = branch.strip()
+        if not re.fullmatch(r"[a-z0-9_.-]+(?:/[a-z0-9_.-]+)?", key):
+            raise ValueError("Repository keys must be repo or owner/repo")
+        if (
+            not branch
+            or len(branch) > 255
+            or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in branch)
+            or any(
+                c in branch for c in ("..", "@{", "~", "^", ":", "?", "*", "[", "\\")
+            )
+            or branch.startswith(("/", ".", "-"))
+            or branch.endswith(("/", ".", ".lock"))
+            or "//" in branch
+            or branch == "@"
+            or any(part.startswith(".") or part.endswith(".lock") for part in branch.split("/"))
+        ):
+            raise ValueError("Enter a valid GitHub branch name")
+        result[key] = branch
+    return result
+
+
+def branch_for_repo(repo: dict, branches: Mapping[str, str]) -> str | None:
+    full_name = repo.get("full_name")
+    name = repo.get("name")
+    return branches.get(str(full_name).casefold()) or branches.get(str(name).casefold())
 
 
 @dataclass
@@ -174,11 +211,16 @@ def render_virtual_doc(
 def dossier_repo_urls(profile_dir: str | Path) -> set[str]:
     urls: set[str] = set()
     for doc in load_manifest(profile_dir).docs:
-        if doc.origin != "upload" or not doc.filename.casefold().endswith(".md"):
+        if doc.origin != "upload":
             continue
         try:
             url = normalize_repo_url(
-                frontmatter_repo_url(doc_path(profile_dir, doc).read_bytes())
+                doc.repo_url
+                or (
+                    frontmatter_repo_url(doc_path(profile_dir, doc).read_bytes())
+                    if doc.filename.casefold().endswith(".md")
+                    else None
+                )
             )
         except OSError:
             continue
@@ -295,6 +337,15 @@ def _remove_local_superseded(
     dossiers: set[str],
     report: HarvestReport,
 ) -> None:
+    with source_lock(profile_dir):
+        _remove_local_superseded_locked(profile_dir, dossiers, report)
+
+
+def _remove_local_superseded_locked(
+    profile_dir: str | Path,
+    dossiers: set[str],
+    report: HarvestReport,
+) -> None:
     for doc in list(load_manifest(profile_dir).docs):
         if doc.origin != "github":
             continue
@@ -318,18 +369,63 @@ def _write_source(
     repo_name: str,
     report: HarvestReport,
     kept: set[str],
+    branch: str | None = None,
 ) -> None:
+    with source_lock(profile_dir):
+        manifest = load_manifest(profile_dir)
+        repo_url = normalize_repo_url(frontmatter_repo_url(data))
+        if (
+            filename in manifest.excluded_github_sources
+            or repo_url in manifest.excluded_github_repos
+        ):
+            return
+        # Recheck after the network fetch: a user may have replaced a GitHub
+        # source with an uploaded dossier while this request was in flight.
+        if repo_url in dossier_repo_urls(profile_dir):
+            return
+        _write_source_locked(
+            profile_dir, filename, data, repo_name, report, kept, branch
+        )
+
+
+def _write_source_locked(
+    profile_dir: str | Path,
+    filename: str,
+    data: bytes,
+    repo_name: str,
+    report: HarvestReport,
+    kept: set[str],
+    branch: str | None = None,
+) -> None:
+    manifest = load_manifest(profile_dir)
+    existing = next((doc for doc in manifest.docs if doc.filename == filename), None)
+    # The filename was chosen before the network response was committed. A user
+    # may have uploaded that name meanwhile; never overwrite their document.
+    if existing is not None and existing.origin != "github":
+        report.failures[repo_name] = "Source filename is used by an uploaded document; saved files were preserved"
+        kept.update(_github_docs_for(profile_dir, normalize_repo_url(frontmatter_repo_url(data))))
+        return
     target = sources_dir(profile_dir) / filename
     if not target.exists() or target.read_bytes() != data:
         _atomic_write(target, data)
         report.written.append(filename)
     kept.add(filename)
-    if not any(doc.filename == filename for doc in load_manifest(profile_dir).docs):
+    if existing is not None:
+        existing.repo_url = existing.repo_url or frontmatter_repo_url(data)
+        existing.github_branch = branch
+        save_manifest(manifest, profile_dir)
+    if existing is None:
         created = add_source(profile_dir, target, mode="project", origin="github")
         if created.origin != "github" or created.filename != filename:
             target.unlink(missing_ok=True)
             report.failures[repo_name] = "virtual document duplicated an upload source"
             kept.discard(filename)
+        else:
+            manifest = load_manifest(profile_dir)
+            next(
+                doc for doc in manifest.docs if doc.id == created.id
+            ).github_branch = branch
+            save_manifest(manifest, profile_dir)
 
 
 def sync_github_sources(
@@ -340,9 +436,11 @@ def sync_github_sources(
     allow: tuple[str, ...] = (),
     deny: tuple[str, ...] = (),
     limit: int = 20,
+    branches: Mapping[str, str] | None = None,
 ) -> HarvestReport:
     """Refresh GitHub virtual docs while conservatively preserving cached state."""
     report = HarvestReport()
+    branches = validate_repo_branches(branches or {})
     dossiers = dossier_repo_urls(profile_dir)
     _remove_local_superseded(profile_dir, dossiers, report)
     owns_client = client is None
@@ -370,10 +468,21 @@ def sync_github_sources(
             login = owner_value.get("login") if isinstance(owner_value, dict) else None
             owner = login if isinstance(login, str) else username
             repo_url = normalize_repo_url(item.get("html_url"))
-            if not name or repo_url in dossiers:
+            branch = branch_for_repo(item, branches)
+            observed_branch = branch or item.get("default_branch")
+            ref_args = (
+                {"ref": observed_branch}
+                if isinstance(observed_branch, str) and observed_branch
+                else {}
+            )
+            if (
+                not name
+                or repo_url in dossiers
+                or repo_url in load_manifest(profile_dir).excluded_github_repos
+            ):
                 continue
             try:
-                listing = github.fetch_root_listing(owner, name)
+                listing = github.fetch_root_listing(owner, name, **ref_args)
                 dossier_entries, overflow = _pick_dossier_entries(listing)
                 for skipped in overflow:
                     report.warnings.append(
@@ -382,7 +491,7 @@ def sync_github_sources(
                     )
                 dossier_files: list[tuple[str, str]] = []
                 for entry in dossier_entries:
-                    text = github.fetch_raw_file(owner, name, entry)
+                    text = github.fetch_raw_file(owner, name, entry, **ref_args)
                     if text is None:
                         continue
                     entry_url = normalize_repo_url(
@@ -400,10 +509,15 @@ def sync_github_sources(
                 files: list[tuple[str, str]] = []
                 if not dossier_files:
                     for entry in _pick_doc_entries(listing):
-                        text = github.fetch_raw_file(owner, name, entry)
+                        text = github.fetch_raw_file(owner, name, entry, **ref_args)
                         if text is not None:
                             files.append((entry, text))
                     if not files:
+                        if branch:
+                            report.failures[name] = (
+                                f"No dossier or README found on branch '{branch}'; saved sources were preserved"
+                            )
+                            kept |= _github_docs_for(profile_dir, repo_url)
                         continue
                 languages = github.fetch_languages(owner, name)
             except httpx.HTTPStatusError as error:
@@ -442,6 +556,7 @@ def sync_github_sources(
                         name,
                         report,
                         kept,
+                        observed_branch if isinstance(observed_branch, str) else None,
                     )
             else:
                 _write_source(
@@ -451,13 +566,15 @@ def sync_github_sources(
                     name,
                     report,
                     kept,
+                    observed_branch if isinstance(observed_branch, str) else None,
                 )
 
         if not stopped_early:
-            for doc in list(load_manifest(profile_dir).docs):
-                if doc.origin == "github" and doc.filename not in kept:
-                    remove_source(profile_dir, doc.id, purge=True)
-                    report.removed.append(doc.filename)
+            with source_lock(profile_dir):
+                for doc in list(load_manifest(profile_dir).docs):
+                    if doc.origin == "github" and doc.filename not in kept:
+                        remove_source(profile_dir, doc.id, purge=True)
+                        report.removed.append(doc.filename)
         return report
     finally:
         if owns_client:

@@ -19,6 +19,7 @@ from resume_tailor_harness.api.schemas.setup import (
     SourcesStatus,
 )
 from resume_tailor_harness.llm_runner import MODEL_CATALOG, provider_access_available
+from resume_tailor_harness.profile.corpus import MANIFEST_NAME, doc_path, load_manifest
 from resume_tailor_harness.services.sources import list_sources
 from resume_tailor_harness.career_skills.registry import CareerSkillRegistry
 from resume_tailor_harness.api.deps import (
@@ -45,7 +46,10 @@ def get_setup_status(request: Request):
     document_store = get_document_store(request)
     config_store = get_config_store(request)
     docs = document_store.list()
-    facts_path = get_profile_dir(request) / "facts.json"
+    profile_dir = get_profile_dir(request)
+    manifest_exists = (profile_dir / MANIFEST_NAME).exists()
+    sources = load_manifest(profile_dir).docs if manifest_exists else []
+    facts_path = profile_dir / "facts.json"
     facts_built_at = (
         datetime.fromtimestamp(facts_path.stat().st_mtime, tz=timezone.utc).isoformat(
             timespec="seconds"
@@ -55,8 +59,12 @@ def get_setup_status(request: Request):
     )
     profile_cfg = cast(ProfileConfigDoc, config_store.get("profile"))
     profile = ProfileStatus(
-        document_count=len(docs),
-        has_resume=any(d.doc_type == "resume" for d in docs),
+        document_count=len(sources) if manifest_exists else len(docs),
+        has_resume=any(
+            d.primary and doc_path(profile_dir, d).is_file() for d in sources
+        )
+        if manifest_exists
+        else any(d.doc_type == "resume" for d in docs),
         facts_built_at=facts_built_at,
         github_username=profile_cfg.github_username,
     )

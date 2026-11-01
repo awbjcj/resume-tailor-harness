@@ -2,3 +2,7 @@
 # Copy to config/profile_sources.yaml and edit.
 resume_path: path/to/your_resume.pdf   # .pdf, .docx, or .txt
 github_username: your-github-username    # leave blank to skip GitHub
+# Optional branches per repository; omitted entries use the default branch.
+github_repo_branches: {}
+# github_repo_branches:
+#   your-github-username/portfolio: dev

@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { useAddNote, useAddUrl } from "./use-sources";
 
-export function MaterialIntakeDialogs() {
+export function MaterialIntakeDialogs({ disabled = false }: { disabled?: boolean }) {
   const addNote = useAddNote();
   const addUrl = useAddUrl();
   const [noteOpen, setNoteOpen] = useState(false);
@@ -31,7 +31,7 @@ export function MaterialIntakeDialogs() {
   return (
     <>
       <Dialog open={noteOpen} onOpenChange={setNoteOpen}>
-        <DialogTrigger render={<Button variant="outline" />}>
+        <DialogTrigger render={<Button variant="outline" disabled={disabled} />}>
           <StickyNote data-icon="inline-start" aria-hidden="true" />
           Add note
         </DialogTrigger>
@@ -40,6 +40,7 @@ export function MaterialIntakeDialogs() {
             className="grid gap-4"
             onSubmit={(event) => {
               event.preventDefault();
+              if (disabled) return;
               addNote.mutate(
                 { title: title.trim(), text: text.trim() },
                 {
@@ -80,7 +81,7 @@ export function MaterialIntakeDialogs() {
             </FieldGroup>
             <DialogFooter>
               <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
-              <Button type="submit" disabled={addNote.isPending || !title.trim() || !text.trim()}>
+              <Button type="submit" disabled={disabled || addNote.isPending || !title.trim() || !text.trim()}>
                 {addNote.isPending ? <Spinner data-icon="inline-start" /> : null}
                 Save note
               </Button>
@@ -90,7 +91,7 @@ export function MaterialIntakeDialogs() {
       </Dialog>
 
       <Dialog open={urlOpen} onOpenChange={setUrlOpen}>
-        <DialogTrigger render={<Button variant="outline" />}>
+        <DialogTrigger render={<Button variant="outline" disabled={disabled} />}>
           <Link data-icon="inline-start" aria-hidden="true" />
           Add URL
         </DialogTrigger>
@@ -99,6 +100,7 @@ export function MaterialIntakeDialogs() {
             className="grid gap-4"
             onSubmit={(event) => {
               event.preventDefault();
+              if (disabled) return;
               addUrl.mutate(
                 { url: url.trim() },
                 {
@@ -129,7 +131,7 @@ export function MaterialIntakeDialogs() {
             </Field>
             <DialogFooter>
               <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
-              <Button type="submit" disabled={addUrl.isPending || !url.trim()}>
+              <Button type="submit" disabled={disabled || addUrl.isPending || !url.trim()}>
                 {addUrl.isPending ? <Spinner data-icon="inline-start" /> : null}
                 Ingest page
               </Button>

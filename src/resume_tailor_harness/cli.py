@@ -149,7 +149,7 @@ def profile_remove(
     """Unregister a source document and its cached fragment."""
     from resume_tailor_harness.profile.corpus import remove_source
 
-    doc = remove_source(dir, ident, purge=purge)
+    doc = remove_source(dir, ident, purge=purge, exclude_github=True)
     if doc is None:
         typer.echo(f"No source matches {ident!r}.")
         raise typer.Exit(code=1)
@@ -266,6 +266,7 @@ def profile_sync_github(
             allow=tuple(config.get("github_repo_allow") or ()),
             deny=tuple(config.get("github_repo_deny") or ()),
             limit=int(config.get("github_repo_limit") or 20),
+            branches=config.get("github_repo_branches") or {},
         )
     except ValueError as error:
         typer.echo(str(error))
@@ -335,6 +336,7 @@ def profile_build(
         github_allow=tuple(cfg.get("github_repo_allow") or ()),
         github_deny=tuple(cfg.get("github_repo_deny") or ()),
         github_limit=int(cfg.get("github_repo_limit") or 20),
+        github_branches=cfg.get("github_repo_branches") or {},
     )
     typer.echo(
         f"Wrote {report['experiences']} experiences and "
@@ -527,6 +529,7 @@ def profile_coach_cmd(
         github_allow=tuple(config.get("github_repo_allow") or ()),
         github_deny=tuple(config.get("github_repo_deny") or ()),
         github_limit=int(config.get("github_repo_limit") or 20),
+        github_branches=config.get("github_repo_branches") or {},
     )
     typer.echo("Rebuilt profile with the new coach evidence.")
 

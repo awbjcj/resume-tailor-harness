@@ -12,6 +12,8 @@ from resume_tailor_harness.profile.corpus import (
     save_manifest,
     update_source,
     frontmatter_repo_url,
+    replace_source,
+    refresh_source_hashes,
 )
 from resume_tailor_harness.security.paths import PathEscapeError
 
@@ -55,6 +57,66 @@ def test_add_source_same_content_is_noop(tmp_path):
     second = add_source(profile_dir, _make_doc(tmp_path))
     assert first.id == second.id
     assert len(load_manifest(profile_dir).docs) == 1
+
+
+def test_reupload_repairs_missing_registered_file(tmp_path):
+    profile_dir = tmp_path / "profile"
+    upload = _make_doc(tmp_path)
+    first = add_source(profile_dir, upload)
+    doc_path(profile_dir, first).unlink()
+    repaired = add_source(profile_dir, upload)
+    assert repaired.id == first.id
+    assert doc_path(profile_dir, repaired).read_bytes() == upload.read_bytes()
+
+
+def test_replace_rolls_back_manifest_bytes_and_cache_on_failure(tmp_path, monkeypatch):
+    import resume_tailor_harness.profile.corpus as corpus
+
+    profile_dir = tmp_path / "profile"
+    doc = add_source(profile_dir, _make_doc(tmp_path))
+    cache = profile_dir / "fragments" / f"{doc.id}.json"
+    cache.parent.mkdir()
+    cache.write_text("cached", encoding="utf-8")
+    before = (profile_dir / "sources.json").read_bytes()
+    replacement = _make_doc(tmp_path, "new.txt", "updated")
+
+    def fail(*args):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(corpus, "save_manifest", fail)
+    with pytest.raises(OSError, match="disk full"):
+        replace_source(profile_dir, doc.id, replacement)
+    assert (profile_dir / "sources.json").read_bytes() == before
+    assert doc_path(profile_dir, doc).read_text(encoding="utf-8") == "Ada Lovelace"
+    assert cache.read_text(encoding="utf-8") == "cached"
+    assert not (profile_dir / "sources" / "new.txt").exists()
+
+
+def test_hash_refresh_does_not_resurrect_removed_sources_or_drop_new_ones(tmp_path):
+    profile_dir = tmp_path / "profile"
+    first = add_source(profile_dir, _make_doc(tmp_path))
+    second = add_source(profile_dir, _make_doc(tmp_path, "other.txt", "other"))
+    remove_source(profile_dir, first.id)
+    third = add_source(profile_dir, _make_doc(tmp_path, "new.txt", "new"))
+    refresh_source_hashes(profile_dir, {first.id: (first.sha256, "old extraction")})
+    assert {d.id for d in load_manifest(profile_dir).docs} == {second.id, third.id}
+
+
+def test_replace_rejects_foreign_dossier_and_preserves_project_mode(tmp_path):
+    profile_dir = tmp_path / "profile"
+    add_source(profile_dir, _make_doc(tmp_path))
+    dossier = _make_doc(
+        tmp_path, "dossier.md", "---\nrepo_url: https://github.com/me/one\n---\n# One"
+    )
+    doc = add_source(profile_dir, dossier)
+    foreign = _make_doc(
+        tmp_path, "other.md", "---\nrepo_url: https://github.com/me/two\n---\n# Two"
+    )
+    with pytest.raises(ValueError, match="same repository"):
+        replace_source(profile_dir, doc.id, foreign)
+    with pytest.raises(ValueError, match="project mode"):
+        update_source(profile_dir, doc.id, mode="literal")
+    assert doc_path(profile_dir, doc).read_bytes() == dossier.read_bytes()
 
 
 def test_first_source_is_automatically_primary(tmp_path):
@@ -200,9 +262,11 @@ def test_add_source_defaults_and_overrides_mode(tmp_path):
     }
 
 
-def test_first_source_must_be_literal(tmp_path):
+def test_only_a_literal_source_can_be_primary(tmp_path):
+    doc = add_source(tmp_path / "p", _file(tmp_path, "deck.md"), mode="synthesis")
+    assert doc.primary is False
     with pytest.raises(ValueError, match="literal"):
-        add_source(tmp_path / "p", _file(tmp_path, "deck.md"), mode="synthesis")
+        update_source(tmp_path / "p", doc.id, primary=True)
 
 
 def test_anchor_requires_synthesis_mode(tmp_path):
@@ -251,14 +315,16 @@ def test_remove_primary_promotes_a_literal_doc(tmp_path):
     assert new_primary.id == literal.id
 
 
-def test_remove_primary_with_only_synthesis_left_fails(tmp_path):
+def test_remove_primary_keeps_synthesis_sources_until_another_resume_is_added(tmp_path):
     profile_dir = tmp_path / "p"
     primary = add_source(
         profile_dir, _file(tmp_path, "resume.txt", "resume body"), primary=True
     )
     add_source(profile_dir, _file(tmp_path, "deck.md", "deck body"), mode="synthesis")
-    with pytest.raises(ValueError, match="literal"):
-        remove_source(profile_dir, primary.id)
+    remove_source(profile_dir, primary.id)
+    assert all(not doc.primary for doc in load_manifest(profile_dir).docs)
+    new = add_source(profile_dir, _file(tmp_path, "new.txt", "new resume"))
+    assert new.primary
 
 
 def test_legacy_manifest_without_mode_loads(tmp_path):
@@ -323,3 +389,32 @@ def test_origin_round_trips_and_dedupe_does_not_retag_upload(tmp_path):
     github_doc = add_source(profile_dir, virtual, mode="project", origin="github")
     assert github_doc.origin == "github"
     assert load_manifest(profile_dir).docs[-1].origin == "github"
+
+
+def test_uploading_original_after_replacement_keeps_distinct_source_ids(tmp_path):
+    profile_dir = tmp_path / "profile"
+    original = _file(tmp_path, "resume.txt", "original resume")
+    first = add_source(profile_dir, original)
+    replace_source(profile_dir, first.id, _file(tmp_path, "updated.txt", "new resume"))
+
+    restored = add_source(profile_dir, original)
+
+    assert restored.id != first.id
+    assert len({doc.id for doc in load_manifest(profile_dir).docs}) == 2
+    remove_source(profile_dir, restored.id, purge=True)
+    remaining = load_manifest(profile_dir).docs
+    assert len(remaining) == 1 and remaining[0].id == first.id
+    assert doc_path(profile_dir, remaining[0]).read_text() == "new resume"
+
+
+def test_upload_does_not_deduplicate_against_a_stale_stored_hash(tmp_path):
+    profile_dir = tmp_path / "profile"
+    original = _file(tmp_path, "dossier.md", "original evidence")
+    first = add_source(profile_dir, original, mode="project", origin="github")
+    doc_path(profile_dir, first).write_text("synced evidence", encoding="utf-8")
+
+    uploaded = add_source(profile_dir, original, mode="project")
+
+    assert uploaded.id != first.id
+    assert doc_path(profile_dir, uploaded).read_text() == "original evidence"
+    assert doc_path(profile_dir, first).read_text() == "synced evidence"

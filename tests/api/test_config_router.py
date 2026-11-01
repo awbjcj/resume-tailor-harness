@@ -224,6 +224,7 @@ def test_profile_repo_filters_round_trip_and_limit_is_bounded(client):
         "githubRepoAllow": ["important-fork"],
         "githubRepoDeny": ["noise"],
         "githubRepoLimit": 5,
+        "githubRepoBranches": {},
     }
     assert (
         client.put("/api/config/profile", json={"githubRepoLimit": 0}).status_code

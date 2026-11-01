@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { changeLanguage } from "@/i18n";
 
@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => ({
     { id: "n1", filename: "notes.md", mode: "literal", primary: false,
       anchor: null, addedAt: "2026-07-03", fragmentStatus: "cached", origin: "upload" },
     { id: "g1", filename: "github--repo.md", mode: "project", primary: false,
-      anchor: null, addedAt: "2026-07-03", fragmentStatus: "cached", origin: "github" },
+      anchor: null, addedAt: "2026-07-03", fragmentStatus: "cached", origin: "github",
+      repoUrl: "https://github.com/ada/repo", githubBranch: "dev" },
     { id: "p1", filename: "portfolio-dossier.md", mode: "project", primary: false,
       anchor: null, addedAt: "2026-07-03", fragmentStatus: "cached", origin: "upload" },
   ],
@@ -25,6 +26,9 @@ const mocks = vi.hoisted(() => ({
   addNote: vi.fn(),
   addUrl: vi.fn(),
   syncGithub: vi.fn(),
+  exclusions: [] as string[],
+  restore: vi.fn(),
+  download: vi.fn(),
 }));
 
 vi.mock("./use-sources", () => ({
@@ -37,11 +41,18 @@ vi.mock("./use-sources", () => ({
   useAddNote: () => ({ mutate: mocks.addNote, isPending: false }),
   useAddUrl: () => ({ mutate: mocks.addUrl, isPending: false }),
   useSyncGithub: () => ({ mutate: mocks.syncGithub, isPending: false }),
+  useGithubExclusions: () => ({ data: mocks.exclusions }),
+  useRestoreGithubSources: () => ({ mutate: mocks.restore, isPending: false }),
+  useDownloadSource: () => ({ mutate: mocks.download, isPending: false }),
 }));
 
 import { SourceManager } from "./SourceManager";
 
 describe("SourceManager", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.exclusions = [];
+  });
   afterEach(async () => {
     await changeLanguage("en");
   });
@@ -49,7 +60,54 @@ describe("SourceManager", () => {
     render(<SourceManager />);
     expect(screen.getByText("resume.pdf")).toBeInTheDocument();
     expect(screen.getByText("deck.pptx")).toBeInTheDocument();
-    expect(screen.getByRole("row", { name: /resume\.pdf primary/i })).toBeInTheDocument();
+    expect(screen.getByRole("article", { name: /resume\.pdf/i })).toBeInTheDocument();
+  });
+
+  it("shows an unbuilt source as needing a build instead of missing", () => {
+    render(<SourceManager />);
+    const row = screen.getByRole("article", { name: /deck\.pptx/i });
+    expect(row).toHaveTextContent("Needs build");
+    expect(row).not.toHaveTextContent(/missing/i);
+  });
+
+  it("identifies a missing file separately and keeps replacement available", () => {
+    const source = mocks.sources[1] as typeof mocks.sources[number] & { fileExists?: boolean };
+    source.fileExists = false;
+    try {
+      render(<SourceManager />);
+      const row = screen.getByRole("article", { name: /deck\.pptx/i });
+      expect(row).toHaveTextContent("File missing");
+      expect(screen.getByRole("button", { name: "Download deck.pptx" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Replace deck.pptx" })).toBeEnabled();
+    } finally {
+      delete source.fileExists;
+    }
+  });
+
+  it("offers replacement and removal for GitHub sources and uploaded dossiers", () => {
+    render(<SourceManager />);
+    for (const name of ["github--repo.md", "portfolio-dossier.md", "deck.pptx"]) {
+      expect(screen.getByRole("button", { name: `Replace ${name}` })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: `Remove ${name}` })).toBeInTheDocument();
+    }
+    expect(screen.getByRole("button", { name: "Remove resume.pdf" })).toBeInTheDocument();
+  });
+
+  it("downloads a source and can restore removed GitHub sources", async () => {
+    mocks.exclusions = ["github--removed.md"];
+    render(<SourceManager />);
+    await userEvent.click(screen.getByRole("button", { name: "Download portfolio-dossier.md" }));
+    expect(mocks.download).toHaveBeenCalledWith(mocks.sources[4]);
+    await userEvent.click(screen.getByRole("button", { name: "Restore removed GitHub sources" }));
+    expect(mocks.restore).toHaveBeenCalledTimes(1);
+  });
+
+  it("auto-detects uploaded dossiers instead of forcing literal extraction", async () => {
+    const { container } = render(<SourceManager />);
+    const input = container.querySelector("input[type=file]") as HTMLInputElement;
+    const file = new File(["---\nrepo_url: https://github.com/me/project\n---"], "dossier.md");
+    await userEvent.upload(input, file);
+    expect(mocks.uploadAll).toHaveBeenCalledWith([file], undefined, null);
   });
 
   it("gives native mode options explicit theme colors", () => {
@@ -100,7 +158,9 @@ describe("SourceManager", () => {
   it("deletes a source", async () => {
     render(<SourceManager />);
     await userEvent.click(screen.getByRole("button", { name: /remove deck.pptx/i }));
-    expect(mocks.remove).toHaveBeenCalledWith("d1");
+    expect(mocks.remove).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Remove source" }));
+    expect(mocks.remove).toHaveBeenCalledWith("d1", expect.objectContaining({ onSuccess: expect.any(Function) }));
   });
 
   it("replaces the primary resume's file", async () => {
@@ -115,22 +175,17 @@ describe("SourceManager", () => {
     expect(mocks.replace).toHaveBeenCalledWith({ oldId: "r1", file });
   });
 
-  it("does not offer replace/remove actions on non-primary sources", () => {
-    render(<SourceManager />);
-    expect(screen.queryByRole("button", { name: /replace deck.pptx/i })).not.toBeInTheDocument();
-  });
-
   it("badges github sources and keeps project mode read-only", () => {
     render(<SourceManager />);
-    const row = screen.getByRole("row", { name: /github--repo\.md/i });
+    const row = screen.getByRole("article", { name: /github--repo\.md/i });
     expect(row).toHaveTextContent("GitHub");
-    expect(row).toHaveTextContent("Synced");
+    expect(row).toHaveTextContent("ada/repo");
+    expect(row).toHaveTextContent("dev");
     expect(screen.queryByLabelText(/mode for github--repo\.md/i)).not.toBeInTheDocument();
 
-    const dossier = screen.getByRole("row", { name: /portfolio-dossier\.md/i });
-    expect(dossier).toHaveTextContent("Read-only");
+    const dossier = screen.getByRole("article", { name: /portfolio-dossier\.md/i });
     expect(dossier).not.toHaveTextContent("GitHub");
-    expect(screen.queryByRole("button", { name: /remove github--repo\.md/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /remove github--repo\.md/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /remove portfolio-dossier\.md/i })).toBeInTheDocument();
   });
 
@@ -158,9 +213,4 @@ describe("SourceManager", () => {
     );
   });
 
-  it("launches tracked github sync", async () => {
-    render(<SourceManager />);
-    await userEvent.click(screen.getByRole("button", { name: /sync github/i }));
-    expect(mocks.syncGithub).toHaveBeenCalledTimes(1);
-  });
 });

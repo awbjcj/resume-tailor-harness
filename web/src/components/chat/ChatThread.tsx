@@ -37,21 +37,25 @@ export function ChatThread({
   const viewport = useRef<HTMLDivElement | null>(null);
   const content = useRef<HTMLDivElement | null>(null);
   const [stuck, setStuck] = useState(true);
+  // Scroll events must revoke queued follow frames before effect cleanup runs.
+  const bottomPinned = useRef(true);
   const onScroll = useCallback(() => {
     const node = viewport.current;
     if (!node) return;
-    setStuck(node.scrollHeight - node.clientHeight - node.scrollTop <= STICK_THRESHOLD_PX);
+    bottomPinned.current = node.scrollHeight - node.clientHeight - node.scrollTop <= STICK_THRESHOLD_PX;
+    setStuck(bottomPinned.current);
   }, []);
   const jump = useCallback(() => {
     const node = viewport.current;
     if (!node) return;
     node.scrollTop = node.scrollHeight;
+    bottomPinned.current = true;
     setStuck(true);
   }, []);
   useEffect(() => {
     if (!stuck) return;
     const frame = requestAnimationFrame(() => {
-      if (viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
+      if (bottomPinned.current && viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
     });
     return () => cancelAnimationFrame(frame);
   }, [messages, streaming, stuck]);
@@ -65,7 +69,7 @@ export function ChatThread({
       if (frame !== null) return;
       frame = requestAnimationFrame(() => {
         frame = null;
-        if (viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
+        if (bottomPinned.current && viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
       });
     });
     observer.observe(viewport.current);

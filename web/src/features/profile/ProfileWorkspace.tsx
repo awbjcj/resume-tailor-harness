@@ -1,19 +1,36 @@
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useState } from "react";
-import { ArrowRight, FileText, Sparkles, Wrench } from "lucide-react";
+import { useIsMutating } from "@tanstack/react-query";
+import {
+  ArrowRight,
+  FileText,
+  FolderGit2,
+  RefreshCw,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import { GuidedWorkspaceHeader } from "@/components/chat/GuidedWorkspaceHeader";
 import { Badge } from "@/components/ui/badge";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BuildReportPanel } from "@/features/profile-sources/BuildReportPanel";
 import { SourceManager } from "@/features/profile-sources/SourceManager";
-import { useCoachSessions } from "@/features/coach/use-coach";
+import { GithubRepositoryPicker } from "@/features/profile-sources/GithubRepositoryPicker";
+import { GithubSyncReport } from "@/features/profile-sources/GithubSyncReport";
+import {
+  SOURCE_MUTATION_KEY,
+  useSyncGithub,
+} from "@/features/profile-sources/use-sources";
 import { useActiveRun } from "@/features/runs/use-active-run";
 import { launchers, useLaunchRun } from "@/features/runs/use-launch-run";
 import { SaveBar } from "@/features/settings/SaveBar";
@@ -22,12 +39,47 @@ import { useConfig, useSaveConfig } from "@/features/settings/use-config";
 import { useDraft } from "@/features/settings/use-draft";
 import { useSetupStatus } from "@/features/settings/use-setup-status";
 import type { paths } from "@/lib/api/schema";
-import { formatUserDate, formatUserDateTime } from "@/lib/date-time";
+import { formatUserDateTime } from "@/lib/date-time";
 
-type ProfileDoc = paths["/api/config/profile"]["get"]["responses"][200]["content"]["application/json"];
+type ProfileDoc =
+  paths["/api/config/profile"]["get"]["responses"][200]["content"]["application/json"];
+type ProfileDraft = Omit<
+  ProfileDoc,
+  "githubRepoAllow" | "githubRepoDeny" | "githubRepoLimit"
+> & {
+  allowText: string;
+  denyText: string;
+  limitText: string;
+};
+
+function editableProfile(
+  data: ProfileDoc | undefined,
+): ProfileDraft | undefined {
+  if (!data) return undefined;
+  const { githubRepoAllow, githubRepoDeny, githubRepoLimit, ...rest } = data;
+  return {
+    ...rest,
+    allowText: (githubRepoAllow ?? []).join(", "),
+    denyText: (githubRepoDeny ?? []).join(", "),
+    limitText: String(githubRepoLimit ?? 20),
+  };
+}
+
+function savedProfile(draft: ProfileDraft): ProfileDoc {
+  const { allowText, denyText, limitText, ...rest } = draft;
+  return {
+    ...rest,
+    githubRepoAllow: parseRepoList(allowText),
+    githubRepoDeny: parseRepoList(denyText),
+    githubRepoLimit: Number(limitText),
+  };
+}
 
 function parseRepoList(value: string): string[] {
-  return value.split(",").map((item) => item.trim()).filter(Boolean);
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function factsStatusText(builtAt: string | null | undefined): string {
@@ -43,18 +95,23 @@ function factsStatusText(builtAt: string | null | undefined): string {
  */
 export function ProfileWorkspace() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data } = useConfig("/api/config/profile");
+  const { data, isError, refetch } = useConfig("/api/config/profile");
   const save = useSaveConfig("/api/config/profile");
-  const { draft, setDraft, dirty, reset } = useDraft(data as ProfileDoc | undefined);
+  const { draft, setDraft, dirty, reset } = useDraft(
+    editableProfile(data as ProfileDoc | undefined),
+  );
   const setupStatus = useSetupStatus();
-  const coachSessions = useCoachSessions();
   const { launch } = useLaunchRun();
-  const building = useActiveRun("profile-build")?.status === "running";
-  const [allowText, setAllowText] = useState("");
-  const [denyText, setDenyText] = useState("");
-  const [limitText, setLimitText] = useState("");
-  const [textSeed, setTextSeed] = useState<string | null>(null);
-  const activeTab = searchParams.get("tab") === "skills" ? "skills" : "documents";
+  const buildRun = useActiveRun("profile-build");
+  const [launchingBuild, setLaunchingBuild] = useState(false);
+  const building =
+    launchingBuild ||
+    (!!buildRun &&
+      ["queued", "running", "cancelling"].includes(buildRun.status));
+  const syncGithub = useSyncGithub();
+  const sourceMutations = useIsMutating({ mutationKey: SOURCE_MUTATION_KEY });
+  const activeTab =
+    searchParams.get("tab") === "skills" ? "skills" : "documents";
 
   const setActiveTab = (value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -63,27 +120,37 @@ export function ProfileWorkspace() {
     setSearchParams(next, { replace: true });
   };
 
-  const nextSeed = data ? JSON.stringify(data) : null;
-  if (data && textSeed !== nextSeed) {
-    setTextSeed(nextSeed);
-    setAllowText((data.githubRepoAllow ?? []).join(", "));
-    setDenyText((data.githubRepoDeny ?? []).join(", "));
-    setLimitText(String(data.githubRepoLimit));
-  }
-
+  if (isError && !draft)
+    return (
+      <div
+        role="alert"
+        className="space-y-3 rounded-xl border border-destructive/30 p-4"
+      >
+        <p>Profile settings could not be loaded. Try again.</p>
+        <Button variant="outline" onClick={() => void refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
   if (!draft) return <Skeleton className="h-64 w-full" />;
 
-  const coachRows = coachSessions.data?.sessions ?? [];
-  const lastCoach = coachRows[coachRows.length - 1];
-
+  const { allowText, denyText, limitText } = draft;
   const parsedLimit = Number(limitText);
-  const limitValid = Number.isInteger(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 100;
-
-  const discard = () => {
-    setAllowText((data?.githubRepoAllow ?? []).join(", "));
-    setDenyText((data?.githubRepoDeny ?? []).join(", "));
-    setLimitText(String(data?.githubRepoLimit ?? 20));
-    reset();
+  const limitValid =
+    Number.isInteger(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 100;
+  const busy =
+    building || syncGithub.isPending || save.isPending || sourceMutations > 0;
+  const buildDisabled =
+    busy || dirty || setupStatus.data?.profile.hasResume === false;
+  const rebuild = () => {
+    if (buildDisabled) return;
+    setLaunchingBuild(true);
+    void launch("profile-build", () => launchers.profileBuild(), [
+      "setup-status",
+      "profile-sources",
+      "profile-skeleton",
+      "profile-matrix",
+    ]).finally(() => setLaunchingBuild(false));
   };
 
   return (
@@ -93,24 +160,85 @@ export function ProfileWorkspace() {
         icon={<Sparkles />}
         eyebrow="Step 1 · Your profile"
         title="Profile"
-        description="Your resume, documents, and skills form the basis for every tailored application."
+        description="Bring your resume and project evidence together, then build the profile behind every tailored application."
         meta={
-          <Badge variant="outline">
-            {lastCoach
-              ? `${lastCoach.topicCount} topics · last session ${formatUserDate(lastCoach.startedAt)}`
-              : "Find evidence for your profile in your first coaching session."}
+          <Badge variant="outline" className="h-auto min-h-5 max-w-full whitespace-normal">
+            {factsStatusText(setupStatus.data?.profile.factsBuiltAt)}
           </Badge>
         }
         actions={
-          <a className={buttonVariants()} data-slot="button" href="/coach">
-            Open coach
-            <ArrowRight data-icon="inline-end" aria-hidden="true" />
-          </a>
+          <>
+            <Button disabled={buildDisabled} onClick={rebuild}>
+              {building ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <Sparkles data-icon="inline-start" aria-hidden="true" />
+              )}
+              {building
+                ? "Building…"
+                : setupStatus.data?.profile.factsBuiltAt
+                  ? "Rebuild profile"
+                  : "Build profile"}
+            </Button>
+            <a
+              className={buttonVariants({ variant: "outline" })}
+              data-slot="button"
+              href="/coach"
+            >
+              Open coach
+              <ArrowRight data-icon="inline-end" aria-hidden="true" />
+            </a>
+          </>
         }
       />
 
+      <ol
+        aria-label="Profile building steps"
+        className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-3 [overflow-wrap:anywhere]"
+      >
+        <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
+          <span className="font-mono text-sm text-muted-foreground">01</span>
+          <div>
+            <p className="text-sm font-medium">Add your evidence</p>
+            <p className="text-sm text-muted-foreground">
+              Resume and supporting documents
+            </p>
+          </div>
+        </li>
+        <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
+          <span className="font-mono text-sm text-muted-foreground">02</span>
+          <div>
+            <p className="text-sm font-medium">Choose GitHub branches</p>
+            <p className="text-sm text-muted-foreground">
+              Point each repository to its dossier
+            </p>
+          </div>
+        </li>
+        <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
+          <span className="font-mono text-sm text-muted-foreground">03</span>
+          <div>
+            <p className="text-sm font-medium">Build your profile</p>
+            <p className="text-sm text-muted-foreground">
+              Turn saved evidence into profile facts
+            </p>
+          </div>
+        </li>
+      </ol>
+      {dirty ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Save your GitHub changes before syncing or building. Your selected
+          branches are not applied until saved.
+        </p>
+      ) : null}
+      {building ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Building your profile from saved evidence. You can follow progress in
+          the build report.
+        </p>
+      ) : null}
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="max-w-full flex-wrap group-data-horizontal/tabs:h-auto [&_button]:h-auto [&_button]:min-h-10">
           <TabsTrigger value="documents">
             <FileText data-icon="inline-start" aria-hidden="true" />
             Documents
@@ -122,89 +250,146 @@ export function ProfileWorkspace() {
         </TabsList>
 
         <TabsContent value="documents" className="flex flex-col gap-6 pt-2">
-          <SourceManager />
-          <Separator />
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="githubUsername">GitHub username</FieldLabel>
-              <Input id="githubUsername" value={draft.githubUsername ?? ""}
-                onChange={(e) => setDraft({ ...draft, githubUsername: e.target.value || null })} />
-              <FieldDescription>Optional. Adds public repositories to your project facts.</FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="githubRepoAllow">Always include repositories</FieldLabel>
-              <Input
-                id="githubRepoAllow"
-                value={allowText}
-                placeholder="portfolio, flagship-project"
-                onChange={(event) => {
-                  setAllowText(event.target.value);
-                  setDraft({ ...draft, githubRepoAllow: parseRepoList(event.target.value) });
-                }}
-              />
-              <FieldDescription>Comma-separated repository names that bypass ranking.</FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="githubRepoDeny">Exclude repositories</FieldLabel>
-              <Input
-                id="githubRepoDeny"
-                value={denyText}
-                placeholder="archive, experiments"
-                onChange={(event) => {
-                  setDenyText(event.target.value);
-                  setDraft({ ...draft, githubRepoDeny: parseRepoList(event.target.value) });
-                }}
-              />
-              <FieldDescription>Comma-separated repository names that are never harvested.</FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="githubRepoLimit">Repository limit</FieldLabel>
-              <Input
-                id="githubRepoLimit"
-                type="number"
-                min={1}
-                max={100}
-                value={limitText}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setLimitText(value);
-                  const parsed = Number(value);
-                  if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 100) {
-                    setDraft({ ...draft, githubRepoLimit: parsed });
-                  }
-                }}
-              />
-              <FieldDescription>
-                {limitValid
-                  ? "Maximum ranked repositories to import, from 1 to 100."
-                  : "Enter a whole number from 1 to 100 to save."}
-              </FieldDescription>
-            </Field>
-          </FieldGroup>
-          <SaveBar dirty={dirty} saving={save.isPending} canSave={limitValid}
-            onSave={() => save.mutate(draft)} onDiscard={discard} />
-          <Separator />
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="text-sm text-muted-foreground">
-              {factsStatusText(setupStatus.data?.profile.factsBuiltAt)}
+          <SourceManager disabled={busy} />
+          <section
+            aria-label="GitHub projects"
+            className="min-w-0 space-y-5 rounded-xl border border-border bg-card p-4 sm:p-5"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0 space-y-1">
+                <h2 className="flex items-center gap-2 text-lg font-semibold">
+                  <FolderGit2 className="size-5" aria-hidden="true" />
+                  GitHub projects
+                </h2>
+                <p className="max-w-prose text-sm text-muted-foreground">
+                  Choose a branch for each repository. Sync saves dossiers;
+                  building turns them into profile facts.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="h-auto min-h-10 max-w-full whitespace-normal"
+                disabled={busy || dirty || !data?.githubUsername}
+                onClick={() => syncGithub.mutate()}
+              >
+                {syncGithub.isPending ? (
+                  <Spinner data-icon="inline-start" />
+                ) : (
+                  <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                )}
+                Sync GitHub
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              className="ml-auto"
-              disabled={building}
-              onClick={() =>
-                launch("profile-build", () => launchers.profileBuild(), [
-                  "setup-status",
-                  "profile-sources",
-                  "profile-skeleton",
-                  "profile-matrix",
-                ])
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="githubUsername">
+                  GitHub username
+                </FieldLabel>
+                <Input
+                  id="githubUsername"
+                  value={draft.githubUsername ?? ""}
+                  disabled={busy}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      githubUsername: e.target.value || null,
+                    })
+                  }
+                />
+                <FieldDescription>
+                  Optional. Save your username before loading repositories.
+                  Builds also sync your saved branch choices.
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
+            <GithubRepositoryPicker
+              username={data?.githubUsername ?? null}
+              branches={draft.githubRepoBranches ?? {}}
+              settingsKey={JSON.stringify(data)}
+              disabled={busy || draft.githubUsername !== data?.githubUsername}
+              onChange={(branches) =>
+                setDraft({ ...draft, githubRepoBranches: branches })
               }
-            >
-              {building ? <Spinner data-icon="inline-start" /> : null}
-              {building ? "Building…" : "Rebuild profile"}
-            </Button>
-          </div>
+            />
+            <details className="rounded-lg border border-border px-4">
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Import preferences
+              </summary>
+              <FieldGroup className="pb-4 pt-2">
+                <Field>
+                  <FieldLabel htmlFor="githubRepoAllow">
+                    Always include repositories
+                  </FieldLabel>
+                  <Input
+                    id="githubRepoAllow"
+                    disabled={busy}
+                    value={allowText}
+                    placeholder="portfolio, flagship-project"
+                    onChange={(event) => {
+                      setDraft({ ...draft, allowText: event.target.value });
+                    }}
+                  />
+                  <FieldDescription>
+                    Comma-separated repository names that bypass ranking.
+                  </FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="githubRepoDeny">
+                    Exclude repositories
+                  </FieldLabel>
+                  <Input
+                    id="githubRepoDeny"
+                    disabled={busy}
+                    value={denyText}
+                    placeholder="archive, experiments"
+                    onChange={(event) => {
+                      setDraft({ ...draft, denyText: event.target.value });
+                    }}
+                  />
+                  <FieldDescription>
+                    Comma-separated repository names that are never harvested.
+                  </FieldDescription>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="githubRepoLimit">
+                    Repository limit
+                  </FieldLabel>
+                  <Input
+                    id="githubRepoLimit"
+                    disabled={busy}
+                    type="number"
+                    min={1}
+                    max={100}
+                    aria-invalid={!limitValid}
+                    aria-describedby="githubRepoLimit-help"
+                    value={limitText}
+                    onChange={(event) => {
+                      setDraft({ ...draft, limitText: event.target.value });
+                    }}
+                  />
+                  <FieldDescription id="githubRepoLimit-help">
+                    {limitValid
+                      ? "Maximum ranked repositories to import, from 1 to 100."
+                      : "Enter a whole number from 1 to 100 to save."}
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
+            </details>
+            <SaveBar
+              dirty={dirty}
+              saving={save.isPending}
+              canSave={limitValid && !busy}
+              sticky={false}
+              onSave={() =>
+                save.mutate(savedProfile(draft), {
+                  onSuccess: (saved) =>
+                    setDraft(editableProfile(saved) ?? null),
+                })
+              }
+              onDiscard={reset}
+            />
+            <GithubSyncReport />
+          </section>
           <BuildReportPanel />
         </TabsContent>
 
