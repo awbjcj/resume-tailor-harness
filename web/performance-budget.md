@@ -26,6 +26,10 @@ and Chinese loading/error messages are available immediately. Failed module
 downloads offer an explicit reload because browsers can cache failed imports;
 reloads are never automatic and can discard other unsaved page input.
 
+Job skill additions load the personal library's shared editor on demand for
+names, aliases, types, and groups, with an option to add the job wording as
+an alias of an existing skill. Closing this editor cancels its draft.
+
 The build groups only modules already in the initial static graph. This avoids
 extra compression overhead from small shared chunks without pulling optional
 forms into startup. Cold Dashboard bytes are effectively unchanged; Pipeline

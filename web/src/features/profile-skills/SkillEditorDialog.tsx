@@ -1,5 +1,5 @@
-import { useSkillCopy } from "@/i18n/skill-copy";
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,49 +10,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
-import type { ProfileMatrix } from "@/features/settings/use-matrix";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMatrix } from "@/features/settings/use-matrix";
+import { useSkillCopy } from "@/i18n/skill-copy";
+import { localizeSkillContainer } from "@/i18n/skill-labels";
+import { skillCategoryValue } from "./skill-categories";
+import { SkillAliasPicker } from "./SkillAliasPicker";
 import {
-  SKILL_CATEGORIES,
-  skillCategoryValue,
-  type SkillCategory,
-} from "./skill-categories";
-import { useAddSkill, useUpdateSkill } from "./use-profile-skills";
-
-export type LibraryRow = NonNullable<ProfileMatrix["rows"]>[number];
-export type LibraryGroup = NonNullable<ProfileMatrix["groups"]>[number];
-export type LibraryCategory = NonNullable<ProfileMatrix["categories"]>[number];
-
-export function LibrarySelect({
-  id,
-  value,
-  onChange,
-  children,
-  disabled,
-  label,
-}: {
-  id?: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-  disabled?: boolean;
-  label?: string;
-}) {
-  return (
-    <select
-      id={id}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      disabled={disabled}
-      aria-label={label}
-      className="h-10 min-w-0 max-w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50"
-    >
-      {children}
-    </select>
-  );
-}
+  SkillEditorFields,
+  type LibraryGroup,
+  type LibraryRow,
+  type SkillDraft,
+} from "./SkillEditorFields";
+import { useAddSkill, useAddSkillAlias, useUpdateSkill } from "./use-profile-skills";
 
 export function SkillEditorDialog({
   row,
@@ -61,49 +32,103 @@ export function SkillEditorDialog({
   disabled = false,
   initialGroup,
   returnFocus,
+  suggestedSkill,
 }: {
   row?: LibraryRow;
-  groups: LibraryGroup[];
+  groups?: LibraryGroup[];
   onClose: () => void;
   disabled?: boolean;
   initialGroup?: string;
   returnFocus?: HTMLElement | null;
+  suggestedSkill?: string;
 }) {
   const copy = useSkillCopy();
-  const id = useId();
-  const [name, setName] = useState(row?.display ?? "");
-  const [aliases, setAliases] = useState((row?.aliases ?? []).join("\n"));
-  const [category, setCategory] = useState<SkillCategory>(
-    row ? skillCategoryValue(row.category) : "hard",
-  );
-  const [group, setGroup] = useState(
-    row?.groupSource === "correction"
-      ? (row.group ?? "")
-      : (initialGroup ?? ""),
-  );
+  const { i18n } = useTranslation();
+  const [mode, setMode] = useState<"new" | "alias">("new");
+  const [draft, setDraft] = useState<SkillDraft>(() => ({
+    name: row?.display ?? suggestedSkill ?? "",
+    aliases: (row?.aliases ?? []).join("\n"),
+    category: row ? skillCategoryValue(row.category) : "hard",
+    group:
+      row?.groupSource === "correction"
+        ? (row.group ?? "")
+        : (initialGroup ?? ""),
+  }));
+  const matrix = useMatrix(groups === undefined);
+  const groupOptions =
+    groups ??
+    (matrix.data?.groups ?? []).map((group) =>
+      localizeSkillContainer(group, i18n.resolvedLanguage),
+    );
+  const loadingGroups = groups === undefined && matrix.isPending;
+  const groupError = groups === undefined && matrix.isError;
   const add = useAddSkill();
   const update = useUpdateSkill();
-  const pending = add.isPending || update.isPending;
-  const error = add.error ?? update.error;
+  const alias = useAddSkillAlias();
+  const pending = add.isPending || update.isPending || alias.isPending;
+  const blocked = disabled || pending || loadingGroups || groupError;
+  const error = mode === "alias" ? alias.error : (add.error ?? update.error);
+  const fromJob = !row && !!suggestedSkill;
+
   function submit(event: FormEvent) {
     event.preventDefault();
-    if (!name.trim() || pending || disabled) return;
+    if (!draft.name.trim() || blocked) return;
+    const previousName =
+      fromJob &&
+      draft.name.trim().toLocaleLowerCase() !== suggestedSkill.trim().toLocaleLowerCase()
+        ? [suggestedSkill.trim()]
+        : [];
     const body = {
-      name: name.trim(),
+      name: draft.name.trim(),
       aliases: [
-        ...new Set(
-          aliases
-            .split(/[,\n]/)
-            .map((alias) => alias.trim())
-            .filter(Boolean),
-        ),
+        ...new Set([
+          ...draft.aliases.split(/[,\n]/).map((name) => name.trim()).filter(Boolean),
+          ...previousName,
+        ]),
       ],
-      category: category === "unspecified" ? null : category,
-      group,
+      category: draft.category === "unspecified" ? null : draft.category,
+      group: draft.group,
     };
     if (row) update.mutate({ key: row.key, ...body }, { onSuccess: onClose });
     else add.mutate(body, { onSuccess: onClose });
   }
+
+  const editorForm = loadingGroups ? (
+    <p role="status" className="flex items-center gap-2 py-4 text-muted-foreground">
+      <Spinner aria-hidden />
+      {copy.loading_skill_matrix}
+    </p>
+  ) : groupError ? (
+    <div role="alert" className="py-4 text-destructive">
+      <p>{copy.couldn_t_load_the_skill_matrix}</p>
+      <Button variant="link" onClick={() => void matrix.refetch()}>
+        {copy.tryAgain}
+      </Button>
+    </div>
+  ) : (
+    <form onSubmit={submit} className="grid min-w-0 gap-4">
+      <SkillEditorFields
+        value={draft}
+        onChange={setDraft}
+        groups={groupOptions}
+        inferred={row?.inferred}
+        disabled={blocked}
+      />
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">{error.message}</p>
+      ) : null}
+      <DialogFooter>
+        <Button type="button" variant="outline" disabled={pending} onClick={onClose}>
+          {copy.cancel}
+        </Button>
+        <Button type="submit" disabled={!draft.name.trim() || blocked}>
+          {pending ? <Spinner aria-hidden /> : null}
+          {pending ? copy.saving : row ? copy.save : copy.addSkill}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+
   return (
     <Dialog
       open
@@ -113,114 +138,65 @@ export function SkillEditorDialog({
     >
       <DialogContent
         overlayClassName="transition-none"
-        className="min-w-0 transition-none sm:max-w-lg"
+        className="min-w-0 transition-none [overflow-wrap:anywhere] sm:max-w-lg"
         showCloseButton={!pending}
         finalFocus={() => (returnFocus?.isConnected ? returnFocus : true)}
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft" || event.key === "ArrowRight")
+            event.stopPropagation();
+        }}
       >
-        <DialogHeader>
+        <DialogHeader className="pr-6">
           <DialogTitle>{row ? copy.edit_skill : copy.add_a_skill}</DialogTitle>
           <DialogDescription>
-            {row ? copy.editDescription : copy.addDescription}
+            {row
+              ? copy.editDescription
+              : fromJob
+                ? mode === "alias"
+                  ? copy.addAliasDescription(suggestedSkill)
+                  : copy.addFromJobDescription(suggestedSkill)
+                : copy.addDescription}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={submit} className="grid min-w-0 gap-4">
-          <div className="grid gap-1.5">
-            <label htmlFor={`${id}-name`} className="text-sm font-medium">
-              Skill name
-            </label>
-            <Input
-              id={`${id}-name`}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              maxLength={200}
-              autoComplete="off"
-              disabled={pending || disabled}
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <label htmlFor={`${id}-aliases`} className="text-sm font-medium">
-              {copy.aliases}
-            </label>
-            <Textarea
-              id={`${id}-aliases`}
-              value={aliases}
-              onChange={(e) => setAliases(e.target.value)}
-              maxLength={10000}
-              disabled={pending || disabled}
-              aria-describedby={`${id}-alias-help`}
-            />
-            <p
-              id={`${id}-alias-help`}
-              className="text-xs text-muted-foreground"
-            >
-              {copy.aliasHelp}
-            </p>
-          </div>
-          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-            <div className="grid min-w-0 gap-1.5">
-              <label htmlFor={`${id}-type`} className="text-sm font-medium">
-                Skill type
-              </label>
-              <LibrarySelect
-                id={`${id}-type`}
-                value={category}
-                onChange={(value) => setCategory(skillCategoryValue(value))}
-                disabled={pending || disabled}
-              >
-                {SKILL_CATEGORIES
-                  .filter(
-                    (value) => !row?.inferred || value !== "unspecified",
-                  )
-                  .map((value) => (
-                    <option key={value} value={value}>
-                      {copy.skillTypes[value]}
-                    </option>
-                  ))}
-              </LibrarySelect>
-            </div>
-            <div className="grid min-w-0 gap-1.5">
-              <label htmlFor={`${id}-group`} className="text-sm font-medium">
-                {copy.group}
-              </label>
-              <LibrarySelect
-                id={`${id}-group`}
-                value={group}
-                onChange={setGroup}
-                disabled={pending || disabled}
-              >
-                <option value="">{copy.automatic_grouping}</option>
-                {groups.map((g) => (
-                  <option key={g.slug} value={g.slug}>
-                    {g.label}
-                  </option>
-                ))}
-              </LibrarySelect>
-            </div>
-          </div>
-          {error ? (
-            <p role="alert" className="text-sm text-destructive">
-              {error.message}
-            </p>
-          ) : null}
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={pending}
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!name.trim() || pending || disabled}
-            >
-              {pending ? <Spinner aria-hidden /> : null}
-              {pending ? "Saving…" : row ? "Save changes" : "Add skill"}
-            </Button>
-          </DialogFooter>
-        </form>
+        {fromJob ? (
+          <Tabs
+            value={mode}
+            onValueChange={(value) => {
+              if (!pending && (value === "new" || value === "alias")) setMode(value);
+            }}
+          >
+            <TabsList className="w-full" aria-label={copy.addSkillMethod}>
+              <TabsTrigger value="new" disabled={pending}>{copy.newSkill}</TabsTrigger>
+              <TabsTrigger value="alias" disabled={pending}>{copy.existingSkill}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="new" className="pt-2">
+              {editorForm}
+            </TabsContent>
+            <TabsContent value="alias" className="space-y-4 pt-2">
+              <SkillAliasPicker
+                disabled={disabled || pending}
+                onSelect={(skillId) => {
+                  if (!disabled && !pending)
+                    alias.mutate({ skillId, alias: suggestedSkill }, { onSuccess: onClose });
+                }}
+              />
+              {pending ? (
+                <p role="status" className="flex items-center gap-2 text-muted-foreground">
+                  <Spinner aria-hidden />{copy.saving}
+                </p>
+              ) : null}
+              {error ? (
+                <p role="alert" className="text-sm text-destructive">{error.message}</p>
+              ) : null}
+              <DialogFooter>
+                <Button type="button" variant="outline" disabled={pending} onClick={onClose}>
+                  {copy.cancel}
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
+        ) : editorForm}
       </DialogContent>
     </Dialog>
   );

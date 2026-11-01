@@ -624,11 +624,6 @@
     "en": "Actor",
     "zh-CN": "操作者"
   },
-  "Add “": {
-    "key": "ui_ae6cd5e55ef8",
-    "en": "Add “",
-    "zh-CN": "添加“"
-  },
   "Add \"{{v0}}\" to your profile": {
     "key": "ui_ce658346e45b",
     "en": "Add \"{{v0}}\" to your profile",
@@ -788,11 +783,6 @@
     "key": "ui_495be0513521",
     "en": "Add timeline event",
     "zh-CN": "添加时间线事件"
-  },
-  "Add to my skills": {
-    "key": "ui_60ccc16251e3",
-    "en": "Add to my skills",
-    "zh-CN": "添加到我的技能"
   },
   "Add URL": {
     "key": "ui_889376c533e5",
@@ -4308,11 +4298,6 @@
     "key": "ui_6c67dc13f839",
     "en": "Hybrid",
     "zh-CN": "混合办公"
-  },
-  "I have this skill": {
-    "key": "ui_1496ed412c5e",
-    "en": "I have this skill",
-    "zh-CN": "我具备这项技能"
   },
   "I manually confirmed this is": {
     "key": "ui_4bb1d8f11448",
@@ -8244,11 +8229,6 @@
     "en": "Salary locations",
     "zh-CN": "薪资适用地点"
   },
-  "Same as a skill I have": {
-    "key": "ui_0a09a53711df",
-    "en": "Same as a skill I have",
-    "zh-CN": "与我已有的技能相同"
-  },
   "Sample {{v0}}": {
     "key": "ui_e6e10401c9fb",
     "en": "Sample {{v0}}",
@@ -8473,16 +8453,6 @@
     "key": "ui_616578cf0cfb",
     "en": "Search terms",
     "zh-CN": "搜索词"
-  },
-  "Search your skills": {
-    "key": "ui_8702d188ba1d",
-    "en": "Search your skills",
-    "zh-CN": "搜索你的技能"
-  },
-  "Search your skills…": {
-    "key": "ui_f36d575c9db0",
-    "en": "Search your skills…",
-    "zh-CN": "搜索你的技能…"
   },
   "Search: {{v0}}": {
     "key": "ui_f14486da7f16",
@@ -10003,11 +9973,6 @@
     "key": "ui_ed4e9f568bbb",
     "en": "This secret pairs with the client ID above. Set both together.",
     "zh-CN": "此密钥与上方的客户端 ID 配套使用，请同时设置。"
-  },
-  "This skill is not yet detected on your profile. Add it to clear the gap.": {
-    "key": "ui_3ba75f08d8cc",
-    "en": "This skill is not yet detected on your profile. Add it to clear the gap.",
-    "zh-CN": "个人资料中还没找到这项技能，补充后即可消除这项差距。"
   },
   "This skill is unavailable.": {
     "key": "ui_bf75c9ed017d",
@@ -12633,5 +12598,10 @@
     "key": "ui_575784e36c75",
     "en": "Skill updated",
     "zh-CN": "技能已更新"
+  },
+  "Add a skill": {
+    "key": "ui_132fe0304136",
+    "en": "Add a skill",
+    "zh-CN": "添加技能"
   }
 }

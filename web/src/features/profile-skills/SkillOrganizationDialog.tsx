@@ -15,7 +15,7 @@ import {
   LibrarySelect,
   type LibraryGroup,
   type LibraryCategory,
-} from "./SkillEditorDialog";
+} from "./SkillEditorFields";
 import { useSkillOrganization } from "./use-profile-skills";
 
 type Edit = {
