@@ -261,11 +261,11 @@ export function ProfileWorkspace() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="documents" className="flex flex-col gap-6 pt-2">
+        <TabsContent value="documents" className="flex flex-col gap-4 pt-2">
           <SourceManager disabled={busy} />
           <section
             aria-label="GitHub projects"
-            className="min-w-0 space-y-5 rounded-xl border border-border bg-card p-4 sm:p-5"
+            className="@container/github min-w-0 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">
@@ -293,12 +293,13 @@ export function ProfileWorkspace() {
               </Button>
             </div>
             <FieldGroup>
-              <Field>
+              <Field className="grid min-w-0 @3xl/github:grid-cols-[minmax(0,12rem)_minmax(0,20rem)_minmax(0,1fr)] @3xl/github:items-center @3xl/github:gap-4">
                 <FieldLabel htmlFor="githubUsername">
                   GitHub username
                 </FieldLabel>
                 <Input
                   id="githubUsername"
+                  aria-describedby="githubUsername-help"
                   value={draft.githubUsername ?? ""}
                   disabled={busy}
                   onChange={(e) =>
@@ -308,7 +309,7 @@ export function ProfileWorkspace() {
                     })
                   }
                 />
-                <FieldDescription>
+                <FieldDescription id="githubUsername-help">
                   Optional. Save your username before loading repositories.
                   Builds also sync your saved branch choices.
                 </FieldDescription>
@@ -327,8 +328,8 @@ export function ProfileWorkspace() {
               <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 Import preferences
               </summary>
-              <FieldGroup className="pb-4 pt-2">
-                <Field>
+              <FieldGroup className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4 pb-4 pt-2">
+                <Field className="min-w-0">
                   <FieldLabel htmlFor="githubRepoAllow">
                     Always include repositories
                   </FieldLabel>
@@ -345,7 +346,7 @@ export function ProfileWorkspace() {
                     Comma-separated repository names that bypass ranking.
                   </FieldDescription>
                 </Field>
-                <Field>
+                <Field className="min-w-0">
                   <FieldLabel htmlFor="githubRepoDeny">
                     Exclude repositories
                   </FieldLabel>
@@ -362,7 +363,7 @@ export function ProfileWorkspace() {
                     Comma-separated repository names that are never harvested.
                   </FieldDescription>
                 </Field>
-                <Field>
+                <Field className="min-w-0">
                   <FieldLabel htmlFor="githubRepoLimit">
                     Repository limit
                   </FieldLabel>

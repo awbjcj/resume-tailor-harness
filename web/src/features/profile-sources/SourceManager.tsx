@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 import {
   localizeSourceFragmentStatus,
   localizeSourceMode,
@@ -117,16 +118,18 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
   return (
     <section
       aria-label="Source documents"
-      className="min-w-0 rounded-xl border border-border bg-card [&_button]:h-auto [&_button]:min-h-10 [&_button]:max-w-full [&_button]:whitespace-normal"
+      className="@container/sources min-w-0 rounded-xl border border-border bg-card [&_button]:h-auto [&_button]:min-h-10 [&_button]:max-w-full [&_button]:whitespace-normal"
     >
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
         <div className="min-w-0 space-y-1">
-          <h2 className="text-lg font-semibold">Source documents</h2>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h2 className="text-lg font-semibold">Source documents</h2>
+            <p className="text-sm text-muted-foreground">{`${ready} of ${sources.length} sources ready`}</p>
+          </div>
           <p className="max-w-prose text-sm text-muted-foreground">
             Your resume provides your career history. Project dossiers add
             evidence from your work.
           </p>
-          <p className="text-sm text-muted-foreground">{`${ready} of ${sources.length} sources ready`}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <MaterialIntakeDialogs disabled={busy} />
@@ -169,20 +172,33 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
         }}
       />
       <div
-        className="border-b border-dashed border-border bg-muted/20 px-4 py-4 sm:px-5"
+        className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-3 border-b border-dashed border-border bg-muted/20 px-4 py-3 sm:px-5"
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
           void uploadFiles(Array.from(event.dataTransfer.files));
         }}
       >
-        <p className="text-sm">
-          Drop files here or select Add source. You can upload PDFs, Word files,
-          Markdown, and other supporting documents.
-        </p>
-        <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
-          <label className="space-y-1.5 text-sm font-medium">
-            <span>Document type</span>
+        <div className="min-w-0 flex-[1_1_20rem] space-y-1">
+          <p className="text-sm">
+            Drop files here or select Add source. You can upload PDFs, Word files,
+            Markdown, and other supporting documents.
+          </p>
+          {uploadMode !== "synthesis" ? (
+            <p className="text-sm text-muted-foreground">
+              Auto-detect chooses a type based on file format and repository
+              metadata. Change it if needed.
+            </p>
+          ) : null}
+        </div>
+        <div
+          className={cn(
+            "grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-3",
+            uploadMode === "synthesis" ? "flex-[1_1_32rem]" : "flex-[0_1_20rem]",
+          )}
+        >
+          <label className="flex min-w-0 flex-col gap-1.5 text-sm font-medium @3xl/sources:flex-row @3xl/sources:items-center @3xl/sources:gap-2">
+            <span className="shrink-0">Document type</span>
             <select
               aria-label="New source mode"
               className={selectClass}
@@ -201,8 +217,8 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
             </select>
           </label>
           {uploadMode === "synthesis" ? (
-            <label className="space-y-1.5 text-sm font-medium">
-              <span>Attach evidence to</span>
+            <label className="flex min-w-0 flex-col gap-1.5 text-sm font-medium @3xl/sources:flex-row @3xl/sources:items-center @3xl/sources:gap-2">
+              <span className="shrink-0">Attach evidence to</span>
               <select
                 aria-label="New source anchor"
                 className={selectClass}
@@ -224,12 +240,7 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
                 ))}
               </select>
             </label>
-          ) : (
-            <p className="self-end text-sm text-muted-foreground">
-              Auto-detect chooses a type based on file format and repository
-              metadata. Change it if needed.
-            </p>
-          )}
+          ) : null}
         </div>
       </div>
       {uploadErrors.length ? (
@@ -251,11 +262,11 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
         </div>
       ) : null}
       {!sources.some((source) => source.primary) ? (
-        <p className="border-b border-border p-4 text-sm text-muted-foreground">
+        <p className="border-b border-border px-4 py-3 text-sm text-muted-foreground sm:px-5">
           Add a resume to build your profile. Your other sources stay saved.
         </p>
       ) : ready < sources.length ? (
-        <p className="border-b border-border p-4 text-sm text-muted-foreground">
+        <p className="border-b border-border px-4 py-3 text-sm text-muted-foreground sm:px-5">
           Sources are saved. Build your profile to use new or updated evidence.
         </p>
       ) : null}
@@ -272,7 +283,7 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="divide-y divide-border @3xl/sources:grid @3xl/sources:grid-cols-[minmax(0,1fr)_auto] @3xl/sources:gap-x-4 @6xl/sources:grid-cols-[minmax(0,1fr)_repeat(2,minmax(10rem,14rem))_auto]">
           {sources.map((source) => (
             <SourceCard
               key={source.id}
@@ -296,7 +307,7 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
         </ul>
       )}
       {exclusions.length ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-4 py-3 sm:px-5">
           <p className="text-sm text-muted-foreground">
             Removed GitHub sources stay excluded from future syncs.
           </p>
@@ -393,15 +404,21 @@ function SourceCard({
   const missing = source.fileExists === false;
   const cached = !missing && source.fragmentStatus === "cached";
   const Icon = missing ? AlertCircle : cached ? CheckCircle2 : Clock3;
+  const editable = !source.primary && source.mode !== "project";
   return (
-    <li>
+    <li className="@3xl/sources:col-span-full @3xl/sources:grid @3xl/sources:grid-cols-subgrid">
       <article
         aria-label={source.filename}
-        className="grid min-w-0 gap-4 p-4 sm:p-5"
+        className="grid min-w-0 gap-x-4 gap-y-3 px-4 py-3 sm:px-5 @3xl/sources:col-span-full @3xl/sources:grid-cols-subgrid @3xl/sources:items-center"
       >
-        <div className="flex min-w-0 items-start gap-3">
+        <div
+          className={cn(
+            "flex min-w-0 items-center gap-3",
+            !editable && "@6xl/sources:col-span-3",
+          )}
+        >
           <div
-            className="hidden size-10 shrink-0 items-center justify-center sm:flex rounded-lg bg-muted text-muted-foreground"
+            className="hidden size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground @xl/sources:flex"
             aria-hidden="true"
           >
             {source.mode === "project" ? (
@@ -410,12 +427,15 @@ function SourceCard({
               <FileText className="size-5" />
             )}
           </div>
-          <div className="min-w-0 flex-1 space-y-2">
+          <div className="min-w-0 flex-1 space-y-1.5">
             <h3 className="font-medium [overflow-wrap:anywhere]">
               {source.filename}
             </h3>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
+              <Badge
+                variant="outline"
+                className="h-auto min-h-5 max-w-full whitespace-normal text-left"
+              >
                 {source.primary
                   ? "Primary resume"
                   : source.mode === "project"
@@ -423,42 +443,51 @@ function SourceCard({
                     : "Supporting document"}
               </Badge>
               {source.origin === "github" ? (
-                <Badge variant="outline">GitHub</Badge>
+                <Badge
+                  variant="outline"
+                  className="h-auto min-h-5 max-w-full whitespace-normal text-left"
+                >
+                  GitHub
+                </Badge>
               ) : source.repoUrl ? (
-                <Badge variant="outline">Uploaded (overrides GitHub)</Badge>
+                <Badge
+                  variant="outline"
+                  className="h-auto min-h-5 max-w-full whitespace-normal text-left"
+                >
+                  Uploaded (overrides GitHub)
+                </Badge>
               ) : null}
-              <Badge variant={cached ? "secondary" : "outline"}>
-                <Icon className="mr-1 size-3" aria-hidden="true" />
+              <Badge
+                variant={cached ? "secondary" : "outline"}
+                className="h-auto min-h-5 max-w-full whitespace-normal text-left"
+              >
+                <Icon className="size-3" aria-hidden="true" />
                 {missing ? (
                   <span>File missing</span>
                 ) : (
                   localizeSourceFragmentStatus(source.fragmentStatus, language)
                 )}
               </Badge>
+              {source.repoUrl ? (
+                <span className="min-w-0 [overflow-wrap:anywhere]">
+                  {source.repoUrl.replace(
+                    /^https?:\/\/(www\.)?github.com\//,
+                    "",
+                  )}
+                </span>
+              ) : null}
+              {source.githubBranch ? (
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <GitBranch
+                    className="size-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span className="[overflow-wrap:anywhere]">
+                    {source.githubBranch}
+                  </span>
+                </span>
+              ) : null}
             </div>
-            {source.repoUrl || source.githubBranch ? (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                {source.repoUrl ? (
-                  <span className="min-w-0 [overflow-wrap:anywhere]">
-                    {source.repoUrl.replace(
-                      /^https?:\/\/(www\.)?github.com\//,
-                      "",
-                    )}
-                  </span>
-                ) : null}
-                {source.githubBranch ? (
-                  <span className="inline-flex min-w-0 items-center gap-1.5">
-                    <GitBranch
-                      className="size-3.5 shrink-0"
-                      aria-hidden="true"
-                    />
-                    <span className="[overflow-wrap:anywhere]">
-                      {source.githubBranch}
-                    </span>
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
             {missing ? (
               <p className="text-sm text-destructive">
                 Replace this file to restore its evidence, or remove the source.
@@ -466,9 +495,9 @@ function SourceCard({
             ) : null}
           </div>
         </div>
-        {!source.primary && source.mode !== "project" ? (
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-3">
-            <label className="space-y-1.5 text-sm">
+        {editable ? (
+          <div className="grid min-w-0 grid-cols-1 items-end gap-x-4 gap-y-3 @md/sources:grid-cols-2 @3xl/sources:col-span-full @3xl/sources:row-start-2 @6xl/sources:col-span-2 @6xl/sources:col-start-2 @6xl/sources:row-start-1 @6xl/sources:grid-cols-subgrid">
+            <label className="flex min-w-0 flex-col gap-1 text-sm">
               <span>Read this document as</span>
               <select
                 aria-label={`mode for ${source.filename}`}
@@ -490,7 +519,7 @@ function SourceCard({
               </select>
             </label>
             {source.mode === "synthesis" ? (
-              <label className="space-y-1.5 text-sm">
+              <label className="flex min-w-0 flex-col gap-1 text-sm">
                 <span>Attach evidence to</span>
                 <select
                   aria-label={`anchor for ${source.filename}`}
@@ -521,7 +550,7 @@ function SourceCard({
             ) : null}
           </div>
         ) : null}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 @3xl/sources:col-start-2 @3xl/sources:row-start-1 @3xl/sources:justify-end @6xl/sources:col-start-4">
           <Button
             variant="outline"
             disabled={missing || downloading}
@@ -559,7 +588,7 @@ function SourceCard({
           ) : null}
           <Button
             variant="ghost"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive sm:ml-auto"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={busy}
             aria-label={`Remove ${source.filename}`}
             onClick={() => onRemove()}
