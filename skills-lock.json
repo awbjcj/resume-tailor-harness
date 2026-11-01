@@ -247,7 +247,7 @@
     "profile-conversation": {
       "source": "https://github.com/awbjcj/resume-tailor-harness",
       "sourceType": "local",
-      "reviewedRef": "c5b2806fae416c1f223927ad818f2a5b8c136dc2",
+      "reviewedRef": "82653dd435decbdf49f9e48436cc07b3b62a13ce",
       "skillPath": "skills/profile-conversation/SKILL.md",
       "computedHash": "341f8be7dc58063812e6ac7c7c7a2abf4aafcdbcd929065c42805ea83c4ab85d",
       "localVersion": "2026-11-01",
