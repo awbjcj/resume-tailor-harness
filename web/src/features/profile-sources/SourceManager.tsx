@@ -14,6 +14,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import "@/i18n/profile-publication";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,8 +54,12 @@ const selectClass =
 const optionClass = "bg-popover text-popover-foreground";
 const accepts = ".pdf,.docx,.txt,.md,.pptx,.xlsx,.html";
 
-export function SourceManager({ disabled = false }: { disabled?: boolean }) {
-  const { i18n } = useTranslation();
+export function SourceManager({ disabled = false, onRefresh, refreshDisabled = false }: {
+  disabled?: boolean;
+  onRefresh?: () => Promise<unknown>;
+  refreshDisabled?: boolean;
+}) {
+  const { t, i18n } = useTranslation();
   const { data: sources, isLoading, isError, refetch } = useSources();
   const { data: skeleton } = useSkeleton();
   const upload = useUploadSources();
@@ -113,7 +118,7 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
   if (isLoading || !sources) return <Skeleton className="h-48 w-full" />;
   const ready = sources.filter(
     (source) =>
-      source.fileExists !== false && source.fragmentStatus === "cached",
+      source.fileExists !== false && source.incorporated === true,
   ).length;
   return (
     <section
@@ -124,7 +129,7 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <h2 className="text-lg font-semibold">Source documents</h2>
-            <p className="text-sm text-muted-foreground">{`${ready} of ${sources.length} sources ready`}</p>
+            <p className="text-sm text-muted-foreground">{t("profilePublication.sourceCount", { used: ready, total: sources.length })}</p>
           </div>
           <p className="max-w-prose text-sm text-muted-foreground">
             Your resume provides your career history. Project dossiers add
@@ -132,7 +137,7 @@ export function SourceManager({ disabled = false }: { disabled?: boolean }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <MaterialIntakeDialogs disabled={busy} />
+          <MaterialIntakeDialogs disabled={busy} onRefresh={onRefresh} refreshDisabled={refreshDisabled} />
           <Button
             variant="outline"
             disabled={busy}
@@ -401,9 +406,10 @@ function SourceCard({
     primary?: boolean;
   }) => void;
 }) {
+  const { t } = useTranslation();
   const missing = source.fileExists === false;
-  const cached = !missing && source.fragmentStatus === "cached";
-  const Icon = missing ? AlertCircle : cached ? CheckCircle2 : Clock3;
+  const incorporated = !missing && source.incorporated === true;
+  const Icon = missing ? AlertCircle : incorporated ? CheckCircle2 : Clock3;
   const editable = !source.primary && source.mode !== "project";
   return (
     <li className="@3xl/sources:col-span-full @3xl/sources:grid @3xl/sources:grid-cols-subgrid">
@@ -458,7 +464,7 @@ function SourceCard({
                 </Badge>
               ) : null}
               <Badge
-                variant={cached ? "secondary" : "outline"}
+                variant={incorporated ? "secondary" : "outline"}
                 className="h-auto min-h-5 max-w-full whitespace-normal text-left"
               >
                 <Icon className="size-3" aria-hidden="true" />
@@ -468,6 +474,11 @@ function SourceCard({
                   localizeSourceFragmentStatus(source.fragmentStatus, language)
                 )}
               </Badge>
+              {!missing ? (
+                <Badge variant={incorporated ? "secondary" : "outline"}>
+                  {t(incorporated ? "profilePublication.sourceUsed" : "profilePublication.sourcePending")}
+                </Badge>
+              ) : null}
               {source.repoUrl ? (
                 <span className="min-w-0 [overflow-wrap:anywhere]">
                   {source.repoUrl.replace(

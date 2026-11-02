@@ -479,15 +479,29 @@ class MessageProcessor:
                     )
                     or not corrected
                 ):
-                    notice.state = "superseded"
-                    self.session.add(notice)
+                    changes = {"state": "superseded"}
                 elif corrected != notice.proposed_status:
                     # A versioned classifier correction must update the review
                     # card as well as its cache. Accepted/dismissed cards stay put.
-                    notice.kind = corrected
-                    notice.proposed_status = corrected
-                    notice.evidence = self._evidence(cached)
-                    self.session.add(notice)
+                    changes = {
+                        "kind": corrected,
+                        "proposed_status": corrected,
+                        "evidence": self._evidence(cached),
+                    }
+                else:
+                    continue
+                # A user may have accepted/dismissed after this page loaded its
+                # notices. Never overwrite that decision from a stale ORM row.
+                self.session.execute(
+                    update(Notification)
+                    .where(
+                        col(Notification.id) == notice.id,
+                        col(Notification.state) == "pending",
+                    )
+                    .values(**changes)
+                    .execution_options(synchronize_session=False)
+                )
+                self.session.refresh(notice)
         existing = {
             (n.application_id, self._notice_identity(n.message_id)): n for n in notices
         }

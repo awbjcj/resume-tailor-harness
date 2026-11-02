@@ -2,6 +2,7 @@ import { useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PencilLine, Save, Trash2 } from "lucide-react";
 import "@/i18n/profile-changes";
+import "@/i18n/profile-publication";
 
 import { ReviewCard } from "@/components/approval/ReviewCard";
 import { Button } from "@/components/ui/button";
@@ -17,31 +18,33 @@ interface DraftNoteCardProps {
   discarding: boolean;
   busy?: boolean;
   onSave: (note: CoachDraftNote) => void | Promise<unknown>;
+  onSaveAndRefresh?: (note: CoachDraftNote) => void | Promise<unknown>;
   onDiscard: () => void | Promise<unknown>;
 }
 
-export function DraftNoteCard({ note, saving, discarding, busy = false, onSave, onDiscard }: DraftNoteCardProps) {
+export function DraftNoteCard({ note, saving, discarding, busy = false, onSave, onSaveAndRefresh, onDiscard }: DraftNoteCardProps) {
   const { t } = useTranslation();
   const id = useId();
   const [editing, setEditing] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [title, setTitle] = useState(note.title);
   const [summary, setSummary] = useState(note.summary);
-  const [decision, setDecision] = useState<"save" | "discard" | null>(null);
+  const [decision, setDecision] = useState<"save" | "save-refresh" | "discard" | null>(null);
   const [failed, setFailed] = useState(false);
   const inFlight = useRef(false);
   const pending = note.status === "pending";
   const locked = busy || saving || discarding || decision !== null;
   const hasEvidence = Boolean(note.quotes?.some((quote) => quote.trim()));
 
-  async function resolve(next: "save" | "discard") {
+  async function resolve(next: "save" | "save-refresh" | "discard") {
     if (locked || inFlight.current || !pending) return;
-    if (next === "save" && (!title.trim() || !summary.trim() || !hasEvidence)) return;
+    if (next !== "discard" && (!title.trim() || !summary.trim() || !hasEvidence)) return;
     inFlight.current = true;
     setDecision(next);
     setFailed(false);
     try {
-      if (next === "save") await onSave({ ...note, title: title.trim(), summary: summary.trim() });
+      if (next === "save-refresh") await onSaveAndRefresh?.({ ...note, title: title.trim(), summary: summary.trim() });
+      else if (next === "save") await onSave({ ...note, title: title.trim(), summary: summary.trim() });
       else await onDiscard();
       setEditing(false);
       setConfirmDiscard(false);
@@ -60,7 +63,7 @@ export function DraftNoteCard({ note, saving, discarding, busy = false, onSave, 
       footer={pending ? <>
         {failed ? <p role="alert" className="text-sm leading-relaxed text-destructive">{t("profileChanges.failed")}</p> : null}
         {saving || discarding || decision ? <p role="status" className="text-sm text-muted-foreground">
-          {t(saving || decision === "save" ? "profileChanges.note.saving" : "profileChanges.note.discarding")}
+          {t(saving || decision === "save" || decision === "save-refresh" ? "profileChanges.note.saving" : "profileChanges.note.discarding")}
         </p> : null}
         {confirmDiscard ? <>
           <p className="text-sm leading-relaxed">{t("profileChanges.note.confirmDiscard")}</p>
@@ -76,6 +79,10 @@ export function DraftNoteCard({ note, saving, discarding, busy = false, onSave, 
             {saving || decision === "save" ? <Spinner data-icon="inline-start" /> : <Save aria-hidden="true" />}
             {t("profileChanges.note.save")}
           </Button>
+          {onSaveAndRefresh ? <Button className="h-auto min-h-11 whitespace-normal py-2" disabled={locked || !title.trim() || !summary.trim() || !hasEvidence} onClick={() => void resolve("save-refresh")}>
+            {decision === "save-refresh" ? <Spinner data-icon="inline-start" /> : null}
+            {t("profilePublication.saveRefresh")}
+          </Button> : null}
           <Button className="h-auto min-h-11 whitespace-normal py-2" variant="outline" disabled={locked} onClick={() => setEditing((value) => !value)}>
             <PencilLine aria-hidden="true" />{t(editing ? "profileChanges.note.preview" : "profileChanges.note.edit")}
           </Button>
@@ -85,6 +92,7 @@ export function DraftNoteCard({ note, saving, discarding, busy = false, onSave, 
         </div>}
       </> : undefined}>
       <div className="min-w-0 space-y-4 p-4 sm:p-5">
+        {pending && onSaveAndRefresh ? <p className="text-sm text-muted-foreground">{t("profilePublication.saveHelp")}</p> : null}
         {editing && pending ? <>
           <Field>
             <FieldLabel htmlFor={`${id}-title`}>{t("profileChanges.note.title")}</FieldLabel>

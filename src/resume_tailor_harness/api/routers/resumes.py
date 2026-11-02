@@ -29,6 +29,7 @@ from resume_tailor_harness.services.board import (
     select_resume_version,
 )
 from resume_tailor_harness.services.rendering import render_resume_version
+from resume_tailor_harness.services.application_materials import MaterialSelectionError
 from resume_tailor_harness.tenancy.storage import resolve_artifact_pdf
 from resume_tailor_harness.tracking.repository import get_job, get_resume_version
 
@@ -167,7 +168,10 @@ def evidence_portfolio_endpoint(
 def select_resume_endpoint(
     job_id: int, version_id: int, session: Session = Depends(get_session)
 ):
-    application = select_resume_version(session, job_id, version_id)
+    try:
+        application = select_resume_version(session, job_id, version_id)
+    except MaterialSelectionError as exc:
+        raise ApiException(409, "MATERIAL_NOT_ELIGIBLE", str(exc)) from exc
     if application is None:
         raise ApiException(404, "NOT_FOUND", "Job or resume version not found")
     return ApplicationOut.model_validate(application)

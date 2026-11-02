@@ -343,6 +343,8 @@ def create_app(
                 ),
                 completed_at=completed_at,
                 logs=payload.get("logs"),
+                meta=payload.get("meta"),
+                result=payload.get("result"),
                 initially_read=(
                     isinstance(payload.get("meta"), dict)
                     and payload["meta"].get("scheduled") is True

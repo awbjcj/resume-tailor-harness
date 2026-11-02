@@ -11,6 +11,7 @@ from resume_tailor_harness.services.run_visibility import (
     visible_run_completion,
     visible_run_completions_clause,
 )
+from resume_tailor_harness.services.run_results import capture_run_target
 from resume_tailor_harness.tracking.tables import (
     ClearedRunHistory,
     RunCompletion,
@@ -32,6 +33,8 @@ def record_run_completion(
     completed_at: datetime,
     logs: list[dict[str, str]] | None = None,
     initially_read: bool = False,
+    meta: object = None,
+    result: object = None,
 ) -> RunCompletion:
     if status not in RUN_COMPLETION_STATUSES:
         raise ValueError(f"unsupported run completion status: {status}")
@@ -55,6 +58,9 @@ def record_run_completion(
     )
     session.add(row)
     session.add(RunOperationLog(run_id=run_id, entries=logs or []))
+    target = capture_run_target(run_id, meta=meta, result=result)
+    if target is not None:
+        session.add(target)
     session.commit()
     session.refresh(row)
     return row

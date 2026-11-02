@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-const BOARD_QUERY_KEYS = ["shortlist", "pipeline", "triage", "job"] as const;
+const BOARD_QUERY_KEYS = ["shortlist", "pipeline", "triage", "job", "dashboard-summary"] as const;
 
 export function invalidateBoardQueries(queryClient: QueryClient): Promise<unknown[]> {
   return Promise.all(

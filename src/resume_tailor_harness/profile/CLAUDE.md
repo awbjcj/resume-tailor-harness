@@ -1,5 +1,20 @@
 # Profile developer reference
 
+## Publication freshness and continued coaching
+
+`publication.json` records the sources successfully incorporated into facts and
+matrix, and participates in the same publication rollback. Its fingerprints
+include consumed source bytes, interpretation metadata, and registry exclusions.
+Direct conversational edits preserve that receipt; full removal/recreation
+retires it. Neither a facts-file timestamp nor cached extraction certifies that
+new evidence has reached the published profile.
+
+Saved coach notes retain pending refresh intent and a durable impact baseline.
+An ended session can explicitly refresh again through its refresh route. A
+conflicting build is not joined unless its captured evidence coverage is known;
+skip/failure reasons stay recoverable in that session. Only explicit refresh
+requests authorize model work.
+
 Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loads only when working under `src/resume_tailor_harness/profile/`.
 
 - **Profile coaching is turn-per-run and evidence-locked.** Durable sessions follow

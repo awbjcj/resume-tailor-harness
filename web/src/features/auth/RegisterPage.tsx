@@ -12,6 +12,7 @@ import { AuthLayout } from "./AuthLayout";
 import { AuthNotice, callbackErrorMessage } from "./AuthNotice";
 import { GoogleButton } from "./GoogleButton";
 import { PasswordStrengthMeter } from "./PasswordStrengthMeter";
+import { taskDestination, withTaskDestination } from "@/lib/task-continuation";
 
 export function RegisterPage() {
   const [params] = useSearchParams();
@@ -28,7 +29,7 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const register = useMutation({
     mutationFn: () => unwrap(api.POST("/api/auth/register", { body: { email, password, inviteCode, displayName: displayName || null } })),
-    onSuccess: () => navigate(`/verify-email?email=${encodeURIComponent(email)}`, { replace: true }),
+    onSuccess: () => navigate(withTaskDestination(`/verify-email?email=${encodeURIComponent(email)}`, taskDestination(params)), { replace: true }),
   });
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -39,7 +40,7 @@ export function RegisterPage() {
       title="Create your workspace"
       description="Use the private invite code from your administrator."
       icon={<UserPlus aria-hidden="true" />}
-      footer={<p className="text-center text-muted-foreground">Already have an account? <Link className="font-medium text-foreground underline underline-offset-4" to="/login">Sign in</Link></p>}
+      footer={<p className="text-center text-muted-foreground">Already have an account? <Link className="font-medium text-foreground underline underline-offset-4" to={withTaskDestination("/login", taskDestination(params))}>Sign in</Link></p>}
     >
       {calloutError ? <AuthNotice tone="error">{calloutError}</AuthNotice> : null}
       {!calloutError && fromGoogle ? (

@@ -24,6 +24,7 @@ from resume_tailor_harness.profile.conversation import (
     can_rebuild_without_resume,
     load_edits,
 )
+from resume_tailor_harness.profile.publication import publication_status
 from resume_tailor_harness.services.sources import list_sources
 from resume_tailor_harness.career_skills.registry import CareerSkillRegistry
 from resume_tailor_harness.api.deps import (
@@ -62,6 +63,7 @@ def get_setup_status(request: Request):
         else None
     )
     profile_cfg = cast(ProfileConfigDoc, config_store.get("profile"))
+    publication = publication_status(profile_dir)
     profile = ProfileStatus(
         document_count=len(sources) if manifest_exists else len(docs),
         has_resume=any(
@@ -70,6 +72,9 @@ def get_setup_status(request: Request):
         if manifest_exists
         else any(d.doc_type == "resume" for d in docs),
         facts_built_at=facts_built_at,
+        freshness=publication.freshness,
+        published_at=publication.published_at,
+        pending_source_count=publication.pending_source_count,
         github_username=profile_cfg.github_username,
     )
     try:

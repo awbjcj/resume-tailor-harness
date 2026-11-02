@@ -10,6 +10,7 @@ export const SUMMARY = {
     rendered: 1,
   },
   queues: { triage: 2, approve: 4, tailor: 1, apply: 1 },
+  queueTargets: {},
   applied: 5,
   openErrorCount: 0,
   activeInterviews: [],

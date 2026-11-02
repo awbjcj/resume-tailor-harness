@@ -33,6 +33,7 @@ from resume_tailor_harness.profile.coach_store import (
     end_session,
     list_sessions,
     load_session,
+    mutate_session,
     set_draft_status,
     set_impact,
 )
@@ -44,6 +45,7 @@ from resume_tailor_harness.profile.conversation import (
 from resume_tailor_harness.profile.intake import add_note_source
 from resume_tailor_harness.profile.interview import make_corpus_tools
 from resume_tailor_harness.profile.snapshot import profile_snapshot, snapshot_diff
+from resume_tailor_harness.profile.publication import load_publication, pending_sources
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.services.profile_build import run_corpus_build
 from resume_tailor_harness.sessions.stream import Notice, NullSink, StreamSink
@@ -90,6 +92,18 @@ def _camel_turn(turn: dict) -> dict:
 
 def session_view(profile_dir: Path | str, session_id: str) -> dict:
     session = load_session(profile_dir, session_id)
+    refresh = session_refresh(profile_dir, session)
+    impact = session["impact"]
+    if (
+        refresh["status"] == "succeeded"
+        and session.get("profile_refresh_baseline") is not None
+        and session.get("profile_refresh", {}).get("status") != "succeeded"
+    ):
+        # A build launched elsewhere can cover an approved note too. Known
+        # publication coverage resolves its pending intent without paid retry.
+        impact = snapshot_diff(
+            session["profile_refresh_baseline"], profile_snapshot(profile_dir)
+        )
     return {
         "sessionId": session["session_id"],
         "sessionTitle": session["session_title"],
@@ -142,8 +156,74 @@ def session_view(profile_dir: Path | str, session_id: str) -> dict:
             if session["recap"] is not None
             else None
         ),
-        "impact": session["impact"],
+        "impact": impact,
+        "profileRefresh": {
+            "status": refresh["status"],
+            "runId": refresh.get("run_id"),
+            "reason": refresh.get("reason"),
+            "completedAt": refresh.get("completed_at"),
+        },
     }
+
+
+def session_refresh(profile_dir: Path | str, session: dict) -> dict:
+    """Project publication coverage without turning a read into paid work."""
+    refresh: dict = dict(session.get("profile_refresh") or {"status": "idle"})
+    saved_sources = {
+        topic["note_doc_id"] for topic in session["topics"] if topic.get("note_doc_id")
+    }
+    if saved_sources and refresh["status"] not in {"running", "failed"}:
+        if not pending_sources(profile_dir, saved_sources):
+            publication = load_publication(profile_dir)
+            refresh.update(
+                status="succeeded",
+                reason=None,
+                completed_at=publication.published_at if publication else None,
+            )
+        elif refresh["status"] not in {"failed", "skipped"}:
+            refresh["status"] = "pending"
+            refresh["reason"] = "Saved evidence is waiting for a profile refresh."
+    return refresh
+
+
+def record_profile_refresh(
+    profile_dir: Path | str,
+    session_id: str,
+    status: str,
+    *,
+    run_id: str | None = None,
+    reason: str | None = None,
+) -> None:
+    """Keep retry intent and its original impact baseline in durable custody."""
+    from resume_tailor_harness.sessions.store import now_iso
+
+    def update(session: dict) -> None:
+        if session.get("profile_refresh_baseline") is None:
+            session["profile_refresh_baseline"] = profile_snapshot(profile_dir)
+        session["profile_refresh"] = {
+            "status": status,
+            "run_id": run_id
+            or (
+                session.get("profile_refresh", {}).get("run_id")
+                if status != "running"
+                else None
+            ),
+            "reason": reason,
+            "completed_at": now_iso() if status in {"succeeded", "failed"} else None,
+        }
+
+    mutate_session(profile_dir, session_id, update)
+
+
+def attach_profile_refresh_run(
+    profile_dir: Path | str, session_id: str, run_id: str
+) -> None:
+    # The worker can finish before submit returns. Attach the id without
+    # replacing its completed result with a late "running" write.
+    def update(session: dict) -> None:
+        session["profile_refresh"]["run_id"] = run_id
+
+    mutate_session(profile_dir, session_id, update)
 
 
 def sessions_view(
@@ -443,6 +523,10 @@ def approve_draft(
             root, f"Coach: {title.strip() or topic_id}", body, anchor=anchor
         )
         set_draft_status(root, session_id, topic_id, "saved", note_doc_id=doc.id)
+        # A late approval remains actionable in this same session, including
+        # after its recap. Saving a note itself does not spend on extraction.
+        if session.get("profile_refresh", {}).get("status") != "running":
+            record_profile_refresh(root, session_id, "pending")
         return doc.id
 
 
@@ -536,7 +620,8 @@ def run_build_with_impact(
     github_branches: dict[str, str] | None = None,
 ) -> dict:
     root = Path(profile_dir)
-    before = profile_snapshot(root)
+    session = load_session(root, session_id)
+    before = session.get("profile_refresh_baseline") or profile_snapshot(root)
     try:
         raw_report = run_corpus_build(
             reporter,
@@ -550,7 +635,20 @@ def run_build_with_impact(
         )
     except Exception as exc:
         set_impact(root, session_id, {"error": str(exc)})
+        record_profile_refresh(root, session_id, "failed", reason=str(exc))
         raise
     impact = snapshot_diff(before, profile_snapshot(root))
     set_impact(root, session_id, impact)
+    saved_sources = {
+        topic["note_doc_id"]
+        for topic in load_session(root, session_id)["topics"]
+        if topic.get("note_doc_id")
+    }
+    waiting = pending_sources(root, saved_sources)
+    record_profile_refresh(
+        root,
+        session_id,
+        "pending" if waiting else "succeeded",
+        reason="New evidence is waiting for a profile refresh." if waiting else None,
+    )
     return {**raw_report, "impact": impact}

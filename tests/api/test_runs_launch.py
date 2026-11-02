@@ -178,6 +178,20 @@ def test_duplicate_resume_revise_returns_conflict_with_active_run(
         executor.shutdown(wait=True)
 
 
+def test_approved_tailor_launch_records_the_exact_targets_before_work(monkeypatch, tmp_path):
+    captured = {}
+    monkeypatch.setattr(runs_router, "resolve_tailor_targets", lambda _session, **_kw: [SimpleNamespace(id=4), SimpleNamespace(id=9)])
+    def fake_tailor(_session, *, job_ids, approved, reporter, **_kwargs):
+        captured.update(job_ids=job_ids, approved=approved)
+        return SimpleNamespace(versions={}, failures={})
+    monkeypatch.setattr(runs_router, "tailor", fake_tailor)
+    with _client(tmp_path) as client:
+        response = client.post("/api/tailor", json={"approved": True})
+        assert response.status_code == 202
+        assert response.json()["meta"]["jobIds"] == [4, 9]
+    assert captured == {"job_ids": [4, 9], "approved": False}
+
+
 def test_tailor_launch_passes_params(monkeypatch, tmp_path):
     captured = {}
 

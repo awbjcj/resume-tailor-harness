@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { firstIncompleteStep, STEPS } from "./SetupWizard";
+import type { SetupStatus } from "@/features/settings/use-setup-status";
 
-const status = (over: object) => ({
+const status = (over: Omit<Partial<SetupStatus>, "profile"> & { profile?: Partial<SetupStatus["profile"]> }): SetupStatus => ({
   secrets: { anthropicKey: false, anyLlmKey: false },
-  profile: { documentCount: 0, hasResume: false, canRebuild: false, factsBuiltAt: null, githubUsername: null },
   search: { configured: false }, sources: { enabledCount: 0 }, complete: false,
   ...over,
+  profile: { documentCount: 0, hasResume: false, canRebuild: false, factsBuiltAt: null, githubUsername: null, freshness: "missing", pendingSourceCount: 0, ...over.profile },
 });
 
 describe("firstIncompleteStep", () => {

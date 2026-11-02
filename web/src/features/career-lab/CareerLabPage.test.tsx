@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { MemoryRouter } from "react-router-dom";
+import { Link, MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CareerLabPage } from "./CareerLabPage";
@@ -47,14 +47,14 @@ vi.mock("@/lib/chat/useChatStream", () => ({
   },
 }));
 
-function renderPage(initialEntry = "/career-lab") {
+function renderPage(initialEntry = "/career-lab", navigation?: ReactNode) {
   const queryClient = new QueryClient();
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>{children}</MemoryRouter>
     </QueryClientProvider>
   );
-  return render(<CareerLabPage />, { wrapper });
+  return render(<>{navigation}<CareerLabPage /></>, { wrapper });
 }
 
 function summary(overrides: Record<string, unknown> = {}) {
@@ -103,6 +103,13 @@ beforeEach(() => {
 });
 
 describe("CareerLabPage", () => {
+  it("follows another result link without remounting Career Lab", async () => {
+    renderPage("/career-lab?session=earlier-session", <Link to="/career-lab?session=another-result">Open another result</Link>);
+    expect(mocks.session).toHaveBeenLastCalledWith("earlier-session");
+    await userEvent.click(screen.getByRole("link", { name: "Open another result" }));
+    expect(mocks.session).toHaveBeenLastCalledWith("another-result");
+  });
+
   it("opens the thread named by the session link from a job", () => {
     // The job's Career Lab tab links to /career-lab?session=<id>, which may be
     // an ended thread that no `status === "active"` scan would ever pick.

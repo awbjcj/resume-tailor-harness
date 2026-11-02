@@ -1,3 +1,4 @@
+import "@/i18n/password-manager";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {

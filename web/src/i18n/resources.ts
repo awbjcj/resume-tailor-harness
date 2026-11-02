@@ -1,10 +1,13 @@
 import { emailNotificationsEn, emailNotificationsZh } from "./email-notifications";
+import type { workflowEn } from "./workflow";
 import autoEn from "./auto-en.json";
 import { billingEn, billingZh } from "./billing";
-import { passwordManagerEn, passwordManagerZh } from "./password-manager";
+import type { passwordManagerEn } from "./password-manager";
 import { manualJobEn, manualJobZh } from "./manual-job";
 import { mailboxesEn, mailboxesZh } from "./mailboxes";
+import type { applicationUpdatesEn } from "./application-updates";
 import type { profileChangesEn } from "./profile-changes";
+import type { profilePublicationEn } from "./profile-publication";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -17,6 +20,7 @@ export async function loadAutoTranslations(
 }
 
 const en = {
+  workflow: {} as typeof workflowEn,
   deferred: { loading: "Loading…", failed: "This form could not load. Try again.", appFailed: "The workspace could not load. Try again.", retry: "Try again", reload: "Reload page" },
   salary: { hour: "hour", month: "month", week: "week", day: "day" },
   chat: {
@@ -26,11 +30,13 @@ const en = {
   },
   billing: billingEn,
   emailNotifications: emailNotificationsEn,
-  passwordManager: passwordManagerEn,
+  passwordManager: {} as typeof passwordManagerEn,
   manualJob: manualJobEn,
   mailboxes: mailboxesEn,
+  applicationUpdates: {} as typeof applicationUpdatesEn,
   // Coach-only copy is registered by its lazy route, keeping it out of startup.
   profileChanges: {} as typeof profileChangesEn,
+  profilePublication: {} as typeof profilePublicationEn,
   agentPrompts: {
     originalLanguage: "Built-in instructions are shown in their original language.",
   },
@@ -651,7 +657,11 @@ const en = {
       tailor: "Tailor",
       tailorDetail: "approved and ready",
       apply: "Apply",
-      applyDetail: "rendered resumes",
+      applyDetail: "ready to prepare",
+      review: "Review",
+      reviewDetail: "resumes needing checks",
+      render: "Render",
+      renderDetail: "PDFs to create",
     },
     quickAccess: "Quick access",
     quickAccessHint: "Open workspace settings in one click",
@@ -756,6 +766,10 @@ const en = {
       coverLetter_one: "{{count}} cover letter", coverLetter_other: "{{count}} cover letters",
       stage_one: "{{count}} stage", stage_other: "{{count}} stages",
     },
+    openResult: "Open result",
+    openWorkspace: "Open workspace",
+    resultUnavailable: "The original result is unavailable. Opening the current workspace.",
+    resultError: "Could not open this result. Try again from operation history.",
     operations: "Recent completed operations",
     historyHint: "Latest 50 operations. Logs retain up to 200 progress messages per operation.",
     clearOperations: "Clear operation history",
@@ -845,10 +859,10 @@ const en = {
         cta: "Review shortlist",
       },
       tailor: {
-        label: "Tailor",
-        task: "Tailor a resume",
-        hint: "Tailor a resume to an approved job, then render and apply.",
-        cta: "Tailor a resume",
+        label: "Application",
+        task: "Prepare and submit an application",
+        hint: "Tailor, review, and render your resume, then prepare the application and record confirmed submission.",
+        cta: "Continue preparation",
       },
     },
   },
@@ -859,6 +873,7 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  workflow: {} as typeof workflowEn,
   deferred: { loading: "正在加载…", failed: "无法加载此表单，请重试。", appFailed: "无法加载工作区，请重试。", retry: "重试", reload: "重新加载页面" },
   salary: { hour: "小时", month: "月", week: "周", day: "天" },
   chat: {
@@ -893,10 +908,12 @@ const zhCN = {
   },
   billing: billingZh,
   emailNotifications: emailNotificationsZh,
-  passwordManager: passwordManagerZh,
+  passwordManager: {} as typeof passwordManagerEn,
   manualJob: manualJobZh,
   mailboxes: mailboxesZh,
+  applicationUpdates: {} as typeof applicationUpdatesEn,
   profileChanges: {} as typeof profileChangesEn,
+  profilePublication: {} as typeof profilePublicationEn,
   agentPrompts: {
     originalLanguage: "内置指令以原文显示。",
   },
@@ -1465,7 +1482,11 @@ const zhCN = {
       tailor: "定制",
       tailorDetail: "已批准，可开始定制",
       apply: "申请",
-      applyDetail: "已生成的简历",
+      applyDetail: "可开始准备的申请",
+      review: "检查",
+      reviewDetail: "需要核验的简历",
+      render: "生成 PDF",
+      renderDetail: "待生成的 PDF",
     },
     quickAccess: "快捷入口",
     quickAccessHint: "一键进入工作区设置",
@@ -1569,6 +1590,10 @@ const zhCN = {
       coverLetter_one: "{{count}} 封求职信", coverLetter_other: "{{count}} 封求职信",
       stage_one: "{{count}} 个阶段", stage_other: "{{count}} 个阶段",
     },
+    openResult: "查看结果",
+    openWorkspace: "打开工作区",
+    resultUnavailable: "原结果已不可用，将打开当前工作区。",
+    resultError: "无法打开此结果，请从操作历史重试。",
     operations: "最近完成的操作",
     historyHint: "显示最近 50 次操作，每次操作最多保留 200 条进度日志。",
     clearOperations: "清空操作历史",
@@ -1658,10 +1683,10 @@ const zhCN = {
         cta: "审核候选",
       },
       tailor: {
-        label: "定制",
-        task: "定制简历",
-        hint: "为已批准的职位定制简历，生成 PDF 后即可投递。",
-        cta: "定制简历",
+        label: "申请",
+        task: "准备并投递职位申请",
+        hint: "定制、检查并生成简历 PDF，再准备申请，确认已投递后记录。",
+        cta: "继续准备申请",
       },
     },
   },

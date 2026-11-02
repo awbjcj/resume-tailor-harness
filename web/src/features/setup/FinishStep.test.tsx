@@ -12,6 +12,19 @@ import { FinishStep } from "./FinishStep";
 describe("FinishStep", () => {
   afterEach(() => useRunStore.setState({ runs: {} }));
 
+  it("does not let an earlier successful run hide newly pending evidence", async () => {
+    server.use(http.get("*/api/setup/status", () => HttpResponse.json({
+      secrets: { anthropicKey: true, anyLlmKey: true },
+      profile: { documentCount: 2, hasResume: true, canRebuild: true, factsBuiltAt: "2026-11-01", freshness: "refresh-needed", pendingSourceCount: 1 },
+      search: { configured: true }, sources: { enabledCount: 1 }, complete: true,
+    })));
+    useRunStore.setState({ runs: { old: { runId: "old", kind: "profile-build", status: "succeeded", percent: 100, phase: "Complete", current: 1, total: 1, etaText: null, result: { experiences: 3, projects: 2 } } } });
+    await changeLanguage("en");
+    render(<MemoryRouter><FinishStep /></MemoryRouter>, { wrapper: withQueryClient });
+    expect(await screen.findByRole("button", { name: "Build profile" })).toBeEnabled();
+    expect(screen.queryByText(/3 experiences/)).not.toBeInTheDocument();
+  });
+
   it("labels successful extraction counts as completion rather than a timestamp in Chinese", async () => {
     server.use(
       http.get("*/api/setup/status", () =>

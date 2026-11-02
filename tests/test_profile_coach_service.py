@@ -5,7 +5,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from resume_tailor_harness.profile.coach import CoachTurn, DraftNote, NewTopic, OpeningTurn
+from resume_tailor_harness.profile.coach import (
+    CoachTurn,
+    DraftNote,
+    NewTopic,
+    OpeningTurn,
+)
 from resume_tailor_harness.profile.coach_store import load_session, mutate_session
 from resume_tailor_harness.services.profile_coach import (
     approve_draft,
@@ -164,7 +169,12 @@ def test_opening_and_message_turn_create_durable_views(tmp_path):
 
 
 def test_opening_turn_seeds_measured_depth_topics_before_model_topics(tmp_path):
-    from resume_tailor_harness.models.profile import Bullet, Contact, Experience, ProfileFacts
+    from resume_tailor_harness.models.profile import (
+        Bullet,
+        Contact,
+        Experience,
+        ProfileFacts,
+    )
     from resume_tailor_harness.profile.store import save_facts
 
     _seed_primary(tmp_path)
@@ -614,6 +624,8 @@ def test_discard_recap_and_late_approval(tmp_path):
         summary="Cut deploy time from 40 min to 6 min.",
         quotes=["I cut deploy time from 40 min to 6 min."],
     )
+    assert session_view(profile_dir, sid)["profileRefresh"]["status"] == "pending"
+    assert load_session(profile_dir, sid)["profile_refresh_baseline"] is not None
 
     other_profile = tmp_path / "other"
     _seed_primary(other_profile)
@@ -675,3 +687,90 @@ def test_build_with_impact_records_errors(tmp_path, monkeypatch):
             github_username=None,
         )
     assert session_view(profile_dir, sid)["impact"] == {"error": "build exploded"}
+    assert session_view(profile_dir, sid)["profileRefresh"]["status"] == "failed"
+
+
+def test_refresh_retains_its_first_impact_baseline_and_late_note_intent(
+    tmp_path, monkeypatch
+):
+    from resume_tailor_harness.models.profile import Contact, ProfileFacts, Project
+    from resume_tailor_harness.profile.publication import (
+        save_publication,
+        source_inputs,
+    )
+    from resume_tailor_harness.profile.store import save_facts
+    from resume_tailor_harness.services import profile_coach as service
+
+    root, sid = _drafted_session(tmp_path)
+    approve_draft(
+        root,
+        sid,
+        "t1",
+        title="Deploys",
+        summary="Reduced deploy time.",
+        quotes=["I cut deploy time from 40 min to 6 min."],
+    )
+    baseline = load_session(root, sid)["profile_refresh_baseline"]
+
+    def publish(_reporter, **_kwargs):
+        save_facts(
+            ProfileFacts(
+                contact=Contact(name="Ada"),
+                projects=[Project(id="new-project", name="Tool")],
+            ),
+            root / "facts.json",
+        )
+        save_publication(root, source_inputs(root))
+        return {}
+
+    monkeypatch.setattr(service, "run_corpus_build", publish)
+    first = service.run_build_with_impact(
+        FakeReporter(),
+        profile_dir=root,
+        session_id=sid,
+        facts_out=root / "facts.json",
+        github_username=None,
+    )
+    second = service.run_build_with_impact(
+        FakeReporter(),
+        profile_dir=root,
+        session_id=sid,
+        facts_out=root / "facts.json",
+        github_username=None,
+    )
+    assert first["impact"] == second["impact"]
+    assert "new-project" in second["impact"]["newFactIds"]
+    assert load_session(root, sid)["profile_refresh_baseline"] == baseline
+    assert session_view(root, sid)["profileRefresh"]["status"] == "succeeded"
+
+
+def test_known_publication_can_resolve_a_skipped_refresh_without_paid_retry(tmp_path):
+    from resume_tailor_harness.models.profile import Contact, ProfileFacts
+    from resume_tailor_harness.profile.publication import (
+        save_publication,
+        source_inputs,
+    )
+    from resume_tailor_harness.profile.store import save_facts
+    from resume_tailor_harness.services.profile_coach import record_profile_refresh
+
+    root, sid = _drafted_session(tmp_path)
+    approve_draft(
+        root,
+        sid,
+        "t1",
+        title="Deploys",
+        summary="Reduced deploy time.",
+        quotes=["I cut deploy time from 40 min to 6 min."],
+    )
+    record_profile_refresh(root, sid, "skipped", reason="Another build is running")
+    save_facts(ProfileFacts(contact=Contact(name="Ada")), root / "facts.json")
+    save_publication(root, source_inputs(root))
+    view = session_view(root, sid)
+    assert view["profileRefresh"]["status"] == "succeeded"
+    assert view["profileRefresh"]["reason"] is None
+    assert view["impact"] is not None
+
+    # An explicit subsequent attempt still owns its real failure, even though
+    # the earlier publication already incorporated these sources.
+    record_profile_refresh(root, sid, "failed", reason="provider unavailable")
+    assert session_view(root, sid)["profileRefresh"]["status"] == "failed"

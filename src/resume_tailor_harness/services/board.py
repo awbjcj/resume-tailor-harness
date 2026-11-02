@@ -17,6 +17,10 @@ from sqlmodel import Session, select
 
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.services.pagination import Page, page_from_slice
+from resume_tailor_harness.services.application_materials import (
+    MaterialSelectionError,
+    resume_application_eligible,
+)
 from resume_tailor_harness.tenancy.paths import FACTS_PATH as DEFAULT_FACTS, resolve_tenant_path
 from resume_tailor_harness.tracking import board_query
 from resume_tailor_harness.tracking.board_query import (
@@ -379,6 +383,10 @@ def select_resume_version(
     version = get_resume_version(session, version_id)
     if version is None or version.job_id != job_id:
         return None
+    if not resume_application_eligible(
+        version.fact_check_passed, version.critique_json, version.gate_reviewers_json
+    ):
+        raise MaterialSelectionError("This resume failed fact-lock and cannot be selected for an application")
     application = application_for_job(session, job_id) or Application(job_id=job_id)
     application.resume_version_id = version_id
     return save_application(session, application)
@@ -392,6 +400,8 @@ def select_cover_letter(
     cover_letter = get_cover_letter(session, cover_letter_id)
     if cover_letter is None or cover_letter.job_id != job_id:
         return None
+    if not cover_letter.fact_check_passed:
+        raise MaterialSelectionError("This cover letter failed fact-check and cannot be selected for an application")
     application = application_for_job(session, job_id) or Application(job_id=job_id)
     application.cover_letter_id = cover_letter_id
     return save_application(session, application)

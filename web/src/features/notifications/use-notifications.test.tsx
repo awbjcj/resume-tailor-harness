@@ -61,7 +61,7 @@ it("refreshes application status across views after accepting a Gmail update", a
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const keys = [
     ["notifications"], ["applications", { status: "submitted" }], ["job", 7],
-    ["pipeline"], ["dashboard-summary"], ["analytics-timeline"],
+    ["pipeline"], ["dashboard-summary"], ["analytics-timeline"], ["application-events", 7],
   ];
   keys.forEach((key) => qc.setQueryData(key, { status: "submitted" }));
   qc.setQueryData(["settings"], {});
@@ -71,4 +71,18 @@ it("refreshes application status across views after accepting a Gmail update", a
   await act(async () => { await result.current.mutateAsync(1); });
   for (const key of keys) expect(qc.getQueryState(key)?.isInvalidated).toBe(true);
   expect(qc.getQueryState(["settings"])?.isInvalidated).toBe(false);
+});
+
+it("sends a single reviewed acceptance command with optional timeline details", async () => {
+  let body: unknown;
+  server.use(http.post("*/api/notifications/1/accept", async ({ request }) => {
+    body = await request.json();
+    return HttpResponse.json({ state: "accepted" });
+  }));
+  const { result } = renderHook(() => useAcceptNotification(), { wrapper: withQueryClient });
+  const event = { kind: "rejected", occurredAt: "2026-11-02T00:00:00Z", allDay: true, result: "pending" };
+  await act(async () => {
+    await result.current.mutateAsync({ id: 1, event, expectedRevision: "review", eventDetailsConfirmed: true });
+  });
+  expect(body).toEqual({ event, expectedRevision: "review", eventDetailsConfirmed: true });
 });

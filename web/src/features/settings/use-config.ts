@@ -30,8 +30,9 @@ export function useSaveConfig<P extends ConfigPath>(path: P) {
   return useMutation({
     mutationFn: (body: GetBody<P>) =>
       unwrap(api.PUT(path, { body } as never)) as Promise<GetBody<P>>,
-    onSuccess: (saved) => {
+    onSuccess: async (saved) => {
       qc.setQueryData(["config", path], saved);
+      await qc.invalidateQueries({ queryKey: ["setup-status"] });
       toast.success("Saved");
     },
     onError: (err: Error) => toast.error(err.message),

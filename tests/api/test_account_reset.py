@@ -127,6 +127,7 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
             "runoperationlog": 0,
             "clearedrunhistory": 0,
             "run_completions": 0,
+            "run_completion_targets": 0,
             "saved_board_views": 0,
             "notifications": 0,
             "applications": 0,

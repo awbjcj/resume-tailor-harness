@@ -65,7 +65,7 @@ describe("DraftNoteCard", () => {
     expect(screen.getByRole("textbox", { name: "标题" })).toHaveValue(note.title);
     expect(screen.getByRole("button", { name: "保存笔记" })).toBeInTheDocument();
     view.rerender(<DraftNoteCard note={{ ...note, status: "saved" }} saving={false} discarding={false} onSave={vi.fn()} onDiscard={vi.fn()} />);
-    expect(screen.getByText("已加入个人资料")).toBeInTheDocument();
+    expect(screen.getByText("已保存为证据")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSessionSelection } from "@/lib/chat/use-session-selection";
+import "@/i18n/profile-publication";
 import { Bot, Clock3, FileCheck2, MessageCircleQuestion, SearchCheck, Sparkles, SquareCheckBig } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
@@ -52,6 +54,7 @@ import {
   useRenameCoachSession,
   useSaveCoachNote,
   useResolveCoachChanges,
+  useRefreshCoachProfile,
   useSendCoachMessage,
   useStartCoachSession,
   useUnarchiveCoachSession,
@@ -63,6 +66,14 @@ import {
 // re-renders — and re-parses the markdown of — every message already in the
 // thread on every stream delta.
 const COACH_ICON = <Sparkles className="size-4" aria-hidden="true" />;
+const REFRESH_MESSAGE = {
+  idle: "profilePublication.sessionPending",
+  pending: "profilePublication.sessionPending",
+  running: "profilePublication.sessionRunning",
+  succeeded: "profilePublication.sessionSucceeded",
+  failed: "profilePublication.sessionFailed",
+  skipped: "profilePublication.sessionSkipped",
+} as const;
 
 function RunError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -78,10 +89,10 @@ function RunError({ message, onRetry }: { message: string; onRetry: () => void }
 
 export function CoachPage() {
   const { t } = useTranslation();
-  const [showArchived, setShowArchived] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useSessionSelection();
+  const [showArchived, setShowArchived] = useState(Boolean(currentSessionId));
   const sessions = useCoachSessions(showArchived);
   const activeSummary = sessions.data?.sessions?.find((session) => session.status === "active");
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const displayedSessionId = currentSessionId ?? activeSummary?.sessionId ?? null;
   const session = useCoachSession(displayedSessionId);
   const start = useStartCoachSession();
@@ -90,6 +101,7 @@ export function CoachPage() {
   const saveNote = useSaveCoachNote();
   const discardNote = useDiscardCoachNote();
   const resolveChanges = useResolveCoachChanges();
+  const refreshProfile = useRefreshCoachProfile();
   const archive = useArchiveCoachSession();
   const unarchive = useUnarchiveCoachSession();
   const remove = useDeleteCoachSession();
@@ -109,6 +121,9 @@ export function CoachPage() {
   const [starting, setStarting] = useState(false);
   const [ending, setEnding] = useState(false);
   const [build, setBuild] = useState(true);
+  const profileBuildActive = useRunStore((state) => Object.values(state.runs).some(
+    (run) => run.kind === "profile-build" && ["queued", "running", "cancelling"].includes(run.status),
+  ));
   const recoveredRunId = useRunStore((state) => {
     const run = Object.values(state.runs).find(
       (candidate) =>
@@ -427,7 +442,7 @@ export function CoachPage() {
                   />
                 </div>
               ) : null}
-              {(active.changeDrafts?.length || active.draftNotes?.length || active.recap || active.impact) ? (
+              {(active.changeDrafts?.length || active.draftNotes?.length || active.recap || active.impact || (active.profileRefresh && active.profileRefresh.status !== "idle")) ? (
                 <div className="space-y-4 border-t p-4 sm:p-6">
                   {active.changeDrafts?.length || active.draftNotes?.length ? <h2 className="text-sm font-semibold">{t("profileChanges.reviewTitle")}</h2> : null}
                   {(active.changeDrafts ?? []).map((draft) => (
@@ -442,12 +457,29 @@ export function CoachPage() {
                       note={note}
                       saving={saveNote.isPending && saveNote.variables?.topicId === note.topicId}
                       discarding={discardNote.isPending && discardNote.variables?.topicId === note.topicId}
-                      busy={busy || resolveChanges.isPending || saveNote.isPending || discardNote.isPending}
+                      busy={busy || resolveChanges.isPending || saveNote.isPending || discardNote.isPending || refreshProfile.isPending}
                       onSave={(draft) => saveNote.mutateAsync({ sessionId: active.sessionId, topicId: draft.topicId, title: draft.title, summary: draft.summary, quotes: draft.quotes ?? [] })}
+                      onSaveAndRefresh={async (draft) => {
+                        await saveNote.mutateAsync({ sessionId: active.sessionId, topicId: draft.topicId, title: draft.title, summary: draft.summary, quotes: draft.quotes ?? [] });
+                        await refreshProfile.mutateAsync({ sessionId: active.sessionId });
+                      }}
                       onDiscard={() => discardNote.mutateAsync({ sessionId: active.sessionId, topicId: note.topicId })}
                     />
                   ))}
                   {active.recap ? <Card className="bg-muted/30"><CardHeader><CardTitle className="text-lg">Session recap</CardTitle></CardHeader><CardContent className="text-base leading-7"><ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{active.recap}</ReactMarkdown></CardContent></Card> : null}
+                  {active.profileRefresh && active.profileRefresh.status !== "idle" ? (
+                    <Alert>
+                      <AlertTitle>{t("profilePublication.sessionTitle")}</AlertTitle>
+                      <AlertDescription className="space-y-3">
+                        <p>{t(REFRESH_MESSAGE[active.profileRefresh.status])}</p>
+                        {active.profileRefresh.reason && ["failed", "skipped"].includes(active.profileRefresh.status) ? <p className="text-sm [overflow-wrap:anywhere]">{active.profileRefresh.reason}</p> : null}
+                        {active.profileRefresh.status !== "succeeded" ? <Button variant="outline" disabled={refreshProfile.isPending || profileBuildActive} onClick={() => void refreshProfile.mutateAsync({ sessionId: active.sessionId }).catch(() => undefined)}>
+                          {refreshProfile.isPending || profileBuildActive ? <Spinner data-icon="inline-start" /> : null}
+                          {t(profileBuildActive ? "profilePublication.refreshing" : ["failed", "skipped"].includes(active.profileRefresh.status) ? "profilePublication.retry" : "profilePublication.refresh")}
+                        </Button> : null}
+                      </AlertDescription>
+                    </Alert>
+                  ) : null}
                   {active.impact ? <ImpactCard impact={active.impact} /> : null}
                 </div>
               ) : null}

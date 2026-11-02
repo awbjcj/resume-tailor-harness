@@ -32,19 +32,21 @@ export const QUEUE_CARDS = [
     subKey: "dashboard.queue.applyDetail",
     to: "/pipeline?stage=rendered",
   },
+  { key: "review", verb: "Review", verbKey: "dashboard.queue.review", sub: "resumes needing checks", subKey: "dashboard.queue.reviewDetail", to: "/pipeline?stage=tailored" },
+  { key: "render", verb: "Render", verbKey: "dashboard.queue.render", sub: "PDFs to create", subKey: "dashboard.queue.renderDetail", to: "/pipeline?stage=tailored" },
 ] as const;
 
 export function ActionQueue({ summary }: { summary: DashboardSummary }) {
   const { t } = useTranslation();
   return (
-    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
       {QUEUE_CARDS.map((card) => {
         const count = summary.queues[card.key] ?? 0;
         const empty = count === 0;
         return (
           <Link
             key={card.key}
-            to={card.to}
+            to={summary.queueTargets?.[card.key]?.href ?? card.to}
             aria-label={`${t(card.verbKey)} ${count} ${t(card.subKey)}`}
             className="group rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             data-empty={empty}

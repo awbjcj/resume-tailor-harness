@@ -141,6 +141,11 @@ def _expected_meta(doc: SourceDoc, sha256: str) -> dict:
     return _literal_meta(sha256)
 
 
+def fragment_input_metadata(doc: SourceDoc, sha256: str) -> dict:
+    """Versioned interpretation inputs shared by caching and publication."""
+    return _expected_meta(doc, sha256)
+
+
 def fragment_cache_status(profile_dir: str | Path, doc: SourceDoc) -> CacheStatus:
     fragment_path, meta_path = _paths(profile_dir, doc.id)
     try:

@@ -27,6 +27,6 @@ export function useApprove() {
       toast.error("Failed to approve job");
     },
     onSuccess: () => toast.success("Approved for tailoring"),
-    onSettled: () => qc.invalidateQueries({ queryKey: ["shortlist"] }),
+    onSettled: () => Promise.all(["shortlist", "pipeline", "job", "dashboard-summary"].map((key) => qc.invalidateQueries({ queryKey: [key] }))),
   });
 }

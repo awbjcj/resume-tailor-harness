@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
 
-import { useEndCoachSession } from "./use-coach";
+import { useEndCoachSession, useRefreshCoachProfile } from "./use-coach";
 
 const mocks = vi.hoisted(() => ({
   post: vi.fn(),
@@ -86,5 +86,18 @@ describe("useEndCoachSession", () => {
     expect(onDone).toHaveBeenCalledOnce();
     expect(toast.success).not.toHaveBeenCalled();
     expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("refetches durable retry intent after a refresh launch conflict", async () => {
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    mocks.unwrap.mockRejectedValue(new Error("A profile build is running"));
+    const { result } = renderHook(() => useRefreshCoachProfile(), { wrapper });
+    await act(async () => {
+      await expect(result.current.mutateAsync({ sessionId: "ended-session" })).rejects.toThrow("running");
+    });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["coach-session"] });
+    expect(mocks.trackRun).not.toHaveBeenCalled();
   });
 });

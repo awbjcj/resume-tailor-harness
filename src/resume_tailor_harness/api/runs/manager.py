@@ -288,6 +288,7 @@ class RunManager:
                     "logs": (self._read_record(run_id) or {}).get("logs", []),
                     "userId": snapshot.user_id,
                     "meta": snapshot.meta,
+                    "result": snapshot.result,
                 }
             )
         except Exception:  # noqa: BLE001 - bookkeeping never masks run outcome

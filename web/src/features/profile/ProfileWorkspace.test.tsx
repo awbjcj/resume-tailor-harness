@@ -144,6 +144,17 @@ describe("ProfileWorkspace", () => {
     expect(screen.getByRole("button", { name: "Rebuild profile" })).toBeEnabled();
   });
 
+  it("shows pending source evidence even when a direct edit updated the facts timestamp", () => {
+    mocks.profile = { factsBuiltAt: "2026-11-02T12:00:00Z", hasResume: true, canRebuild: true };
+    Object.assign(mocks.profile, { freshness: "refresh-needed", publishedAt: "2026-11-01T00:00:00Z", pendingSourceCount: 1 });
+    mocks.launch.mockClear();
+    renderWorkspace();
+    expect(screen.getByText("Saved evidence needs a profile refresh")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("not reflected in your profile yet");
+    expect(screen.queryByText(/Profile built/)).not.toBeInTheDocument();
+    expect(mocks.launch).not.toHaveBeenCalled();
+  });
+
   it("opens the skills tab from a dashboard deep link", async () => {
     renderWorkspace("/profile?tab=skills");
 

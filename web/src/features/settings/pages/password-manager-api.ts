@@ -1,3 +1,4 @@
+import "@/i18n/password-manager";
 import type { components } from "@/lib/api/schema";
 import type { passwordManagerEn } from "@/i18n/password-manager";
 

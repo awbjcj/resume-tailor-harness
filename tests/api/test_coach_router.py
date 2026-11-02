@@ -2,6 +2,8 @@ import io
 import json
 import time
 
+import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from resume_tailor_harness.api.app import create_app
@@ -380,3 +382,81 @@ def test_coach_archive_rejects_active_and_invalid_status_filter(tmp_path):
             ).status_code
             == 422
         )
+
+
+@pytest.mark.parametrize("blocked_by_quota", [False, True])
+def test_ended_session_refresh_records_conflict_then_recovers(
+    monkeypatch, tmp_path, blocked_by_quota
+):
+    from resume_tailor_harness.api.runs.manager import (
+        RunQuotaError,
+        RunSingletonConflict,
+    )
+    from resume_tailor_harness.profile.coach_store import load_session
+    from resume_tailor_harness.profile.publication import (
+        save_publication,
+        source_inputs,
+    )
+    from resume_tailor_harness.models.profile import Contact, ProfileFacts
+    from resume_tailor_harness.profile.store import save_facts
+
+    client = _client(tmp_path)
+    monkeypatch.setattr(
+        "resume_tailor_harness.llm_runner.resolve_api_key", lambda *_a, **_k: "key"
+    )
+    with client:
+        _seed_primary(client)
+        _seed_draft(tmp_path)
+        root = tmp_path / "data" / "profile"
+        end_session(root, "s1", "recap")
+        saved = client.post(
+            "/api/profile/coach/sessions/s1/notes/t1",
+            json={
+                "title": "Deploys",
+                "summary": "Reduced deploy time",
+                "quotes": ["I cut deploy time 40%."],
+            },
+        )
+        assert saved.status_code == 200
+        assert (
+            client.get("/api/profile/coach/sessions/s1").json()["profileRefresh"][
+                "status"
+            ]
+            == "pending"
+        )
+        assert isinstance(client.app, FastAPI)
+        manager = client.app.state.run_manager
+        submit = manager.submit
+
+        def conflict(*_a, **_k):
+            if blocked_by_quota:
+                raise RunQuotaError("Concurrent run allowance is full")
+            raise RunSingletonConflict("older-build")
+
+        monkeypatch.setattr(manager, "submit", conflict)
+        blocked = client.post("/api/profile/coach/sessions/s1/refresh")
+        assert blocked.status_code == (429 if blocked_by_quota else 409)
+        assert blocked.json()["error"]["code"] == (
+            "QUOTA_EXCEEDED" if blocked_by_quota else "PROFILE_BUILD_BUSY"
+        )
+        assert load_session(root, "s1")["profile_refresh"]["status"] == "skipped"
+        reason = load_session(root, "s1")["profile_refresh"]["reason"]
+        assert "allowance" in reason if blocked_by_quota else "running" in reason
+
+        def publish(_reporter, **_kwargs):
+            save_facts(ProfileFacts(contact=Contact(name="Ada")), root / "facts.json")
+            save_publication(root, source_inputs(root))
+            return {}
+
+        monkeypatch.setattr(manager, "submit", submit)
+        monkeypatch.setattr(
+            "resume_tailor_harness.services.profile_coach.run_corpus_build", publish
+        )
+        refreshed = client.post("/api/profile/coach/sessions/s1/refresh")
+        assert refreshed.status_code == 202
+        result = _wait(client, refreshed.json()["runId"])
+        assert result["state"] == "done"
+        session = client.get("/api/profile/coach/sessions/s1").json()
+        assert session["status"] == "ended"
+        assert session["profileRefresh"]["status"] == "succeeded"
+        assert session["impact"] is not None

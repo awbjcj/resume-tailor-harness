@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Literal
 
 from resume_tailor_harness.api.schemas.base import CamelModel
+from resume_tailor_harness.profile.publication import ProfileFreshness
 
 
 class SecretsStatus(CamelModel):
@@ -17,6 +18,9 @@ class ProfileStatus(CamelModel):
     has_resume: bool
     can_rebuild: bool = False
     facts_built_at: str | None = None
+    freshness: ProfileFreshness = "unknown"
+    published_at: str | None = None
+    pending_source_count: int = 0
     github_username: str | None = None
 
 

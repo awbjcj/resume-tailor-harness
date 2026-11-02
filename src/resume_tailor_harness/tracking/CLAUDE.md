@@ -1,5 +1,16 @@
 # Tracking / board developer reference
 
+### Application continuation
+
+`services/application_continuation.py` owns the read-only Application next step
+used by Job detail, dashboard queues, and run results. Job processing status is
+still a high-water mark. Application progression, submission timestamps, and
+submitted events take precedence, even after a manual status reset. Exact resume
+selection wins over newer alternatives; failed checks lead to review, and a
+missing/confined-invalid PDF leads to render rather than Apply. Material eligibility
+is shared with Application preparation. Selection/render/status changes invalidate
+dashboard readiness as well as Job detail.
+
 Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loads only when working under `src/resume_tailor_harness/tracking/`.
 
 ### Archive, delete, prune and redo

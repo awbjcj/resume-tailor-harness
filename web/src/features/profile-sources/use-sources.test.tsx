@@ -18,13 +18,28 @@ vi.mock("@/features/runs/use-launch-run", () => ({
   useLaunchRun: () => ({ launch: mocks.launch }),
 }));
 
-import { useSyncGithub } from "./use-sources";
+import { useRestoreGithubSources, useSyncGithub } from "./use-sources";
+import { useSetupStatus } from "@/features/settings/use-setup-status";
 import { useDeleteSource, useReplaceSource, useUploadSources } from "./use-sources";
 import { server } from "@/test/server";
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
 );
+
+it("refreshes publication status after restoring excluded GitHub sources", async () => {
+  server.use(
+    http.delete("/api/profile/sources/github-exclusions", () => new HttpResponse(null, { status: 204 })),
+    http.get("/api/setup/status", () => HttpResponse.json({ profile: { freshness: "refresh-needed" } })),
+  );
+  const qc = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
+  qc.setQueryData(["setup-status"], { profile: { freshness: "current" } });
+  const { result } = renderHook(() => ({ restore: useRestoreGithubSources(), setup: useSetupStatus() }), {
+    wrapper: ({ children }: { children: ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>,
+  });
+  await act(async () => { await result.current.restore.mutateAsync(); });
+  await waitFor(() => expect(result.current.setup.data?.profile.freshness).toBe("refresh-needed"));
+});
 
 describe("useSyncGithub", () => {
   beforeEach(() => {
