@@ -1,5 +1,7 @@
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import "@/i18n/profile-publication";
 import { useIsMutating } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -83,11 +85,6 @@ function parseRepoList(value: string): string[] {
     .filter(Boolean);
 }
 
-function factsStatusText(builtAt: string | null | undefined): string {
-  if (!builtAt) return "Not built yet";
-  return `Profile built ${formatUserDateTime(builtAt)}`;
-}
-
 /**
  * The Profile workspace — step 1 of the job-hunting journey, promoted out of
  * Settings to a top-level destination. The coach (how you enrich the profile)
@@ -95,6 +92,7 @@ function factsStatusText(builtAt: string | null | undefined): string {
  * are split into tabs so nothing is stacked on one endless page.
  */
 export function ProfileWorkspace() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data, isError, refetch } = useConfig("/api/config/profile");
   const save = useSaveConfig("/api/config/profile");
@@ -146,24 +144,31 @@ export function ProfileWorkspace() {
   const canRebuild = setupStatus.data?.profile.canRebuild ??
     (setupStatus.data?.profile.hasResume !== false);
   const buildDisabled = busy || dirty || !canRebuild;
-  const rebuild = () => {
-    if (buildDisabled) return;
+  const rebuild = async () => {
+    if (buildDisabled) return false;
     setLaunchingBuild(true);
-    void launch("profile-build", () => launchers.profileBuild(), [
-      "setup-status",
-      "profile-sources",
-      "profile-skeleton",
-      "profile-matrix",
-      "profile-skills",
-      "skill-cleanup",
-      "suppressed-skills",
-      "match-gap",
-      "job",
-      "triage",
-      "shortlist",
-      "pipeline",
-    ]).finally(() => setLaunchingBuild(false));
+    try {
+      return await launch("profile-build", () => launchers.profileBuild(), [
+        "setup-status",
+        "profile-sources",
+        "profile-skeleton",
+        "profile-matrix",
+        "profile-skills",
+        "skill-cleanup",
+        "suppressed-skills",
+        "match-gap",
+        "job",
+        "triage",
+        "shortlist",
+        "pipeline",
+      ]);
+    } finally {
+      setLaunchingBuild(false);
+    }
   };
+  const freshness = setupStatus.data?.profile.freshness ??
+    (setupStatus.data?.profile.factsBuiltAt ? "unknown" : "missing");
+  const freshnessKey = freshness === "refresh-needed" ? "pending" : freshness;
 
   return (
     <div className="flex flex-col gap-6">
@@ -175,12 +180,12 @@ export function ProfileWorkspace() {
         description="Build your profile from your resume and project evidence to tailor your applications."
         meta={
           <Badge variant="outline" className="h-auto min-h-5 max-w-full whitespace-normal">
-            {factsStatusText(setupStatus.data?.profile.factsBuiltAt)}
+            {t(`profilePublication.${freshnessKey}`)}
           </Badge>
         }
         actions={
           <>
-            <Button disabled={buildDisabled} onClick={rebuild}>
+            <Button disabled={buildDisabled} onClick={() => void rebuild()}>
               {building ? (
                 <Spinner data-icon="inline-start" />
               ) : (
@@ -203,6 +208,17 @@ export function ProfileWorkspace() {
           </>
         }
       />
+
+      {freshness === "refresh-needed" || freshness === "unknown" ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {t(freshness === "refresh-needed" ? "profilePublication.pendingHelp" : "profilePublication.unknownHelp")}
+        </p>
+      ) : null}
+      {setupStatus.data?.profile.publishedAt ? (
+        <p className="text-sm text-muted-foreground">
+          {t("profilePublication.published", { date: formatUserDateTime(setupStatus.data.profile.publishedAt) })}
+        </p>
+      ) : null}
 
       <ol
         aria-label="Profile building steps"
@@ -262,7 +278,7 @@ export function ProfileWorkspace() {
         </TabsList>
 
         <TabsContent value="documents" className="flex flex-col gap-4 pt-2">
-          <SourceManager disabled={busy} />
+          <SourceManager disabled={busy} onRefresh={rebuild} refreshDisabled={buildDisabled} />
           <section
             aria-label="GitHub projects"
             className="@container/github min-w-0 space-y-4 rounded-xl border border-border bg-card p-4 sm:p-5"

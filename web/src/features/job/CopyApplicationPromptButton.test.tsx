@@ -36,6 +36,7 @@ describe("CopyApplicationPromptButton", () => {
     render(<CopyApplicationPromptButton jobId={7} />);
     fireEvent.click(screen.getByRole("button", { name: "Copy application prompt" }));
     expect(await screen.findByRole("textbox", { name: "English application prompt" })).toHaveValue(prompt);
+    expect(screen.getByText(/Selected files must be downloaded separately/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Edit application profile" })).toHaveAttribute("href", "/settings/application-profile");
   });
 

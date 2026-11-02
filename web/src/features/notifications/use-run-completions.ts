@@ -3,7 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, unwrap } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 
-export type RunCompletionItem = components["schemas"]["RunCompletionOut"];
+export type RunCompletionItem = components["schemas"]["RunCompletionOut"] & {
+  resultHref?: string | null;
+  resultAvailable?: boolean;
+};
 export const RUN_COMPLETIONS_KEY = ["run-completions"] as const;
 
 export function useRunCompletions(surface: "operations" | "notifications" = "notifications") {

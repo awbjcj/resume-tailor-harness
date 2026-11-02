@@ -69,6 +69,16 @@ it("announces a tailor completion with its successful job and version counts", (
   expect(toast.success.mock.calls[0][0]).toContain("2 resume versions");
 });
 
+it("offers a result action without replaying work or opening it automatically", () => {
+  const open = vi.fn();
+  announceCompletions([run()], open);
+  expect(open).not.toHaveBeenCalled();
+  expect(toast.success).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ action: { label: "Open result", onClick: expect.any(Function) } }));
+  const options = toast.success.mock.calls[0][1] as { action: { onClick: () => void } };
+  options.action.onClick();
+  expect(open).toHaveBeenCalledWith("r1");
+});
+
 it.each([0, 1, 2])("localizes %i completed jobs and versions without English nouns or duplicate units", async (count) => {
   await changeLanguage("zh-CN");
   announceCompletions([run({ result: { jobs: Array.from({ length: count }, () => ({ versionCount: 1 })) } })]);

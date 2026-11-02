@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { api, unwrap } from "@/lib/api/client";
 import { AuthLayout } from "./AuthLayout";
+import { consumeTaskDestination } from "@/lib/task-continuation";
 import { OtpInput } from "./OtpInput";
 import { useCooldown } from "./useCooldown";
 
@@ -24,7 +25,7 @@ export function VerifyEmailPage() {
     mutationFn: () => unwrap(api.POST("/api/auth/verify-email", { body: { email, code } })),
     onSuccess: (me) => {
       queryClient.setQueryData(["auth", "me"], me);
-      navigate("/", { replace: true });
+      navigate(consumeTaskDestination(params), { replace: true });
     },
   });
   const resend = useMutation({

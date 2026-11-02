@@ -1,5 +1,7 @@
 import { withQueryClient } from "@/test/utils";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render as renderUI, screen, waitFor, within, type RenderOptions } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { Link, MemoryRouter } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,6 +28,7 @@ vi.stubGlobal("EventSource", FakeEventSource);
 const sendMessage = vi.fn();
 const endSession = vi.fn();
 const saveNote = vi.fn();
+const refreshProfile = vi.fn();
 const discardNote = vi.fn();
 const archiveSession = vi.fn();
 const unarchiveSession = vi.fn();
@@ -37,7 +40,16 @@ const coachState = vi.hoisted(() => ({
   extraPendingChange: false,
   useDefaultSession: true,
   sessions: [] as Array<Record<string, unknown>>,
+  entry: "/coach",
+  refreshStatus: "idle",
+  refreshReason: null as string | null,
+  noteStatus: "pending",
+  selectedSessionId: null as string | null,
 }));
+
+function render(ui: ReactNode, options?: RenderOptions) {
+  return renderUI(<MemoryRouter initialEntries={[coachState.entry]}>{ui}</MemoryRouter>, options);
+}
 
 vi.mock("@/components/TranscribeButton", () => ({ TranscribeButton: () => null }));
 
@@ -62,7 +74,9 @@ vi.mock("./use-coach", () => ({
     refetch: vi.fn(),
   });
   },
-  useCoachSession: (sessionId: string | null) => ({
+  useCoachSession: (sessionId: string | null) => {
+    coachState.selectedSessionId = sessionId;
+    return ({
     data: sessionId ? {
       sessionId: "session-1",
       status: coachState.status,
@@ -70,6 +84,7 @@ vi.mock("./use-coach", () => ({
       endedAt: null,
       recap: coachState.recap,
       impact: null,
+      profileRefresh: { status: coachState.refreshStatus, reason: coachState.refreshReason },
       topics: [
         {
           id: "topic-1",
@@ -96,7 +111,7 @@ vi.mock("./use-coach", () => ({
           title: "Improved delivery",
           summary: "Shipped a measurable improvement.",
           quotes: ["Cut delivery time by 30%."],
-          status: "pending",
+          status: coachState.noteStatus,
         },
       ],
       changeDrafts: coachState.extraPendingChange ? [{
@@ -107,11 +122,13 @@ vi.mock("./use-coach", () => ({
     isLoading: false,
     isError: false,
     refetch: vi.fn(),
-  }),
+  });
+  },
   useStartCoachSession: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSendCoachMessage: () => ({ mutateAsync: sendMessage, isPending: false }),
   useEndCoachSession: () => ({ mutateAsync: endSession, isPending: false }),
   useSaveCoachNote: () => ({ mutateAsync: saveNote, isPending: false }),
+  useRefreshCoachProfile: () => ({ mutateAsync: refreshProfile, isPending: false }),
   useDiscardCoachNote: () => ({ mutateAsync: discardNote, isPending: false }),
   useResolveCoachChanges: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useArchiveCoachSession: () => ({ mutate: archiveSession }),
@@ -129,6 +146,12 @@ describe("CoachPage", () => {
     coachState.extraPendingChange = false;
     coachState.useDefaultSession = true;
     coachState.sessions = [];
+    coachState.entry = "/coach";
+    coachState.refreshStatus = "idle";
+    coachState.refreshReason = null;
+    coachState.noteStatus = "pending";
+    coachState.selectedSessionId = null;
+    refreshProfile.mockResolvedValue({ runId: "refresh-run" });
     FakeEventSource.last = null;
     localStorage.setItem("resume-tailor-harness-token", "token");
     sendMessage.mockImplementation(async ({ onDone }) => {
@@ -280,5 +303,56 @@ describe("CoachPage", () => {
     render(<CoachPage />, { wrapper: withQueryClient });
     await user.click(screen.getByRole("checkbox", { name: "Show archived" }));
     expect(coachState.includeArchived).toBe(true);
+  });
+
+  it("opens the linked archived session and retries its skipped profile refresh", async () => {
+    coachState.entry = "/coach?session=old-session";
+    coachState.status = "ended";
+    coachState.noteStatus = "saved";
+    coachState.refreshStatus = "skipped";
+    coachState.refreshReason = "A profile build is running. Refresh again after it finishes.";
+    render(<CoachPage />, { wrapper: withQueryClient });
+    expect(coachState.selectedSessionId).toBe("old-session");
+    expect(coachState.includeArchived).toBe(true);
+    expect(screen.getByText(/profile refresh did not start/)).toBeInTheDocument();
+    expect(refreshProfile).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Retry profile refresh" }));
+    expect(refreshProfile).toHaveBeenCalledWith({ sessionId: "session-1" });
+  });
+
+  it("follows a new result link after a session was selected from history", async () => {
+    coachState.sessions = [
+      { sessionId: "session-1", sessionTitle: "Current coaching", status: "active", startedAt: "2026-07-18", topicCount: 1, savedNoteCount: 0 },
+      { sessionId: "older", sessionTitle: "Earlier coaching", status: "ended", startedAt: "2026-07-15", topicCount: 1, savedNoteCount: 0 },
+    ];
+    render(<><Link to="/coach?session=another-result">Open another result</Link><CoachPage /></>, { wrapper: withQueryClient });
+    await userEvent.click(screen.getByRole("button", { name: /^Earlier coaching/ }));
+    expect(coachState.selectedSessionId).toBe("older");
+    await userEvent.click(screen.getByRole("link", { name: "Open another result" }));
+    expect(coachState.selectedSessionId).toBe("another-result");
+  });
+
+  it("clears the linked selection after deleting its session", async () => {
+    coachState.entry = "/coach?session=older";
+    coachState.sessions = [
+      { sessionId: "older", sessionTitle: "Earlier coaching", status: "ended", startedAt: "2026-07-15", topicCount: 1, savedNoteCount: 0 },
+    ];
+    deleteSession.mockImplementation((_variables, options) => options.onSuccess());
+    render(<CoachPage />, { wrapper: withQueryClient });
+    await userEvent.click(screen.getByRole("button", { name: "Actions for Earlier coaching" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Delete" }));
+    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(coachState.selectedSessionId).toBeNull());
+  });
+
+  it("saves approved evidence before the explicitly requested profile refresh", async () => {
+    let finishSave!: () => void;
+    saveNote.mockImplementation(() => new Promise<void>((resolve) => { finishSave = resolve; }));
+    render(<CoachPage />, { wrapper: withQueryClient });
+    await userEvent.click(screen.getByRole("button", { name: "Save and refresh profile" }));
+    expect(saveNote).toHaveBeenCalledOnce();
+    expect(refreshProfile).not.toHaveBeenCalled();
+    await act(async () => finishSave());
+    expect(refreshProfile).toHaveBeenCalledExactlyOnceWith({ sessionId: "session-1" });
   });
 });

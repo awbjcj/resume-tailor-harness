@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { api, unwrap } from "@/lib/api/client";
 import { AuthLayout } from "./AuthLayout";
+import { consumeTaskDestination } from "@/lib/task-continuation";
 import { OtpInput } from "./OtpInput";
 import { PasswordStrengthMeter } from "./PasswordStrengthMeter";
 
@@ -23,7 +24,7 @@ export function ResetPasswordPage() {
     mutationFn: () => unwrap(api.POST("/api/auth/password/reset", { body: { email, code, newPassword } })),
     onSuccess: (me) => {
       queryClient.setQueryData(["auth", "me"], me);
-      navigate("/", { replace: true });
+      navigate(consumeTaskDestination(params), { replace: true });
     },
   });
   if (!email) return <Navigate to="/forgot-password" replace />;

@@ -29,6 +29,7 @@ vi.mock("@/features/profile-skills/use-profile-skills", () => ({
   SKILL_MUTATION_KEY: ["profile-skill-mutation"],
   useAddSkill: () => ({ mutate: state.add, isPending: false }),
   useUpdateSkill: () => ({ mutate: state.update, isPending: false }),
+  useAddSkillAlias: () => ({ mutate: vi.fn(), isPending: false }),
   useMoveSkillGroup: () => ({ mutate: state.move, isPending: false }),
   useMergeProfileSkills: () => ({ mutate: state.merge, isPending: false }),
   useCleanProfileSkills: () => ({ mutate: state.clean, isPending: false }),

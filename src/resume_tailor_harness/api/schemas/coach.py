@@ -84,6 +84,15 @@ class CoachImpactOut(CamelModel):
     error: str | None = None
 
 
+class CoachProfileRefreshOut(CamelModel):
+    status: Literal["idle", "pending", "running", "succeeded", "failed", "skipped"] = (
+        "idle"
+    )
+    run_id: str | None = None
+    reason: str | None = None
+    completed_at: str | None = None
+
+
 class CoachSessionOut(CamelModel):
     session_id: str
     session_title: str | None = None
@@ -97,6 +106,9 @@ class CoachSessionOut(CamelModel):
     change_drafts: list[CoachChangeDraftOut] = Field(default_factory=list)
     recap: str | None = None
     impact: CoachImpactOut | None = None
+    profile_refresh: CoachProfileRefreshOut = Field(
+        default_factory=CoachProfileRefreshOut
+    )
 
 
 class CoachSessionSummaryOut(CamelModel):

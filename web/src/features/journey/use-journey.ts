@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import "@/i18n/workflow";
 import { useTranslation } from "react-i18next";
 
 import { useDashboardSummary, type DashboardSummary } from "@/features/dashboard/use-dashboard-summary";
@@ -43,6 +44,7 @@ export interface JourneyStage {
   readonly cta: JourneyCta;
   readonly state: JourneyStageState;
   readonly count: number | null;
+  readonly actionKind?: "tailor" | "review" | "render" | "apply";
 }
 
 export interface Journey {
@@ -75,7 +77,7 @@ export const JOURNEY_STAGES: readonly JourneyStageDef[] = [
     task: "Build your profile",
     hint: "Add your resume and build your profile so tailoring has facts to draw on.",
     cta: { label: "Build your profile", to: "/profile" },
-    done: (s) => (s.profile.hasResume || s.profile.canRebuild) && Boolean(s.profile.factsBuiltAt),
+    done: (s) => (s.profile.hasResume || s.profile.canRebuild) && Boolean(s.profile.factsBuiltAt) && s.profile.freshness !== "refresh-needed",
     count: (s) => s.profile.documentCount,
   },
   {
@@ -84,7 +86,7 @@ export const JOURNEY_STAGES: readonly JourneyStageDef[] = [
     task: "Add job sources",
     hint: "Set a search and enable at least one source so the agent knows where to look.",
     cta: { label: "Add sources", to: "/settings/sources" },
-    done: (s) => s.search.configured && s.sources.enabledCount > 0,
+    done: (s, d) => (s.search.configured && s.sources.enabledCount > 0) || activeJobCount(d) > 0,
     count: (s) => s.sources.enabledCount,
   },
   {
@@ -107,12 +109,12 @@ export const JOURNEY_STAGES: readonly JourneyStageDef[] = [
   },
   {
     id: "tailor",
-    label: "Tailor",
-    task: "Tailor a resume",
-    hint: "Tailor a resume to an approved job, then render and apply.",
+    label: "Application",
+    task: "Prepare and submit an application",
+    hint: "Tailor, review and render, then prepare and record confirmed submission.",
     cta: { label: "Tailor a resume", to: "/pipeline?stage=approved" },
-    done: (_s, d) => status(d, "tailored") + status(d, "rendered") > 0,
-    count: (_s, d) => d.queues.tailor ?? 0,
+    done: (_s, d) => d.applied > 0,
+    count: (_s, d) => ["tailor", "review", "render", "apply"].reduce((sum, key) => sum + (d.queues[key] ?? 0), 0),
   },
 ];
 
@@ -169,6 +171,11 @@ export function deriveJourney(s: SetupStatus, d: DashboardSummary): Journey {
       cta: stage.cta,
       state,
       count: stage.count ? stage.count(s, d) : null,
+      ...(stage.id === "tailor" ? (() => {
+        const kind = (["tailor", "review", "render", "apply"] as const).find((key) => d.queueTargets?.[key]);
+        const target = kind ? d.queueTargets?.[kind] : undefined;
+        return kind && target ? { actionKind: kind, cta: { label: stage.cta.label, to: target.href } } : {};
+      })() : {}),
     };
   });
   return {
@@ -194,9 +201,10 @@ export function useJourney(): Journey | null {
       ...journey,
       stages: journey.stages.map((stage) => {
         const copy = JOURNEY_COPY[stage.id];
+        const label = stage.actionKind ? t(`workflow.next.${stage.actionKind}`) : t(copy.cta);
         const cta = "pull" in stage.cta
-          ? { label: t(copy.cta), pull: true as const }
-          : { label: t(copy.cta), to: stage.cta.to };
+          ? { label, pull: true as const }
+          : { label, to: stage.cta.to };
         return {
           ...stage,
           label: t(copy.label),

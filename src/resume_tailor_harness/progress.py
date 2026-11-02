@@ -72,7 +72,12 @@ def atomic_write_text(path: Path, text: str, *, root: Path | str) -> None:
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+    # Completion must sort after artifacts created in the same second.
+    return (
+        datetime.now(timezone.utc)
+        .isoformat(timespec="microseconds")
+        .replace("+00:00", "Z")
+    )
 
 
 #: Bounded retry for a transient read failure (Windows ``os.replace``/``open``

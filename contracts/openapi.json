@@ -1211,6 +1211,16 @@
           "job": {
             "$ref": "#/components/schemas/ApplicationJobContext"
           },
+          "materials": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationMaterialsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "profile": {
             "$ref": "#/components/schemas/ApplicationProfileDoc"
           },
@@ -2080,6 +2090,105 @@
         "title": "ApplicationJobOut",
         "type": "object"
       },
+      "ApplicationMaterialOut": {
+        "properties": {
+          "applicationEligible": {
+            "title": "Applicationeligible",
+            "type": "boolean"
+          },
+          "blockReason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "fact_lock_failed",
+                  "fact_check_failed",
+                  "material_missing"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blockreason"
+          },
+          "downloadPath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downloadpath"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "isSelected": {
+            "title": "Isselected",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "resume",
+              "cover_letter"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "pdfAvailable": {
+            "title": "Pdfavailable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "isSelected",
+          "applicationEligible",
+          "pdfAvailable"
+        ],
+        "title": "ApplicationMaterialOut",
+        "type": "object"
+      },
+      "ApplicationMaterialsOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationMaterialOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "selectedCoverLetterId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selectedcoverletterid"
+          },
+          "selectedResumeVersionId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selectedresumeversionid"
+          }
+        },
+        "title": "ApplicationMaterialsOut",
+        "type": "object"
+      },
       "ApplicationName": {
         "additionalProperties": false,
         "properties": {
@@ -2109,6 +2218,49 @@
           }
         },
         "title": "ApplicationName",
+        "type": "object"
+      },
+      "ApplicationNextStepOut": {
+        "properties": {
+          "href": {
+            "title": "Href",
+            "type": "string"
+          },
+          "jobId": {
+            "title": "Jobid",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "triage",
+              "approve",
+              "tailor",
+              "review",
+              "render",
+              "apply",
+              "track"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "resumeVersionId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resumeversionid"
+          }
+        },
+        "required": [
+          "jobId",
+          "kind",
+          "href"
+        ],
+        "title": "ApplicationNextStepOut",
         "type": "object"
       },
       "ApplicationOut": {
@@ -2865,8 +3017,24 @@
       },
       "ApplicationPromptOut": {
         "properties": {
+          "materials": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationMaterialsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "prompt": {
             "title": "Prompt",
+            "type": "string"
+          },
+          "submissionPolicy": {
+            "const": "stop_before_submit",
+            "default": "stop_before_submit",
+            "title": "Submissionpolicy",
             "type": "string"
           }
         },
@@ -5176,6 +5344,58 @@
         "title": "CoachNoteOut",
         "type": "object"
       },
+      "CoachProfileRefreshOut": {
+        "properties": {
+          "completedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completedat"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "runId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runid"
+          },
+          "status": {
+            "default": "idle",
+            "enum": [
+              "idle",
+              "pending",
+              "running",
+              "succeeded",
+              "failed",
+              "skipped"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "CoachProfileRefreshOut",
+        "type": "object"
+      },
       "CoachResearchActionOut": {
         "properties": {
           "kind": {
@@ -5246,6 +5466,9 @@
                 "type": "null"
               }
             ]
+          },
+          "profileRefresh": {
+            "$ref": "#/components/schemas/CoachProfileRefreshOut"
           },
           "recap": {
             "anyOf": [
@@ -6260,6 +6483,17 @@
       },
       "CoverLetterOut": {
         "properties": {
+          "applicationEligible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicationeligible"
+          },
           "createdAt": {
             "format": "date-time",
             "title": "Createdat",
@@ -6303,6 +6537,17 @@
               }
             ],
             "title": "Parentid"
+          },
+          "pdfAvailable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdfavailable"
           },
           "pdfPath": {
             "anyOf": [
@@ -6481,6 +6726,13 @@
           },
           "practiceStats": {
             "$ref": "#/components/schemas/PracticeStatsOut"
+          },
+          "queueTargets": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ApplicationNextStepOut"
+            },
+            "title": "Queuetargets",
+            "type": "object"
           },
           "queues": {
             "additionalProperties": {
@@ -9445,6 +9697,16 @@
             "title": "Needsattention",
             "type": "boolean"
           },
+          "nextStep": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationNextStepOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "postedAt": {
             "anyOf": [
               {
@@ -11913,6 +12175,38 @@
         "title": "NoteIn",
         "type": "object"
       },
+      "NotificationAcceptIn": {
+        "properties": {
+          "event": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationEventCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eventDetailsConfirmed": {
+            "default": false,
+            "title": "Eventdetailsconfirmed",
+            "type": "boolean"
+          },
+          "expectedRevision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectedrevision"
+          }
+        },
+        "title": "NotificationAcceptIn",
+        "type": "object"
+      },
       "NotificationOut": {
         "properties": {
           "applicationId": {
@@ -11966,6 +12260,10 @@
             "title": "Proposedstatus",
             "type": "string"
           },
+          "revision": {
+            "title": "Revision",
+            "type": "string"
+          },
           "state": {
             "title": "State",
             "type": "string"
@@ -11990,7 +12288,8 @@
           "evidence",
           "messageId",
           "state",
-          "createdAt"
+          "createdAt",
+          "revision"
         ],
         "title": "NotificationOut",
         "type": "object"
@@ -13336,6 +13635,17 @@
             ],
             "title": "Factsbuiltat"
           },
+          "freshness": {
+            "default": "unknown",
+            "enum": [
+              "missing",
+              "unknown",
+              "current",
+              "refresh-needed"
+            ],
+            "title": "Freshness",
+            "type": "string"
+          },
           "githubUsername": {
             "anyOf": [
               {
@@ -13350,6 +13660,22 @@
           "hasResume": {
             "title": "Hasresume",
             "type": "boolean"
+          },
+          "pendingSourceCount": {
+            "default": 0,
+            "title": "Pendingsourcecount",
+            "type": "integer"
+          },
+          "publishedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publishedat"
           }
         },
         "required": [
@@ -15212,6 +15538,17 @@
       },
       "ResumeVersionOut": {
         "properties": {
+          "applicationEligible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicationeligible"
+          },
           "createdAt": {
             "format": "date-time",
             "title": "Createdat",
@@ -15293,6 +15630,17 @@
               }
             ],
             "title": "Parentversionid"
+          },
+          "pdfAvailable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdfavailable"
           },
           "pdfPath": {
             "anyOf": [
@@ -16302,6 +16650,22 @@
               }
             ],
             "title": "Readat"
+          },
+          "resultAvailable": {
+            "default": false,
+            "title": "Resultavailable",
+            "type": "boolean"
+          },
+          "resultHref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resulthref"
           },
           "runId": {
             "title": "Runid",
@@ -20913,6 +21277,11 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "incorporated": {
+            "default": false,
+            "title": "Incorporated",
+            "type": "boolean"
           },
           "mode": {
             "enum": [
@@ -33347,6 +33716,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/NotificationAcceptIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -34556,6 +34942,61 @@
           }
         },
         "summary": "Save Note"
+      }
+    },
+    "/api/profile/coach/sessions/{session_id}/refresh": {
+      "post": {
+        "operationId": "refresh_coach_profile_api_profile_coach_sessions__session_id__refresh_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refresh Coach Profile"
       }
     },
     "/api/profile/coach/sessions/{session_id}/unarchive": {
@@ -37467,6 +37908,61 @@
           }
         },
         "summary": "List Completions"
+      }
+    },
+    "/api/run-completions/by-run/{run_id}": {
+      "get": {
+        "operationId": "result_for_run_api_run_completions_by_run__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunCompletionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Result For Run"
       }
     },
     "/api/run-completions/read-all": {

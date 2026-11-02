@@ -63,7 +63,7 @@ describe("useLaunchRun", () => {
     );
 
     expect(mocks.trackRun).toHaveBeenCalledWith({ runId: "r1", kind: "tailor" });
-    expect(invalidationKeys("r1", "tailor")).toEqual(["job"]);
+    expect(invalidationKeys("r1", "tailor")).toEqual(expect.arrayContaining(["job", "dashboard-summary"]));
     expect(mocks.toastSuccess).not.toHaveBeenCalled();
   });
 

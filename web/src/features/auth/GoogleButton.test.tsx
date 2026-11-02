@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 
 import { server } from "@/test/server";
 import { GoogleButton } from "./GoogleButton";
@@ -11,7 +12,7 @@ describe("GoogleButton", () => {
   it("explains why unavailable Google sign-in is disabled", async () => {
     server.use(http.get("/api/health", () => HttpResponse.json({ status: "ok", mailConfigured: true, googleOauthConfigured: false })));
     const user = userEvent.setup();
-    render(<QueryClientProvider client={new QueryClient()}><GoogleButton mode="login" /></QueryClientProvider>);
+    render(<MemoryRouter><QueryClientProvider client={new QueryClient()}><GoogleButton mode="login" /></QueryClientProvider></MemoryRouter>);
     const button = await screen.findByRole("button", { name: /continue with google/i });
     expect(button).toBeDisabled();
     await user.hover(button.parentElement!);
@@ -38,9 +39,9 @@ describe("GoogleButton", () => {
     );
     const user = userEvent.setup();
     render(
-      <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter><QueryClientProvider client={new QueryClient()}>
         <GoogleButton mode="register" invite="inv_google" disabledReason="" />
-      </QueryClientProvider>,
+      </QueryClientProvider></MemoryRouter>,
     );
 
     const button = await screen.findByRole("button", {

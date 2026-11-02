@@ -4,7 +4,7 @@
 // Keep the full skill set readable immediately in the job detail modal rail.
 
 import type { SkillTag } from "@/lib/filters/types";
-import { AddSkillPopover } from "@/features/profile-skills/AddSkillPopover";
+import { AddJobSkillButton } from "@/features/profile-skills/AddJobSkillButton";
 
 function Chip({
   tag,
@@ -28,7 +28,7 @@ function Chip({
       {tag.name}
       {!tag.covered && (
         <span className="-mr-1 inline-flex size-4 items-center justify-center">
-          <AddSkillPopover skillName={tag.name} />
+          <AddJobSkillButton skillName={tag.name} />
         </span>
       )}
     </span>

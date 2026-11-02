@@ -30,6 +30,7 @@ from resume_tailor_harness.profile.group_corrections import (
 )
 from resume_tailor_harness.profile.matrix import rebuild_saved_matrix
 from resume_tailor_harness.profile.store import save_facts
+from resume_tailor_harness.profile.snapshot import profile_snapshot
 from resume_tailor_harness.rollback import rollback_scope
 
 
@@ -65,12 +66,15 @@ def resolve_changes(
             return  # Retry after an uncertain response never applies twice.
         if draft.status != "pending":
             raise ValueError("Draft already resolved")
+        baseline = profile_snapshot(root) if decision == "apply" else None
 
         def mark_resolved(current: dict) -> None:
             item = next(d for d in current["change_drafts"] if d["id"] == draft_id)
             if item["status"] != "pending":
                 raise ValueError("Draft already resolved")
             item["status"] = status
+            if baseline is not None and current.get("profile_refresh_baseline") is None:
+                current["profile_refresh_baseline"] = baseline
 
         if decision == "discard":
             mutate_session(root, session_id, mark_resolved)
@@ -132,6 +136,7 @@ def apply_workspace_draft(
             ):
                 raise ValueError("Profile changes require current user evidence")
         facts = current_facts(root)
+        was_missing = facts is None
         facts = facts.model_copy(deep=True) if facts else None
         ledger = load_edits(root)
         organization = load_group_corrections(corrections_path(root), strict=True)
@@ -167,11 +172,16 @@ def apply_workspace_draft(
             root / "facts.json",
             root / "matrix.json",
             root / "manual_skills.json",
+            root / "publication.json",
             corrections_path(root),
             *receipt_paths,
         )
         with rollback_scope(paths):
             save_edits(root, ledger)
+            if facts is None or was_missing:
+                # A recreated blank profile has not incorporated the old
+                # corpus merely because its former publication is retained.
+                (root / "publication.json").unlink(missing_ok=True)
             if organization.model_dump() != original_organization:
                 save_group_corrections(organization, corrections_path(root))
             if facts is None:

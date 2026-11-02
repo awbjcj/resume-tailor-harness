@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { ackRuns } from "@/lib/runs/ack";
 import { announceCompletions } from "@/lib/runs/announce";
+import { openRunResult } from "@/lib/runs/result-navigation";
 import { invalidationKeys } from "@/lib/runs/invalidation";
 import { addTerminalListener } from "@/lib/runs/tracker";
 import { RUN_COMPLETIONS_KEY } from "@/features/notifications/use-run-completions";
@@ -24,7 +25,7 @@ export function useRunCompletionEffects(): void {
   useEffect(
     () =>
       addTerminalListener((runs) => {
-        announceCompletions(runs);
+        announceCompletions(runs, (runId) => { void openRunResult(runId); });
         void ackRuns(runs.map((run) => run.runId));
         const keys = new Set(
           runs.flatMap((run) => invalidationKeys(run.runId, run.kind)),

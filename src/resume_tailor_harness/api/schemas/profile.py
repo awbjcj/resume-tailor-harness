@@ -30,6 +30,7 @@ class SourceOut(CamelModel):
     file_exists: bool = True
     repo_url: str | None = None
     github_branch: str | None = None
+    incorporated: bool = False
 
 
 class GithubRepositoryOut(CamelModel):

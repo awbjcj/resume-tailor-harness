@@ -7,18 +7,17 @@ from datetime import datetime
 
 from sqlmodel import Session, col, func, select
 
-from resume_tailor_harness.tracking.queries import _TRIAGE_STATUSES
-from resume_tailor_harness.tracking.tables import Application, ErrorRecord, Job, JobStatus
-
-# Pipeline stages that are literally "waiting on the user", keyed by queue name.
-# triage mirrors _TRIAGE_STATUSES (the same set the Triage page query gates on),
-# not just "filtered", so this queue count stays consistent with that view.
-QUEUE_STATUSES: dict[str, tuple[str, ...]] = {
-    "triage": _TRIAGE_STATUSES,
-    "approve": (JobStatus.shortlisted.value,),
-    "tailor": (JobStatus.approved.value,),
-    "apply": (JobStatus.rendered.value,),
-}
+from resume_tailor_harness.tracking.tables import (
+    Application,
+    ErrorRecord,
+    Job,
+    JobStatus,
+)
+from resume_tailor_harness.services.application_continuation import (
+    ApplicationNextStep,
+    application_next_steps,
+    application_progress_clause,
+)
 
 
 @dataclass(frozen=True)
@@ -26,6 +25,7 @@ class DashboardSummary:
     status_counts: dict[str, int] = field(default_factory=dict)
     queues: dict[str, int] = field(default_factory=dict)
     applied: int = 0
+    queue_targets: dict[str, ApplicationNextStep] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -53,28 +53,43 @@ def summarize_dashboard(session: Session) -> DashboardSummary:
     counts = {status.value: 0 for status in JobStatus}
     for status, count in rows:
         counts[status] = count
-    queues = {
-        name: sum(counts.get(s, 0) for s in statuses)
-        for name, statuses in QUEUE_STATUSES.items()
-    }
+    steps = application_next_steps(session)
+    queues: dict[str, int] = dict.fromkeys(
+        ("triage", "approve", "tailor", "review", "render", "apply"), 0
+    )
+    targets: dict[str, ApplicationNextStep] = {}
+    for step in steps.values():
+        if step.kind in queues:
+            queues[step.kind] += 1
+            targets.setdefault(step.kind, step)
     applied = session.exec(
-        select(func.count())
+        select(func.count(col(Application.job_id).distinct()))
         .select_from(Application)
         .join(Job, col(Application.job_id) == Job.id)
-        .where(Application.status != "ready", Job.archived_at == None)  # noqa: E711
+        .where(application_progress_clause(), Job.archived_at == None)  # noqa: E711
     ).one()
-    return DashboardSummary(status_counts=counts, queues=queues, applied=applied)
+    return DashboardSummary(
+        status_counts=counts, queues=queues, applied=applied, queue_targets=targets
+    )
 
 
 def summarize_practice(rows: list[dict]) -> PracticeStats:
-    ordered = sorted(rows, key=lambda row: (row.get("startedAt", ""), row.get("sessionId", "")))
-    scores = [float(row["overallScore"]) for row in ordered if row.get("overallScore") is not None]
+    ordered = sorted(
+        rows, key=lambda row: (row.get("startedAt", ""), row.get("sessionId", ""))
+    )
+    scores = [
+        float(row["overallScore"])
+        for row in ordered
+        if row.get("overallScore") is not None
+    ]
     return PracticeStats(
         completed_sessions=len(rows),
         scored_sessions=len(scores),
         average_score=round(sum(scores) / len(scores), 1) if scores else None,
         latest_score=scores[-1] if scores else None,
-        change_from_first=(round(scores[-1] - scores[0], 1) if len(scores) >= 2 else None),
+        change_from_first=(
+            round(scores[-1] - scores[0], 1) if len(scores) >= 2 else None
+        ),
     )
 
 

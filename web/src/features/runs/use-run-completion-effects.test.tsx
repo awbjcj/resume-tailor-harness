@@ -9,6 +9,7 @@ import type { RunRecord } from "@/lib/runs/store";
 import { useRunStore } from "@/lib/runs/store";
 import { completeRuns, resetRunTrackerForTests } from "@/lib/runs/tracker";
 import { server } from "@/test/server";
+import { useSetupStatus } from "@/features/settings/use-setup-status";
 
 const mocks = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
@@ -54,6 +55,25 @@ beforeEach(() => {
   useRunStore.setState({ runs: {} });
 });
 
+it("refreshes publication status when a GitHub sync finishes after a reload", async () => {
+  server.use(
+    http.post("/api/runs/ack", () => HttpResponse.json({ acknowledged: 1 })),
+    http.get("/api/setup/status", () => HttpResponse.json({
+      profile: { freshness: "refresh-needed", pendingSourceCount: 1 },
+    })),
+  );
+  const qc = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
+  qc.setQueryData(["setup-status"], { profile: { freshness: "current", pendingSourceCount: 0 } });
+  const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+  const { result } = renderHook(() => {
+    useRunCompletionEffects();
+    return useSetupStatus();
+  }, { wrapper });
+  expect(result.current.data?.profile.freshness).toBe("current");
+  act(() => completeRuns([finished({ kind: "github-sync" })]));
+  await waitFor(() => expect(result.current.data?.profile.freshness).toBe("refresh-needed"));
+});
+
 it("announces, acknowledges, and invalidates a completion", async () => {
   const acked: string[][] = [];
   server.use(
@@ -71,12 +91,13 @@ it("announces, acknowledges, and invalidates a completion", async () => {
 
   expect(mocks.toastSuccess).toHaveBeenCalledWith(
     expect.stringMatching(/3 resume versions.*render PDF/i),
+    expect.objectContaining({ action: { label: "Open result", onClick: expect.any(Function) } }),
   );
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["job"] });
   await waitFor(() => expect(acked).toEqual([["r1"]]));
 });
 
-it("uses the keys the launch site registered for that run", () => {
+it("adds launch-specific keys while preserving kind-wide freshness", () => {
   const qc = new QueryClient();
   const invalidate = vi.spyOn(qc, "invalidateQueries");
   mount(qc);
@@ -85,7 +106,7 @@ it("uses the keys the launch site registered for that run", () => {
   act(() => completeRuns([finished()]));
 
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["match-gap"] });
-  expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ["job"] });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["job"] });
 });
 
 const recoveredChatRuns = [

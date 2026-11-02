@@ -12,9 +12,10 @@ export type ProfileMatrix = components["schemas"]["MatrixOut"];
 export type SuppressedSkill = components["schemas"]["SuppressedSkillOut"];
 
 /** Every surface where a skill's presence or coverage is displayed. */
-export function useMatrix() {
+export function useMatrix(enabled = true) {
   return useQuery({
     queryKey: ["profile-matrix"],
+    enabled,
     queryFn: () =>
       unwrap(
         api.GET("/api/profile/matrix", {} as never),

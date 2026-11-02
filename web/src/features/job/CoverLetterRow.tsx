@@ -29,6 +29,8 @@ export type CoverLetterItem = {
   instruction?: string | null;
   parentId?: number | null;
   factCheckPassed: boolean;
+  applicationEligible?: boolean | null;
+  pdfAvailable?: boolean | null;
   pdfPath?: string | null;
   createdAt?: string;
 };
@@ -58,6 +60,8 @@ export function CoverLetterRow({
   const deselect = useDeselectCoverLetter(jobId);
   const remove = useDeleteCoverLetters(jobId);
   const applied = appliedId === coverLetter.id;
+  const eligible = coverLetter.applicationEligible ?? coverLetter.factCheckPassed;
+  const pdfAvailable = coverLetter.pdfAvailable ?? Boolean(coverLetter.pdfPath);
   const origin = coverLetter.origin ?? "draft";
   const isRevision = origin === "revision";
 
@@ -84,8 +88,8 @@ export function CoverLetterRow({
                 {isRevision ? "Revision" : "Draft"}
               </Badge>
               {justCreated ? <Badge>Just created</Badge> : null}
-              <Badge variant={coverLetter.factCheckPassed ? "outline" : "destructive"}>
-                {coverLetter.factCheckPassed ? "Fact-check passed" : "Fact-check failed"}
+              <Badge variant={eligible ? "outline" : "destructive"}>
+                {eligible ? "Fact-check passed" : "Fact-check failed"}
               </Badge>
               {coverLetter.parentId && (
                 <span className="text-xs text-muted-foreground">
@@ -98,24 +102,37 @@ export function CoverLetterRow({
                 {coverLetter.instruction}
               </p>
             )}
+            {!eligible && (
+              <p className="text-sm text-destructive">
+                {applied
+                  ? "This selected cover letter failed fact-check. Change or clear the selection before applying."
+                  : "Fact-check must pass before this cover letter can be selected for an application."}
+              </p>
+            )}
+            {applied && eligible && (
+              <p className="text-sm text-muted-foreground">Selection does not submit an application.</p>
+            )}
+            {eligible && !pdfAvailable && (
+              <p className="text-sm text-muted-foreground">PDF unavailable. Prepare or provide this cover letter before uploading.</p>
+            )}
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {/* A toggle: clicking an applied letter unselects it, which is also
+          {/* A toggle: clicking a selected letter unselects it, which is also
               how the user gets past the delete gate below. */}
           <Button
             size="sm"
             variant={applied ? "default" : "outline"}
-            disabled={select.isPending || deselect.isPending}
+            disabled={select.isPending || deselect.isPending || (!applied && !eligible)}
             title={applied ? "Click to unselect" : undefined}
             onClick={() =>
               applied ? deselect.mutate() : select.mutate(coverLetter.id)
             }
           >
             <CheckCircle2 className="size-4" aria-hidden="true" />
-            {applied ? "Applied" : "Use for application"}
+            {applied ? "Selected for application" : "Use for application"}
           </Button>
-          {coverLetter.pdfPath ? (
+          {pdfAvailable ? (
             <>
               <Button
                 size="sm"

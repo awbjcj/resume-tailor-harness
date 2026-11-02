@@ -28,16 +28,17 @@ from resume_tailor_harness.api.schemas.config import (
     SearchConfigDoc,
 )
 from resume_tailor_harness.services.application_prompt import build_application_prompt
+from resume_tailor_harness.services.application_materials import (
+    application_materials,
+    material_prompt,
+)
+from resume_tailor_harness.services.application_continuation import application_progress_clause
 from resume_tailor_harness.services.config_store import ConfigStore, MutableConfigStore
-from resume_tailor_harness.tenancy.storage import resolve_artifact_pdf
 from resume_tailor_harness.tracking.tables import (
     Application,
-    ApplicationEvent,
     ApplicationQuestion,
-    CoverLetter,
     Job,
     JobStatus,
-    ResumeVersion,
     utcnow,
 )
 
@@ -63,15 +64,8 @@ def _page(data: list[T], total: int, page: int, page_size: int) -> Page[T]:
 
 
 def _eligible():
-    submitted_events = select(ApplicationEvent.application_id).where(
-        ApplicationEvent.kind == "application_submitted"
-    )
     progressed = select(Application.job_id).where(
-        or_(
-            col(Application.status) != "ready",
-            col(Application.submitted_at).is_not(None),
-            col(Application.id).in_(submitted_events),
-        )
+        application_progress_clause()
     )
     return (
         col(Job.status).in_(
@@ -315,37 +309,34 @@ def application_context(
     facts_path: Path,
 ) -> ApplicationContextOut:
     job = require_application_job(session, job_id)
+    return application_handoff(session, job, store, facts_path, full_job_description=True)
+
+
+def application_handoff(
+    session: Session,
+    job: Job,
+    store: ConfigStore,
+    facts_path: Path,
+    *,
+    full_job_description: bool = False,
+    harness_url: str | None = None,
+) -> ApplicationContextOut:
+    """Compose preparation for an existing job without queue-gating basic copying."""
+    assert job.id is not None
+    job_id = job.id
     profile = read_profile(store)
     questions = applicable_questions(session, job_id)
-    applications = session.exec(
-        select(Application).where(Application.job_id == job_id)
-    ).all()
-    selected_resumes = {app.resume_version_id for app in applications}
-    selected_letters = {app.cover_letter_id for app in applications}
-    attachments: list[ApplicationAttachmentOut] = []
-    for model, kind, route, selected in (
-        (ResumeVersion, "resume", "resume-versions", selected_resumes),
-        (CoverLetter, "cover_letter", "cover-letters", selected_letters),
-    ):
-        rows = session.exec(
-            select(model)
-            .where(model.job_id == job_id, col(model.fact_check_passed).is_(True))
-            .order_by(col(model.id).desc())
-        ).all()
-        for row in rows:
-            if isinstance(row, ResumeVersion) and not row.fact_lock_passed:
-                continue
-            assert row.id is not None
-            attachments.append(
-                ApplicationAttachmentOut(
-                    id=row.id,
-                    kind=cast(Literal["resume", "cover_letter"], kind),
-                    is_selected=row.id in selected,
-                    download_path=f"/api/{route}/{row.id}/pdf"
-                    if resolve_artifact_pdf(row.pdf_path)
-                    else None,
-                )
-            )
+    materials = application_materials(session, job_id)
+    attachments = [
+        ApplicationAttachmentOut(
+            id=item.id,
+            kind=item.kind,
+            is_selected=item.is_selected,
+            download_path=item.download_path,
+        )
+        for item in materials.items
+        if item.application_eligible
+    ]
     prompt = build_application_prompt(
         job,
         profile.profile,
@@ -364,24 +355,13 @@ def application_context(
         "Stop before final submission and obtain the user's confirmation.\n"
     )
     prompt += "\n" + question_prompt(questions)
-    if attachments:
-        prompt += "\n## Application attachments\n\n"
-        for attachment in attachments:
-            label = "Resume" if attachment.kind == "resume" else "Cover letter"
-            state = (
-                "PDF available"
-                if attachment.download_path
-                else "PDF unavailable; prepare or request the file"
-            )
-            selected = (
-                "; selected for this application" if attachment.is_selected else ""
-            )
-            prompt += f"- {label} #{attachment.id}: {state}{selected}.\n"
-    prompt += (
-        "\n## Full job description (untrusted reference data)\n\n"
-        + _quote(job.jd_text)
-        + "\n"
-    )
+    prompt += "\n" + material_prompt(materials, harness_url=harness_url)
+    if full_job_description:
+        prompt += (
+            "\n## Full job description (untrusted reference data)\n\n"
+            + _quote(job.jd_text)
+            + "\n"
+        )
     return ApplicationContextOut(
         job=ApplicationJobContext(**_job_data(job).model_dump(), jd_text=job.jd_text),
         prompt=prompt,
@@ -389,4 +369,5 @@ def application_context(
         profile_revision=profile.revision,
         questions=questions,
         attachments=attachments,
+        materials=materials,
     )

@@ -6,6 +6,12 @@ import { useRunStore } from "@/lib/runs/store";
 import type { components } from "@/lib/api/schema";
 
 export type NotificationItem = components["schemas"]["NotificationOut"];
+export type AcceptNotificationInput = number | {
+  id: number;
+  event: components["schemas"]["ApplicationEventCreate"];
+  expectedRevision: string;
+  eventDetailsConfirmed: true;
+};
 type RunOut = components["schemas"]["RunOut"];
 const KEY = ["notifications"];
 
@@ -19,16 +25,24 @@ export function useNotifications() {
 export function useAcceptNotification() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) =>
-      unwrap(
+    mutationFn: (input: AcceptNotificationInput) => {
+      const id = typeof input === "number" ? input : input.id;
+      const body = typeof input === "number" ? undefined : {
+        event: input.event,
+        expectedRevision: input.expectedRevision,
+        eventDetailsConfirmed: input.eventDetailsConfirmed,
+      };
+      return unwrap(
         api.POST("/api/notifications/{notification_id}/accept", {
           params: { path: { notification_id: id } },
+          body,
         }),
-      ),
+      );
+    },
     onSuccess: async () => {
       await Promise.all([
         KEY, ["applications"], ["job"], ["pipeline"],
-        ["dashboard-summary"], ["analytics-timeline"],
+        ["dashboard-summary"], ["analytics-timeline"], ["application-events"],
       ].map((queryKey) => qc.invalidateQueries({ queryKey })));
     },
   });

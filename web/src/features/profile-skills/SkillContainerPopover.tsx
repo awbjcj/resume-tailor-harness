@@ -23,7 +23,7 @@ import {
   type LibraryCategory,
   type LibraryGroup,
   type LibraryRow,
-} from "./SkillEditorDialog";
+} from "./SkillEditorFields";
 import { SkillMoveForm, skillPopoverClass } from "./SkillContextPopover";
 import { useSkillOrganization } from "./use-profile-skills";
 

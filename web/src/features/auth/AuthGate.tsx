@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, unwrap } from "@/lib/api/client";
+import { taskDestinationForLocation, withTaskDestination } from "@/lib/task-continuation";
 
 export function useMe() {
   return useQuery({
@@ -22,6 +23,8 @@ export function useMe() {
 }
 
 export function AuthGate({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const requested = taskDestinationForLocation(location.pathname, location.search, location.hash);
   const me = useMe();
   if (me.isPending) {
     return (
@@ -51,10 +54,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
     );
   }
   if (me.data.authRequired && !me.data.username) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={withTaskDestination("/login", requested)} replace />;
   }
   if (me.data.needsEmail) {
-    return <Navigate to="/complete-profile" replace />;
+    return <Navigate to={withTaskDestination("/complete-profile", requested)} replace />;
   }
   return <>{children}</>;
 }

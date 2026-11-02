@@ -8,6 +8,12 @@ from typing import TYPE_CHECKING
 
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.profile.store import save_facts
+from resume_tailor_harness.profile.publication import (
+    PUBLICATION_NAME,
+    SourceInputs,
+    save_publication,
+    source_inputs,
+)
 from resume_tailor_harness.rollback import rollback_scope
 from resume_tailor_harness.tenancy.limits import enforce_active_budget
 from resume_tailor_harness.tenancy.paths import resolve_tenant_path
@@ -23,12 +29,16 @@ def _publish_profile_artifacts(
     facts_path: Path,
     matrix_path: Path,
     matrix_writer: Callable[[SkillMatrix, str | Path], None],
+    inputs: SourceInputs | None = None,
 ) -> None:
     """Publish facts and their derived matrix as one rollback-safe operation."""
 
-    with rollback_scope((facts_path, matrix_path)):
+    publication_path = facts_path.parent / PUBLICATION_NAME
+    with rollback_scope((facts_path, matrix_path, publication_path)):
         save_facts(facts, facts_path)
         matrix_writer(matrix, matrix_path)
+        if inputs is not None:
+            save_publication(facts_path.parent, inputs)
 
 
 def run_corpus_build(
@@ -213,6 +223,7 @@ def run_corpus_build(
                 facts_path=facts_path,
                 matrix_path=matrix_path,
                 matrix_writer=save_matrix,
+                inputs=report.source_inputs,
             )
     if reporter is not None:
         reporter.step(3, label="Saved matrix.json")
@@ -283,6 +294,10 @@ def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -
             )
         capture_skill_overrides(facts, edits)
         matrix = build_decorated_matrix(profile_dir, facts)
+        # This path intentionally rebuilds only approved conversation changes;
+        # saved source documents have not been extracted by it.
+        inputs = source_inputs(profile_dir)
+        inputs.documents = {}
         with rollback_scope(
             (
                 facts_path,
@@ -300,6 +315,7 @@ def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -
                 facts_path=facts_path,
                 matrix_path=facts_path.with_name("matrix.json"),
                 matrix_writer=save_matrix,
+                inputs=inputs,
             )
     if reporter is not None:
         reporter.step(1, label="Saved profile and skill matrix")

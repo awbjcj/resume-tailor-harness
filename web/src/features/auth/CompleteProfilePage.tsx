@@ -1,7 +1,8 @@
 import { type FormEvent, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AtSign } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { consumeTaskDestination } from "@/lib/task-continuation";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -13,6 +14,7 @@ import { OtpInput } from "./OtpInput";
 import { useCooldown } from "./useCooldown";
 
 export function CompleteProfilePage() {
+  const [params] = useSearchParams();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -27,7 +29,7 @@ export function CompleteProfilePage() {
     mutationFn: () => unwrap(api.POST("/api/account/email/verify", { body: { email, code } })),
     onSuccess: (me) => {
       queryClient.setQueryData(["auth", "me"], me);
-      navigate("/", { replace: true });
+      navigate(consumeTaskDestination(params), { replace: true });
     },
   });
   const active = sent ? confirm : requestCode;

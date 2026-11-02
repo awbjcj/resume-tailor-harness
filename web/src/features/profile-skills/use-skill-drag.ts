@@ -6,7 +6,7 @@ import {
   useState,
   type PointerEvent,
 } from "react";
-import type { LibraryRow } from "./SkillEditorDialog";
+import type { LibraryRow } from "./SkillEditorFields";
 
 export type SkillDropTarget = { kind: "group" | "category"; key: string };
 type Gesture = {

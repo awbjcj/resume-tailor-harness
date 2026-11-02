@@ -65,7 +65,7 @@ def test_summary_counts_and_queues(client):
     _seed(client.app.state.engine)
     body = client.get("/api/dashboard/summary").json()
     assert body["statusCounts"]["filtered"] == 1  # archived excluded
-    assert body["queues"] == {"triage": 1, "approve": 1, "tailor": 1, "apply": 1}
+    assert body["queues"] == {"triage": 1, "approve": 1, "tailor": 1, "review": 0, "render": 0, "apply": 0}
     assert body["applied"] == 1
 
 

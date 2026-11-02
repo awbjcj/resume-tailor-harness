@@ -14,15 +14,16 @@ export const DEFAULT_INVALIDATE = [
   "pipeline",
   "triage",
   "job",
+  "dashboard-summary",
 ] as const;
 
 const BY_KIND: Record<string, readonly string[]> = {
   refreshClusters: ["match-gap"],
   maintainTaxonomy: ["match-gap"],
   undoTaxonomyMaintenance: ["match-gap"],
-  "profile-build": ["profile-sources", "match-gap", "setup-status", "profile-matrix", "profile-skills", "skill-cleanup", "suppressed-skills", "job", "shortlist", "pipeline", "triage"],
+  "profile-build": ["profile-sources", "match-gap", "setup-status", "profile-matrix", "profile-skills", "skill-cleanup", "suppressed-skills", "job", "shortlist", "pipeline", "triage", "coach-session", "coach-sessions", "dashboard-summary"],
   "profile-skills-rebuild": ["profile-matrix", "profile-skills", "skill-cleanup", "suppressed-skills", "match-gap", "job", "shortlist", "pipeline", "triage"],
-  "github-sync": ["profile-sources"],
+  "github-sync": ["profile-sources", "setup-status", "profile-source-exclusions", "github-repositories"],
   gmailSync: ["notifications", "gmail-status"],
   mailboxSync: ["notifications", "mailboxes", "gmail-status"],
   // Reload recovery has no chat mutation callback to refresh sessions.
@@ -55,7 +56,8 @@ export function forgetInvalidation(runId: string): void {
 export function invalidationKeys(runId: string, kind: string): string[] {
   // Copied, not shared: callers merge these into sets and a leaked reference
   // to BY_KIND would let one completion rewrite the table for every later one.
-  return [...(overrides.get(runId) ?? BY_KIND[kind] ?? DEFAULT_INVALIDATE)];
+  // Callers may add consumers, but cannot hide the kind's shared refresh rules.
+  return [...new Set([...(BY_KIND[kind] ?? DEFAULT_INVALIDATE), ...(overrides.get(runId) ?? [])])];
 }
 
 export function resetInvalidationForTests(): void {

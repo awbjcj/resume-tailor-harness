@@ -46,6 +46,7 @@ export function useRestoreGithubSources() {
       Promise.all([
         qc.invalidateQueries({ queryKey: ["profile-source-exclusions"] }),
         qc.invalidateQueries({ queryKey: ["github-repositories"] }),
+        qc.invalidateQueries({ queryKey: ["setup-status"] }),
       ]),
     onError: (err: Error) => toast.error(err.message),
   });

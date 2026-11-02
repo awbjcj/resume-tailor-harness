@@ -70,7 +70,7 @@ export function useBulkAction(board: Board) {
     preview: (args: Args) => call(args, true),
     run: async (args: Args) => {
       const result = await call(args, false);
-      for (const key of ["shortlist", "pipeline", "triage"]) {
+      for (const key of ["shortlist", "pipeline", "triage", "job", "dashboard-summary"]) {
         qc.invalidateQueries({ queryKey: [key] });
       }
       const skippedText = result.skipped ? ` · ${result.skipped} skipped` : "";

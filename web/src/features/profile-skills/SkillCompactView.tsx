@@ -7,7 +7,7 @@ import type {
   LibraryCategory,
   LibraryGroup,
   LibraryRow,
-} from "./SkillEditorDialog";
+} from "./SkillEditorFields";
 import { SkillContainerPopover } from "./SkillContainerPopover";
 import { SkillContextPopover } from "./SkillContextPopover";
 import { useMoveSkillGroup } from "./use-profile-skills";

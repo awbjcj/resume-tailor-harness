@@ -6,7 +6,7 @@ import { useLaunchRun } from "@/features/runs/use-launch-run";
 
 function invalidateBoards(qc: ReturnType<typeof useQueryClient>, jobId: number) {
   qc.invalidateQueries({ queryKey: ["job", jobId] });
-  for (const k of ["shortlist", "pipeline", "triage"]) {
+  for (const k of ["shortlist", "pipeline", "triage", "dashboard-summary"]) {
     qc.invalidateQueries({ queryKey: [k] });
   }
 }
@@ -135,7 +135,7 @@ export function useRenderVersion(jobId: number) {
           params: { path: { version_id: versionId } },
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["job", jobId] }),
+    onSuccess: () => invalidateBoards(qc, jobId),
   });
 }
 
@@ -174,7 +174,7 @@ export function useSelectResume(jobId: number) {
           params: { path: { job_id: jobId, version_id: versionId } },
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["job", jobId] }),
+    onSuccess: () => invalidateBoards(qc, jobId),
   });
 }
 
@@ -192,7 +192,7 @@ export function useDeselectResume(jobId: number) {
           params: { path: { job_id: jobId } },
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["job", jobId] }),
+    onSuccess: () => invalidateBoards(qc, jobId),
     onError: () => toast.error("Failed to unselect"),
   });
 }

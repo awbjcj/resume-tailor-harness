@@ -28,12 +28,15 @@ it("uses the per-kind map for a run it never saw launched", () => {
     "shortlist",
     "pipeline",
     "triage",
+    "coach-session",
+    "coach-sessions",
+    "dashboard-summary",
   ]);
 });
 
-it("prefers a remembered per-run override", () => {
+it("a remembered caller refresh cannot suppress shared publication consumers", () => {
   rememberInvalidation("r1", ["setup-status"]);
-  expect(invalidationKeys("r1", "profile-build")).toEqual(["setup-status"]);
+  expect(invalidationKeys("r1", "profile-build")).toEqual(expect.arrayContaining(["setup-status", "coach-session", "profile-skills", "dashboard-summary"]));
 });
 
 it("forgets an override so a recycled id cannot inherit it", () => {
@@ -51,6 +54,9 @@ it("forgets an override so a recycled id cannot inherit it", () => {
     "shortlist",
     "pipeline",
     "triage",
+    "coach-session",
+    "coach-sessions",
+    "dashboard-summary",
   ]);
 });
 

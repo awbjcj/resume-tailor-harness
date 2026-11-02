@@ -7,6 +7,7 @@ import { api, unwrap } from "@/lib/api/client";
 import { formatUserDateTime, formatUserTime } from "@/lib/date-time";
 import { localizeRunError, localizeRunKind, localizeRunLogMessage, localizeRunPhase } from "@/i18n/dynamic-labels";
 import { ClearHistoryButton } from "@/features/notifications/ClearHistoryButton";
+import { RunResultLink } from "@/features/runs/RunResultLink";
 import { useClearOperationHistory, useRunCompletions, type RunCompletionItem } from "@/features/notifications/use-run-completions";
 
 function Operation({ item }: { item: RunCompletionItem }) {
@@ -28,10 +29,13 @@ function Operation({ item }: { item: RunCompletionItem }) {
           {formatUserDateTime(item.completedAt, i18n.resolvedLanguage)}
         </time>
       </div>
-      <Button size="xs" variant="ghost" aria-expanded={expanded}
-        aria-controls={`operation-logs-${item.id}`} onClick={() => setExpanded(!expanded)}>
-        {t(expanded ? "runHistory.hideLogs" : "runHistory.viewLogs")}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <RunResultLink item={item} />
+        <Button size="xs" variant="ghost" aria-expanded={expanded}
+          aria-controls={`operation-logs-${item.id}`} onClick={() => setExpanded(!expanded)}>
+          {t(expanded ? "runHistory.hideLogs" : "runHistory.viewLogs")}
+        </Button>
+      </div>
     </div>
     {item.label && <p className="mt-1 break-words text-sm text-muted-foreground">{localizeRunPhase(item.label, i18n.resolvedLanguage)}</p>}
     {item.error && <p className="mt-1 break-words text-sm text-destructive">{localizeRunError(item.error, i18n.resolvedLanguage)}</p>}

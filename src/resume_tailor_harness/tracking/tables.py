@@ -274,6 +274,20 @@ class RunCompletion(SQLModel, table=True):
     read_at: datetime | None = Field(default=None, index=True)
 
 
+class RunCompletionTarget(SQLModel, table=True):
+    """Allowlisted result identities; resolved against current workspace state."""
+
+    __tablename__ = cast(Any, "run_completion_targets")
+
+    run_id: str = Field(primary_key=True)
+    job_ids_json: list[int] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    resume_version_id: int | None = None
+    cover_letter_id: int | None = None
+    session_id: str | None = None
+
+
 class EmailDraft(SQLModel, table=True):
     __tablename__ = cast(Any, "email_drafts")
 

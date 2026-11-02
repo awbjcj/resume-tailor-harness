@@ -70,6 +70,7 @@ from resume_tailor_harness.services.revision import revise_resume_version
 from resume_tailor_harness.services.tailoring import (
     DEFAULT_REVIEW,
     DEFAULT_REVIEW_DEEP,
+    resolve_targets as resolve_tailor_targets,
     tailor,
 )
 from resume_tailor_harness.tenancy.context import current_context
@@ -329,12 +330,17 @@ def launch_tailor(
     params: TailorParams, request: Request, mgr: RunManager = Depends(get_run_manager)
 ):
     engine = _engine(request)
+    if params.job_ids is not None:
+        target_ids = list(dict.fromkeys(params.job_ids))
+    else:
+        with get_session(engine) as session:
+            target_ids = [job.id for job in resolve_tailor_targets(session, job_ids=None, approved=params.approved) if job.id is not None]
 
     def do_tailor(session, reporter):
         outcome = tailor(
             session,
-            job_ids=params.job_ids,
-            approved=params.approved,
+            job_ids=target_ids,
+            approved=False,
             review_path=DEFAULT_REVIEW_DEEP if params.deep else DEFAULT_REVIEW,
             reporter=reporter,
             fail_on_partial=True,
@@ -359,7 +365,7 @@ def launch_tailor(
             ],
         }
 
-    return launch(mgr, "tailor", session_work(engine, do_tailor))
+    return launch(mgr, "tailor", session_work(engine, do_tailor), meta={"jobIds": target_ids})
 
 
 @router.post("/redo", response_model=RunOut, status_code=202)
@@ -389,7 +395,7 @@ def launch_redo(
             ]
         ).model_dump(by_alias=True)
 
-    return launch(mgr, "redo", session_work(engine, do_redo))
+    return launch(mgr, "redo", session_work(engine, do_redo), meta={"jobIds": params.job_ids})
 
 
 @router.post("/cover-letters", response_model=RunOut, status_code=202)

@@ -1,5 +1,6 @@
+import "@/i18n/application-updates";
 import { useTranslation } from "react-i18next";
-import { useState, type ReactElement } from "react";
+import { useState, type ReactElement, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,31 +47,45 @@ type FormState = {
   compCurrency: string;
 };
 
-function initialState(event?: ApplicationEvent): FormState {
+type EventReview = {
+  title: string;
+  description: string;
+  context: ReactNode;
+  submitLabel: string;
+  confirmationLabel: string;
+  allowedKinds: readonly string[];
+};
+
+function initialState(
+  event?: ApplicationEvent,
+  initialValues?: Partial<ApplicationEventCreate>,
+  isReview = false,
+): FormState {
+  const values = event ?? initialValues;
   const currentTimeZone = userTimeZone();
-  const parts = dateInputParts(event?.occurredAt, event?.allDay ?? true, currentTimeZone);
+  const parts = dateInputParts(values?.occurredAt, values?.allDay ?? true, currentTimeZone);
   return {
-    kind: event?.kind ?? "application_submitted",
-    sequence: event?.sequenceOverride?.toString() ?? "",
-    customLabel: event?.customLabel ?? "",
+    kind: values?.kind ?? "application_submitted",
+    sequence: event?.sequenceOverride?.toString() ?? initialValues?.sequence?.toString() ?? "",
+    customLabel: values?.customLabel ?? "",
     date: parts.date,
-    time: parts.time || "09:00",
-    allDay: event?.allDay ?? true,
-    timezone: currentTimeZone,
-    durationMinutes: event?.durationMinutes?.toString() ?? "",
-    modality: event?.modality ?? "",
-    platform: event?.platform ?? "",
-    platformOther: event?.platformOther ?? "",
-    locationOrLink: event?.locationOrLink ?? "",
-    interviewers: event?.interviewers ?? "",
-    result: event?.result ?? "pending",
-    notes: event?.notes ?? "",
-    reflection: event?.reflection ?? "",
-    compBase: event?.compBase?.toString() ?? "",
-    compBonus: event?.compBonus?.toString() ?? "",
-    compEquityAnnual: event?.compEquityAnnual?.toString() ?? "",
-    compSigning: event?.compSigning?.toString() ?? "",
-    compCurrency: event?.compCurrency ?? "USD",
+    time: parts.time || (isReview ? "" : "09:00"),
+    allDay: values?.allDay ?? true,
+    timezone: initialValues?.timezone ?? (isReview ? "" : currentTimeZone),
+    durationMinutes: values?.durationMinutes?.toString() ?? "",
+    modality: values?.modality ?? "",
+    platform: values?.platform ?? "",
+    platformOther: values?.platformOther ?? "",
+    locationOrLink: values?.locationOrLink ?? "",
+    interviewers: values?.interviewers ?? "",
+    result: values?.result ?? "pending",
+    notes: values?.notes ?? "",
+    reflection: values?.reflection ?? "",
+    compBase: values?.compBase?.toString() ?? "",
+    compBonus: values?.compBonus?.toString() ?? "",
+    compEquityAnnual: values?.compEquityAnnual?.toString() ?? "",
+    compSigning: values?.compSigning?.toString() ?? "",
+    compCurrency: values?.compCurrency ?? "USD",
   };
 }
 
@@ -83,6 +98,7 @@ function NativeSelect({
   value,
   values,
   allowBlank = true,
+  blankLabel = "Not specified",
   onChange,
 }: {
   id: string;
@@ -90,6 +106,7 @@ function NativeSelect({
   value: string;
   values: Record<string, string>;
   allowBlank?: boolean;
+  blankLabel?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -101,7 +118,7 @@ function NativeSelect({
         onChange={(event) => onChange(event.target.value)}
         className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
-        {allowBlank && <option value="">Not specified</option>}
+        {allowBlank && <option value="">{blankLabel}</option>}
         {Object.entries(values).map(([option, optionLabel]) => (
           <option key={option} value={option}>
             {optionLabel}
@@ -115,36 +132,64 @@ function NativeSelect({
 export function EventFormDialog({
   trigger,
   event,
+  initialValues,
+  review,
+  open: controlledOpen,
+  onOpenChange,
   onSubmit,
 }: {
-  trigger: ReactElement;
+  trigger?: ReactElement;
   event?: ApplicationEvent;
+  initialValues?: Partial<ApplicationEventCreate>;
+  review?: EventReview;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSubmit: (body: ApplicationEventCreate) => void | Promise<void>;
 }) {
-  useTranslation();
+  const { t } = useTranslation();
   const { KIND_LABELS, MODALITY_LABELS, PLATFORM_LABELS, RESULT_LABELS } = getEventLabels();
+  const kindLabels = review
+    ? Object.fromEntries(Object.entries(KIND_LABELS).filter(([kind]) => review.allowedKinds.includes(kind)))
+    : KIND_LABELS;
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(() => initialState(event));
+  const [form, setForm] = useState(() => initialState(event, initialValues, !!review));
+  const [detailsConfirmed, setDetailsConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const set = <K extends keyof FormState>(field: K, value: FormState[K]) =>
+  const set = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
+    if (review) setDetailsConfirmed(false);
+  };
 
   const setDialogOpen = (nextOpen: boolean) => {
     if (nextOpen) {
-      setForm(initialState(event));
+      setForm(initialState(event, initialValues, !!review));
+      setDetailsConfirmed(false);
       setError(null);
     }
     setOpen(nextOpen);
+    onOpenChange?.(nextOpen);
   };
 
   const submit = async () => {
+    if (review && !review.allowedKinds.includes(form.kind)) {
+      setError(t("applicationUpdates.stageRequired"));
+      return;
+    }
     if (form.kind === "custom" && !form.customLabel.trim()) {
       setError("Label is required for an Other event.");
       return;
     }
     if (form.kind !== "custom" && !form.date) {
       setError("Date is required for this stage.");
+      return;
+    }
+    if (review && !form.allDay && (!form.time || !form.timezone.trim())) {
+      setError(t("applicationUpdates.timeRequired"));
+      return;
+    }
+    if (review && !detailsConfirmed) {
+      setError(t("applicationUpdates.confirmRequired"));
       return;
     }
     let occurredAt: string | null = null;
@@ -198,7 +243,7 @@ export function EventFormDialog({
     setIsSubmitting(true);
     try {
       await onSubmit(body);
-      setOpen(false);
+      setDialogOpen(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to save this event.");
     } finally {
@@ -207,23 +252,25 @@ export function EventFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setDialogOpen}>
-      <DialogTrigger render={trigger} />
+    <Dialog open={controlledOpen ?? open} onOpenChange={setDialogOpen}>
+      {trigger && <DialogTrigger render={trigger} />}
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{event ? "Edit event" : "Add timeline event"}</DialogTitle>
+          <DialogTitle>{review?.title ?? (event ? "Edit event" : "Add timeline event")}</DialogTitle>
           <DialogDescription>
-            Record what happened, when it happened, and what you want to remember.
+            {review?.description ?? "Record what happened, when it happened, and what you want to remember."}
           </DialogDescription>
         </DialogHeader>
+        {review?.context}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <NativeSelect
             id="event-kind"
             label="Stage"
             value={form.kind}
-            values={KIND_LABELS}
-            allowBlank={false}
+            values={kindLabels}
+            allowBlank={!!review}
+            blankLabel={t("applicationUpdates.chooseStage")}
             onChange={(value) => set("kind", value)}
           />
           {form.kind === "custom" && (
@@ -258,6 +305,7 @@ export function EventFormDialog({
               value={form.date}
               onChange={(e) => set("date", e.target.value)}
             />
+            {review && <p className="text-xs text-muted-foreground">{t("applicationUpdates.dateHelp")}</p>}
           </div>
           {!form.allDay && (
             <div className="space-y-1.5">
@@ -402,13 +450,24 @@ export function EventFormDialog({
             />
           </div>
         </div>
+        {review && (
+          <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={detailsConfirmed}
+              onChange={(e) => setDetailsConfirmed(e.target.checked)}
+            />
+            {review.confirmationLabel}
+          </label>
+        )}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
             Cancel
           </Button>
           <Button type="button" disabled={isSubmitting} onClick={() => void submit()}>
-            {isSubmitting ? "Saving…" : "Save event"}
+            {isSubmitting ? "Saving…" : (review?.submitLabel ?? "Save event")}
           </Button>
         </DialogFooter>
       </DialogContent>

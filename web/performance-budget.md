@@ -26,6 +26,10 @@ and Chinese loading/error messages are available immediately. Failed module
 downloads offer an explicit reload because browsers can cache failed imports;
 reloads are never automatic and can discard other unsaved page input.
 
+Job skill additions load the personal library's shared editor on demand for
+names, aliases, types, and groups, with an option to add the job wording as
+an alias of an existing skill. Closing this editor cancels its draft.
+
 The build groups only modules already in the initial static graph. This avoids
 extra compression overhead from small shared chunks without pulling optional
 forms into startup. Cold Dashboard bytes are effectively unchanged; Pipeline
@@ -36,3 +40,12 @@ Further work toward 200 KB should profile the synchronous translation catalog
 and shared UI imports. Preserve translated first render and language switching;
 moving bytes to an unconditional asynchronous download is not a startup win.
 Cold-route totals deliberately expose costs that entry-only measurements hide.
+
+Workflow continuation (2026-11-02) retains these ceilings. The measured build is
+263,816 initial gzip bytes, 359,388 for Dashboard, and 624,211 for Pipeline;
+the largest deferred chunk is 103,412 bytes. The 200 KB target remains unmet.
+Workflow and Application update copy register with their consuming views, while
+password-manager copy registers with settings rather than public startup.
+Application update review loads its form only when opened, and a Job's next-step
+module loads alongside the detail request after opening that Job. Both retain
+translated loading and retry feedback; these are download-size measurements.

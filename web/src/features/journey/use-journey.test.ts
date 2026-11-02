@@ -8,7 +8,7 @@ import { deriveJourney, JOURNEY_STAGES, type JourneyStageId } from "./use-journe
 const emptyStatus: SetupStatus = {
   complete: false,
   secrets: { anthropicKey: false, anyLlmKey: false },
-  profile: { documentCount: 0, hasResume: false, canRebuild: false, factsBuiltAt: null, githubUsername: null },
+  profile: { documentCount: 0, hasResume: false, canRebuild: false, factsBuiltAt: null, githubUsername: null, freshness: "missing", pendingSourceCount: 0 },
   search: { configured: false },
   sources: { enabledCount: 0 },
 };
@@ -94,7 +94,7 @@ describe("deriveJourney", () => {
     expect(deriveJourney(ready, shortlisted).currentStep).toBe("tailor");
   });
 
-  it("reports completion once something is tailored", () => {
+  it("keeps preparation actionable until submission is recorded", () => {
     const ready = {
       ...emptyStatus,
       profile: { ...emptyStatus.profile, hasResume: true, factsBuiltAt: "x" },
@@ -102,10 +102,19 @@ describe("deriveJourney", () => {
       sources: { enabledCount: 1 },
     };
     const done = { ...emptySummary, statusCounts: { shortlisted: 2, tailored: 1, rendered: 1 } };
-    const j = deriveJourney(ready, done);
+    expect(deriveJourney(ready, done).currentStep).toBe("tailor");
+    const j = deriveJourney(ready, { ...done, applied: 1 });
     expect(j.currentStep).toBeNull();
     expect(j.complete).toBe(true);
     expect(j.completedCount).toBe(j.total);
     expect(j.stages.every((s) => s.state === "done")).toBe(true);
+  });
+
+  it("uses the real render target and skips discovery prerequisites for imported Jobs", () => {
+    const s = { ...emptyStatus, profile: { ...emptyStatus.profile, hasResume: true, factsBuiltAt: "x" } };
+    const d: DashboardSummary = { ...emptySummary, statusCounts: { tailored: 1 }, queues: { render: 1 }, queueTargets: { render: { jobId: 17, kind: "render", href: "/pipeline?job=17&tab=resumes" } } };
+    const journey = deriveJourney(s, d);
+    expect(journey.currentStep).toBe("tailor");
+    expect(journey.stages.at(-1)?.cta).toMatchObject({ to: "/pipeline?job=17&tab=resumes" });
   });
 });

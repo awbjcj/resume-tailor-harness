@@ -624,11 +624,6 @@
     "en": "Actor",
     "zh-CN": "操作者"
   },
-  "Add “": {
-    "key": "ui_ae6cd5e55ef8",
-    "en": "Add “",
-    "zh-CN": "添加“"
-  },
   "Add \"{{v0}}\" to your profile": {
     "key": "ui_ce658346e45b",
     "en": "Add \"{{v0}}\" to your profile",
@@ -788,11 +783,6 @@
     "key": "ui_495be0513521",
     "en": "Add timeline event",
     "zh-CN": "添加时间线事件"
-  },
-  "Add to my skills": {
-    "key": "ui_60ccc16251e3",
-    "en": "Add to my skills",
-    "zh-CN": "添加到我的技能"
   },
   "Add URL": {
     "key": "ui_889376c533e5",
@@ -4104,11 +4094,6 @@
     "en": "Gmail sync",
     "zh-CN": "Gmail 同步"
   },
-  "Go to dashboard": {
-    "key": "ui_f085ee865703",
-    "en": "Go to dashboard",
-    "zh-CN": "前往求职概览"
-  },
   "Goal ·": {
     "key": "ui_f4927f5392bb",
     "en": "Goal ·",
@@ -4308,11 +4293,6 @@
     "key": "ui_6c67dc13f839",
     "en": "Hybrid",
     "zh-CN": "混合办公"
-  },
-  "I have this skill": {
-    "key": "ui_1496ed412c5e",
-    "en": "I have this skill",
-    "zh-CN": "我具备这项技能"
   },
   "I manually confirmed this is": {
     "key": "ui_4bb1d8f11448",
@@ -6039,11 +6019,6 @@
     "en": "Manage non-financial workspace limits here. Manage cost allowances in Cost quotas.",
     "zh-CN": "设置工作区的职位数、并发数等限制。费用额度请在“费用配额”中管理。"
   },
-  "Not built yet": {
-    "key": "ui_45ecacee6d98",
-    "en": "Not built yet",
-    "zh-CN": "尚未生成"
-  },
   "Not checked:": {
     "key": "ui_47a2eca90192",
     "en": "Not checked:",
@@ -6728,11 +6703,6 @@
     "key": "ui_a9c09e5d56ce",
     "en": "Profile build progress",
     "zh-CN": "个人档案构建进度"
-  },
-  "Profile built {{v0}}": {
-    "key": "ui_efec11a797fd",
-    "en": "Profile built {{v0}}",
-    "zh-CN": "个人资料生成时间：{{v0}}"
   },
   "Profile built:": {
     "key": "ui_e3de055128d7",
@@ -8244,11 +8214,6 @@
     "en": "Salary locations",
     "zh-CN": "薪资适用地点"
   },
-  "Same as a skill I have": {
-    "key": "ui_0a09a53711df",
-    "en": "Same as a skill I have",
-    "zh-CN": "与我已有的技能相同"
-  },
   "Sample {{v0}}": {
     "key": "ui_e6e10401c9fb",
     "en": "Sample {{v0}}",
@@ -8473,16 +8438,6 @@
     "key": "ui_616578cf0cfb",
     "en": "Search terms",
     "zh-CN": "搜索词"
-  },
-  "Search your skills": {
-    "key": "ui_8702d188ba1d",
-    "en": "Search your skills",
-    "zh-CN": "搜索你的技能"
-  },
-  "Search your skills…": {
-    "key": "ui_f36d575c9db0",
-    "en": "Search your skills…",
-    "zh-CN": "搜索你的技能…"
   },
   "Search: {{v0}}": {
     "key": "ui_f14486da7f16",
@@ -9409,11 +9364,6 @@
     "en": "System design",
     "zh-CN": "系统设计"
   },
-  "Tailor": {
-    "key": "ui_7b50347c175f",
-    "en": "Tailor",
-    "zh-CN": "定制"
-  },
   "Tailor {{v0}} job{{v1}}": {
     "key": "ui_3ed945c71569",
     "en": "Tailor {{v0}} job{{v1}}",
@@ -9428,11 +9378,6 @@
     "key": "ui_78c56eb9fb96",
     "en": "Tailor a resume first to run a mock interview.",
     "zh-CN": "请先定制简历，再开始模拟面试。"
-  },
-  "Tailor a resume to an approved job, then render and apply.": {
-    "key": "ui_737aec128fa5",
-    "en": "Tailor a resume to an approved job, then render and apply.",
-    "zh-CN": "为已批准的职位定制简历，生成 PDF 后即可投递。"
   },
   "Tailor approved…": {
     "key": "ui_37b781c677fb",
@@ -10003,11 +9948,6 @@
     "key": "ui_ed4e9f568bbb",
     "en": "This secret pairs with the client ID above. Set both together.",
     "zh-CN": "此密钥与上方的客户端 ID 配套使用，请同时设置。"
-  },
-  "This skill is not yet detected on your profile. Add it to clear the gap.": {
-    "key": "ui_3ba75f08d8cc",
-    "en": "This skill is not yet detected on your profile. Add it to clear the gap.",
-    "zh-CN": "个人资料中还没找到这项技能，补充后即可消除这项差距。"
   },
   "This skill is unavailable.": {
     "key": "ui_bf75c9ed017d",
@@ -11149,11 +11089,6 @@
     "en": "Could not stop the response. Please try again.",
     "zh-CN": "无法停止回复，请重试。"
   },
-  "Application prompt copied in English": {
-    "key": "ui_10e14f661314",
-    "en": "Application prompt copied in English",
-    "zh-CN": "英文申请提示词已复制"
-  },
   "Could not load application prompt. Please try again.": {
     "key": "ui_2c5ddd01ef74",
     "en": "Could not load application prompt. Please try again.",
@@ -11163,11 +11098,6 @@
     "key": "ui_7f98c985ee1a",
     "en": "Copy application prompt",
     "zh-CN": "复制申请提示词"
-  },
-  "Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant.": {
-    "key": "ui_bc1664cf9193",
-    "en": "Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant.",
-    "zh-CN": "无法使用剪贴板。请选中下方文字并手动复制，再粘贴到支持浏览器操作或电脑操作的 AI 助手中。"
   },
   "English application prompt": {
     "key": "ui_698103364511",
@@ -12184,11 +12114,6 @@
     "en": "Used by the writer, reviser, and advisory panel. Minimums stay within the evidence in your profile, so they do not require invented claims. Choose one or two pages in Rendering. One-page drafts use lower bullet limits and preserve space for experience and projects.",
     "zh-CN": "供撰写助手、修改助手和评分评审参考。最低要求以个人资料中的事实为限，不要求编造内容。请在“渲染”中选择一页或两页。单页草稿的要点上限较低，会为工作经历和项目留出空间。"
   },
-  "{{v0}} of {{v1}} sources ready": {
-    "key": "ui_47e283f51df8",
-    "en": "{{v0}} of {{v1}} sources ready",
-    "zh-CN": "{{v1}} 个来源中有 {{v0}} 个已就绪"
-  },
   "Add a resume to build your profile. Your other sources stay saved.": {
     "key": "ui_db19a11cc922",
     "en": "Add a resume to build your profile. Your other sources stay saved.",
@@ -12633,5 +12558,85 @@
     "key": "ui_575784e36c75",
     "en": "Skill updated",
     "zh-CN": "技能已更新"
+  },
+  "Add a skill": {
+    "key": "ui_132fe0304136",
+    "en": "Add a skill",
+    "zh-CN": "添加技能"
+  },
+  "Selected for application": {
+    "key": "ui_53a5e930623f",
+    "en": "Selected for application",
+    "zh-CN": "已选用于申请"
+  },
+  "Selection does not submit an application.": {
+    "key": "ui_d33cf6590396",
+    "en": "Selection does not submit an application.",
+    "zh-CN": "选择文档不会提交申请。"
+  },
+  "This selected resume failed fact-lock. Change or clear the selection before applying.": {
+    "key": "ui_eb19f392888d",
+    "en": "This selected resume failed fact-lock. Change or clear the selection before applying.",
+    "zh-CN": "所选简历未通过真实性校验。申请前请更换或清除该选择。"
+  },
+  "Fact-lock must pass before this resume can be selected for an application.": {
+    "key": "ui_bfbe7c3aabf5",
+    "en": "Fact-lock must pass before this resume can be selected for an application.",
+    "zh-CN": "简历通过真实性校验后，才可选用于申请。"
+  },
+  "PDF unavailable. Render this version before uploading.": {
+    "key": "ui_61057f9bc5a2",
+    "en": "PDF unavailable. Render this version before uploading.",
+    "zh-CN": "PDF 不可用。上传前请先渲染此版本。"
+  },
+  "This selected cover letter failed fact-check. Change or clear the selection before applying.": {
+    "key": "ui_a4ae524d562e",
+    "en": "This selected cover letter failed fact-check. Change or clear the selection before applying.",
+    "zh-CN": "所选求职信未通过事实核验。申请前请更换或清除该选择。"
+  },
+  "Fact-check must pass before this cover letter can be selected for an application.": {
+    "key": "ui_988d734c1160",
+    "en": "Fact-check must pass before this cover letter can be selected for an application.",
+    "zh-CN": "求职信通过事实核验后，才可选用于申请。"
+  },
+  "PDF unavailable. Prepare or provide this cover letter before uploading.": {
+    "key": "ui_364a0389bdaf",
+    "en": "PDF unavailable. Prepare or provide this cover letter before uploading.",
+    "zh-CN": "PDF 不可用。上传前请先准备或提供这封求职信。"
+  },
+  "Application preparation copied in English. Files are not attached.": {
+    "key": "ui_08926d265770",
+    "en": "Application preparation copied in English. Files are not attached.",
+    "zh-CN": "已复制英文申请准备资料，文件需另行提供。"
+  },
+  "Copy application preparation and selected material IDs. Download files separately.": {
+    "key": "ui_cedac237a283",
+    "en": "Copy application preparation and selected material IDs. Download files separately.",
+    "zh-CN": "复制申请准备资料和所选文档编号。文件需另行下载。"
+  },
+  "Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant. Selected files must be downloaded separately.": {
+    "key": "ui_2e9903ee7c74",
+    "en": "Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant. Selected files must be downloaded separately.",
+    "zh-CN": "无法使用剪贴板。请选中并复制下方文字，再粘贴到支持浏览器操作或电脑操作的 AI 助手中。所选文件需另行下载。"
+  },
+  "resumes needing checks": {
+    "key": "ui_d01f4f853159",
+    "en": "resumes needing checks",
+    "zh-CN": "需要核验的简历"
+  },
+  "PDFs to create": {
+    "key": "ui_b11233551925",
+    "en": "PDFs to create",
+    "zh-CN": "待生成的 PDF"
+  },
+  "Prepare and submit an application": {
+    "key": "ui_36964dc4e340",
+    "en": "Prepare and submit an application",
+    "zh-CN": "准备并投递职位申请"
+  },
+  "Tailor, review and render, then prepare and record confirmed submission.": {
+    "key": "ui_1697bb2f52e6",
+    "en": "Tailor, review and render, then prepare and record confirmed submission.",
+    "zh-CN": "定制、检查并生成简历 PDF，再准备申请，确认已投递后记录。"
   }
 }
