@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SourcesManager } from "@/features/sources/SourcesPage";
+import { useSetupContinuation } from "../use-setup-continuation";
 
 export function SourcesStep() {
   const navigate = useNavigate();
+  const { nextPath } = useSetupContinuation();
   return (
     <Card>
       <CardHeader>
@@ -18,8 +20,8 @@ export function SourcesStep() {
         <SourcesManager />
       </CardContent>
       <CardFooter className="justify-end gap-2">
-        <Button variant="ghost" onClick={() => navigate("/setup/finish")}>Skip for now</Button>
-        <Button onClick={() => navigate("/setup/finish")}>Continue</Button>
+        <Button variant="ghost" onClick={() => navigate(nextPath("sources"))}>Skip for now</Button>
+        <Button onClick={() => navigate(nextPath("sources"))}>Continue</Button>
       </CardFooter>
     </Card>
   );

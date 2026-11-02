@@ -1,5 +1,8 @@
 import { ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useDeferredComponent } from "@/lib/use-deferred-component";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +45,9 @@ type ClosedLoopJob = {
 const tabTriggerClass =
   "h-10 flex-none rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground after:hidden hover:bg-background/70 data-active:bg-background data-active:text-foreground data-active:shadow-sm data-active:ring-1 data-active:ring-border/70";
 
+const JOB_TAB_VALUES = ["job", "resumes", "sponsorship", "research", "coverLetters", "tracking", "interview", "careerLab"];
+const loadNextStep = () => import("@/features/job/JobNextStep").then((module) => ({ default: module.JobNextStep }));
+
 const tabCountClass =
   "ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-semibold leading-none tabular-nums text-muted-foreground";
 
@@ -63,6 +69,17 @@ export function JobModal({
   isLoadingNext?: boolean;
 }) {
   const { data: job, isLoading } = useJobDetail(jobId);
+  const { t } = useTranslation();
+  // Begin alongside the detail request, only once a Job is actually opened.
+  const { Component: NextStep, failed: nextFailed, retry: retryNext, reloadRequired } = useDeferredComponent(true, loadNextStep);
+  const [params, setParams] = useSearchParams();
+  const requestedTab = params.get("tab");
+  const tab = requestedTab && JOB_TAB_VALUES.includes(requestedTab) ? requestedTab : "job";
+  const setTab = (value: string) => setParams((previous) => {
+    const next = new URLSearchParams(previous);
+    next.set("tab", value);
+    return next;
+  }, { replace: true });
   const closedLoopJob = job as
     (NonNullable<typeof job> & ClosedLoopJob) | undefined;
   const coverLetters = closedLoopJob?.coverLetters ?? [];
@@ -189,7 +206,11 @@ export function JobModal({
                 </div>
               </header>
 
-              <Tabs defaultValue="job" className="flex min-h-0 flex-1 flex-col">
+              {job.nextStep && (NextStep ? <NextStep job={job} onTab={setTab} /> : <div className="flex items-center gap-3 border-b px-5 py-3 text-sm text-muted-foreground" role={nextFailed ? "alert" : "status"}>
+                {t(nextFailed ? "deferred.failed" : "deferred.loading")}
+                {nextFailed && <Button size="sm" variant="outline" onClick={retryNext}>{t(reloadRequired ? "deferred.reload" : "deferred.retry")}</Button>}
+              </div>)}
+              <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
                 <TabsList className="h-auto w-full shrink-0 flex-nowrap justify-start gap-1 overflow-x-auto rounded-none border-b bg-muted/25 px-4 py-3 text-base group-data-horizontal/tabs:h-auto sm:px-8">
                   <TabsTrigger value="job" className={tabTriggerClass}>
                     Job details

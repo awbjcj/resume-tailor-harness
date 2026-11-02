@@ -28,6 +28,8 @@ type ResumeVersion = components["schemas"]["ResumeVersionOut"] & {
   origin?: string;
   instruction?: string | null;
   parentVersionId?: number | null;
+  applicationEligible?: boolean | null;
+  pdfAvailable?: boolean | null;
 };
 
 /**
@@ -68,6 +70,8 @@ export function VersionRow({
   const deselect = useDeselectResume(jobId);
   const remove = useDeleteVersions(jobId);
   const applied = appliedVersionId === version.id;
+  const eligible = version.applicationEligible ?? (version.factCheckPassed && !version.failedGates?.length);
+  const pdfAvailable = version.pdfAvailable ?? Boolean(version.pdfPath);
   const origin = version.origin ?? "tailor";
   const isRevision = origin === "revision";
 
@@ -95,8 +99,8 @@ export function VersionRow({
               </Badge>
               {justCreated ? <Badge>Just created</Badge> : null}
               <span className="text-muted-foreground">Score {version.reviewScore ?? "not scored"}</span>
-              <Badge variant={version.factCheckPassed ? "outline" : "destructive"}>
-                {version.factCheckPassed
+              <Badge variant={eligible ? "outline" : "destructive"}>
+                {eligible
                   ? "Fact-lock passed"
                   : failedGateLabel(version.failedGates)}
               </Badge>
@@ -111,24 +115,37 @@ export function VersionRow({
                 {version.instruction}
               </p>
             )}
+            {!eligible && (
+              <p className="text-sm text-destructive">
+                {applied
+                  ? "This selected resume failed fact-lock. Change or clear the selection before applying."
+                  : "Fact-lock must pass before this resume can be selected for an application."}
+              </p>
+            )}
+            {applied && eligible && (
+              <p className="text-sm text-muted-foreground">Selection does not submit an application.</p>
+            )}
+            {eligible && !pdfAvailable && (
+              <p className="text-sm text-muted-foreground">PDF unavailable. Render this version before uploading.</p>
+            )}
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {/* A toggle: clicking an applied version unselects it, which is also
+          {/* A toggle: clicking a selected version unselects it, which is also
               how the user gets past the delete gate below. */}
           <Button
             size="sm"
             variant={applied ? "default" : "outline"}
-            disabled={select.isPending || deselect.isPending}
+            disabled={select.isPending || deselect.isPending || (!applied && !eligible)}
             title={applied ? "Click to unselect" : undefined}
             onClick={() =>
               applied ? deselect.mutate() : select.mutate(version.id)
             }
           >
             <CheckCircle2 className="size-4" aria-hidden="true" />
-            {applied ? "Applied" : "Use for application"}
+            {applied ? "Selected for application" : "Use for application"}
           </Button>
-          {version.pdfPath ? (
+          {pdfAvailable ? (
             <>
               <Button
                 size="sm"

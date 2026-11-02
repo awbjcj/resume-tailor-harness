@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSessionSelection } from "@/lib/chat/use-session-selection";
 import { Bot, Building2, CheckCircle2, Clock3, Compass, MessageCircleQuestion, Search } from "lucide-react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
@@ -35,8 +36,8 @@ export function ScoutPage() {
   const [newOpen, setNewOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const sessions = useScoutSessions(showArchived);
+  const [selectedId, setSelectedId] = useSessionSelection();
   const activeSummary = sessions.data?.sessions?.find((row) => row.status === "active");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const displayedId = selectedId ?? activeSummary?.sessionId ?? null;
   const session = useScoutSession(displayedId);
   const start = useStartScoutSession();

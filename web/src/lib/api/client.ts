@@ -1,6 +1,7 @@
 import createClient from "openapi-fetch";
 
 import type { paths } from "./schema";
+import { rememberTaskDestination, taskDestinationForLocation, withTaskDestination } from "@/lib/task-continuation";
 
 const TOKEN_KEY = "resume-tailor-harness-token";
 
@@ -62,7 +63,9 @@ api.use({
       typeof window !== "undefined" &&
       window.location.pathname !== "/login"
     ) {
-      window.location.assign("/login");
+      const destination = taskDestinationForLocation(window.location.pathname, window.location.search, window.location.hash);
+      rememberTaskDestination(destination);
+      window.location.assign(withTaskDestination("/login", destination));
     }
     return response;
   },

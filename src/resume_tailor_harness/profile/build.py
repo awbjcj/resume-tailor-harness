@@ -35,6 +35,7 @@ from resume_tailor_harness.profile.merge import (
 )
 from resume_tailor_harness.profile.resume_reader import read_resume_text
 from resume_tailor_harness.profile.synthesis import profile_skeleton
+from resume_tailor_harness.profile.publication import SourceInputs, source_inputs
 
 
 def build_profile(
@@ -84,6 +85,7 @@ class BuildReport(ExtensibleModel):
     anchor_decisions: list[str] = Field(default_factory=list)
     verification_drops: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    source_inputs: SourceInputs | None = Field(default=None, exclude=True)
 
 
 def build_corpus_profile(
@@ -256,4 +258,11 @@ def build_corpus_profile(
             # prerequisite. Legacy/incomplete data remains valid when this
             # cheap-tier backfill is temporarily unavailable.
             report.warnings.append(f"bullet aspect classification failed: {exc}")
+    inputs = source_inputs(profile_dir, manifest, consumed_hashes=True)
+    inputs.documents = {
+        key: value
+        for key, value in inputs.documents.items()
+        if report.doc_status.get(key) in {"cached", "extracted", "source-changed"}
+    }
+    report.source_inputs = inputs
     return merged, report

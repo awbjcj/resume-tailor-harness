@@ -28,14 +28,14 @@ def _seed(app, *, versions=1, cover_letters=0, applied_version=False):
         job_id = job.id
         version_ids = []
         for round_no in range(versions):
-            version = ResumeVersion(job_id=job_id, round=round_no)
+            version = ResumeVersion(job_id=job_id, round=round_no, fact_check_passed=True)
             s.add(version)
             s.commit()
             s.refresh(version)
             version_ids.append(version.id)
         letter_ids = []
         for _ in range(cover_letters):
-            letter = CoverLetter(job_id=job_id)
+            letter = CoverLetter(job_id=job_id, fact_check_passed=True)
             s.add(letter)
             s.commit()
             s.refresh(letter)

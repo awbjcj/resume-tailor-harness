@@ -85,7 +85,14 @@ null`; the domain model rejects that outright, so turning the budget off
   category mappings never alter the actual awarded degree in resume evidence.
   External harnesses use `agent_applications.py` for the full JD/context and
   scoped question ledger. The concise copy prompt also includes matching saved
-  questions. `YamlConfigStore.update` serializes read/modify/write with a file
+  questions. Both handoffs share `application_materials.py` for factual eligibility,
+  exact selected document IDs, unavailable PDFs and authenticated download routes.
+  Unsafe or missing legacy selections remain visible with a reason but never
+  become upload-safe attachments; newer documents never replace an explicit
+  older selection. Basic copying accepts any existing Job, while external queue
+  context retains its approved/unsubmitted gate. Reading either handoff never
+  creates an Application, and selecting a document never records submission.
+  `YamlConfigStore.update` serializes read/modify/write with a file
   lock shared by ordinary PUT; profile revision checks happen inside that lock.
   Application questions live in the workspace database, separate from the
   settings bundle. They do not become resume evidence.

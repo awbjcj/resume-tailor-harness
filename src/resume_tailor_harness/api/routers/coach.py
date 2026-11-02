@@ -15,12 +15,7 @@ from resume_tailor_harness.api.deps import (
 from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.runs.launch import launch
 from resume_tailor_harness.api.runs.conversation import with_conversation_stream
-from resume_tailor_harness.api.runs.manager import (
-    RunManager,
-    RunQuotaError,
-    RunResetConflict,
-    RunSingletonConflict,
-)
+from resume_tailor_harness.api.runs.manager import RunManager
 from resume_tailor_harness.api.schemas.coach import (
     CoachEndIn,
     CoachMessageIn,
@@ -48,11 +43,13 @@ from resume_tailor_harness.services.profile_conversation import (
 )
 from resume_tailor_harness.services.profile_coach import (
     approve_draft,
+    attach_profile_refresh_run,
     discard_draft,
     run_build_with_impact,
     run_message_turn,
     run_opening_turn,
     run_recap_turn,
+    record_profile_refresh,
     session_view,
     sessions_view,
 )
@@ -236,6 +233,68 @@ def discard_note(session_id: str, topic_id: str, request: Request):
         raise _value_error(exc) from exc
 
 
+def _launch_profile_refresh(
+    manager: RunManager, profile_dir, session_id: str, profile_config: ProfileConfigDoc
+) -> RunOut:
+    record_profile_refresh(profile_dir, session_id, "running")
+    try:
+        run = launch(
+            manager,
+            "profile-build",
+            lambda reporter: run_build_with_impact(
+                reporter,
+                profile_dir=profile_dir,
+                session_id=session_id,
+                facts_out=profile_dir / "facts.json",
+                github_username=profile_config.github_username,
+                github_allow=tuple(profile_config.github_repo_allow),
+                github_deny=tuple(profile_config.github_repo_deny),
+                github_limit=profile_config.github_repo_limit,
+                github_branches=profile_config.github_repo_branches,
+            ),
+            singleton_key="profile-build",
+            # Another build may have captured its evidence before this note
+            # was approved. Joining it cannot promise incorporation.
+            singleton_conflict="raise",
+            meta={"sessionId": session_id},
+            busy_code="PROFILE_BUILD_BUSY",
+            busy_message="A profile build is running. Refresh again after it finishes.",
+        )
+    except ApiException as exc:
+        record_profile_refresh(profile_dir, session_id, "skipped", reason=exc.message)
+        raise
+    attach_profile_refresh_run(profile_dir, session_id, run.run_id)
+    return run
+
+
+@router.post(
+    "/profile/coach/sessions/{session_id}/refresh",
+    response_model=RunOut,
+    status_code=202,
+)
+def refresh_coach_profile(
+    session_id: str,
+    request: Request,
+    manager: RunManager = Depends(get_run_manager),
+    settings: Settings = Depends(get_settings_dep),
+):
+    profile_dir = _guard_setup(request, settings)
+    try:
+        session_view(profile_dir, session_id)
+        from resume_tailor_harness.profile.conversation import load_edits
+
+        if load_edits(profile_dir).deleted:
+            raise ValueError(
+                "The profile was removed. Create a profile before refreshing."
+            )
+        profile_config = cast(
+            ProfileConfigDoc, get_config_store(request).get("profile")
+        )
+        return _launch_profile_refresh(manager, profile_dir, session_id, profile_config)
+    except ValueError as exc:
+        raise _value_error(exc) from exc
+
+
 @router.post(
     "/profile/coach/sessions/{session_id}/end",
     response_model=RunOut,
@@ -256,7 +315,6 @@ def end_coach_session(
     if current["status"] != "active":
         raise ApiException(409, "CONFLICT", "session ended")
     profile_config = cast(ProfileConfigDoc, get_config_store(request).get("profile"))
-    facts_out = profile_dir / "facts.json"
 
     def work(reporter, sink):
         ended = run_recap_turn(
@@ -273,30 +331,24 @@ def end_coach_session(
         skipped_reason = None
         if payload.build and not removed and (saved_count or applied_count):
             try:
-                build_run_id = manager.submit(
-                    "profile-build",
-                    lambda build_reporter: run_build_with_impact(
-                        build_reporter,
-                        profile_dir=profile_dir,
-                        session_id=session_id,
-                        facts_out=facts_out,
-                        github_username=profile_config.github_username,
-                        github_allow=tuple(profile_config.github_repo_allow),
-                        github_deny=tuple(profile_config.github_repo_deny),
-                        github_limit=profile_config.github_repo_limit,
-                        github_branches=profile_config.github_repo_branches,
-                    ),
-                    singleton_key="profile-build",
-                    singleton_conflict="raise",
-                )
-            except (RunSingletonConflict, RunResetConflict, RunQuotaError) as exc:
-                skipped_reason = str(exc)
+                build_run_id = _launch_profile_refresh(
+                    manager, profile_dir, session_id, profile_config
+                ).run_id
+            except ApiException as exc:
+                skipped_reason = exc.message
         elif not payload.build:
-            skipped_reason = "build=false"
+            skipped_reason = "Profile refresh was left off when this session ended."
         elif removed:
             skipped_reason = "profile was removed"
         else:
             skipped_reason = "no saved notes or applied changes to build from"
+        if skipped_reason is not None:
+            record_profile_refresh(
+                profile_dir, session_id, "skipped", reason=skipped_reason
+            )
+        ended["profileRefresh"] = session_view(profile_dir, session_id)[
+            "profileRefresh"
+        ]
         return {
             "session": ended,
             "buildRunId": build_run_id,

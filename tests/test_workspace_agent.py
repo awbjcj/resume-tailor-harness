@@ -464,7 +464,7 @@ def test_artifact_selection_and_delete_require_separate_approval(workspace):
     from resume_tailor_harness.tracking.tables import ResumeVersion
 
     with Session(workspace[0]) as session:
-        session.add(ResumeVersion(job_id=1, content_json={"summary": "APIs"}))
+        session.add(ResumeVersion(job_id=1, fact_check_passed=True, content_json={"summary": "APIs"}))
         session.add(ResumeVersion(job_id=1, content_json={"summary": "Systems"}))
         session.commit()
     decide(
@@ -749,9 +749,9 @@ def test_document_selection_previews_old_and_new_selection(workspace):
     from resume_tailor_harness.tracking.tables import ResumeVersion, CoverLetter
 
     with Session(workspace[0]) as session:
-        session.add(ResumeVersion(id=1, job_id=1))
-        session.add(ResumeVersion(id=2, job_id=1))
-        session.add(CoverLetter(id=2, job_id=1, content_json={"body": "Cover letter"}))
+        session.add(ResumeVersion(id=1, job_id=1, fact_check_passed=True))
+        session.add(ResumeVersion(id=2, job_id=1, fact_check_passed=True))
+        session.add(CoverLetter(id=2, job_id=1, fact_check_passed=True, content_json={"body": "Cover letter"}))
         session.add(Application(job_id=1, resume_version_id=1))
         session.commit()
     plan = propose(

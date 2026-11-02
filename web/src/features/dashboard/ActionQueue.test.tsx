@@ -13,13 +13,15 @@ const renderQueue = (summary = SUMMARY) =>
   );
 
 describe("ActionQueue", () => {
-  it("renders four cards linking to their boards", () => {
+  it("includes review and render work alongside the existing queues", () => {
     renderQueue();
     expect(QUEUE_CARDS.map((c) => c.key)).toEqual([
       "triage",
       "approve",
       "tailor",
       "apply",
+      "review",
+      "render",
     ]);
     expect(screen.getByRole("link", { name: /triage 2/i })).toHaveAttribute(
       "href",
@@ -44,6 +46,11 @@ describe("ActionQueue", () => {
       ...SUMMARY,
       queues: { triage: 0, approve: 0, tailor: 0, apply: 0 },
     });
-    expect(screen.getAllByRole("link")).toHaveLength(4);
+    expect(screen.getAllByRole("link")).toHaveLength(6);
+  });
+
+  it("opens the exact pending Job and tab when a continuation is available", () => {
+    renderQueue({ ...SUMMARY, queueTargets: { render: { jobId: 17, kind: "render", href: "/pipeline?job=17&tab=resumes", resumeVersionId: 9 } } });
+    expect(screen.getByRole("link", { name: /render 0/i })).toHaveAttribute("href", "/pipeline?job=17&tab=resumes");
   });
 });

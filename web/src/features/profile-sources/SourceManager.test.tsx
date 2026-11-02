@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -38,7 +38,7 @@ vi.mock("./use-sources", () => ({
   usePatchSource: () => ({ mutate: mocks.patch, isPending: false }),
   useDeleteSource: () => ({ mutate: mocks.remove, isPending: false }),
   useReplaceSource: () => ({ mutate: mocks.replace, isPending: false }),
-  useAddNote: () => ({ mutate: mocks.addNote, isPending: false }),
+  useAddNote: () => ({ mutateAsync: mocks.addNote, isPending: false }),
   useAddUrl: () => ({ mutate: mocks.addUrl, isPending: false }),
   useSyncGithub: () => ({ mutate: mocks.syncGithub, isPending: false }),
   useGithubExclusions: () => ({ data: mocks.exclusions }),
@@ -199,9 +199,7 @@ describe("SourceManager", () => {
     await user.click(screen.getByRole("button", { name: /save note/i }));
     expect(mocks.addNote).toHaveBeenCalledWith(
       { title: "On-call", text: "Led the rotation." },
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
-    act(() => mocks.addNote.mock.calls[0][1].onSuccess());
 
     await waitFor(() => expect(screen.getByRole("button", { name: /add url/i })).toBeVisible());
     await user.click(screen.getByRole("button", { name: /add url/i }));
@@ -211,6 +209,25 @@ describe("SourceManager", () => {
       { url: "https://example.com/work" },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
+  });
+
+  it("keeps cached extraction separate from incorporated profile evidence", () => {
+    render(<SourceManager />);
+    const row = screen.getByRole("article", { name: /resume\.pdf/i });
+    expect(row).toHaveTextContent("Awaiting profile refresh");
+    expect(screen.getByText("0 of 5 sources incorporated")).toBeInTheDocument();
+  });
+
+  it("refreshes only after explicitly saving a note and requesting refresh", async () => {
+    const refresh = vi.fn().mockResolvedValue(true);
+    render(<SourceManager onRefresh={refresh} />);
+    await userEvent.click(screen.getByRole("button", { name: "Add note" }));
+    await userEvent.type(screen.getByLabelText("Note title"), "Metrics");
+    await userEvent.type(screen.getByLabelText("Note text"), "Reduced cycle time.");
+    expect(refresh).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Save and refresh profile" }));
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    expect(mocks.addNote).toHaveBeenCalledExactlyOnceWith({ title: "Metrics", text: "Reduced cycle time." });
   });
 
 });

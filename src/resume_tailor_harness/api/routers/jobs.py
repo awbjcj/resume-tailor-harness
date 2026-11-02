@@ -24,13 +24,11 @@ from resume_tailor_harness.api.runs.launch import launch, session_work
 from resume_tailor_harness.api.runs.manager import RunManager
 from resume_tailor_harness.api.schemas.bulk import BulkRequest, BulkResultOut
 from resume_tailor_harness.api.schemas.config import (
-    ApplicationProfileDoc,
     ReviewConfigDoc,
-    SearchConfigDoc,
 )
 from resume_tailor_harness.api.schemas.application_prompt import ApplicationPromptOut
-from resume_tailor_harness.services.application_prompt import build_application_prompt
-from resume_tailor_harness.services.agent_applications import applicable_questions, question_prompt
+from resume_tailor_harness.services.agent_applications import application_handoff
+from resume_tailor_harness.services.application_materials import material_for_application
 from resume_tailor_harness.api.schemas.jobs import (
     ApplicationOut,
     ApplicationUpsert,
@@ -91,14 +89,17 @@ def application_prompt(
     if job is None:
         raise ApiException(404, "NOT_FOUND", f"Job #{job_id} not found")
     store = get_config_store(request)
-    answers = cast(ApplicationProfileDoc, store.get("application_profile"))
-    search = cast(SearchConfigDoc, store.get("search"))
     response.headers["Cache-Control"] = "no-store"
+    handoff = application_handoff(
+        session,
+        job,
+        store,
+        get_profile_dir(request) / "facts.json",
+        harness_url=str(request.base_url).rstrip("/"),
+    )
     return ApplicationPromptOut(
-        prompt=build_application_prompt(
-            job, answers, get_profile_dir(request) / "facts.json", search=search
-        )
-        + question_prompt(applicable_questions(session, job_id))
+        prompt=handoff.prompt,
+        materials=handoff.materials,
     )
 
 
@@ -156,6 +157,11 @@ def _job_detail_response(
             "company_intelligence": company_intelligence,
         }
     )
+    from resume_tailor_harness.api.schemas.continuation import ApplicationNextStepOut
+    from resume_tailor_harness.services.application_continuation import application_next_steps
+
+    next_step = application_next_steps(session, [job_id], include_archived=True).get(job_id)
+    detail.next_step = ApplicationNextStepOut.model_validate(next_step) if next_step else None
     if not settings.h1b_mcp_enabled:
         detail.h1b_sponsorship = H1BSponsorshipOut(
             capability="disabled",
@@ -173,6 +179,14 @@ def _job_detail_response(
     gate_names = {r.name for r in review_doc.reviewers if r.gate}
     for version in detail.resume_versions:
         version.apply_gate_names(gate_names)
+    for sources, outputs in (
+        (row.resume_versions, detail.resume_versions),
+        (row.cover_letters, detail.cover_letters),
+    ):
+        for source, output in zip(sources, outputs, strict=True):
+            material = material_for_application(source)
+            output.application_eligible = material.application_eligible
+            output.pdf_available = material.pdf_available
     return detail
 
 

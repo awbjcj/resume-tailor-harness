@@ -12,6 +12,7 @@ import { api, unwrap } from "@/lib/api/client";
 import { AuthLayout } from "./AuthLayout";
 import { AuthNotice, callbackErrorMessage } from "./AuthNotice";
 import { GoogleButton } from "./GoogleButton";
+import { consumeTaskDestination, taskDestination, withTaskDestination } from "@/lib/task-continuation";
 
 export function LoginPage() {
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ export function LoginPage() {
     mutationFn: () => unwrap(api.POST("/api/auth/login", { body: { identifier, password } })),
     onSuccess: (me) => {
       queryClient.setQueryData(["auth", "me"], me);
-      navigate(me.needsEmail ? "/complete-profile" : "/", { replace: true });
+      navigate(me.needsEmail ? withTaskDestination("/complete-profile", taskDestination(params)) : consumeTaskDestination(params), { replace: true });
     },
   });
   const submit = (event: FormEvent) => {
@@ -39,7 +40,7 @@ export function LoginPage() {
       title={t("auth.welcomeBack")}
       description={t("auth.signInDescription")}
       icon={<KeyRound aria-hidden="true" />}
-      footer={<p className="text-center text-muted-foreground">{t("auth.newHere")} <Link className="font-medium text-foreground underline underline-offset-4" to="/register">{t("auth.createAccount")}</Link></p>}
+      footer={<p className="text-center text-muted-foreground">{t("auth.newHere")} <Link className="font-medium text-foreground underline underline-offset-4" to={withTaskDestination("/register", taskDestination(params))}>{t("auth.createAccount")}</Link></p>}
     >
       {calloutError ? <AuthNotice tone="error">{calloutError}</AuthNotice> : null}
       <form onSubmit={submit}>
@@ -56,7 +57,7 @@ export function LoginPage() {
           <Field data-invalid={login.isError || undefined}>
             <div className="flex items-center justify-between">
               <FieldLabel htmlFor="login-password">{t("auth.password")}</FieldLabel>
-              <Link className="text-xs text-muted-foreground underline underline-offset-4" to="/forgot-password">{t("auth.forgotPassword")}</Link>
+              <Link className="text-xs text-muted-foreground underline underline-offset-4" to={withTaskDestination("/forgot-password", taskDestination(params))}>{t("auth.forgotPassword")}</Link>
             </div>
             <Input id="login-password" type="password" autoComplete="current-password" value={password} disabled={login.isPending} aria-invalid={login.isError || undefined} onChange={(event) => setPassword(event.target.value)} required />
             {login.isError ? <FieldError>{login.error.message}</FieldError> : null}

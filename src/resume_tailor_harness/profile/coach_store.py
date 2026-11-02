@@ -51,6 +51,15 @@ class CoachTurnRecord(ExtensibleModel):
     agent_meta: AgentRunMeta | None = None
 
 
+class CoachProfileRefresh(ExtensibleModel):
+    status: Literal["idle", "pending", "running", "succeeded", "failed", "skipped"] = (
+        "idle"
+    )
+    run_id: str | None = None
+    reason: str | None = None
+    completed_at: str | None = None
+
+
 class CoachSession(SessionModel):
     ended_at: str | None = None
     turns: list[CoachTurnRecord] = Field(default_factory=list)
@@ -59,6 +68,8 @@ class CoachSession(SessionModel):
     change_drafts: list[CoachChangeDraft] = Field(default_factory=list)
     recap: str | None = None
     impact: dict | None = None
+    profile_refresh: CoachProfileRefresh = Field(default_factory=CoachProfileRefresh)
+    profile_refresh_baseline: dict | None = None
 
 
 _STORE: SessionStore[CoachSession] = SessionStore(CoachSession, label="coach")

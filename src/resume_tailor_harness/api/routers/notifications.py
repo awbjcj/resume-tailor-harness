@@ -5,12 +5,18 @@ from sqlmodel import Session
 
 from resume_tailor_harness.api.deps import get_session
 from resume_tailor_harness.api.errors import ApiException
-from resume_tailor_harness.api.schemas.notifications import NotificationOut
+from resume_tailor_harness.api.schemas.notifications import (
+    NotificationAcceptIn,
+    NotificationOut,
+)
+from resume_tailor_harness.services.application_events import EventValidationError
 from resume_tailor_harness.services.notifications import (
+    NotificationConflictError,
     accept_notification,
     clear_notification_history,
     dismiss_notification,
     list_pending,
+    notification_revision,
 )
 from resume_tailor_harness.tracking.tables import Application, Job
 
@@ -18,7 +24,9 @@ router = APIRouter()
 
 
 def _to_out(session: Session, notification) -> NotificationOut:
-    out = NotificationOut.model_validate(notification)
+    out = NotificationOut.model_validate(
+        {**notification.model_dump(), "revision": notification_revision(notification)}
+    )
     application = session.get(Application, notification.application_id)
     if application is not None:
         job = session.get(Job, application.job_id)
@@ -35,8 +43,27 @@ def list_notifications(session: Session = Depends(get_session)):
 
 
 @router.post("/notifications/{notification_id}/accept", response_model=NotificationOut)
-def accept(notification_id: int, session: Session = Depends(get_session)):
-    notification = accept_notification(session, notification_id)
+def accept(
+    notification_id: int,
+    body: NotificationAcceptIn | None = None,
+    session: Session = Depends(get_session),
+):
+    try:
+        notification = accept_notification(
+            session,
+            notification_id,
+            event=(
+                body.event.model_dump(exclude_none=True)
+                if body and body.event
+                else None
+            ),
+            expected_revision=body.expected_revision if body else None,
+            event_details_confirmed=body.event_details_confirmed if body else False,
+        )
+    except EventValidationError as error:
+        raise ApiException(422, "VALIDATION_ERROR", error.message) from error
+    except NotificationConflictError as error:
+        raise ApiException(409, "NOTIFICATION_CHANGED", str(error)) from error
     if notification is None:
         raise ApiException(
             404, "NOT_FOUND", f"Notification #{notification_id} not found"

@@ -140,6 +140,37 @@ def test_build_launches_run(client, monkeypatch):
     assert body["runId"]
 
 
+def test_build_does_not_join_a_run_with_unknown_source_coverage(client, monkeypatch):
+    import threading
+    from resume_tailor_harness.services import profile_build
+
+    client.post(
+        "/api/profile/sources", files={"file": ("resume.txt", b"resume", "text/plain")}
+    )
+    started = threading.Event()
+    release = threading.Event()
+
+    def build(_reporter, **_kwargs):
+        started.set()
+        assert release.wait(3)
+        return {}
+
+    monkeypatch.setattr(profile_build, "run_corpus_build", build)
+    try:
+        first = client.post("/api/profile/build")
+        assert first.status_code == 202
+        assert started.wait(2)
+        client.post(
+            "/api/profile/sources/note", json={"title": "Late", "text": "New evidence"}
+        )
+        second = client.post("/api/profile/build")
+        assert second.status_code == 409
+        assert second.json()["error"]["code"] == "PROFILE_BUILD_BUSY"
+        assert second.json()["error"]["details"]["runId"] == first.json()["runId"]
+    finally:
+        release.set()
+
+
 def test_profile_build_uses_saved_repository_branch_choices(client, monkeypatch):
     import threading
     from resume_tailor_harness.services import profile_build

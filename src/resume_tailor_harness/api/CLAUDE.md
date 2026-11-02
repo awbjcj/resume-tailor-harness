@@ -46,6 +46,12 @@ logic lives in routers. Start it with `resume-tailor-harness serve`; `create_app
   `RunOperationLog`; GET `/api/run-completions/{id}/logs` reads these from the
   workspace database even after transient run files expire. Older runs may have
   no recorded logs. The dashboard reuses its Recent runs card for this history.
+  `RunCompletionTarget` preserves only allowlisted job/artifact/session identifiers
+  alongside that ledger. History and `/run-completions/by-run/{id}` resolve local
+  result links from current workspace state; deleted or unknown legacy targets
+  fall back to the relevant workspace. Toasts resolve the same link on click,
+  without replaying a write. Targets survive transient run cleanup and are cleared
+  by a jobs/all workspace reset with the history.
   Agent chat operations (Career Lab, coach, interview, scout) surface only
   failures in history and notifications; successful/cancelled runs remain
   durable and still emit terminal events for chat refresh and acknowledgement.

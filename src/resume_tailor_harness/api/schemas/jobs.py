@@ -9,6 +9,7 @@ from typing import Annotated, Any, Literal
 from pydantic import Field, model_validator
 
 from resume_tailor_harness.api.schemas.base import CamelModel
+from resume_tailor_harness.api.schemas.continuation import ApplicationNextStepOut
 from resume_tailor_harness.company_intelligence.models import (
     CompanyIntelligenceAxis,
     CompanyIntelligenceEvidence,
@@ -132,6 +133,8 @@ class ResumeVersionOut(CamelModel):
     parent_version_id: int | None = None
     review_score: int | None
     fact_check_passed: bool
+    application_eligible: bool | None = None
+    pdf_available: bool | None = None
     pdf_path: str | None
     critique_json: list[dict] | None
     created_at: datetime
@@ -195,6 +198,8 @@ class CoverLetterOut(CamelModel):
     instruction: str | None = None
     parent_id: int | None = None
     fact_check_passed: bool
+    application_eligible: bool | None = None
+    pdf_available: bool | None = None
     pdf_path: str | None
     created_at: datetime
 
@@ -365,6 +370,7 @@ class ApplicationOut(CamelModel):
 
 class JobDetail(CamelModel):
     id: int
+    next_step: ApplicationNextStepOut | None = None
     source: str
     url: str | None
     company: str | None

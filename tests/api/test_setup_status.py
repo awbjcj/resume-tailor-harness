@@ -50,6 +50,8 @@ def test_areas_flip_as_setup_progresses(make_client, tmp_path):
         assert body["secrets"]["anthropicKey"] is True
         assert body["profile"]["hasResume"] is True
         assert body["profile"]["factsBuiltAt"] is not None
+        assert body["profile"]["freshness"] == "unknown"
+        assert body["profile"]["publishedAt"] is None
         assert body["search"]["configured"] is True
         # no sources enabled yet -> still incomplete
         assert body["sources"]["enabledCount"] == 0

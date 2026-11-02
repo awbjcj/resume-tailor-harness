@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SecretsForm } from "@/features/settings/forms/SecretsForm";
 import { useSaveSecrets, useSecrets } from "@/features/settings/use-secrets";
+import { useSetupContinuation } from "../use-setup-continuation";
 
 export function KeysStep() {
   const secrets = useSecrets();
   const saveSecrets = useSaveSecrets();
   const navigate = useNavigate();
+  const { nextPath } = useSetupContinuation();
 
   const primary = (secrets.data ?? []).filter((s) => s.key === "anthropicApiKey");
   const rest = (secrets.data ?? []).filter((s) => s.key !== "anthropicApiKey");
@@ -42,10 +44,10 @@ export function KeysStep() {
         )}
       </CardContent>
       <CardFooter className="justify-end gap-2">
-        <Button variant="ghost" onClick={() => navigate("/setup/documents")}>
+        <Button variant="ghost" disabled={saveSecrets.isPending} onClick={() => navigate(nextPath("keys"))}>
           Skip for now
         </Button>
-        <Button onClick={() => navigate("/setup/documents")}>Save & continue</Button>
+        <Button disabled={saveSecrets.isPending} onClick={() => navigate(nextPath("keys"))}>Continue</Button>
       </CardFooter>
     </Card>
   );

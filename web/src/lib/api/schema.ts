@@ -2955,6 +2955,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/profile/coach/sessions/{session_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Coach Profile */
+        post: operations["refresh_coach_profile_api_profile_coach_sessions__session_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profile/coach/sessions/{session_id}/unarchive": {
         parameters: {
             query?: never;
@@ -3663,6 +3680,23 @@ export interface paths {
         post?: never;
         /** Clear Operations */
         delete: operations["clear_operations_api_run_completions_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/run-completions/by-run/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Result For Run */
+        get: operations["result_for_run_api_run_completions_by_run__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5107,6 +5141,7 @@ export interface components {
             /** Attachments */
             attachments: components["schemas"]["ApplicationAttachmentOut"][];
             job: components["schemas"]["ApplicationJobContext"];
+            materials?: components["schemas"]["ApplicationMaterialsOut"] | null;
             profile: components["schemas"]["ApplicationProfileDoc"];
             /** Profilerevision */
             profileRevision: string;
@@ -5308,6 +5343,35 @@ export interface components {
             /** Url */
             url: string | null;
         };
+        /** ApplicationMaterialOut */
+        ApplicationMaterialOut: {
+            /** Applicationeligible */
+            applicationEligible: boolean;
+            /** Blockreason */
+            blockReason?: ("fact_lock_failed" | "fact_check_failed" | "material_missing") | null;
+            /** Downloadpath */
+            downloadPath?: string | null;
+            /** Id */
+            id: number;
+            /** Isselected */
+            isSelected: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "resume" | "cover_letter";
+            /** Pdfavailable */
+            pdfAvailable: boolean;
+        };
+        /** ApplicationMaterialsOut */
+        ApplicationMaterialsOut: {
+            /** Items */
+            items?: components["schemas"]["ApplicationMaterialOut"][];
+            /** Selectedcoverletterid */
+            selectedCoverLetterId?: number | null;
+            /** Selectedresumeversionid */
+            selectedResumeVersionId?: number | null;
+        };
         /** ApplicationName */
         ApplicationName: {
             /**
@@ -5330,6 +5394,20 @@ export interface components {
              * @default
              */
             suffix: string;
+        };
+        /** ApplicationNextStepOut */
+        ApplicationNextStepOut: {
+            /** Href */
+            href: string;
+            /** Jobid */
+            jobId: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "triage" | "approve" | "tailor" | "review" | "render" | "apply" | "track";
+            /** Resumeversionid */
+            resumeVersionId?: number | null;
         };
         /** ApplicationOut */
         ApplicationOut: {
@@ -5813,8 +5891,15 @@ export interface components {
         };
         /** ApplicationPromptOut */
         ApplicationPromptOut: {
+            materials?: components["schemas"]["ApplicationMaterialsOut"] | null;
             /** Prompt */
             prompt: string;
+            /**
+             * Submissionpolicy
+             * @default stop_before_submit
+             * @constant
+             */
+            submissionPolicy: "stop_before_submit";
         };
         /** ApplicationQuestionCreate */
         ApplicationQuestionCreate: {
@@ -6618,6 +6703,21 @@ export interface components {
             /** Docid */
             docId: string;
         };
+        /** CoachProfileRefreshOut */
+        CoachProfileRefreshOut: {
+            /** Completedat */
+            completedAt?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Runid */
+            runId?: string | null;
+            /**
+             * Status
+             * @default idle
+             * @enum {string}
+             */
+            status: "idle" | "pending" | "running" | "succeeded" | "failed" | "skipped";
+        };
         /** CoachResearchActionOut */
         CoachResearchActionOut: {
             /** Kind */
@@ -6641,6 +6741,7 @@ export interface components {
             /** Endedat */
             endedAt?: string | null;
             impact?: components["schemas"]["CoachImpactOut"] | null;
+            profileRefresh?: components["schemas"]["CoachProfileRefreshOut"];
             /** Recap */
             recap?: string | null;
             /** Sessionid */
@@ -7100,6 +7201,8 @@ export interface components {
         };
         /** CoverLetterOut */
         CoverLetterOut: {
+            /** Applicationeligible */
+            applicationEligible?: boolean | null;
             /**
              * Createdat
              * Format: date-time
@@ -7120,6 +7223,8 @@ export interface components {
             origin: string;
             /** Parentid */
             parentId?: number | null;
+            /** Pdfavailable */
+            pdfAvailable?: boolean | null;
             /** Pdfpath */
             pdfPath: string | null;
             /** Resumeversionid */
@@ -7192,6 +7297,10 @@ export interface components {
              */
             openErrorCount: number;
             practiceStats?: components["schemas"]["PracticeStatsOut"];
+            /** Queuetargets */
+            queueTargets?: {
+                [key: string]: components["schemas"]["ApplicationNextStepOut"];
+            };
             /** Queues */
             queues: {
                 [key: string]: number;
@@ -8349,6 +8458,7 @@ export interface components {
              * @default false
              */
             needsAttention: boolean;
+            nextStep?: components["schemas"]["ApplicationNextStepOut"] | null;
             /** Postedat */
             postedAt: string | null;
             /**
@@ -9192,6 +9302,17 @@ export interface components {
              */
             title: string;
         };
+        /** NotificationAcceptIn */
+        NotificationAcceptIn: {
+            event?: components["schemas"]["ApplicationEventCreate"] | null;
+            /**
+             * Eventdetailsconfirmed
+             * @default false
+             */
+            eventDetailsConfirmed: boolean;
+            /** Expectedrevision */
+            expectedRevision?: string | null;
+        };
         /** NotificationOut */
         NotificationOut: {
             /** Applicationid */
@@ -9215,6 +9336,8 @@ export interface components {
             messageId: string;
             /** Proposedstatus */
             proposedStatus: string;
+            /** Revision */
+            revision: string;
             /** State */
             state: string;
             /** Title */
@@ -9646,10 +9769,23 @@ export interface components {
             documentCount: number;
             /** Factsbuiltat */
             factsBuiltAt?: string | null;
+            /**
+             * Freshness
+             * @default unknown
+             * @enum {string}
+             */
+            freshness: "missing" | "unknown" | "current" | "refresh-needed";
             /** Githubusername */
             githubUsername?: string | null;
             /** Hasresume */
             hasResume: boolean;
+            /**
+             * Pendingsourcecount
+             * @default 0
+             */
+            pendingSourceCount: number;
+            /** Publishedat */
+            publishedAt?: string | null;
         };
         /** ProjectOut */
         ProjectOut: {
@@ -10337,6 +10473,8 @@ export interface components {
         };
         /** ResumeVersionOut */
         ResumeVersionOut: {
+            /** Applicationeligible */
+            applicationEligible?: boolean | null;
             /**
              * Createdat
              * Format: date-time
@@ -10370,6 +10508,8 @@ export interface components {
             origin: string;
             /** Parentversionid */
             parentVersionId?: number | null;
+            /** Pdfavailable */
+            pdfAvailable?: boolean | null;
             /** Pdfpath */
             pdfPath: string | null;
             /** Reviewscore */
@@ -10794,6 +10934,13 @@ export interface components {
             label: string;
             /** Readat */
             readAt?: string | null;
+            /**
+             * Resultavailable
+             * @default false
+             */
+            resultAvailable: boolean;
+            /** Resulthref */
+            resultHref?: string | null;
             /** Runid */
             runId: string;
             /**
@@ -12374,6 +12521,11 @@ export interface components {
             githubBranch?: string | null;
             /** Id */
             id: string;
+            /**
+             * Incorporated
+             * @default false
+             */
+            incorporated: boolean;
             /**
              * Mode
              * @enum {string}
@@ -19884,7 +20036,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["NotificationAcceptIn"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -20395,6 +20551,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CoachSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_coach_profile_api_profile_coach_sessions__session_id__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
                 };
             };
             /** @description Validation Error */
@@ -22192,6 +22381,39 @@ export interface operations {
                     "application/json": {
                         [key: string]: number;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    result_for_run_api_run_completions_by_run__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunCompletionOut"];
                 };
             };
             /** @description Validation Error */

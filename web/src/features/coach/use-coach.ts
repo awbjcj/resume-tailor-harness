@@ -215,6 +215,23 @@ export function useEndCoachSession() {
       });
 }
 
+export function useRefreshCoachProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sessionId }: { sessionId: string }) => {
+      const run = await unwrap(api.POST("/api/profile/coach/sessions/{session_id}/refresh", {
+        params: { path: { session_id: sessionId } },
+      }));
+      seedRun(run, async () => {
+        await queryClient.invalidateQueries();
+      });
+      return run;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["coach-session"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
 export function useSaveCoachNote() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -242,6 +259,7 @@ export function useSaveCoachNote() {
         queryClient.invalidateQueries({ queryKey: ["coach-session"] }),
         queryClient.invalidateQueries({ queryKey: ["coach-sessions"] }),
         queryClient.invalidateQueries({ queryKey: ["profile-sources"] }),
+        queryClient.invalidateQueries({ queryKey: ["setup-status"] }),
       ]);
     },
     onError: () => queryClient.invalidateQueries({ queryKey: ["coach-session"] }),

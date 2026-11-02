@@ -15,6 +15,8 @@ class RunCompletionOut(CamelModel):
     error: str | None = None
     completed_at: datetime
     read_at: datetime | None = None
+    result_href: str | None = None
+    result_available: bool = False
 
 
 class RunCompletionsReadOut(CamelModel):

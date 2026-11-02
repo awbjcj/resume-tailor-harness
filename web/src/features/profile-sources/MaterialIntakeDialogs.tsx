@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import "@/i18n/profile-publication";
 import { Link, StickyNote } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,12 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { useAddNote, useAddUrl } from "./use-sources";
 
-export function MaterialIntakeDialogs({ disabled = false }: { disabled?: boolean }) {
+export function MaterialIntakeDialogs({ disabled = false, onRefresh, refreshDisabled = false }: {
+  disabled?: boolean;
+  onRefresh?: () => Promise<unknown>;
+  refreshDisabled?: boolean;
+}) {
+  const { t } = useTranslation();
   const addNote = useAddNote();
   const addUrl = useAddUrl();
   const [noteOpen, setNoteOpen] = useState(false);
@@ -27,6 +34,19 @@ export function MaterialIntakeDialogs({ disabled = false }: { disabled?: boolean
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
+
+  const saveNote = async (refresh: boolean) => {
+    if (disabled || addNote.isPending || !title.trim() || !text.trim()) return;
+    try {
+      await addNote.mutateAsync({ title: title.trim(), text: text.trim() });
+      setTitle("");
+      setText("");
+      setNoteOpen(false);
+      if (refresh) await onRefresh?.();
+    } catch {
+      // The mutation reports the error and keeps the user's draft available.
+    }
+  };
 
   return (
     <>
@@ -40,17 +60,7 @@ export function MaterialIntakeDialogs({ disabled = false }: { disabled?: boolean
             className="grid gap-4"
             onSubmit={(event) => {
               event.preventDefault();
-              if (disabled) return;
-              addNote.mutate(
-                { title: title.trim(), text: text.trim() },
-                {
-                  onSuccess: () => {
-                    setTitle("");
-                    setText("");
-                    setNoteOpen(false);
-                  },
-                },
-              );
+              void saveNote(false);
             }}
           >
             <DialogHeader>
@@ -58,6 +68,7 @@ export function MaterialIntakeDialogs({ disabled = false }: { disabled?: boolean
               <DialogDescription>
                 Add first-hand context that is missing from your uploaded files.
               </DialogDescription>
+              <p className="text-sm text-muted-foreground">{t("profilePublication.saveHelp")}</p>
             </DialogHeader>
             <FieldGroup>
               <Field>
@@ -85,6 +96,11 @@ export function MaterialIntakeDialogs({ disabled = false }: { disabled?: boolean
                 {addNote.isPending ? <Spinner data-icon="inline-start" /> : null}
                 Save note
               </Button>
+              {onRefresh ? (
+                <Button type="button" disabled={disabled || refreshDisabled || addNote.isPending || !title.trim() || !text.trim()} onClick={() => void saveNote(true)}>
+                  {t("profilePublication.saveRefresh")}
+                </Button>
+              ) : null}
             </DialogFooter>
           </form>
         </DialogContent>

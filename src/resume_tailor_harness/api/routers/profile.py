@@ -59,6 +59,7 @@ from resume_tailor_harness.profile.corpus import (
     update_source,
 )
 from resume_tailor_harness.profile.fragments import fragment_cache_status
+from resume_tailor_harness.profile.publication import pending_sources
 from resume_tailor_harness.profile.github_harvest import sync_github_sources
 from resume_tailor_harness.profile.intake import add_note_source, add_url_source
 from resume_tailor_harness.profile.matrix import load_matrix
@@ -141,8 +142,6 @@ def launch_profile_build(request: Request, mgr: RunManager = Depends(get_run_man
 def _launch_build(
     request: Request,
     mgr: RunManager,
-    *,
-    singleton_conflict: str = "join",
 ) -> RunOut:
     profile_dir = _profile_dir(request)
     from resume_tailor_harness.profile.conversation import can_rebuild_without_resume
@@ -193,7 +192,9 @@ def _launch_build(
         "profile-build",
         work,
         singleton_key="profile-build",
-        singleton_conflict=singleton_conflict,
+        singleton_conflict="raise",
+        busy_code="PROFILE_BUILD_BUSY",
+        busy_message="A profile build is running. Refresh again after it finishes.",
     )
 
 
@@ -205,7 +206,10 @@ def _profile_dir(request: Request) -> Path:
     return get_profile_dir(request)
 
 
-def _source_out(profile_dir: Path, doc) -> SourceOut:
+def _source_out(
+    profile_dir: Path, doc, *, pending: set[str] | None = None
+) -> SourceOut:
+    pending = pending if pending is not None else pending_sources(profile_dir, {doc.id})
     return SourceOut(
         id=doc.id,
         filename=doc.filename,
@@ -218,6 +222,7 @@ def _source_out(profile_dir: Path, doc) -> SourceOut:
         file_exists=doc_path(profile_dir, doc).is_file(),
         repo_url=doc.repo_url,
         github_branch=doc.github_branch,
+        incorporated=doc.id not in pending,
     )
 
 
@@ -225,9 +230,9 @@ def _source_out(profile_dir: Path, doc) -> SourceOut:
 def list_sources(request: Request):
     profile_dir = _profile_dir(request)
     with source_lock(profile_dir):
-        return [
-            _source_out(profile_dir, doc) for doc in load_manifest(profile_dir).docs
-        ]
+        docs = load_manifest(profile_dir).docs
+        pending = pending_sources(profile_dir, {doc.id for doc in docs})
+        return [_source_out(profile_dir, doc, pending=pending) for doc in docs]
 
 
 @router.get("/profile/sources/github-exclusions", response_model=list[str])

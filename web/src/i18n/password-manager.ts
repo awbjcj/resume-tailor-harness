@@ -1,3 +1,4 @@
+import i18n from "i18next";
 export const passwordManagerEn = {
   title: "Password manager",
   description: "Save employer logins to use again when applying for another role at the same company.",
@@ -99,3 +100,12 @@ export const passwordManagerZh: typeof passwordManagerEn = {
   busyError: "另一项更改尚未完成，请稍后重试。",
   vaultError: "密码库暂不可用。请让部署管理员检查加密密钥和密码库备份。",
 };
+
+
+function register() {
+  i18n.addResourceBundle("en", "translation", { passwordManager: passwordManagerEn }, true, true);
+  i18n.addResourceBundle("zh-CN", "translation", { passwordManager: passwordManagerZh }, true, true);
+}
+
+if (i18n.isInitialized) register();
+else i18n.on("initialized", register);

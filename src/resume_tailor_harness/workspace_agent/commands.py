@@ -11,6 +11,7 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Session, col, select
 
 from resume_tailor_harness.services import application_events, board
+from resume_tailor_harness.services.application_materials import resume_application_eligible
 from resume_tailor_harness.services.config_store import YamlConfigStore
 from resume_tailor_harness.tracking.tables import (
     ApplicationQuestion,
@@ -327,6 +328,18 @@ def prepare_change(
             snap["resumes" if values["kind"] == "resume" else "cover_letters"],
             change.target_id,
         )
+        if op == "artifact.select":
+            eligible = (
+                resume_application_eligible(
+                    before["fact_check_passed"],
+                    before.get("critique_json"),
+                    before.get("gate_reviewers_json"),
+                )
+                if values["kind"] == "resume"
+                else before["fact_check_passed"]
+            )
+            if not eligible:
+                raise ValueError("This document failed factual safety checks and cannot be selected for an application")
         if (
             op == "artifact.delete"
             and snap["application"].get(

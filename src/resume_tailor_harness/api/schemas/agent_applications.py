@@ -7,6 +7,7 @@ from pydantic import ConfigDict, Field, StrictBool, StringConstraints, model_val
 
 from resume_tailor_harness.api.schemas.base import CamelModel
 from resume_tailor_harness.api.schemas.config import ApplicationProfileDoc
+from resume_tailor_harness.api.schemas.application_materials import ApplicationMaterialsOut
 
 QuestionText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)
@@ -102,4 +103,5 @@ class ApplicationContextOut(CamelModel):
     profile_revision: str
     questions: list[ApplicationQuestionOut]
     attachments: list[ApplicationAttachmentOut]
+    materials: ApplicationMaterialsOut | None = None
     submission_policy: Literal["stop_before_submit"] = "stop_before_submit"

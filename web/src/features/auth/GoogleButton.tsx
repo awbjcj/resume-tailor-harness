@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { api, unwrap } from "@/lib/api/client";
+import { useSearchParams } from "react-router-dom";
+import { rememberTaskDestination, taskDestination } from "@/lib/task-continuation";
 
 function GoogleMark() {
   return (
@@ -25,6 +27,7 @@ export function GoogleButton({
   invite?: string;
   disabledReason?: string;
 }) {
+  const [params] = useSearchParams();
   const health = useQuery({
     queryKey: ["health"],
     queryFn: () => unwrap(api.GET("/api/health")),
@@ -37,7 +40,10 @@ export function GoogleButton({
           params: { query: { mode, ...(invite ? { invite } : {}) } },
         }),
       ),
-    onSuccess: ({ authUrl }) => window.location.assign(authUrl),
+    onSuccess: ({ authUrl }) => {
+      rememberTaskDestination(taskDestination(params));
+      window.location.assign(authUrl);
+    },
   });
   const reason =
     disabledReason ??

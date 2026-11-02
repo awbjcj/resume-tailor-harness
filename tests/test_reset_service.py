@@ -20,6 +20,7 @@ from resume_tailor_harness.tracking.tables import (
     Notification,
     ResumeVersion,
     RunCompletion,
+    RunCompletionTarget,
     RunOperationLog,
     SavedBoardView,
     SkillSuggestion,
@@ -98,6 +99,7 @@ def _seed_pipeline(session: Session) -> None:
         RunOperationLog(run_id="run-1", entries=[{"message": "private operation"}])
     )
     session.add(ClearedRunHistory(run_id="cleared-1", surface="operations"))
+    session.add(RunCompletionTarget(run_id="run-1", job_ids_json=[job.id]))
     session.add(
         SavedBoardView(board="shortlist", name="Top roles", query_string="fitMin=80")
     )
@@ -163,6 +165,7 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
         "runoperationlog": 1,
         "clearedrunhistory": 1,
         "run_completions": 1,
+        "run_completion_targets": 1,
         "saved_board_views": 1,
         "notifications": 1,
         "applications": 1,
@@ -223,7 +226,7 @@ def test_all_scope_preserves_config_secrets_and_overrides(session, paths):
 
     report = reset_workspace(session, paths, ResetScope.all)
 
-    assert sum(report.rows_deleted.values()) == 10
+    assert sum(report.rows_deleted.values()) == 11
     assert report.areas_cleared == [
         "output",
         "runs",

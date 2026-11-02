@@ -4,13 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 
 import { server } from "@/test/server";
 import { JobModal } from "./JobModal";
 
-const wrap = (ui: ReactNode) => {
+const wrap = (ui: ReactNode, initialPath = "/") => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+  return render(<MemoryRouter initialEntries={[initialPath]}><QueryClientProvider client={qc}>{ui}</QueryClientProvider></MemoryRouter>);
 };
 
 const jobPayload = (overrides: Record<string, unknown> = {}) => ({
@@ -36,6 +37,12 @@ const jobPayload = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("JobModal", () => {
+  it("opens the requested tab when continuing a specific Job", async () => {
+    server.use(http.get("/api/jobs/42", () => HttpResponse.json(jobPayload())));
+    wrap(<JobModal jobId={42} onClose={() => {}} />, "/pipeline?job=42&tab=resumes");
+    expect(await screen.findByRole("heading", { name: "Resume versions" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Resumes" })).toHaveAttribute("aria-selected", "true");
+  });
   it("renders job detail with a heading and the JD text", async () => {
     server.use(http.get("/api/jobs/42", () => HttpResponse.json(jobPayload())));
     wrap(<JobModal jobId={42} onClose={() => {}} />);

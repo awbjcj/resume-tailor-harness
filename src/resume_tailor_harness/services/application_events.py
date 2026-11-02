@@ -204,8 +204,17 @@ def _warn_duplicate_override(session: Session, event: ApplicationEvent) -> None:
 
 
 def create_event(
-    session: Session, job_id: int, payload: dict[str, Any]
+    session: Session,
+    job_id: int,
+    payload: dict[str, Any],
+    *,
+    commit: bool = True,
 ) -> ApplicationEvent:
+    """Create an event, optionally joining the caller's atomic transaction.
+
+    ``commit=False`` still validates, flushes, resequences and advances status;
+    the caller must commit the combined operation. Failures roll it back.
+    """
     _validate(payload)
     try:
         application = _application(session, job_id)
@@ -229,8 +238,9 @@ def create_event(
         session.flush()
         _resequence_group(session, application_id, kind)
         _advance(session, application, kind)
-        session.commit()
-        session.refresh(event)
+        if commit:
+            session.commit()
+            session.refresh(event)
         return event
     except BaseException:
         session.rollback()

@@ -39,7 +39,7 @@ export const HEALTH_ITEMS: HealthItem[] = [
     label: "Profile facts built",
     labelKey: "dashboard.health.facts",
     to: "/profile",
-    ok: (s) => s.profile.factsBuiltAt != null,
+    ok: (s) => s.profile.factsBuiltAt != null && s.profile.freshness !== "refresh-needed",
   },
   {
     key: "search",

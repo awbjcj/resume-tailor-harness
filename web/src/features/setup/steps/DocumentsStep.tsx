@@ -8,6 +8,7 @@ import { DocumentManager } from "@/features/settings/forms/DocumentManager";
 import { useConfig, useSaveConfig } from "@/features/settings/use-config";
 import { useDraft } from "@/features/settings/use-draft";
 import type { paths } from "@/lib/api/schema";
+import { useSetupContinuation } from "../use-setup-continuation";
 
 type ProfileDoc = paths["/api/config/profile"]["get"]["responses"][200]["content"]["application/json"];
 
@@ -16,10 +17,14 @@ export function DocumentsStep() {
   const save = useSaveConfig("/api/config/profile");
   const { draft, setDraft } = useDraft(data as ProfileDoc | undefined);
   const navigate = useNavigate();
+  const { nextPath } = useSetupContinuation();
 
-  const continueToNext = () => {
-    if (draft) save.mutate(draft);
-    navigate("/setup/search");
+  const continueToNext = async () => {
+    if (!draft) return;
+    try {
+      await save.mutateAsync(draft);
+      navigate(nextPath("documents"));
+    } catch { /* Keep the draft and the step; mutation displays the error. */ }
   };
 
   return (
@@ -39,8 +44,8 @@ export function DocumentsStep() {
         )}
       </CardContent>
       <CardFooter className="justify-end gap-2">
-        <Button variant="ghost" onClick={() => navigate("/setup/search")}>Skip for now</Button>
-        <Button onClick={continueToNext}>Save & continue</Button>
+        <Button variant="ghost" disabled={save.isPending} onClick={() => navigate(nextPath("documents"))}>Skip for now</Button>
+        <Button disabled={!draft || save.isPending} onClick={() => void continueToNext()}>Save & continue</Button>
       </CardFooter>
     </Card>
   );

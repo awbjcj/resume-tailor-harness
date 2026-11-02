@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useSessionSelection } from "@/lib/chat/use-session-selection";
 import { FileText, ListChecks, MessageCircleMore, Sparkles, SquareCheckBig } from "lucide-react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
@@ -64,7 +64,7 @@ export function CareerLabPage() {
   const { i18n } = useTranslation();
   const [newOpen, setNewOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [selectedSessionId, setSelectedSessionId] = useSessionSelection();
   const sessions = useCareerLabSessions({ includeArchived: showArchived });
   const skills = useCareerLabSkills();
   // Active threads are per job, so there can be several. The API exposes the
@@ -83,15 +83,6 @@ export function CareerLabPage() {
     const unanchored = active.find((row) => row.jobId == null);
     return { activeSummary: unanchored ?? active[0], unanchoredActive: unanchored };
   }, [sessions.data?.activeSessions, sessions.data?.sessions]);
-  // `?session=` is an opening selection, not a standing one — a job's Career Lab
-  // tab links here to name the thread to show. It seeds the selection instead of
-  // acting as a fallback beneath it, because a fallback outlives the action meant
-  // to clear it: deleting or archiving the linked thread resets
-  // `selectedSessionId`, and a still-present param would immediately re-select
-  // the row that no longer exists.
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
-    () => searchParams.get("session"),
-  );
   const displayedSessionId = selectedSessionId ?? activeSummary?.sessionId ?? null;
   const session = useCareerLabSession(displayedSessionId);
   const start = useStartCareerLab();

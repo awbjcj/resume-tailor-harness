@@ -40,7 +40,23 @@ function completedCount(count: number, kind: "job" | "resumeVersion" | "coverLet
   return i18n.t(`runHistory.counts.${kind}`, { count });
 }
 
-function announceOne(run: RunRecord): void {
+function announceOne(run: RunRecord, openResult?: (runId: string) => void): void {
+  const notify = (method: "success" | "error" | "info", message: string) => {
+    if (openResult) toast[method](message, { action: {
+      label: i18n.t(run.status === "succeeded" ? "runHistory.openResult" : "runHistory.openWorkspace"),
+      onClick: () => openResult(run.runId),
+    } });
+    else toast[method](message);
+  };
+  const completionToast = {
+    success: (message: string) => notify("success", message),
+    error: (message: string) => notify("error", message),
+    info: (message: string) => notify("info", message),
+  };
+  announceOneMessage(run, completionToast);
+}
+
+function announceOneMessage(run: RunRecord, toast: { success: (message: string) => void; error: (message: string) => void; info: (message: string) => void }): void {
   if (run.status === "failed") {
     toast.error(`${localizedRunLabel(run.kind)} ${i18n.t("runHistory.outcomes.failed")}: ${localizeRunError(run.error, i18n.resolvedLanguage) ?? i18n.t("dashboard.errorsUnavailable")}`);
     return;
@@ -153,7 +169,7 @@ function announceOne(run: RunRecord): void {
  * reconnect can surface several completions at once, and deciding "toast or
  * summarise" one run at a time cannot see how many siblings are coming.
  */
-export function announceCompletions(runs: readonly RunRecord[]): void {
+export function announceCompletions(runs: readonly RunRecord[], openResult?: (runId: string) => void): void {
   runs = runs.filter(visibleRunCompletion);
   if (runs.length === 0) return;
   if (runs.length > ANNOUNCE_TOAST_CAP) {
@@ -166,5 +182,5 @@ export function announceCompletions(runs: readonly RunRecord[]): void {
     else toast.success(summary);
     return;
   }
-  for (const run of runs) announceOne(run);
+  for (const run of runs) announceOne(run, openResult);
 }

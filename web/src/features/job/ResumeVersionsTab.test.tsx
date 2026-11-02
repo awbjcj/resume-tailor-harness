@@ -134,13 +134,13 @@ describe("ResumeVersionsTab", () => {
     expect(mocks.api.POST).not.toHaveBeenCalled();
   });
 
-  it("unselects an applied version through the Applied toggle", async () => {
+  it("unselects the chosen version through its selection toggle", async () => {
     const user = userEvent.setup();
     wrap(
       <ResumeVersionsTab jobId={3} versions={[version(1, 0)]} appliedVersionId={1} />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Applied/ }));
+    await user.click(screen.getByRole("button", { name: /Selected for application/ }));
 
     expect(mocks.api.DELETE).toHaveBeenCalledWith(
       "/api/jobs/{job_id}/select-resume",

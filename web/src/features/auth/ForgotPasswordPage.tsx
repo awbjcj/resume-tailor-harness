@@ -1,7 +1,8 @@
 import { type FormEvent, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { LifeBuoy } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { taskDestination, withTaskDestination } from "@/lib/task-continuation";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -11,18 +12,19 @@ import { api, unwrap } from "@/lib/api/client";
 import { AuthLayout } from "./AuthLayout";
 
 export function ForgotPasswordPage() {
+  const [params] = useSearchParams();
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
   const forgot = useMutation({
     mutationFn: () => unwrap(api.POST("/api/auth/password/forgot", { body: { email } })),
-    onSuccess: () => navigate(`/reset-password?email=${encodeURIComponent(email)}`, { replace: true }),
+    onSuccess: () => navigate(withTaskDestination(`/reset-password?email=${encodeURIComponent(email)}`, taskDestination(params)), { replace: true }),
   });
   const submit = (event: FormEvent) => {
     event.preventDefault();
     forgot.mutate();
   };
   return (
-    <AuthLayout title="Reset your password" description="Enter your email and we’ll send a single-use code." icon={<LifeBuoy aria-hidden="true" />} footer={<Link className="text-muted-foreground underline underline-offset-4" to="/login">Back to sign in</Link>}>
+    <AuthLayout title="Reset your password" description="Enter your email and we’ll send a single-use code." icon={<LifeBuoy aria-hidden="true" />} footer={<Link className="text-muted-foreground underline underline-offset-4" to={withTaskDestination("/login", taskDestination(params))}>Back to sign in</Link>}>
       <form onSubmit={submit}>
         <Field><FieldLabel htmlFor="forgot-email">Email</FieldLabel><Input id="forgot-email" type="email" autoComplete="email" value={email} disabled={forgot.isPending} onChange={(event) => setEmail(event.target.value)} required /></Field>
         {forgot.isError ? <p className="mt-3 text-sm text-destructive" role="alert">{forgot.error.message}</p> : null}

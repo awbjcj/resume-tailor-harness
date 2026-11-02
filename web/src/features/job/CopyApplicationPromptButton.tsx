@@ -27,7 +27,7 @@ export function CopyApplicationPromptButton({ jobId, compact = false }: { jobId:
       }));
       try {
         await navigator.clipboard.writeText(prompt);
-        toast.success("Application prompt copied in English");
+        toast.success("Application preparation copied in English. Files are not attached.");
       } catch {
         setFallback(prompt);
       }
@@ -45,7 +45,7 @@ export function CopyApplicationPromptButton({ jobId, compact = false }: { jobId:
         size={compact ? "icon-sm" : "sm"}
         variant={compact ? "ghost" : "outline"}
         aria-label="Copy application prompt"
-        title="Copy application prompt"
+        title="Copy application preparation and selected material IDs. Download files separately."
         disabled={pending}
         aria-busy={pending}
         onClick={(event) => {
@@ -65,7 +65,7 @@ export function CopyApplicationPromptButton({ jobId, compact = false }: { jobId:
           <DialogHeader className="pr-6">
             <DialogTitle>Copy application prompt</DialogTitle>
             <DialogDescription>
-              Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant.
+              Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant. Selected files must be downloaded separately.
             </DialogDescription>
           </DialogHeader>
           <Textarea

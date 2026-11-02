@@ -22,6 +22,8 @@ import { localizeRunError, localizeRunKind, localizeRunPhase } from "@/i18n/dyna
 import { formatUserDateTime } from "@/lib/date-time";
 
 import { ClearHistoryButton } from "./ClearHistoryButton";
+import { RunResultLink } from "@/features/runs/RunResultLink";
+import { ApplicationUpdateReviewDialog } from "./ApplicationUpdateReviewDialog";
 
 function isEventNudge(kind: string): boolean {
   return kind === "interview_soon" || kind === "offer_deadline_soon";
@@ -162,6 +164,7 @@ export function NotificationsBell() {
                                 ? localizeRunPhase(item.label, i18n.resolvedLanguage)
                                 : formatUserDateTime(item.completedAt, i18n.resolvedLanguage))}
                           </p>
+                          <div className="mt-2"><RunResultLink item={item} /></div>
                         </div>
                         {item.readAt == null && (
                           <Button
@@ -199,7 +202,7 @@ export function NotificationsBell() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 flex justify-end gap-2">
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -209,6 +212,7 @@ export function NotificationsBell() {
                     <X className="size-4" aria-hidden="true" />
                     Dismiss
                   </Button>
+                  {item.proposedStatus && <ApplicationUpdateReviewDialog item={item} />}
                   {isEventNudge(item.kind) && item.jobId != null ? (
                     <Button size="sm" render={<Link to={`/pipeline?job=${item.jobId}`} />}>
                       View job

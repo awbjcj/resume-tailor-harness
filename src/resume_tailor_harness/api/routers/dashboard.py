@@ -3,8 +3,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from sqlmodel import Session
 
-from resume_tailor_harness.api.deps import get_interview_dir, get_profile_dir, get_session
+from resume_tailor_harness.api.deps import (
+    get_interview_dir,
+    get_profile_dir,
+    get_session,
+)
 from resume_tailor_harness.api.schemas.coach import CoachSessionSummaryOut
+from resume_tailor_harness.api.schemas.continuation import ApplicationNextStepOut
 from resume_tailor_harness.api.schemas.dashboard import (
     DashboardSummaryOut,
     PracticeStatsOut,
@@ -21,7 +26,9 @@ from resume_tailor_harness.services.errors import count_open
 from resume_tailor_harness.services.mock_interview import (
     sessions_view as interview_sessions_view,
 )
-from resume_tailor_harness.services.profile_coach import sessions_view as coach_sessions_view
+from resume_tailor_harness.services.profile_coach import (
+    sessions_view as coach_sessions_view,
+)
 from resume_tailor_harness.tracking.queries import upcoming_events
 from resume_tailor_harness.tracking.event_vocab import INTERVIEW_KINDS
 
@@ -46,6 +53,10 @@ def get_dashboard_summary(request: Request, session: Session = Depends(get_sessi
         status_counts=summary.status_counts,
         queues=summary.queues,
         applied=summary.applied,
+        queue_targets={
+            key: ApplicationNextStepOut.model_validate(value)
+            for key, value in summary.queue_targets.items()
+        },
         open_error_count=count_open(session),
         active_interviews=[
             InterviewSessionSummaryOut.model_validate(row) for row in interview_rows

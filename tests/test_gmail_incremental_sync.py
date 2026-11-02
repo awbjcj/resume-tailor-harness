@@ -175,6 +175,70 @@ def test_new_classifier_version_corrects_existing_pending_proposal(
             assert notice.proposed_status == "rejected"
 
 
+@pytest.mark.parametrize("corrected_label", ["none", "rejection"])
+def test_stale_sync_correction_never_reopens_an_accepted_timeline_proposal(
+    tmp_path, monkeypatch, corrected_label
+):
+    from datetime import datetime, timezone
+
+    from resume_tailor_harness.gmail.classify import SyncClassifier
+    from resume_tailor_harness.gmail.processing import MessageProcessor
+    from resume_tailor_harness.services.notifications import notification_revision
+    from resume_tailor_harness.tracking.tables import ApplicationEvent
+
+    engine = _seed()
+    service = FakeGmailService([_mail("m1", decision="interview")])
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    with Session(engine) as session:
+        notice = session.exec(select(Notification)).one()
+        receipt = session.exec(select(GmailReceipt)).one()
+        assert notice.id is not None
+        notice_id = notice.id
+        revision = notification_revision(notice)
+        processor = MessageProcessor(
+            None, session, receipt.account,
+            SyncClassifier(None, None, 20, lambda _: None), lambda: None,
+        )
+        receipt.label = corrected_label
+        session.add(receipt)
+        session.commit()
+        original_exec = session.exec
+        accepted = False
+
+        def select_before_accept(statement, *args, **kwargs):
+            nonlocal accepted
+            result = original_exec(statement, *args, **kwargs)
+            if not accepted and any(
+                description.get("entity") is Notification
+                for description in getattr(statement, "column_descriptions", [])
+            ):
+                # Finish loading the pending ORM rows, then interleave the
+                # user's atomic acceptance before sync corrects those rows.
+                notices = result.all()
+                accepted = True
+                with Session(engine) as other:
+                    assert accept_notification(
+                        other, notice_id,
+                        event={
+                            "kind": "technical_round", "all_day": True,
+                            "occurred_at": datetime(2026, 11, 6, tzinfo=timezone.utc),
+                        },
+                        expected_revision=revision, event_details_confirmed=True,
+                    ) is not None
+                return Mock(all=lambda: notices)
+            return result
+
+        monkeypatch.setattr(session, "exec", select_before_accept)
+        processor._propose_latest({1})
+        assert accepted
+        session.commit()
+        session.refresh(notice)
+        assert notice.state == "accepted"
+        assert notice.proposed_status == "interview"
+        assert accept_notification(session, notice_id) is None
+        assert len(session.exec(select(ApplicationEvent)).all()) == 1
+
+
 def test_cancelled_batch_retains_discovered_queue_and_can_resume(tmp_path):
     engine = _seed()
     service = FakeGmailService([_mail("m1")])
