@@ -11,7 +11,7 @@ from resume_tailor_harness.render.sample_content import sample_resume_content
 from resume_tailor_harness.render.templates import BUNDLED, resolve_template
 
 
-def _dense_content(roles=4, bullets=5, projects=3):
+def _dense_content(roles=3, bullets=4, projects=2):
     content = sample_resume_content()
     content.summary = None
     content.summary_provenance = []
@@ -144,7 +144,7 @@ def test_unbalanced_content_requests_revision_and_keeps_previous_artifact(tmp_pa
     path.write_bytes(b"previous validated artifact")
     with pytest.raises(renderer.PageBalanceError, match="verified"):
         renderer.render_pdf(
-            _dense_content(roles=5, bullets=6, projects=3), path, fit_pages=2
+            _dense_content(roles=4, bullets=5, projects=3), path, fit_pages=2
         )
     assert path.read_bytes() == b"previous validated artifact"
     assert list(tmp_path.iterdir()) == [path]

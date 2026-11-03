@@ -1,3 +1,9 @@
+import pytest
+from sqlmodel import Session
+
+from resume_tailor_harness.tracking.tables import CoverLetter, Job, ResumeVersion
+
+
 def _login(client):
     response = client.post(
         "/api/auth/login",
@@ -83,6 +89,50 @@ def test_download_link_is_purpose_bound(mu_client):
 
     assert mu_client.get(f"/api/account/export?token={download}").status_code == 200
     assert mu_client.get(f"/api/account/export?token={sse}").status_code == 401
+
+
+@pytest.mark.parametrize("kind", ["resume-versions", "cover-letters"])
+def test_native_pdf_preview_accepts_only_a_download_capability(mu_app, mu_client, kind):
+    _login(mu_client)
+    context = mu_app.state.default_context
+    path = context.paths.root / "output" / "preview.pdf"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"%PDF-1.4 test")
+    with Session(context.engine) as session:
+        job = Job(source="manual", jd_text="x", company="Acme", title="Engineer")
+        session.add(job)
+        session.commit()
+        session.refresh(job)
+        assert job.id is not None
+        artifact = (
+            ResumeVersion(job_id=job.id, round=0, pdf_path=str(path))
+            if kind == "resume-versions"
+            else CoverLetter(job_id=job.id, pdf_path=str(path))
+        )
+        session.add(artifact)
+        session.commit()
+        session.refresh(artifact)
+        artifact_id = artifact.id
+    download = mu_client.post(
+        "/api/auth/link-token", json={"purpose": "download"}
+    ).json()["token"]
+    sse = mu_client.post("/api/auth/link-token", json={"purpose": "sse"}).json()[
+        "token"
+    ]
+    mu_client.cookies.clear()
+    url = f"/api/{kind}/{artifact_id}/preview"
+    assert mu_client.get(url).status_code == 401
+    assert mu_client.get(f"{url}?token={sse}").status_code == 401
+    response = mu_client.get(f"{url}?token={download}")
+    assert response.status_code == 200
+    assert response.content == path.read_bytes()
+    assert response.headers["content-disposition"].startswith(
+        'inline; filename="Acme-Engineer-'
+    )
+    # The native PDF viewer can issue range requests with the same capability.
+    partial = mu_client.get(f"{url}?token={download}", headers={"Range": "bytes=0-7"})
+    assert partial.status_code == 206
+    assert partial.content == b"%PDF-1.4"
 
 
 def test_admin_export_accepts_an_admin_download_link(mu_client):

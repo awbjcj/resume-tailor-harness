@@ -19,22 +19,35 @@
 #let theme = styles.at(style)
 #set document(title: contact.name)
 #set page(paper: "us-letter", margin: (x: 0.6in, y: 0.55in))
-#let body-size = calc.clamp(10.5 * zoom, 10, 12) * 1pt
-#set text(font: theme.font, size: body-size, hyphenate: false, fill: black)
-#set par(justify: false, leading: (0.45 - density * 0.17) * 1em, spacing: 0.35em)
-#set list(indent: 0pt, body-indent: 0.8em, marker: [•], spacing: (0.3 - density * 0.2) * 1em)
+#let body-size = calc.clamp(11 * zoom, 10, 12) * 1pt
+#let metadata-size = calc.max(10pt, body-size - 0.5pt)
+#let title-size = calc.min(12pt, body-size + 0.5pt)
+// These gaps retain a readable floor even at the compact density limit.
+// Fixed font edges keep wrapped baselines consistent across bundled families.
+#let row-gap = (3.8 - density * 0.8) * 1pt
+#let detail-gap = (4.5 - density) * 1pt
+#let entry-gap = (7 - density * 2) * 1pt
+#set text(
+  font: theme.font, size: body-size, hyphenate: false, fill: black,
+  top-edge: 0.78em, bottom-edge: -0.2em,
+)
+#set par(justify: false, leading: (0.32 - density * 0.06) * 1em, spacing: detail-gap)
+#set list(
+  indent: 0pt, body-indent: 0.9em, marker: [•], tight: false,
+  spacing: (3.5 - density) * 1pt,
+)
+#show list: set block(above: detail-gap, below: 0pt)
 #show list.item: set block(breakable: false)
 
 #let section-title(t) = block(
   width: 100%, sticky: true, breakable: false,
-  above: theme.gap * (1 - density * 0.35), below: 4pt - density * 1pt,
+  above: theme.gap * (1 - density * 0.2), below: 5pt - density * 0.75pt,
 )[
   #set align(if style == "graduate" { center } else { left })
-  #text(size: 12pt, weight: "bold", fill: theme.accent)[#(if theme.caps { upper(t) } else { t })]
-  #if theme.rule [
-    #v(-3pt)
-    #line(length: 100%, stroke: 0.5pt + theme.accent)
-  ]
+  #let label = text(size: 12pt, weight: "bold", fill: theme.accent)[#(if theme.caps { upper(t) } else { t })]
+  #if theme.rule {
+    stack(dir: ttb, spacing: 2pt, label, line(length: 100%, stroke: 0.5pt + theme.accent))
+  } else { label }
 ]
 #let break-before(key) = if sys.inputs.at("break_before", default: "") == key { pagebreak() }
 
@@ -104,14 +117,23 @@
 #let maybe-join(values) = values.filter(x => x != none and x != "").join(", ")
 #let linked(title, url) = if url != none and url != "" { link(url)[#title] } else { [#title] }
 
-// Inline text preserves reading order without layout tables or columns.
+// Each row owns its vertical gap; a manual linebreak would inherit the much
+// tighter body leading. Inline text retains extraction order and full width.
+#let detail-row(body, size: body-size, keep-with-next: false) = block(
+  above: detail-gap, below: 0pt, sticky: keep-with-next,
+)[#text(size: size)[#body]]
 #let subheading(row1-left, row1-right, row2-left, row2-right) = block(
-  sticky: true, breakable: false, above: 4pt - density * 2pt, below: 2pt,
+  sticky: true, breakable: false, above: entry-gap, below: 0pt,
 )[
-  *#row1-left* #h(1fr) #text(size: 10pt)[#row1-right]
-  #if row2-left != none or row2-right != none [
-    \ #emph[#(if row2-left != none { row2-left } else { [] })]
-    #if row2-right != none and row2-right != "" [#h(1fr) #text(size: 10pt)[#row2-right]]
+  #block(above: 0pt, below: 0pt)[
+    #text(size: title-size, weight: "bold")[#row1-left]
+    #if row1-right != none and row1-right != "" [#h(0.8em)#h(1fr)#text(size: metadata-size)[#row1-right]]
+  ]
+  #if (row2-left != none and row2-left != "") or (row2-right != none and row2-right != "") [
+    #block(above: row-gap, below: 0pt)[
+      #emph[#(if row2-left != none { row2-left } else { [] })]
+      #if row2-right != none and row2-right != "" [#h(0.8em)#h(1fr)#text(size: metadata-size)[#row2-right]]
+    ]
   ]
 ]
 #let dates(start, end) = {
@@ -120,27 +142,30 @@
   values.join(" – ")
 }
 #let bullets(items) = if items.len() > 0 {
-  list(..items.map(b => highlight(b.text, highlight-keywords)))
+  // A two-bullet entry should not leave its last bullet alone on the next page.
+  // Longer lists can continue at the existing, unbroken bullet boundaries.
+  block(above: detail-gap, below: 0pt, breakable: items.len() > 2)[
+    #list(..items.map(b => highlight(b.text, highlight-keywords)))
+  ]
 }
 
 // Header
 #align(if theme.centered { center } else { left })[
-  #text(size: 20pt, weight: "bold", fill: theme.accent)[#contact.name]
-  #if contact.at("headline", default: none) != none [
-    \ #text(size: 10.5pt, style: "italic")[#contact.headline]
+  #block(above: 0pt, below: 0pt)[#text(size: 20pt, weight: "bold", fill: theme.accent)[#contact.name]]
+  #if contact.at("headline", default: none) != none and contact.headline != "" [
+    #block(above: row-gap, below: 0pt)[#text(size: body-size, style: "italic")[#contact.headline]]
   ]
   #let parts = (
     contact.at("location", default: none),
     contact.at("email", default: none),
     contact.at("phone", default: none),
   ).filter(x => x != none and x != "")
-  #if parts.len() > 0 [ \ #text(size: 10pt)[#parts.join("   |   ")] ]
+  #if parts.len() > 0 [#block(above: row-gap, below: 0pt)[#text(size: metadata-size)[#parts.join("   |   ")]]]
   #let links = contact.at("links", default: ())
   #if links.len() > 0 [
-    \ #text(size: 10pt)[#links.map(l => underline[#link(l.url)[#l.label]]).join("   |   ")]
+    #block(above: row-gap, below: 0pt)[#text(size: metadata-size)[#links.map(l => underline[#link(l.url)[#l.label]]).join("   |   ")]]
   ]
 ]
-#v(2pt)
 
 #let summary-block() = {
   let summary = data.at("summary", default: none)
@@ -166,7 +191,6 @@
           e.at("location", default: none),
         )
         #bullets(e.at("bullets", default: ()))
-        #v(1pt)
       ]
     ]
   }
@@ -191,12 +215,11 @@
           if ed.at("gpa", default: none) != none { "GPA: " + ed.gpa } else { none },
           if ed.at("honors", default: ()).len() > 0 { ed.honors.join(", ") } else { none },
         ).filter(x => x != none and x != "")
-        #if tail.len() > 0 [ #emph(tail.join("   |   ")) \ ]
+        #if tail.len() > 0 { detail-row(emph(tail.join("   |   ")), size: metadata-size) }
         #let coursework = ed.at("relevant_coursework", default: ())
-        #if coursework.len() > 0 [ #emph("Coursework: " + coursework.join(", ")) \ ]
+        #if coursework.len() > 0 { detail-row(emph("Coursework: " + coursework.join(", ")), size: metadata-size) }
         #let activities = ed.at("activities", default: ())
-        #if activities.len() > 0 [ #emph("Activities: " + activities.join(", ")) \ ]
-        #v(2pt)
+        #if activities.len() > 0 { detail-row(emph("Activities: " + activities.join(", ")), size: metadata-size) }
       ]
     ]
   }
@@ -212,11 +235,10 @@
         #let tech = p.at("tech", default: ())
         #subheading(p.name, dates(p.at("start", default: none), p.at("end", default: none)), p.at("role", default: none), none)
         #let urls = (p.at("url", default: none), p.at("repo_url", default: none)).filter(u => u != none and u != "").dedup()
-        #if urls.len() > 0 [#urls.map(u => linked(u, u)).join(" | ") \ ]
-        #if tech.len() > 0 [#text(size: 10pt)[#tech.join(" · ")] \ ]
-        #if p.at("description", default: none) != none [#p.description \ ]
+        #if urls.len() > 0 { detail-row(urls.map(u => linked(u, u)).join(" | "), size: metadata-size, keep-with-next: true) }
+        #if tech.len() > 0 { detail-row(tech.join(" · "), size: metadata-size, keep-with-next: true) }
+        #if p.at("description", default: none) != none and p.description != "" { detail-row(p.description, keep-with-next: p.at("bullets", default: ()).len() > 0) }
         #bullets(p.at("bullets", default: ()))
-        #v(1pt)
       ]
     ]
   }
@@ -229,7 +251,7 @@
       #section-title("Skills")
       #for (category, items) in skills [
         // Keep emphasis on the category; skill names read as ordinary body text.
-        *#category:* #items.map(s => s.name).join(", ") \
+        #block(above: row-gap, below: 0pt, breakable: false)[*#category:* #items.map(s => s.name).join(", ")]
       ]
     ]
   }
@@ -304,9 +326,8 @@
           vol.at("role", default: none),
           none,
         )
-        #if vol.at("description", default: none) != none [ #highlight(vol.description, highlight-keywords) \ ]
+        #if vol.at("description", default: none) != none and vol.description != "" { detail-row(highlight(vol.description, highlight-keywords), keep-with-next: vol.at("bullets", default: ()).len() > 0) }
         #bullets(vol.at("bullets", default: ()))
-        #v(1pt)
       ]
     ]
   }
@@ -324,7 +345,7 @@
       #section-title(section.title)
       #for entry in section.entries [
         #subheading(linked(entry.title, entry.at("url", default: none)), entry.at("date", default: ""), entry.at("organization", default: none), none)
-        #if entry.at("description", default: none) != none [#entry.description \ ]
+        #if entry.at("description", default: none) != none and entry.description != "" { detail-row(entry.description) }
       ]
     ]
   }

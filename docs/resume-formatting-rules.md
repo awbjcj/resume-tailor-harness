@@ -53,8 +53,13 @@ combined below rather than copied wholesale into every model prompt.
    they do not force truncation or padding. The final PDF supplies the layout
    measurement.
 5. **Layout adjustment:** US Letter, 0.6in horizontal/0.55in vertical margins,
-   10–12pt body, 12pt headings, 20pt name; adjust leading and bullet/entry/section
-   spacing together. Retain hyperlinks, content, ordering and provenance.
+   10–12pt body (11pt by default), 12pt headings, 20pt name; adjust leading and
+   bullet/entry/section spacing together. Entry titles are slightly larger than
+   body text; secondary metadata stays at least 10pt. Use distinct blocks for
+   titles, roles, project technologies/links/descriptions and skill categories.
+   Compact fitting retains a 1.24em body baseline distance, 3pt between heading
+   rows, 3.5pt around detail rows and 2.5pt between bullets. Retain hyperlinks,
+   content, ordering and provenance.
 6. **Page acceptance:** one page, or two pages with at least 80% of the printable
    height occupied on each. Try compacting a short spill first, then bounded
    expansion. If neither works, request a content revision and preserve existing
@@ -93,6 +98,12 @@ Visual tests exercise real PNG delivery in both panel modes and workflow variant
 fresh screenshots after revision, failure propagation, bounded previews and cleanup,
 font preferences, and the independent fact gates. Provider transport is tested with
 fakes; these tests do not establish live model vision quality.
+
+PDF glyph-bound tests cover all eight layouts at roomy, default and compact
+densities, including wrapped titles/technology lists, missing optional metadata,
+role-to-bullet spacing, education details and portfolio links. Preview/download
+tests keep friendly filenames consistent for ASCII and Unicode job names and
+check native-viewer access and range requests with purpose-bound capabilities.
 
 The multimodal adapter follows [Agno's image-bytes interface](https://docs.agno.com/models/providers/native/anthropic/usage/image-input-bytes).
 Rasterization follows [PDFium's rendering and threading rules](https://pypdfium2.readthedocs.io/en/stable/python_api.html).

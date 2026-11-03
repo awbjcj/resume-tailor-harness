@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from resume_tailor_harness.api.app import create_app
@@ -61,13 +62,18 @@ def test_cover_letter_pdf_download_uses_friendly_filename(tmp_path):
     )
 
 
-def test_cover_letter_preview_serves_inline_without_attachment_disposition(tmp_path):
+@pytest.mark.parametrize(
+    "company,title", [("Acme Corp", "Senior Engineer"), ("示例公司", "软件工程师")]
+)
+def test_cover_letter_preview_serves_inline_with_the_download_filename(
+    tmp_path, company, title
+):
     client = _client()
     pdf = tmp_path / "ok.pdf"
     pdf.write_bytes(b"%PDF-1.4 test")
     with client:
         with get_session(client.app.state.engine) as s:  # type: ignore[union-attr]
-            job = Job(source="manual", jd_text="x", company="Acme Corp")
+            job = Job(source="manual", jd_text="x", company=company, title=title)
             s.add(job)
             s.commit()
             s.refresh(job)
@@ -78,11 +84,14 @@ def test_cover_letter_preview_serves_inline_without_attachment_disposition(tmp_p
             s.refresh(cl)
             clid = cl.id
         resp = client.get(f"/api/cover-letters/{clid}/preview")
+        download = client.get(f"/api/cover-letters/{clid}/pdf")
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "application/pdf"
     assert resp.content == b"%PDF-1.4 test"
-    # An inline preview must not be handed to the browser as a download.
-    assert "attachment" not in resp.headers.get("content-disposition", "")
+    assert resp.headers["content-disposition"] == download.headers[
+        "content-disposition"
+    ].replace("attachment;", "inline;", 1)
+    assert "filename" in resp.headers["content-disposition"]
 
 
 def test_cover_letter_preview_404_when_no_file(tmp_path):

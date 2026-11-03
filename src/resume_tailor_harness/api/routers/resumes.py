@@ -86,7 +86,7 @@ def download_pdf(
     )
 
 
-@router.get("/resume-versions/{version_id}/preview")
+@link_router.get("/resume-versions/{version_id}/preview")
 def preview_pdf(
     version_id: int, session: Session = Depends(get_session)
 ) -> FileResponse:
@@ -98,15 +98,17 @@ def preview_pdf(
     path = resolve_artifact_pdf(version.pdf_path)
     if path is None:
         raise ApiException(404, "NOT_FOUND", "No rendered PDF for this version")
-    # Streamed, not buffered. ``FileResponse`` only emits a disposition when a
-    # ``filename`` is passed, so ``inline`` is set explicitly here -- an
-    # attachment disposition would defeat the preview.
+    job = get_job(session, version.job_id)
+    filename = resume_download_name(job, version) if job is not None else path.name
+    # A native viewer needs the real URL and filename for its own Save button.
     return FileResponse(
         path,
         media_type="application/pdf",
+        filename=filename,
+        content_disposition_type="inline",
         headers={
-            "Content-Disposition": "inline",
             "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "no-referrer",
             "Content-Security-Policy": "default-src 'none'; object-src 'self'",
         },
     )
