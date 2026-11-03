@@ -14,6 +14,10 @@ from resume_tailor_harness.tenancy.system_db import LlmRate
 
 MILLION = 1_000_000
 
+# Internal rate-card identity, never a model ID sent to OpenAI. Decisions has
+# endpoint-specific billing even though the provider returns gpt-6-luna.
+OPENAI_DECISIONS_RATE_MODEL = "gpt-6-luna:decisions"
+
 RATE_PERIOD_PEAK = "peak"
 RATE_PERIOD_OFF_PEAK = "off_peak"
 # DeepSeek's published peak windows, half-open [start, end) in UTC hours.
@@ -186,7 +190,13 @@ def calculate_cost(
     rate = find_rate(
         engine,
         provider,
-        usage.model,
+        (
+            OPENAI_DECISIONS_RATE_MODEL
+            if provider == "openai"
+            and usage.model == "gpt-6-luna"
+            and usage.reasoning_mode == "decisions"
+            else usage.model
+        ),
         input_tokens=prompt_tokens,
         now=now,
     )
@@ -640,6 +650,26 @@ def seed_llm_rates(engine: Engine) -> None:
                     minimum=minimum,
                     maximum=maximum,
                 )
+        # Decisions GA contract, verified 2026-11-03: ordinary/cache input
+        # uses Luna Standard rates, but output is free on /v1/decisions only.
+        # The endpoint currently supports only the default 30m cache lifetime.
+        for minimum, maximum, input_rate, cache_read, cache_write in (
+            (0, 272_000, 0.1, 0.01, 0.125),
+            (272_001, None, 0.2, 0.02, 0.25),
+        ):
+            upsert_rate(
+                provider="openai",
+                model=OPENAI_DECISIONS_RATE_MODEL,
+                effective_from=datetime(2026, 10, 22, tzinfo=timezone.utc),
+                input_rate=input_rate,
+                cache_read=cache_read,
+                cache_write=cache_write,
+                output_rate=0,
+                tool=None,
+                source="https://developers.openai.com/api/docs/guides/decisions#pricing-and-availability",
+                minimum=minimum,
+                maximum=maximum,
+            )
         # Argon's introductory Standard price ends at the December boundary.
         # Implicit caching has a read rate but no explicit-cache write charge.
         argon_regular = datetime(2026, 12, 1, tzinfo=timezone.utc)

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.tenancy.context import UserContext, use_context
 from resume_tailor_harness.tenancy.costs import (
+    OPENAI_DECISIONS_RATE_MODEL,
     MeteredUsage,
     calculate_cost,
     find_rate,
@@ -40,6 +41,80 @@ from resume_tailor_harness.tenancy.system_db import (
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 
 NOW = datetime(2026, 7, 30, 12, 0, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(
+    "tokens,expected,total",
+    [
+        (272_000, (100_000, 10_000, 125_000, 0), 27_135),
+        (272_001, (200_000, 20_000, 250_000, 0), 54_271),
+    ],
+)
+def test_decisions_prices_input_and_cache_in_separate_endpoint_bands(
+    tmp_path, tokens, expected, total
+):
+    engine = _engine(tmp_path)
+    release = datetime(2026, 10, 22, tzinfo=UTC)
+    assert (
+        find_rate(
+            engine, "openai", OPENAI_DECISIONS_RATE_MODEL, now=release.replace(day=21)
+        )
+        is None
+    )
+    rate = find_rate(
+        engine,
+        "openai",
+        OPENAI_DECISIONS_RATE_MODEL,
+        input_tokens=tokens,
+        now=release,
+    )
+    assert rate is not None
+    assert (
+        rate.input_micros_per_million,
+        rate.cache_read_micros_per_million,
+        rate.cache_write_micros_per_million,
+        rate.output_micros_per_million,
+    ) == expected
+    priced = calculate_cost(
+        engine,
+        MeteredUsage(
+            provider="openai",
+            model="gpt-6-luna",
+            input_tokens=tokens,
+            cache_read_tokens=1_000,
+            cache_write_tokens=1_000,
+            reasoning_mode="decisions",
+        ),
+        now=release,
+    )
+    assert priced.total_micros == total
+    assert priced.rate_id == rate.id
+    assert {line.kind for line in priced.lines} == {
+        "INPUT",
+        "CACHE_READ",
+        "CACHE_WRITE",
+    }
+    ordinary = calculate_cost(
+        engine,
+        MeteredUsage(provider="openai", model="gpt-6-luna", output_tokens=1_000),
+        now=release,
+    )
+    assert ordinary.total_micros == 500
+    assert ordinary.rate_id != rate.id
+    seed_llm_rates(engine)
+    refreshed = find_rate(
+        engine,
+        "openai",
+        OPENAI_DECISIONS_RATE_MODEL,
+        input_tokens=tokens,
+        now=release,
+    )
+    assert refreshed is not None and refreshed.id == rate.id
+    with Session(engine) as session:
+        assert (
+            session.query(LlmRate).filter_by(model=OPENAI_DECISIONS_RATE_MODEL).count()
+            == 2
+        )
 
 
 @pytest.mark.parametrize("operation", ["search", "fetch"])
