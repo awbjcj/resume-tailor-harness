@@ -1,11 +1,12 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { mockEmptyRuns } from "./support";
 
 const activeCareerLab = {
   sessionId: "career-1", title: "Offer strategy", goal: "Compare two offers", startedAt: "2026-08-02T12:00:00Z", endedAt: null, status: "active", archivedAt: null, turnCount: 1,
 };
 
 async function mockCareerLab(page: Page, active = false) {
-  await page.route("**/api/auth/me", (route) => route.fulfill({ json: { username: null, role: null, authRequired: false } }));
+  await mockEmptyRuns(page);
   await page.route("**/api/notifications", (route) => route.fulfill({ json: [] }));
   await page.route("**/api/transcribe/availability", (route) => route.fulfill({ json: { available: false } }));
   await page.route("**/api/runs?*", (route) => route.fulfill({ json: { data: [], pagination: { page: 1, pageSize: 200, totalItems: 0, totalPages: 0 } } }));
