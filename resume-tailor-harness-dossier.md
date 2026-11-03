@@ -2,7 +2,7 @@
 repo_url: https://github.com/awbjcj/resume-tailor-harness
 repo_name: resume-agent
 role: sole author
-generated_at: 2026-11-01
+generated_at: 2026-11-02
 ---
 
 # Project: Résumé Tailor Harness
@@ -11,13 +11,13 @@ A job-search application for candidates who want their materials grounded in the
 
 ## Summary
 
-Résumé Tailor Harness brings job discovery, résumé and cover-letter tailoring, coaching, and application tracking into one system (`src/resume_tailor_harness/discovery/`, `src/resume_tailor_harness/tailor/`, `src/resume_tailor_harness/tracking/`). It provides a browser interface, command-line interface, and an SDK for external application agents (`web/src/`, `src/resume_tailor_harness/cli.py`, `sdk/python/`). Review gates check whether generated résumé claims trace back to profile facts, and mailbox integrations propose recruiting-status updates for review (`src/resume_tailor_harness/tailor/verdict.py`, `src/resume_tailor_harness/services/mailboxes.py`). The sole human author continues to maintain the project; the latest commit in the evidence snapshot is dated 2026-11-01.
+Résumé Tailor Harness brings job discovery, résumé and cover-letter tailoring, coaching, and application tracking into one system (`src/resume_tailor_harness/discovery/`, `src/resume_tailor_harness/tailor/`, `src/resume_tailor_harness/tracking/`). It provides a browser interface, command-line interface, and an SDK for external application agents (`web/src/`, `src/resume_tailor_harness/cli.py`, `sdk/python/`). Review gates check whether generated résumé claims trace back to profile facts, and mailbox integrations propose recruiting-status updates for review (`src/resume_tailor_harness/tailor/verdict.py`, `src/resume_tailor_harness/services/mailboxes.py`). The sole human author continues to maintain the project; the latest commit in the evidence snapshot is dated 2026-11-02.
 
-Role: sole author (2,394 of 2,590 reachable commits across the owner's three Git identities; the remaining 196 are bot-authored, `git shortlog -sne 16a243a9`, `git rev-list --count 16a243a9`)
+Role: sole author (2,427 of 2,626 reachable commits across the owner's three Git identities; the remaining 199 are bot-authored, `git shortlog -sne 456840b9`, `git rev-list --count 456840b9`)
 Repository: https://github.com/awbjcj/resume-tailor-harness
-Timeline: 2026-06 – present (first commit 2026-06-08, `git log --reverse --format=%as 16a243a9`)
+Timeline: 2026-06 – present (first commit 2026-06-08, `git log --reverse --format=%as 456840b9`)
 
-Evidence revision: `16a243a9c6a158d6fe8f6cf8454e90129d7fece2`. Counts tied to the snapshot use this revision.
+Evidence revision: `456840b97db96aa41c04060097e0bb5e09ec83e7`. Counts tied to the snapshot use this revision.
 
 ## Tech stack (evidence-backed)
 
@@ -57,17 +57,17 @@ Evidence revision: `16a243a9c6a158d6fe8f6cf8454e90129d7fece2`. Counts tied to th
 - Enforced provenance, skill-naming, and numeric-evidence gates in résumé review; the fact-check reviewer blocks by default and can be configured as advisory (`src/resume_tailor_harness/tailor/verdict.py:aggregate`, `src/resume_tailor_harness/tailor/review_config.py:ReviewerSpec`).
 - Preserved application progress when a higher-priority source replaces a duplicate job by updating the existing record in place (`src/resume_tailor_harness/discovery/ingest.py:save_or_upgrade`, `tests/test_discovery_ingest.py:test_upgrade_preserves_application_and_status`).
 - Bound task agents to root-confined, hash-verified skill procedures and recorded the selected skill identity with run metadata (`src/resume_tailor_harness/career_skills/registry.py:CareerSkillRegistry`, `src/resume_tailor_harness/profile/project_extractor.py:build_project_extractor_agent`).
-- Built application-agent context around an approved-job queue and fact-checked attachments, with instructions to obtain confirmation before final submission (`src/resume_tailor_harness/services/agent_applications.py:application_context`).
+- Preserved selected application documents through preparation and handoff, exposing missing or ineligible files instead of silently replacing them (`src/resume_tailor_harness/services/application_materials.py:application_materials`, `src/resume_tailor_harness/services/agent_applications.py:application_handoff`; commit `aaf59c62`).
 - Isolated hosted users with request-scoped workspace contexts and an encrypted account vault that checks its owner on read (`src/resume_tailor_harness/tenancy/context.py:use_context`, `src/resume_tailor_harness/services/application_accounts.py:AccountVault`).
 - Built resumable recruiting-mail analysis across Gmail API, Microsoft Graph, and IMAP using saved cursors and cached classifications (`src/resume_tailor_harness/gmail/scan.py:MailboxScanner`, `src/resume_tailor_harness/gmail/processing.py:MessageProcessor`, `src/resume_tailor_harness/services/mailboxes.py`).
-- Added visual résumé review using the export renderer and bounded page previews, with overflow reported as a layout failure (`src/resume_tailor_harness/render/layout_review.py:render_layout_preview`, `tests/test_visual_layout_review.py:test_overflow_is_diagnostic_and_bounded_and_temp_pdf_is_removed`).
-- Built profile-change approval into coach conversations, with a follow-up build tracked in the browser (`src/resume_tailor_harness/api/routers/coach.py:resolve_profile_changes`, `web/src/features/coach/use-coach.ts:useEndCoachSession`; commits `865c9897`, `16a243a9`).
+- Preserved cited dossier applications as project facts linked to each skill, including through cached extraction and cross-project merges (`src/resume_tailor_harness/profile/dossier.py:retain_dossier_evidence`, `tests/test_profile_dossier.py:test_evidence_links_survive_cache_and_cross_project_skill_merge`; commit `dd98ccf9`).
+- Built human-reviewed workspace actions with revision checks and receipts, keeping agent previews read-only (`src/resume_tailor_harness/workspace_agent/runtime.py:WorkspaceTools.functions`, `src/resume_tailor_harness/workspace_agent/actions.py:resolve_plan`; commits `9e18b568`, `8ea111d7`).
 
 ## Quantified outcomes
 
 - Reduced the full Python suite's measured runtime on one Windows machine from 836.79 seconds to 294.21 seconds (64.8%) with four pytest-xdist workers; both runs reported 4,698 passed and 5 skipped (`docs/test-performance.md`; commit `edbe85b3`).
 - Reduced the full Vitest suite's measured runtime on the same machine from 186.39 seconds to 79.10 seconds (57.6%) using four isolated VM workers; both runs reported 215 files and 965 tests passed (`docs/test-performance.md`; commit `edbe85b3`).
-- Registered 36 pinned skill procedures across seven agent families (`skills-lock.json` at `16a243a9`; reproduce with `git show 16a243a9:skills-lock.json | python -c "import json,sys; s=json.load(sys.stdin)['skills']; print(len(s), len({v['family'] for v in s.values()}))"`).
+- Registered 37 pinned skill procedures across seven agent families (`skills-lock.json` at `456840b9`; reproduce with `git show 456840b9:skills-lock.json | python -c "import json,sys; s=json.load(sys.stdin)['skills']; print(len(s), len({v['family'] for v in s.values()}))"`).
 
 ## Skills demonstrated
 
@@ -79,12 +79,14 @@ Evidence revision: `16a243a9c6a158d6fe8f6cf8454e90129d7fece2`. Counts tied to th
     - Created an ordered fan-out that isolates individual failures — `src/resume_tailor_harness/concurrency.py:gather_isolated` (commit `861e7309`).
     - Projected extracted project facts into a source-aware profile fragment — `src/resume_tailor_harness/profile/project_extractor.py:project_facts_to_profile`.
     - Staged mailbox history pages and saved their cursors for later processing — `src/resume_tailor_harness/gmail/scan.py:MailboxScanner._stage_page`.
+    - Projected cited project applications into skill-linked facts — `src/resume_tailor_harness/profile/dossier.py:retain_dossier_evidence` (commit `dd98ccf9`).
 - Name: TypeScript
   - Context: Built typed browser clients for run events and coach sessions.
   - Evidence:
     - Mapped server run states and watched event streams — `web/src/lib/runs/sse.ts:watchRun` (commit `09cd425a`).
     - Typed coach response records and mutations against generated API schemas — `web/src/features/coach/use-coach.ts:useCoachSessions`.
     - Parsed streamed conversation events into browser event records — `web/src/lib/chat/agui.ts:parseAguiEvent` (commit `846dbb38`).
+    - Sent the reviewed action IDs and proposal digest from a review card — `web/src/components/chat/workspace-review/WorkspaceProposalCard.tsx:WorkspaceProposalCard` (commit `f510a676`).
 
 ### Frameworks
 
@@ -94,34 +96,40 @@ Evidence revision: `16a243a9c6a158d6fe8f6cf8454e90129d7fece2`. Counts tied to th
     - Composed routers and application lifecycle in the server factory — `src/resume_tailor_harness/api/app.py:create_app` (commit `af4d0134`).
     - Added a route to resolve proposed profile changes — `src/resume_tailor_harness/api/routers/coach.py:resolve_profile_changes` (commit `865c9897`).
     - Accepted coach messages through a session-scoped route — `src/resume_tailor_harness/api/routers/coach.py:send_message`.
+    - Rejected authorization-header access to in-app proposal review — `src/resume_tailor_harness/api/routers/workspace_agent.py:review_proposal` (commit `9e18b568`).
 - Name: Pydantic
   - Context: Defined and validated the shape of extracted project facts.
   - Evidence:
     - Forbade extra fields on the project extraction record — `src/resume_tailor_harness/profile/project_extractor.py:ProjectDocFacts` (commit `aa8d09ee`).
     - Tested rejection of unrelated top-level sections — `tests/test_profile_project_extractor.py:test_project_doc_schema_forbids_foreign_top_level_sections` (commit `aa8d09ee`).
     - Normalized a known skill-category label before validation — `src/resume_tailor_harness/profile/project_extractor.py:ProjectDocFacts._normalize_tooling_skill_category`.
+    - Rejected extra fields in model-facing workspace commands — `src/resume_tailor_harness/workspace_agent/models.py:WorkspaceChange` (commit `9e18b568`).
 - Name: SQLModel
   - Context: Modeled tracked jobs and used sessions to preserve them during source upgrades.
   - Evidence:
     - Defined persisted job and application tables — `src/resume_tailor_harness/tracking/tables.py:Job`, `src/resume_tailor_harness/tracking/tables.py:Application` (commit `dac8594d` for `Job`).
     - Updated an existing job when a stronger source arrives — `src/resume_tailor_harness/discovery/ingest.py:save_or_upgrade`.
     - Stored mailbox message receipts as database records — `src/resume_tailor_harness/gmail/tables.py:GmailReceipt`.
+    - Stored workspace proposals and action receipts as separate records — `src/resume_tailor_harness/workspace_agent/tables.py:12-35` (commit `9e18b568`).
 - Name: SQLAlchemy
   - Context: Configured database engines and mapped account records.
   - Evidence:
     - Created pooled engines for concurrent in-memory sessions — `src/resume_tailor_harness/db.py:make_engine` (commit `33932273`).
     - Defined user and account tables on a declarative base — `src/resume_tailor_harness/tenancy/system_db.py:SystemBase`, `src/resume_tailor_harness/tenancy/system_db.py:User` (commit `b18d45ff`).
+    - Committed database effects and approval receipts in one transaction — `src/resume_tailor_harness/workspace_agent/actions.py:resolve_plan` (commit `9e18b568`).
 - Name: Agno
   - Context: Constructed task agents with structured outputs and wrapped their execution.
   - Evidence:
     - Built a project extraction agent with a closed output schema and selected skill — `src/resume_tailor_harness/profile/project_extractor.py:build_project_extractor_agent` (commit `01a10110`).
     - Added a runner for synchronous, asynchronous, and streamed agent calls — `src/resume_tailor_harness/llm_runner.py:AgentRunner`.
+    - Bound workspace read and preview tools to a conversational persona — `src/resume_tailor_harness/career_lab/agents.py:build_persona_agent` (commit `9e18b568`).
 - Name: React
   - Context: Built the coach interface and its session interactions.
   - Evidence:
     - Rendered the coach page and its localized interface — `web/src/features/coach/CoachPage.tsx:CoachPage` (commit `68571e6a`).
     - Tested the coach hook after a follow-up profile build — `web/src/features/coach/use-coach.test.tsx:42` (commit `992ce80d`).
     - Rendered apply and discard controls for a proposed profile change — `web/src/features/coach/ProfileChangeCard.tsx:ProfileChangeCard`.
+    - Rendered a review card for applying or discarding selected proposed actions — `web/src/components/chat/workspace-review/WorkspaceProposalCard.tsx:WorkspaceProposalCard`.
 - Name: TanStack Query
   - Aliases: React Query
   - Context: Managed coach data and refreshed affected views after mutations.
@@ -129,6 +137,7 @@ Evidence revision: `16a243a9c6a158d6fe8f6cf8454e90129d7fece2`. Counts tied to th
     - Loaded coach sessions with a query hook — `web/src/features/coach/use-coach.ts:useCoachSessions` (commit `bccb2437`).
     - Invalidated session and profile queries after a follow-up build — `web/src/features/coach/use-coach.ts:useEndCoachSession`.
     - Invalidated session lists after archive and delete mutations — `web/src/features/coach/use-coach.ts:useCoachSessionMutation`.
+    - Loaded paginated review proposals and refreshed them after a conversation turn — `web/src/components/chat/workspace-review/WorkspaceReviewPanel.tsx:WorkspaceReviewPanel`.
 - Name: i18next
   - Context: Added language selection and translated interface copy.
   - Evidence:
@@ -171,6 +180,7 @@ Evidence revision: `16a243a9c6a158d6fe8f6cf8454e90129d7fece2`. Counts tied to th
     - Checked that project extraction rejects unrelated sections — `tests/test_profile_project_extractor.py:test_project_doc_schema_forbids_foreign_top_level_sections` (commit `aa8d09ee`).
     - Tested that fan-out keeps results ordered and isolates errors — `tests/test_concurrency.py:test_gather_isolated_preserves_order_and_isolates_errors`.
     - Parameterized invalid skill-manifest cases to check that failures remain confined to their capability — `tests/test_career_skill_registry.py:test_invalid_manifest_entry_fails_only_its_capability`.
+    - Checked that the repository dossier retains every labeled skill and cited example — `tests/test_profile_dossier.py:test_repository_dossier_retains_every_labeled_skill_and_usage_example` (commit `dd98ccf9`).
 - Name: pytest-xdist
   - Context: Distributed the complete backend suite across isolated workers while retaining its tests.
   - Evidence:
@@ -203,18 +213,21 @@ Evidence revision: `16a243a9c6a158d6fe8f6cf8454e90129d7fece2`. Counts tied to th
     - Collected concurrent results in input order with per-item errors — `src/resume_tailor_harness/concurrency.py:gather_isolated` (commit `861e7309`).
     - Tested cancellation of in-flight tasks when a checkpoint fails — `tests/test_concurrency.py:test_gather_isolated_cancels_in_flight_tasks_when_checkpoint_raises`.
     - Tested that asynchronous funding waiters leave executor capacity for settlement — `tests/test_llm_runner_concurrency.py:test_async_funding_waiters_leave_executor_capacity_for_settlement`.
+    - Tested that concurrent approvals create a single effect — `tests/test_workspace_agent.py:test_concurrent_approvals_apply_once` (commit `9e18b568`).
 - Name: Application security
   - Context: Restricted untrusted network access and protected saved employer credentials.
   - Evidence:
     - Resolved public addresses before pinning outbound requests and bounded response size — `src/resume_tailor_harness/security/outbound.py:fetch_public_bytes` (commit `df3cdf04`).
     - Encrypted the account vault and rejected data belonging to another owner — `src/resume_tailor_harness/services/application_accounts.py:AccountVault._read`, `src/resume_tailor_harness/services/application_accounts.py:AccountVault._write` (commit `ec5bce45`).
     - Tested rejection of unsafe skill-manifest entries, including path traversal and hash mismatches — `tests/test_career_skill_registry.py:test_invalid_manifest_entry_fails_only_its_capability`.
+    - Rejected altered proposal digests and stale target revisions before applying changes — `src/resume_tailor_harness/workspace_agent/actions.py:resolve_plan` (commit `8ea111d7`).
 - Name: Agent orchestration
   - Context: Bound agent tasks to verified procedures and retained their selected identities.
   - Evidence:
     - Checked skill paths and hashes before making a capability available — `src/resume_tailor_harness/career_skills/registry.py:CareerSkillRegistry` (commit `08c42dc3`).
     - Saved the selected skill reference with project-extractor run metadata — `src/resume_tailor_harness/profile/project_extractor.py:build_project_extractor_agent`.
     - Tested that a changed skill file is revalidated before reuse — `tests/test_career_skill_registry.py:test_registry_revalidates_a_skill_after_the_file_changes`.
+    - Exposed workspace reads and previews to agents without an approval tool — `src/resume_tailor_harness/workspace_agent/runtime.py:WorkspaceTools.functions` (commit `9e18b568`).
 - Name: Internationalization
   - Aliases: i18n
   - Context: Supported English and Chinese interface language selection without changing underlying values.
@@ -222,6 +235,21 @@ Evidence revision: `16a243a9c6a158d6fe8f6cf8454e90129d7fece2`. Counts tied to th
     - Selected and persisted a supported language — `web/src/i18n/index.ts:resolveInitialLanguage`, `web/src/i18n/index.ts:changeLanguage` (commit `fc2a4bbb` for initialization).
     - Tested language switching while preserving unsaved settings — `web/e2e/i18n-review.spec.ts:80` (commit `570191d4`).
     - Translated dynamic run error labels for display — `web/src/i18n/dynamic-labels.ts:localizeRunError` (commit `1df8e042`).
+
+- Name: Data provenance
+  - Context: Preserved cited project evidence through extraction, merging, and profile publication.
+  - Evidence:
+    - Parsed labeled skill contexts and cited applications while excluding fenced examples — `src/resume_tailor_harness/profile/dossier.py:parse_dossier` (commit `dd98ccf9`).
+    - Linked each retained application to its source skill as a project fact — `src/resume_tailor_harness/profile/dossier.py:retain_dossier_evidence`.
+    - Tested evidence links across cached extraction and cross-project skill merges — `tests/test_profile_dossier.py:test_evidence_links_survive_cache_and_cross_project_skill_merge`.
+    - Compared current source fingerprints with the last successful publication to report pending changes — `src/resume_tailor_harness/profile/publication.py:publication_status` (commit `aaf59c62`).
+- Name: Human-in-the-loop
+  - Aliases: HITL
+  - Context: Required review of proposed workspace changes before domain effects were applied.
+  - Evidence:
+    - Tested that agent previews do not apply changes or expose approval — `tests/test_workspace_agent.py:test_tools_and_publishing_do_not_apply_changes` (commit `9e18b568`).
+    - Rechecked proposal digests and target revisions, then saved an action receipt — `src/resume_tailor_harness/workspace_agent/actions.py:resolve_plan` (commit `8ea111d7`).
+    - Tested that a failed receipt transaction rolls back the domain effect — `tests/test_workspace_agent.py:test_effects_roll_back_if_receipt_transaction_fails`.
 
 ### Tooling
 
