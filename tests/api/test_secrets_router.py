@@ -194,3 +194,74 @@ def test_put_models_rejects_capabilities_the_selected_model_does_not_support(cli
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "UNSUPPORTED_MODEL_SETTING"
+
+
+@pytest.mark.parametrize("platform_key", ["", "platform-openai-test-key"])
+def test_local_workspace_secret_changes_apply_without_restart(tmp_path, platform_key):
+    env = tmp_path / ".env"
+    env.write_text(
+        f"OPENAI_API_KEY={platform_key}\n"
+        "OPENAI_BASE_URL=https://platform.example.com/v1\n"
+        "CHEAP_MODEL=openai:gpt-4.1\n",
+        encoding="utf-8",
+    )
+    app = create_app(
+        app_mode="local",
+        env_path=env,
+        data_dir=tmp_path / "data",
+        config_dir=tmp_path / "config",
+    )
+    with TestClient(app) as client:
+        original_env = env.read_text(encoding="utf-8")
+        for key in ("workspace-openai-test-key", "replacement-openai-test-key", None):
+            previous = app.state.default_context
+            previous.spend_decisions["openai:gpt-4.1"] = object()
+            previous.selected_model_own_keys["openai:gpt-4.1"] = False
+
+            response = client.put("/api/secrets", json={"openaiApiKey": key})
+            assert response.status_code == 200
+            refreshed = app.state.default_context
+            assert refreshed is not previous
+            assert refreshed.spend_decisions == {}
+            assert refreshed.selected_model_own_keys == {}
+            catalog = client.get("/api/config/models/catalog").json()
+            openai = next(row for row in catalog if row["provider"] == "openai")
+            assert openai["hasKey"] is bool(key or platform_key)
+            assert client.get("/api/setup/status").json()["secrets"][
+                "anyLlmKey"
+            ] is bool(key or platform_key)
+
+            assert refreshed.settings.openai_api_key == (key or platform_key)
+            assert (
+                refreshed.settings.openai_base_url == "https://platform.example.com/v1"
+            )
+            assert refreshed.settings.cheap_model == "openai:gpt-4.1"
+            assert refreshed.platform_provider_keys == (
+                {"openai": platform_key} if platform_key else {}
+            )
+            assert refreshed.user_provider_keys == ({"openai": key} if key else {})
+            assert app.state.settings.openai_api_key == platform_key
+            assert env.read_text(encoding="utf-8") == original_env
+            assert client.get("/api/auth/me").json()["authRequired"] is False
+
+
+def test_local_workspace_model_changes_apply_without_restart(tmp_path):
+    env = tmp_path / ".env"
+    env.write_text("OPENAI_API_KEY=platform-test-key\n", encoding="utf-8")
+    app = create_app(
+        app_mode="local",
+        env_path=env,
+        data_dir=tmp_path / "data",
+        config_dir=tmp_path / "config",
+    )
+    with TestClient(app) as client:
+        for effort in ("low", None):
+            response = client.put(
+                "/api/config/models",
+                json={"midModel": "openai:gpt-5.5", "midReasoningEffort": effort},
+            )
+            assert response.status_code == 200
+            settings = app.state.default_context.settings
+            assert settings.mid_model == "openai:gpt-5.5"
+            assert settings.mid_reasoning_effort == effort
+            assert settings.openai_api_key == "platform-test-key"
