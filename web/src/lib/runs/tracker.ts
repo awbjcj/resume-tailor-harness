@@ -225,10 +225,13 @@ export function pollRunsNow(): Promise<void> {
   // Coalesce. A backend restart errors every tracked run's stream at once, and
   // each one asks for a reconciliation; N identical requests would return the
   // same listing N times and race each other applying it.
-  pollInFlight ??= reconcileRuns().finally(() => {
-    pollInFlight = null;
+  if (pollInFlight !== null) return pollInFlight;
+  const pending = reconcileRuns().finally(() => {
+    // Cleanup from an earlier mount must not release the new mount's poll.
+    if (pollInFlight === pending) pollInFlight = null;
   });
-  return pollInFlight;
+  pollInFlight = pending;
+  return pending;
 }
 
 async function reconcileRuns(): Promise<void> {
@@ -339,6 +342,9 @@ function stopPolling(): void {
 /** Tear polling down from outside: in-flight results no longer belong to anyone. */
 export function stopRunPoller(): void {
   pollGeneration += 1;
+  // The next mount needs a fresh reconciliation. Sharing this request would
+  // discard its results under the previous generation (including StrictMode).
+  pollInFlight = null;
   stopPolling();
 }
 

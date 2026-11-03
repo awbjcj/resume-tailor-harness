@@ -13,6 +13,10 @@ export async function mockGmailSettings(page: Page) {
 }
 
 export async function mockEmptyRuns(page: Page) {
+  await page.route("**/api/run-completions?*", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/board-views?*", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/workspace-agent/proposals?*", (route) =>
+    route.fulfill({ json: { proposals: [], nextOffset: null } }));
   await page.route("**/api/config/language", async (route) => route.fulfill({ json: route.request().postDataJSON() }));
   await page.route("**/api/auth/me", (route) =>
     route.fulfill({
