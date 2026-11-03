@@ -69,7 +69,10 @@ for (const language of ["en", "zh-CN"] as const) {
       await page.getByRole("textbox", { name: language === "en" ? "Summary" : "摘要", exact: true }).fill("Led the migration and handover.");
       expect(noteSaved).toBe(false);
       await page.getByRole("button", { name: language === "en" ? "Save note" : "保存笔记", exact: true }).click();
-      await expect(page.getByText(language === "en" ? "Added to profile" : "已加入个人资料", { exact: true })).toBeVisible();
+      const savedNote = page.getByRole("group", { name: "Migration lead", exact: true });
+      await expect(savedNote.getByText(language === "en" ? "Saved as evidence" : "已保存为证据", { exact: true })).toBeVisible();
+      await expect(savedNote.getByText("Led the migration and handover.", { exact: true })).toBeVisible();
+      expect(noteSaved).toBe(true);
       await expect(page.getByRole("textbox", { name: language === "en" ? "Summary" : "摘要", exact: true })).toHaveCount(0);
     });
   }

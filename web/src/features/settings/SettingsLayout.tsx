@@ -129,7 +129,7 @@ export function SettingsLayout() {
                             to={item.to}
                             className={({ isActive }) =>
                               cn(
-                                "flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:w-full",
+                                "flex min-h-11 scroll-my-1 items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:w-full",
                                 isActive &&
                                   "bg-primary/8 font-medium text-foreground ring-1 ring-primary/20",
                               )
