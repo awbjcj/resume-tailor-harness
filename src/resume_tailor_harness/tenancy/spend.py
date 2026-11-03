@@ -314,6 +314,35 @@ class SpendGate:
         """Return the key this call would use. Never raises on budget."""
         return self._resolve(model_id, now=now)[0]
 
+    def open_decisions(self) -> SpendDecision:
+        """Fund the separately enrolled, direct-only Decisions feature.
+
+        Never consult subscription routing or BYOK fallback. This dedicated
+        platform key stays shared funding even if a concurrent call uses BYOK.
+        Recheck eligibility on every request, including in shadow mode.
+        """
+        context = current_context()
+        settings = self._settings or (
+            context.settings if context else _current_settings()
+        )
+        if (
+            not settings.openai_decisions_enabled
+            or not settings.openai_decisions_api_key.strip()
+        ):
+            raise ValueError("OpenAI Decisions is not configured and enabled")
+        if context is not None:
+            verdict = _evaluate_shared(context, "openai", "gpt-6-luna", now=None)
+            if verdict.denial is not None:
+                raise verdict.denial
+        return SpendDecision(
+            api_key=settings.openai_decisions_api_key.strip(),
+            own_key=False,
+            provider="openai",
+            model="gpt-6-luna",
+            reason="decisions-direct",
+            base_url="https://api.openai.com/v1",
+        )
+
     def available(self, model_id: str, *, now: datetime | None = None) -> bool:
         """Whether a call has both a credential and permission to spend."""
         decision, fatal = self._resolve(model_id, now=now)
@@ -398,7 +427,11 @@ class SpendGate:
         if routed is not None:
             verdict = _evaluate_shared(context, provider, model, now=now)
             return _CachedDecision(
-                time.monotonic(), routed, verdict.denial, verdict.headroom, verdict.unit,
+                time.monotonic(),
+                routed,
+                verdict.denial,
+                verdict.headroom,
+                verdict.unit,
             )
 
         platform_key = context.platform_provider_keys.get(provider, "")

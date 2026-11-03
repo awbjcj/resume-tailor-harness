@@ -9,6 +9,8 @@ from pathlib import Path
 from agno.agent import Agent
 
 from resume_tailor_harness.config import get_settings
+from resume_tailor_harness.decisions import DecisionClient
+from resume_tailor_harness.taxonomy.decision_classification import group_questions
 from resume_tailor_harness.llm_runner import (
     AgentRunner,
     build_model,
@@ -43,6 +45,7 @@ from resume_tailor_harness.services.profile_skills import (
 )
 from resume_tailor_harness.taxonomy.groups import SkillGroupAssignments
 from resume_tailor_harness.tenancy.limits import enforce_active_budget
+from resume_tailor_harness.tenancy.usage import UsageSettlementError
 from resume_tailor_harness.prompts.guidance import with_guidance
 
 PROFILE_GROUP_INSTRUCTIONS = [
@@ -129,8 +132,9 @@ def rebuild_profile_skills(
     # Explicit assignments are never sent to the model or overwritten.
     tokens = [row.key for row in matrix.rows if row.group_source != "correction"]
     additions: dict[str, str] = {}
+    decisions = DecisionClient()
     if tokens:
-        agent = build_profile_group_agent()
+        agent = None
         groups = [
             {
                 "id": key,
@@ -141,11 +145,42 @@ def rebuild_profile_skills(
         ]
         for offset in range(0, len(tokens), 40):
             batch = tokens[offset : offset + 40]
-            content = agent.run(json.dumps({"groups": groups, "skills": batch})).content
-            if not isinstance(content, SkillGroupAssignments):
-                raise ValueError(
-                    "Skill classification returned an invalid response. Existing skills were kept."
-                )
+            if reporter is not None:
+                reporter.checkpoint()
+            fast = decisions.choose_sync(
+                group_questions(
+                    batch,
+                    {
+                        group["id"]: f"{group['label']} ({group['category']})"
+                        for group in groups
+                    },
+                ),
+                family="profile-groups-decisions",
+            )
+            additions.update(fast)
+            batch = [token for token in batch if token not in fast]
+            if not batch:
+                continue
+            try:
+                if agent is None:
+                    agent = build_profile_group_agent()
+                content = agent.run(
+                    json.dumps({"groups": groups, "skills": batch})
+                ).content
+                if not isinstance(content, SkillGroupAssignments):
+                    raise ValueError(
+                        "Skill classification returned an invalid response. Existing skills were kept."
+                    )
+            except UsageSettlementError:
+                raise
+            except Exception:
+                # Preserve purchased valid siblings when the optional hybrid
+                # path's generative tail fails. Off-mode behavior is unchanged.
+                if not decisions.accepted:
+                    raise
+                if reporter is not None:
+                    reporter.checkpoint()
+                continue
             for assignment in content.assignments:
                 if assignment.token in batch and assignment.group in catalog:
                     additions.setdefault(assignment.token, assignment.group)
@@ -182,4 +217,6 @@ def rebuild_profile_skills(
         "inferred": inferred,
         "warnings": warnings,
         "cleanup": cleanup.model_dump(mode="json") if cleanup else None,
+        "decisionsCalls": decisions.calls,
+        "decisionsClassified": decisions.accepted,
     }

@@ -135,3 +135,12 @@ def test_classifier_empty_input_and_invalid_batch_size():
     assert runner.prompts == []
     with pytest.raises(ValueError, match="batch_size"):
         classify_missing_groups({"python"}, runner, batch_size=0)
+
+
+def test_classifier_never_hides_standard_fallback_settlement_errors():
+    from resume_tailor_harness.tenancy.usage import UsageSettlementError
+
+    with pytest.raises(UsageSettlementError):
+        classify_missing_groups(
+            {"python"}, FakeRunner(UsageSettlementError("ledger unavailable"))
+        )

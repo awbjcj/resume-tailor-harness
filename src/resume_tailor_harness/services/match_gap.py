@@ -10,6 +10,7 @@ from pathlib import Path
 from sqlmodel import Session
 
 from resume_tailor_harness.config import get_settings
+from resume_tailor_harness.decisions import DecisionClient
 from resume_tailor_harness.llm_runner import Runner, run_with_cleanup
 from resume_tailor_harness.progress import ProgressReporter
 from resume_tailor_harness.taxonomy.classification import (
@@ -307,6 +308,7 @@ def refresh_clusters(
         canonicalizer = agents.canonicalizer
         themer = agents.themer
         escalation_themer = agents.escalation_themer
+    decisions = DecisionClient(settings)
     # Narrowed by the raise rather than by `assert`, which `-O` strips out.
     if canonicalizer is None or themer is None:
         raise ValueError("canonicalizer and themer must be provided together")
@@ -507,6 +509,7 @@ def refresh_clusters(
                     settings.taxonomy_canonical_repair_max_singletons
                 ),
                 budget=budget,
+                decisions=decisions,
             )
             after_first = merge_cluster_map(existing, first.additions)
             # Temporarily remove only generated provisional placements from the
@@ -855,6 +858,10 @@ def refresh_clusters(
         "recoveryRounds": recovery_rounds,
         "recoveryAttemptedSkills": len(attempted_this_run),
         "modelCalls": budget.calls,
+        "decisionsCalls": decisions.calls,
+        "decisionsChoicesAccepted": decisions.accepted,
+        "decisionsProviderFallback": decisions.failed,
+        "decisionsLowYieldBypass": decisions.domain_bypass,
         "maxModelCalls": budget.max_calls,
         "maxPromptBytes": budget.max_prompt_bytes,
         "usageLimitReached": budget.exhausted,

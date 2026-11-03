@@ -176,7 +176,9 @@ class UsageSettlementError(RuntimeError):
     """A hosted call must not silently escape the billing ledger."""
 
 
-def record_call(agent: object, response: object) -> None:
+def record_call(
+    agent: object, response: object, *, own_key: bool | None = None
+) -> None:
     """Settle a response once: receipt, exact usage, line items and balances.
 
     The provider run id is scoped to the tenant. A retry of the same response
@@ -203,17 +205,21 @@ def record_call(agent: object, response: object) -> None:
                 detail,
                 model_type=model_type,
             )
-            own_key = selected_key_is_own(usage.provider, agent)
+            funded_by_owner = (
+                selected_key_is_own(usage.provider, agent)
+                if own_key is None
+                else own_key
+            )
             priced = calculate_cost(context.system_engine, usage)
             if (
-                not own_key
+                not funded_by_owner
                 and priced.total_micros is None
                 and context.settings.cost_quota_enforcement == "enforce"
             ):
                 raise UsageSettlementError(
                     "Shared usage has no exact price; settlement failed"
                 )
-            charges.append((usage, own_key, priced))
+            charges.append((usage, funded_by_owner, priced))
         request_id = getattr(response, "run_id", None)
         receipt_id = hashlib.sha256(
             f"{context.user_id}:{request_id}".encode()
@@ -316,7 +322,9 @@ def record_call(agent: object, response: object) -> None:
         ) from exc
 
 
-def record_direct_usage(usage: MeteredUsage) -> None:
+def record_direct_usage(
+    usage: MeteredUsage, *, own_key: bool | None = None, request_id: str | None = None
+) -> None:
     """Send non-Agno provider calls through the same immutable recorder."""
 
     metrics = SimpleNamespace(
@@ -343,5 +351,7 @@ def record_direct_usage(usage: MeteredUsage) -> None:
             model=usage.model,
             model_provider=usage.provider,
             metrics=metrics,
+            run_id=request_id,
         ),
+        own_key=own_key,
     )

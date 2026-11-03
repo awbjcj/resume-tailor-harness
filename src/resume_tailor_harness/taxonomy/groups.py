@@ -14,6 +14,9 @@ from resume_tailor_harness.prompts.guidance import with_guidance
 from pydantic import Field
 
 from resume_tailor_harness.config import get_settings
+from resume_tailor_harness.decisions import DecisionClient, BATCH_SIZE
+from resume_tailor_harness.taxonomy.decision_classification import group_questions
+from resume_tailor_harness.tenancy.usage import UsageSettlementError
 from resume_tailor_harness.llm_runner import (
     prompt_cache_for,
     AgentRunner,
@@ -157,10 +160,21 @@ def classify_missing_groups(
         raise ValueError("batch_size must be positive")
     requested = {token for raw in tokens if (token := normalize_skill(raw))}
     additions: dict[str, str] = {}
-    for batch in _shard(requested, batch_size):
+    decisions = DecisionClient()
+    size = min(batch_size, BATCH_SIZE) if decisions.enabled else batch_size
+    for batch in _shard(requested, size):
+        fast = decisions.choose_sync(
+            group_questions(batch, SKILL_GROUPS), family="skill-groups-decisions"
+        )
+        additions.update(fast)
+        batch = [token for token in batch if token not in fast]
+        if not batch:
+            continue
         allowed = set(batch)
         try:
             content = agent.run(json.dumps(batch)).content
+        except UsageSettlementError:
+            raise
         except Exception:  # noqa: BLE001 - one failed batch must not sink a build
             continue
         if not isinstance(content, SkillGroupAssignments):

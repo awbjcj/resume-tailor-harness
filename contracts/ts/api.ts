@@ -522,6 +522,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/routing/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Decisions Config */
+        get: operations["get_decisions_config_api_admin_routing_decisions_get"];
+        /** Put Decisions Config */
+        put: operations["put_decisions_config_api_admin_routing_decisions_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/system/defaults": {
         parameters: {
             query?: never;
@@ -7313,6 +7331,24 @@ export interface components {
             /** Upcomingevents */
             upcomingEvents?: components["schemas"]["UpcomingEventOut"][];
         };
+        /** DecisionsConfigDoc */
+        DecisionsConfigDoc: {
+            /** Enabled */
+            enabled: boolean;
+            /** Endpoint */
+            endpoint: string;
+            /** Keyconfigured */
+            keyConfigured: boolean;
+            /** Model */
+            model: string;
+        };
+        /** DecisionsUpdate */
+        DecisionsUpdate: {
+            /** Apikey */
+            apiKey?: string | null;
+            /** Enabled */
+            enabled?: boolean | null;
+        };
         /** DemandEdgeOut */
         DemandEdgeOut: {
             /** Jobid */
@@ -13864,6 +13900,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoutingConfigDoc"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_decisions_config_api_admin_routing_decisions_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionsConfigDoc"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_decisions_config_api_admin_routing_decisions_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionsConfigDoc"];
                 };
             };
             /** @description Validation Error */
