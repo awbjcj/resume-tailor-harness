@@ -8,6 +8,7 @@ import { mailboxesEn, mailboxesZh } from "./mailboxes";
 import type { applicationUpdatesEn } from "./application-updates";
 import type { profileChangesEn } from "./profile-changes";
 import type { profilePublicationEn } from "./profile-publication";
+import type { decisionsEn } from "./decisions";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -20,6 +21,7 @@ export async function loadAutoTranslations(
 }
 
 const en = {
+  decisions: {} as typeof decisionsEn,
   workflow: {} as typeof workflowEn,
   deferred: { loading: "Loading…", failed: "This form could not load. Try again.", appFailed: "The workspace could not load. Try again.", retry: "Try again", reload: "Reload page" },
   salary: { hour: "hour", month: "month", week: "week", day: "day" },
@@ -873,6 +875,7 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  decisions: {} as typeof decisionsEn,
   workflow: {} as typeof workflowEn,
   deferred: { loading: "正在加载…", failed: "无法加载此表单，请重试。", appFailed: "无法加载工作区，请重试。", retry: "重试", reload: "重新加载页面" },
   salary: { hour: "小时", month: "月", week: "周", day: "天" },

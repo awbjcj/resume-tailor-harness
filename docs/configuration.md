@@ -27,6 +27,8 @@ hosted-only settings such as `APP_BASE_URL`, `AUTH_PASSWORD_HASH`, or
 | `ANTHROPIC_BASE_URL` | `https://api.anthropic.com` | Direct Anthropic API endpoint. Applied explicitly whenever routing selects `api`, so it cannot inherit the Sub2API endpoint. |
 | `OPENAI_API_KEY` | empty | Shared OpenAI credential for `openai:` model IDs, optional embeddings, and direct audio operations. |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Direct OpenAI API endpoint. Applied explicitly whenever routing selects `api`; transcription and TTS always use this endpoint because Sub2API may not implement the audio APIs. |
+| `OPENAI_DECISIONS_ENABLED` | `false` | Admin opt-in for fast profile grouping, category assignment and existing-domain selection. Uses the direct Decisions API independently of provider routing. See [fast skill classification](openai-decisions.md). |
+| `OPENAI_DECISIONS_API_KEY` | empty | Separate deployment-owned OpenAI API key for Decisions. Required for enrollment; charges this key's OpenAI API balance. Never uses gateway or member credentials. |
 | `GEMINI_API_KEY` | empty | Shared Google Gemini credential for `gemini:` model IDs. |
 | `DEEPSEEK_API_KEY` | empty | Shared DeepSeek credential for `deepseek:` model IDs. |
 | `SUB2API_BASE_URL` | empty | Subscription-gateway origin shared by all routed providers; empty disables gateway routing unless a provider is pinned to `subscription`. |

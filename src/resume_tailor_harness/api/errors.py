@@ -114,7 +114,10 @@ def install_error_handlers(app: FastAPI) -> None:
                 "Request validation failed",
                 # Pydantic errors include raw input (including rejected secrets).
                 None
-                if "/application-account" in request.url.path
+                if (
+                    "/application-account" in request.url.path
+                    or request.url.path == "/api/admin/routing/decisions"
+                )
                 else [
                     {"loc": error["loc"], "type": error["type"]}
                     for error in exc.errors()

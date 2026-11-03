@@ -17,7 +17,10 @@ from sqlalchemy.orm import Session
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.tenancy.context import UserContext, use_context
 from resume_tailor_harness.tenancy.costs import seed_llm_rates
-from resume_tailor_harness.tenancy.limits import BudgetExceededError, CostRateUnavailableError
+from resume_tailor_harness.tenancy.limits import (
+    BudgetExceededError,
+    CostRateUnavailableError,
+)
 from resume_tailor_harness.tenancy.quotas import (
     CostQuotaExceededError,
     GlobalCostQuotaExceededError,
@@ -35,6 +38,98 @@ from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 
 NOW = datetime(2026, 7, 30, 12, 0, tzinfo=UTC)
 MODEL = "claude-sonnet-5"
+
+
+def test_decisions_dedicated_key_bypasses_gateway_and_byok_but_not_shared_policy(
+    tmp_path,
+):
+    engine = _engine(tmp_path, shared_key_access=False)
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_decisions_enabled=True,
+        openai_decisions_api_key="decisions-key",
+        openai_route_mode="subscription",
+        sub2api_openai_key="gateway-key",
+        sub2api_base_url="https://gateway.example",
+    )
+    context = _context(
+        tmp_path,
+        engine,
+        settings=settings,
+        user_provider_keys={"openai": "user-key"},
+        own_key_providers=frozenset({"openai"}),
+    )
+    with use_context(context), pytest.raises(BudgetExceededError):
+        SpendGate().open_decisions()
+    with Session(engine) as session:
+        user = session.get(User, context.user_id)
+        assert user is not None
+        user.shared_key_access = True
+        session.commit()
+    with use_context(context):
+        decision = SpendGate().open_decisions()
+    assert decision.api_key == "decisions-key"
+    assert decision.base_url == "https://api.openai.com/v1"
+    assert decision.own_key is False
+
+
+def test_decisions_admin_obeys_global_cap_and_explicit_usage_is_not_byok(tmp_path):
+    from resume_tailor_harness.tenancy.costs import MeteredUsage
+    from resume_tailor_harness.tenancy.usage import record_direct_usage
+
+    engine = _engine(tmp_path, role="admin")
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_decisions_enabled=True,
+        openai_decisions_api_key="decisions-key",
+        cost_quota_enforcement="enforce",
+        global_monthly_cost_quota_micros=1,
+    )
+    context = _context(
+        tmp_path,
+        engine,
+        settings=settings,
+        role="admin",
+        own_key_providers=frozenset({"openai"}),
+    )
+    context.selected_own_key_providers["openai"] = True
+    usage = MeteredUsage(
+        provider="openai",
+        model="gpt-6-luna",
+        input_tokens=1000,
+        total_tokens=1000,
+        reasoning_mode="decisions",
+    )
+    with use_context(context):
+        SpendGate().open_decisions()
+        record_direct_usage(usage, own_key=False, request_id="decisions:one")
+        record_direct_usage(usage, own_key=False, request_id="decisions:one")
+        with pytest.raises(GlobalCostQuotaExceededError):
+            SpendGate().open_decisions()
+    with Session(engine) as session:
+        rows = session.query(UsageEvent).all()
+        assert len(rows) == 1
+        assert rows[0].own_key is False
+        assert rows[0].cost_micros == 100
+        assert rows[0].quota_cost_micros == 100
+
+
+def test_workspace_cannot_override_decisions_enrollment_or_key(tmp_path):
+    from resume_tailor_harness.tenancy.workspace import effective_settings
+
+    paths = WorkspacePaths(tmp_path)
+    paths.secrets_env.write_text(
+        "OPENAI_DECISIONS_ENABLED=true\nOPENAI_DECISIONS_API_KEY=tenant-key\n",
+        encoding="utf-8",
+    )
+    base = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_decisions_enabled=False,
+        openai_decisions_api_key="platform-key",
+    )
+    overlay = effective_settings(base, paths)
+    assert overlay.settings.openai_decisions_enabled is False
+    assert overlay.settings.openai_decisions_api_key == "platform-key"
 
 
 def _engine(tmp_path, **user_fields):

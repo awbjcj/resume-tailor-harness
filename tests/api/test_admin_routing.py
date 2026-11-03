@@ -37,6 +37,13 @@ def test_routing_configuration_is_admin_only(mu_app, mu_client):
     _add_member(mu_app)
     assert _login(mu_client, "member", "member-password").status_code == 200
     assert mu_client.get("/api/admin/routing").status_code == 403
+    assert mu_client.get("/api/admin/routing/decisions").status_code == 403
+    assert (
+        mu_client.put(
+            "/api/admin/routing/decisions", json={"enabled": True, "apiKey": "key"}
+        ).status_code
+        == 403
+    )
     assert (
         mu_client.put("/api/admin/routing", json={"baseUrl": "https://x"}).status_code
         == 403
@@ -113,3 +120,64 @@ def test_local_mode_refreshes_the_default_context_and_clears_route_cache(tmp_pat
         assert refreshed is not previous
         assert refreshed.settings.sub2api_anthropic_key == "ant-subscription-key"
         assert refreshed.spend_decisions == {}
+        enrolled = client.put(
+            "/api/admin/routing/decisions",
+            json={"enabled": True, "apiKey": "direct-key-test"},
+        )
+        assert enrolled.status_code == 200
+        assert app.state.default_context.settings.openai_decisions_enabled is True
+        assert (
+            app.state.default_context.settings.openai_decisions_api_key
+            == "direct-key-test"
+        )
+
+
+def test_decisions_enrollment_is_separate_explicit_and_write_only(mu_app, mu_client):
+    assert _login(mu_client).status_code == 200
+    url = "/api/admin/routing/decisions"
+    assert mu_client.get(url).json()["enabled"] is False
+    before = mu_app.state.env_path.read_bytes()
+    assert mu_client.put(url, json={"enabled": True}).status_code == 422
+    assert mu_app.state.env_path.read_bytes() == before
+    secret = "sk-direct-decisions-test"
+    response = mu_client.put(url, json={"apiKey": secret})
+    assert response.status_code == 200
+    assert response.json()["enabled"] is False
+    assert response.json()["keyConfigured"] is True
+    assert secret not in response.text
+    assert mu_client.put(url, json={"enabled": True}).json()["enabled"] is True
+    assert mu_app.state.settings.openai_decisions_api_key == secret
+    assert mu_app.state.settings.openai_route_mode == "auto"
+    assert mu_app.state.settings.sub2api_openai_key == ""
+    assert mu_app.state.settings.openai_api_key == ""
+    assert mu_client.put(url, json={"apiKey": None}).status_code == 422
+    response = mu_client.put(url, json={"enabled": False, "apiKey": None})
+    assert response.status_code == 200
+    assert response.json()["keyConfigured"] is False
+    assert secret not in mu_app.state.env_path.read_text(encoding="utf-8")
+
+
+def test_decisions_rejects_gateway_key_and_endpoint_overrides(mu_app, mu_client):
+    assert _login(mu_client).status_code == 200
+    mu_app.state.settings.sub2api_openai_key = "gateway-test"
+    url = "/api/admin/routing/decisions"
+    before = mu_app.state.env_path.read_bytes()
+    assert (
+        mu_client.put(url, json={"enabled": True, "apiKey": "gateway-test"}).status_code
+        == 422
+    )
+    assert (
+        mu_client.put(url, json={"endpoint": "https://gateway.example"}).status_code
+        == 422
+    )
+    assert mu_client.put(url, json={"enabled": None}).status_code == 422
+    assert mu_app.state.env_path.read_bytes() == before
+
+
+def test_decisions_validation_never_reflects_rejected_secrets(mu_client):
+    assert _login(mu_client).status_code == 200
+    secret = "sk-rejected-test-secret-" + "x" * 512
+    response = mu_client.put("/api/admin/routing/decisions", json={"apiKey": secret})
+    assert response.status_code == 422
+    assert secret not in response.text
+    assert response.headers["cache-control"] == "no-store"

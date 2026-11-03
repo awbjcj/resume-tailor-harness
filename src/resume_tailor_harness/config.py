@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     anthropic_base_url: str = "https://api.anthropic.com"
     openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
+    # Separate, deployment-owned opt-in. Decisions always use api.openai.com,
+    # never the general provider route or a member's key.
+    openai_decisions_enabled: bool = False
+    openai_decisions_api_key: str = Field(default="", repr=False)
     gemini_api_key: str = ""
     deepseek_api_key: str = ""
 

@@ -21,3 +21,10 @@ import resume_tailor_harness.taxonomy.embeddings as embeddings
 @pytest.fixture(autouse=True)
 def _offline_embedding_provider(monkeypatch):
     monkeypatch.setattr(embeddings, "_provider_from_settings", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def _offline_decisions(monkeypatch):
+    # A developer may enroll locally. Ordinary tests must still be offline;
+    # feature tests explicitly construct enabled Settings and mock transport.
+    monkeypatch.setenv("OPENAI_DECISIONS_ENABLED", "false")
