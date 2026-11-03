@@ -33,7 +33,7 @@ describe("ApplicationUpdateReviewDialog", () => {
     expect(screen.getByLabelText(/^date$/i)).toHaveValue("");
     expect(screen.getByLabelText(/^notes$/i)).toHaveValue(item.evidence);
     expect(screen.getByText("Proposed status: Interview")).toBeInTheDocument();
-    expect(screen.getByText(/receipt time does not establish an interview appointment/)).toBeInTheDocument();
+    expect(screen.getByText(/time you received the message doesn't confirm an interview appointment/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Accept and add event" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Choose the stage described in the message.");
     await user.selectOptions(screen.getByLabelText(/^stage$/i), "technical_round");
@@ -42,13 +42,13 @@ describe("ApplicationUpdateReviewDialog", () => {
     expect(screen.getByLabelText(/^time$/i)).toHaveValue("");
     expect(screen.getByLabelText(/^timezone$/i)).toHaveValue("");
     await user.click(screen.getByRole("button", { name: "Accept and add event" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Enter the confirmed time and timezone");
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter the confirmed time and time zone");
     await user.type(screen.getByLabelText(/^time$/i), "14:00");
     await user.type(screen.getByLabelText(/^timezone$/i), "America/New_York");
     await user.click(screen.getByRole("button", { name: "Accept and add event" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Confirm the event details");
     expect(accepted).toBeUndefined();
-    await user.click(screen.getByRole("checkbox", { name: /I confirmed the stage/ }));
+    await user.click(screen.getByRole("checkbox", { name: /I've confirmed the stage/ }));
     await user.click(screen.getByRole("button", { name: "Accept and add event" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(accepted).toEqual(expect.objectContaining({
@@ -71,7 +71,7 @@ describe("ApplicationUpdateReviewDialog", () => {
     await user.click(screen.getByRole("button", { name: "Add to timeline" }));
     await user.selectOptions(await screen.findByLabelText(/^stage$/i), "online_assessment");
     await user.type(screen.getByLabelText(/^date$/i), "2026-11-06");
-    await user.click(screen.getByRole("checkbox", { name: /I confirmed the stage/ }));
+    await user.click(screen.getByRole("checkbox", { name: /I've confirmed the stage/ }));
     rerender(<ApplicationUpdateReviewDialog item={{ ...item, revision: "review-2", evidence: "Corrected evidence" }} />);
     expect(screen.getByLabelText(/^notes$/i)).toHaveValue(item.evidence);
     expect(screen.queryByText("Corrected evidence")).not.toBeInTheDocument();
@@ -89,7 +89,7 @@ describe("ApplicationUpdateReviewDialog", () => {
     await user.click(screen.getByRole("button", { name: "添加到时间线" }));
     expect(screen.getByRole("dialog", { name: "审核申请状态更新" })).toBeInTheDocument();
     expect(await screen.findByText("建议状态：面试中")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /我已根据邮件或与雇主核实/ })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /我已通过邮件或向雇主核实/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "接受并添加事件" })).toBeInTheDocument();
   });
 });

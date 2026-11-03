@@ -73,7 +73,7 @@ describe("ProfileChangeCard", () => {
     await user.click(screen.getByRole("button", { name: "Apply changes" }));
     expect(resolve).toHaveBeenCalledTimes(1);
     await act(async () => reject(new Error("Unavailable")));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Your draft is kept");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your draft is still available");
     expect(screen.getByRole("button", { name: "Apply changes" })).toBeEnabled();
     expect(screen.getByText("Backend Engineer")).toBeInTheDocument();
   });

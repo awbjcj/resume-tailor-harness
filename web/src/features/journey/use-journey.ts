@@ -111,7 +111,7 @@ export const JOURNEY_STAGES: readonly JourneyStageDef[] = [
     id: "tailor",
     label: "Application",
     task: "Prepare and submit an application",
-    hint: "Tailor, review and render, then prepare and record confirmed submission.",
+    hint: "Tailor, review, and render your resume, then prepare your application and record it after submission is confirmed.",
     cta: { label: "Tailor a resume", to: "/pipeline?stage=approved" },
     done: (_s, d) => d.applied > 0,
     count: (_s, d) => ["tailor", "review", "render", "apply"].reduce((sum, key) => sum + (d.queues[key] ?? 0), 0),

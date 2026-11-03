@@ -2,10 +2,10 @@ import i18n from "./index";
 
 export const decisionsEn = {
   title: "Fast skill classification",
-  description: "Use OpenAI Decisions for profile grouping, category assignment, and selection of existing domains.",
+  description: "Use OpenAI Decisions to group profile skills, assign categories, and select existing domains.",
   enrollment: "Enable direct OpenAI Decisions",
-  billing: "Enabling this feature sends skill names and relevant context directly to OpenAI and charges the API balance of the key below. It bypasses Sub2API, even when OpenAI normally uses your subscription gateway. Shared spending limits still apply.",
-  quality: "Clear choices use the fast path. Uncertain results, new domains, and provider failures use your usual models and routing. Manual corrections stay protected. Speed and cost depend on how many skills need fallback.",
+  billing: "Enabling this feature sends skill names and relevant context directly to OpenAI and charges the API balance associated with the key below. It bypasses Sub2API, even when OpenAI normally uses your subscription gateway. Shared spending limits still apply.",
+  quality: "Clear classifications use the fast path. Uncertain results, new domains, and provider failures fall back to your usual models and routing. Manual corrections are preserved. Speed and cost depend on how many skills need fallback.",
   key: "Direct OpenAI API key",
   configured: "Key saved — leave blank to keep it",
   placeholder: "Paste an OpenAI API key",
@@ -26,10 +26,10 @@ export const decisionsEn = {
 
 export const decisionsZh: typeof decisionsEn = {
   title: "快速技能分类",
-  description: "使用 OpenAI Decisions 进行个人技能分组、类别分配和现有领域选择。",
+  description: "使用 OpenAI Decisions 为个人技能分组、分配类别并选择已有领域。",
   enrollment: "启用 OpenAI Decisions 直连",
   billing: "启用后，技能名称和相关上下文将直接发送至 OpenAI，并使用下方密钥所属账户的 API 余额计费。即使 OpenAI 通常通过订阅网关访问，此功能也会绕过 Sub2API。平台共享用量限额仍然有效。",
-  quality: "明确的选择使用快速分类；不确定的结果、新领域和服务故障由原有模型及路由处理。手动修正始终保留。实际速度和费用取决于需要回退处理的技能数量。",
+  quality: "分类结果明确时使用快速通道；结果不确定、涉及新领域或服务商出错时，会回退到原有模型和路由。手动修正会保留。实际速度和费用取决于需要回退处理的技能数量。",
   key: "OpenAI 直连 API 密钥",
   configured: "已保存密钥，留空即可保留",
   placeholder: "粘贴 OpenAI API 密钥",

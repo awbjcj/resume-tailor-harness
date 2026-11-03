@@ -118,15 +118,15 @@ export function VersionRow({
             {!eligible && (
               <p className="text-sm text-destructive">
                 {applied
-                  ? "This selected resume failed fact-lock. Change or clear the selection before applying."
-                  : "Fact-lock must pass before this resume can be selected for an application."}
+                  ? "This resume failed fact-lock. Choose another resume or clear your selection before applying."
+                  : "This resume must pass fact-lock before you can select it for an application."}
               </p>
             )}
             {applied && eligible && (
-              <p className="text-sm text-muted-foreground">Selection does not submit an application.</p>
+              <p className="text-sm text-muted-foreground">Selecting a document does not submit an application.</p>
             )}
             {eligible && !pdfAvailable && (
-              <p className="text-sm text-muted-foreground">PDF unavailable. Render this version before uploading.</p>
+              <p className="text-sm text-muted-foreground">No PDF is available. Generate one for this version before uploading.</p>
             )}
           </div>
         </div>
