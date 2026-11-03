@@ -16,6 +16,9 @@ fitOnePage}`; legacy `template_path` and `output_dir` remain runtime-only CLI
   Source references and the bundled Source Sans 3 license are in
   `templates/README.md` and `templates/fonts/LICENSE.md`. Compile with the
   bundled font directory; do not require host fonts or remote Typst packages.
+  Default body text is 11pt with separate entry/metadata blocks. Compact fitting
+  must preserve the shared spacing floors; real PDF glyph-bound tests cover all
+  layouts/densities. Bundled catalog previews use the one-page export fitter.
 - **Export length is validated before publication.** `fit_one_page` selects
   one page or a maximum of two. Bundled fitting uses bounded compression/expansion (at most twelve calls),
   10–12pt body text, and at least 80% printable-height fill on both pages.

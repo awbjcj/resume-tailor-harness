@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from resume_tailor_harness.api.app import create_app
@@ -14,7 +15,12 @@ from resume_tailor_harness.models.resume import (
     TailoredProject,
 )
 from resume_tailor_harness.tracking.repository import save_application
-from resume_tailor_harness.tracking.tables import Application, Job, JobStatus, ResumeVersion
+from resume_tailor_harness.tracking.tables import (
+    Application,
+    Job,
+    JobStatus,
+    ResumeVersion,
+)
 
 
 def _client():
@@ -277,13 +283,16 @@ def test_pdf_download_filename_is_friendly(tmp_path):
     )
 
 
-def test_pdf_preview_serves_inline_without_attachment_disposition(tmp_path):
+@pytest.mark.parametrize(
+    "company,title", [("Acme Corp", "Senior Engineer"), ("示例公司", "软件工程师")]
+)
+def test_pdf_preview_serves_inline_with_the_download_filename(tmp_path, company, title):
     client = _client()
     pdf = tmp_path / "ok.pdf"
     pdf.write_bytes(b"%PDF-1.4 test")
     with client:
         with get_session(client.app.state.engine) as s:  # type: ignore[union-attr]
-            job = Job(source="manual", jd_text="x", company="Acme Corp")
+            job = Job(source="manual", jd_text="x", company=company, title=title)
             s.add(job)
             s.commit()
             s.refresh(job)
@@ -294,11 +303,14 @@ def test_pdf_preview_serves_inline_without_attachment_disposition(tmp_path):
             s.refresh(v)
             vid = v.id
         resp = client.get(f"/api/resume-versions/{vid}/preview")
+        download = client.get(f"/api/resume-versions/{vid}/pdf")
     assert resp.status_code == 200
     assert resp.headers["content-type"] == "application/pdf"
     assert resp.content == b"%PDF-1.4 test"
-    # An inline preview must not be handed to the browser as a download.
-    assert "attachment" not in resp.headers.get("content-disposition", "")
+    assert resp.headers["content-disposition"] == download.headers[
+        "content-disposition"
+    ].replace("attachment;", "inline;", 1)
+    assert "filename" in resp.headers["content-disposition"]
 
 
 def test_pdf_preview_404_when_no_file(tmp_path):

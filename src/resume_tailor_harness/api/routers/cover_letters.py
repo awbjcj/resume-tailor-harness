@@ -95,7 +95,7 @@ def download_cover_letter_pdf(
     )
 
 
-@router.get("/cover-letters/{cover_letter_id}/preview")
+@link_router.get("/cover-letters/{cover_letter_id}/preview")
 def preview_cover_letter_pdf(
     cover_letter_id: int, session: Session = Depends(get_session)
 ) -> FileResponse:
@@ -109,15 +109,18 @@ def preview_cover_letter_pdf(
     path = resolve_artifact_pdf(cover_letter.pdf_path)
     if path is None:
         raise ApiException(404, "NOT_FOUND", "No rendered PDF for this cover letter")
-    # Streamed, not buffered. ``FileResponse`` only emits a disposition when a
-    # ``filename`` is passed, so ``inline`` is set explicitly here -- an
-    # attachment disposition would defeat the preview.
+    job = get_job(session, cover_letter.job_id)
+    filename = (
+        cover_letter_download_name(job, cover_letter) if job is not None else path.name
+    )
     return FileResponse(
         path,
         media_type="application/pdf",
+        filename=filename,
+        content_disposition_type="inline",
         headers={
-            "Content-Disposition": "inline",
             "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "no-referrer",
             "Content-Security-Policy": "default-src 'none'; object-src 'self'",
         },
     )

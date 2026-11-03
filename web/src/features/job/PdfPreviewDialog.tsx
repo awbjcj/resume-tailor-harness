@@ -10,11 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { apiUrl, authHeaders, openDownload } from "@/lib/api/client";
+import { apiUrl, authHeaders, createDownloadUrl, openDownload } from "@/lib/api/client";
 
 /**
  * The dialog stays mounted for its exit transition (200ms in `dialog.tsx`), so
- * the close-time reset is deferred past it -- clearing the blob the moment
+ * the close-time reset is deferred past it -- clearing the frame the moment
  * `open` flips makes the PDF vanish and leaves an empty box fading out.
  */
 const EXIT_RESET_DELAY_MS = 250;
@@ -22,8 +22,8 @@ const EXIT_RESET_DELAY_MS = 250;
 /**
  * Render a stored PDF inline, so a resume or cover letter can be read before
  * it is downloaded. The API's `/preview` routes deliberately serve an `inline`
- * disposition; the blob is fetched (rather than pointing the iframe at the
- * URL) because the request needs the session/bearer credentials.
+ * disposition and friendly filename. A short download capability lets native
+ * viewers authenticate without replacing the named response with a blob UUID.
  */
 export function PdfPreviewDialog({
   open,
@@ -38,15 +38,15 @@ export function PdfPreviewDialog({
   previewPath: string;
   downloadPath: string;
 }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Derived rather than stored: the reset clears both results, so "open with no
   // result yet" is exactly the loading state, and the effect body never has to
   // set state synchronously.
-  const loading = open && blobUrl === null && error === null;
+  const loading = open && previewUrl === null && error === null;
   const pendingResetRef = useRef<{ id: number; run: () => void } | null>(null);
 
-  // Settle a deferred close-time reset early. Everything that must revoke
+  // Settle a deferred close-time reset early. Everything that must reset
   // promptly -- a `previewPath` change while open, a reopen, unmount -- calls
   // this rather than waiting out the exit animation.
   const flushPendingReset = useCallback(() => {
@@ -62,7 +62,6 @@ export function PdfPreviewDialog({
     flushPendingReset();
 
     const controller = new AbortController();
-    let objectUrl: string | null = null;
     void (async () => {
       try {
         const response = await fetch(apiUrl(previewPath), {
@@ -74,14 +73,12 @@ export function PdfPreviewDialog({
           const payload = await response.json().catch(() => null);
           throw new Error(payload?.error?.message ?? "Preview failed");
         }
-        objectUrl = URL.createObjectURL(await response.blob());
-        // `abort()` cancels the request, but a response that already resolved
-        // still lands here -- the signal is what makes a stale result stale.
-        if (controller.signal.aborted) {
-          URL.revokeObjectURL(objectUrl);
-          return;
-        }
-        setBlobUrl(objectUrl);
+        // Check errors before mounting the frame, then let the native viewer
+        // stream the named response itself. Do not buffer another PDF copy.
+        await response.body?.cancel();
+        if (controller.signal.aborted) return;
+        const url = await createDownloadUrl(previewPath, controller.signal);
+        if (!controller.signal.aborted) setPreviewUrl(url);
       } catch (cause) {
         // A deliberate abort is not a failure worth reporting.
         if (controller.signal.aborted) return;
@@ -91,10 +88,8 @@ export function PdfPreviewDialog({
 
     return () => {
       controller.abort();
-      const stale = objectUrl;
       const run = () => {
-        if (stale) URL.revokeObjectURL(stale);
-        setBlobUrl(null);
+        setPreviewUrl(null);
         setError(null);
       };
       pendingResetRef.current = {
@@ -129,10 +124,11 @@ export function PdfPreviewDialog({
             <p className="flex h-full items-center justify-center text-sm text-destructive" role="alert">
               {error}
             </p>
-          ) : blobUrl ? (
+          ) : previewUrl ? (
             <iframe
-              src={blobUrl}
+              src={previewUrl}
               title={title}
+              referrerPolicy="no-referrer"
               className="h-full w-full rounded-lg border-0"
             />
           ) : null}

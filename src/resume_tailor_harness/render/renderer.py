@@ -12,6 +12,7 @@ from pypdf import PdfReader
 from resume_tailor_harness.models.resume import ResumeContent
 
 _FONT_DIRECTORY = Path(__file__).resolve().parents[3] / "templates" / "fonts"
+_BODY_SIZE_PT = 11
 
 
 def _slug(text: str) -> str:
@@ -96,7 +97,7 @@ def render_pdf(
     template_path: str | Path = "templates/resume.typ",
     *,
     fit_pages: int | None = 1,
-    min_zoom: float = 10 / 10.5,
+    min_zoom: float = 10 / _BODY_SIZE_PT,
     zoom_step: float = 0.03,
     root: str | Path | None = None,
     highlight_terms: list[str] | None = None,
@@ -133,10 +134,10 @@ def render_pdf(
     from resume_tailor_harness.render.templates import BUNDLED
 
     bundled = any(source == template.path.resolve() for template in BUNDLED.values())
-    floor = max(min_zoom, 10 / 10.5)
+    floor = max(min_zoom, 10 / _BODY_SIZE_PT)
 
     def compile_at(density: float, break_before: str = "") -> tuple[bytes, int]:
-        zoom = 1 - density * ((1 - floor) if density >= 0 else (12 / 10.5 - 1))
+        zoom = 1 - density * ((1 - floor) if density >= 0 else (12 / _BODY_SIZE_PT - 1))
         sys_inputs = {
             "data": data,
             "zoom": f"{zoom:.6f}",

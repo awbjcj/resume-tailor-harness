@@ -90,7 +90,16 @@ to meet the page budget. Each native revision is rendered and reviewed again.
 Bundled pages are US Letter with 0.6-inch horizontal and 0.55-inch vertical
 margins. The fitter adjusts body text within **10–12pt**, paragraph leading,
 bullet spacing, entry spacing and section gaps. Names stay 20pt and headings
-12pt. It measures the text span against the printable area on **both** pages;
+12pt. The default body is 11pt, with slightly larger bold entry titles and
+metadata at most half a point smaller (never below 10pt). Separate blocks give
+company/title, project/technology, link, description and skill-category rows
+their own spacing instead of inheriting tight paragraph line breaks. Even the
+most compact setting keeps 3pt between heading rows, 3.5pt around detail rows,
+2.5pt between bullets and a 1.24em body baseline distance. These gaps are bounded
+alongside type size; fitting requests a content revision when they cannot fit.
+Bundled template previews use the same one-page fitter as exports.
+
+It measures the text span against the printable area on **both** pages;
 each must occupy at least **80%** for a two-page export. This is a vertical layout
 measure, not an ATS score or a count of ink pixels.
 
@@ -115,3 +124,9 @@ Custom template authors remain responsible for their typography and spacing.
 
 See [the local resume-skill review and resolved rules](../docs/resume-formatting-rules.md)
 for role-specific rules, conflicts, evidence requirements and validation.
+
+Resume and cover-letter previews stream the original PDF with an inline
+`Content-Disposition` and the same company/role/version filename as downloads.
+The browser viewer uses a short download capability rather than an anonymous
+blob URL, so its built-in Save button retains the friendly filename. This also
+works with bearer authentication; capability scope and tenant checks still apply.
