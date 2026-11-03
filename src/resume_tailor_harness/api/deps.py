@@ -275,8 +275,13 @@ def require_admin() -> UserContext:
 
 
 def refresh_app_settings(app, fresh: Settings) -> None:
-    """Keep startup/platform fields when volume-backed settings are refreshed."""
+    """Refresh the settings used by subsequent requests after an env write."""
     if current_context() is not None:
+        # Hosted requests rebuild their workspace overlay each time. Local
+        # requests reuse default_context, so refresh it too, keeping the
+        # platform settings as its base rather than promoting workspace keys.
+        if app.state.app_mode == "local":
+            refresh_platform_settings(app, app.state.settings)
         return
     refresh_platform_settings(app, fresh)
 
