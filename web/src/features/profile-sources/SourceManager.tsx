@@ -475,7 +475,10 @@ function SourceCard({
                 )}
               </Badge>
               {!missing ? (
-                <Badge variant={incorporated ? "secondary" : "outline"}>
+                <Badge
+                  variant={incorporated ? "secondary" : "outline"}
+                  className="h-auto min-h-5 max-w-full whitespace-normal text-left"
+                >
                   {t(incorporated ? "profilePublication.sourceUsed" : "profilePublication.sourcePending")}
                 </Badge>
               ) : null}
