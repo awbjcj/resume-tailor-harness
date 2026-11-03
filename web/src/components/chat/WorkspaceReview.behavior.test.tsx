@@ -141,7 +141,7 @@ describe("workspace review interactions", () => {
     saved.actions[0].receipt = { state: "unconfirmed", result: {}, approvedBy: "local-user", createdAt: saved.createdAt };
     serve(saved);
     render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
-    expect((await screen.findAllByText("Outcome unconfirmed. Check the saved record; do not retry this change.")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("The outcome is unconfirmed. Check the record to see what happened. Don't retry this change.")).length).toBeGreaterThan(0);
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Approve and save" })).not.toBeInTheDocument();
   });

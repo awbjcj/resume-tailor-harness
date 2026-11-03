@@ -26,7 +26,7 @@ const fields: Record<string, readonly [string, string]> = {
   comp_currency: ["Currency", "币种"], total_comp: ["Total compensation", "薪酬总额"],
   keywords: ["Keywords", "关键词"], titles: ["Job titles", "职位名称"], locations: ["Locations", "地点"],
   remote_policy: ["Work arrangements", "办公方式"], min_salary: ["Minimum salary", "最低薪资"],
-  yoe_min: ["Minimum years of experience", "最少工作年数"], yoe_max: ["Maximum years of experience", "最多工作年数"],
+  yoe_min: ["Minimum years of experience", "最低工作年限"], yoe_max: ["Maximum years of experience", "最高工作年限"],
   sponsorship_required: ["Visa sponsorship required", "需要工作签证担保"], role_anchors: ["Role keywords", "职位关键词"],
   exclude_terms: ["Excluded terms", "排除词"], target_role: ["Target role", "目标职位"],
   distance: ["Search radius", "搜索半径"], max_days_old: ["Maximum posting age (days)", "职位发布天数上限"],

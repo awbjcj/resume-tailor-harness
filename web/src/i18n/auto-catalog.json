@@ -12569,50 +12569,50 @@
     "en": "Selected for application",
     "zh-CN": "已选用于申请"
   },
-  "Selection does not submit an application.": {
-    "key": "ui_d33cf6590396",
-    "en": "Selection does not submit an application.",
+  "Selecting a document does not submit an application.": {
+    "key": "ui_47b78d036c6b",
+    "en": "Selecting a document does not submit an application.",
     "zh-CN": "选择文档不会提交申请。"
   },
-  "This selected resume failed fact-lock. Change or clear the selection before applying.": {
-    "key": "ui_eb19f392888d",
-    "en": "This selected resume failed fact-lock. Change or clear the selection before applying.",
-    "zh-CN": "所选简历未通过真实性校验。申请前请更换或清除该选择。"
+  "This resume failed fact-lock. Choose another resume or clear your selection before applying.": {
+    "key": "ui_5fccf8407be5",
+    "en": "This resume failed fact-lock. Choose another resume or clear your selection before applying.",
+    "zh-CN": "所选简历未通过真实性校验。申请前请更换简历或取消选择。"
   },
-  "Fact-lock must pass before this resume can be selected for an application.": {
-    "key": "ui_bfbe7c3aabf5",
-    "en": "Fact-lock must pass before this resume can be selected for an application.",
+  "This resume must pass fact-lock before you can select it for an application.": {
+    "key": "ui_e5ef773b42ef",
+    "en": "This resume must pass fact-lock before you can select it for an application.",
     "zh-CN": "简历通过真实性校验后，才可选用于申请。"
   },
-  "PDF unavailable. Render this version before uploading.": {
-    "key": "ui_61057f9bc5a2",
-    "en": "PDF unavailable. Render this version before uploading.",
-    "zh-CN": "PDF 不可用。上传前请先渲染此版本。"
+  "No PDF is available. Generate one for this version before uploading.": {
+    "key": "ui_0c6ea0c43c00",
+    "en": "No PDF is available. Generate one for this version before uploading.",
+    "zh-CN": "当前没有 PDF。上传前请先为此版本生成 PDF。"
   },
-  "This selected cover letter failed fact-check. Change or clear the selection before applying.": {
-    "key": "ui_a4ae524d562e",
-    "en": "This selected cover letter failed fact-check. Change or clear the selection before applying.",
-    "zh-CN": "所选求职信未通过事实核验。申请前请更换或清除该选择。"
+  "This cover letter failed fact-check. Choose another cover letter or clear your selection before applying.": {
+    "key": "ui_ac42ddba0354",
+    "en": "This cover letter failed fact-check. Choose another cover letter or clear your selection before applying.",
+    "zh-CN": "所选求职信未通过事实核验。申请前请更换求职信或取消选择。"
   },
-  "Fact-check must pass before this cover letter can be selected for an application.": {
-    "key": "ui_988d734c1160",
-    "en": "Fact-check must pass before this cover letter can be selected for an application.",
+  "This cover letter must pass fact-check before you can select it for an application.": {
+    "key": "ui_7d8a4c8d64d2",
+    "en": "This cover letter must pass fact-check before you can select it for an application.",
     "zh-CN": "求职信通过事实核验后，才可选用于申请。"
   },
-  "PDF unavailable. Prepare or provide this cover letter before uploading.": {
-    "key": "ui_364a0389bdaf",
-    "en": "PDF unavailable. Prepare or provide this cover letter before uploading.",
-    "zh-CN": "PDF 不可用。上传前请先准备或提供这封求职信。"
+  "No PDF is available. Prepare or provide this cover letter before uploading.": {
+    "key": "ui_9fb0979059dd",
+    "en": "No PDF is available. Prepare or provide this cover letter before uploading.",
+    "zh-CN": "当前没有 PDF。上传前请先准备或提供这封求职信。"
   },
-  "Application preparation copied in English. Files are not attached.": {
-    "key": "ui_08926d265770",
-    "en": "Application preparation copied in English. Files are not attached.",
-    "zh-CN": "已复制英文申请准备资料，文件需另行提供。"
+  "Application prompt copied in English. Files aren't attached.": {
+    "key": "ui_d8f34eb86201",
+    "en": "Application prompt copied in English. Files aren't attached.",
+    "zh-CN": "已复制英文申请提示词，未包含文件。"
   },
-  "Copy application preparation and selected material IDs. Download files separately.": {
-    "key": "ui_cedac237a283",
-    "en": "Copy application preparation and selected material IDs. Download files separately.",
-    "zh-CN": "复制申请准备资料和所选文档编号。文件需另行下载。"
+  "Copy the application prompt and selected document IDs. Download files separately.": {
+    "key": "ui_89481776a5e8",
+    "en": "Copy the application prompt and selected document IDs. Download files separately.",
+    "zh-CN": "复制申请提示词和所选文档编号。文件需另行下载。"
   },
   "Clipboard access is unavailable. Select and copy the text below, then paste it into your browser or computer-use assistant. Selected files must be downloaded separately.": {
     "key": "ui_2e9903ee7c74",
@@ -12634,9 +12634,9 @@
     "en": "Prepare and submit an application",
     "zh-CN": "准备并投递职位申请"
   },
-  "Tailor, review and render, then prepare and record confirmed submission.": {
-    "key": "ui_1697bb2f52e6",
-    "en": "Tailor, review and render, then prepare and record confirmed submission.",
-    "zh-CN": "定制、检查并生成简历 PDF，再准备申请，确认已投递后记录。"
+  "Tailor, review, and render your resume, then prepare your application and record it after submission is confirmed.": {
+    "key": "ui_89099bc3bced",
+    "en": "Tailor, review, and render your resume, then prepare your application and record it after submission is confirmed.",
+    "zh-CN": "先定制、检查并生成简历 PDF，再准备申请。确认投递后记录。"
   }
 }

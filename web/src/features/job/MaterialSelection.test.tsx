@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { CoverLetterRow, type CoverLetterItem } from "./CoverLetterRow";
 import { VersionRow } from "./VersionRow";
 
@@ -53,7 +54,7 @@ describe("application material selection", () => {
     render(<VersionRow jobId={7} version={version()} appliedVersionId={null} />);
     fireEvent.click(screen.getByRole("button", { name: "Use for application" }));
     expect(mutations.selectResume).toHaveBeenCalledWith(11);
-    expect(screen.getByText("PDF unavailable. Render this version before uploading.")).toBeInTheDocument();
+    expect(screen.getByText("No PDF is available. Generate one for this version before uploading.")).toBeInTheDocument();
   });
 
   it("blocks a failed resume before a mutation and keeps its reason visible", () => {
@@ -62,7 +63,7 @@ describe("application material selection", () => {
     expect(choose).toBeDisabled();
     fireEvent.click(choose);
     expect(mutations.selectResume).not.toHaveBeenCalled();
-    expect(screen.getByText("Fact-lock must pass before this resume can be selected for an application.")).toBeInTheDocument();
+    expect(screen.getByText("This resume must pass fact-lock before you can select it for an application.")).toBeInTheDocument();
   });
 
   it("allows a previously selected unsafe resume to be cleared without calling it applied", () => {
@@ -70,7 +71,7 @@ describe("application material selection", () => {
     const selected = screen.getByRole("button", { name: "Selected for application" });
     expect(selected).toBeEnabled();
     expect(screen.queryByText("Applied")).not.toBeInTheDocument();
-    expect(screen.getByText("This selected resume failed fact-lock. Change or clear the selection before applying.")).toBeInTheDocument();
+    expect(screen.getByText("This resume failed fact-lock. Choose another resume or clear your selection before applying.")).toBeInTheDocument();
     fireEvent.click(selected);
     expect(mutations.deselectResume).toHaveBeenCalledOnce();
   });
@@ -79,15 +80,31 @@ describe("application material selection", () => {
     render(<VersionRow jobId={7} version={version({ pdfPath: "stale.pdf" })} appliedVersionId={11} />);
     expect(screen.queryByRole("link", { name: "Download" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Render" })).toBeInTheDocument();
-    expect(screen.getByText("Selection does not submit an application.")).toBeInTheDocument();
+    expect(screen.getByText("Selecting a document does not submit an application.")).toBeInTheDocument();
+  });
+
+  it("shows selection, PDF, and fact-lock guidance in Chinese", async () => {
+    await changeLanguage("zh-CN");
+    const view = render(<VersionRow jobId={7} version={version()} appliedVersionId={11} />);
+    try {
+      expect(await screen.findByText("选择文档不会提交申请。")).toBeInTheDocument();
+      expect(screen.getByText("当前没有 PDF。上传前请先为此版本生成 PDF。")).toBeInTheDocument();
+      view.rerender(<VersionRow jobId={7} version={version({ applicationEligible: false })} appliedVersionId={11} />);
+      expect(screen.getByText("所选简历未通过真实性校验。申请前请更换简历或取消选择。")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "已选用于申请" }));
+      expect(mutations.deselectResume).toHaveBeenCalledOnce();
+    } finally {
+      view.unmount();
+      await changeLanguage("en");
+    }
   });
 
   it("applies the same safety and clearing rules to cover letters", () => {
     const view = render(<CoverLetterRow jobId={7} coverLetter={letter({ applicationEligible: false })} appliedId={null} />);
     expect(screen.getByRole("button", { name: "Use for application" })).toBeDisabled();
-    expect(screen.getByText("Fact-check must pass before this cover letter can be selected for an application.")).toBeInTheDocument();
+    expect(screen.getByText("This cover letter must pass fact-check before you can select it for an application.")).toBeInTheDocument();
     view.rerender(<CoverLetterRow jobId={7} coverLetter={letter({ applicationEligible: false })} appliedId={21} />);
-    expect(screen.getByText("This selected cover letter failed fact-check. Change or clear the selection before applying.")).toBeInTheDocument();
+    expect(screen.getByText("This cover letter failed fact-check. Choose another cover letter or clear your selection before applying.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Selected for application" }));
     expect(mutations.deselectLetter).toHaveBeenCalledOnce();
     expect(mutations.selectLetter).not.toHaveBeenCalled();
@@ -95,7 +112,7 @@ describe("application material selection", () => {
 
   it("allows a safe cover letter selection while making its missing PDF explicit", () => {
     render(<CoverLetterRow jobId={7} coverLetter={letter({ pdfPath: "missing.pdf" })} appliedId={null} />);
-    expect(screen.getByText("PDF unavailable. Prepare or provide this cover letter before uploading.")).toBeInTheDocument();
+    expect(screen.getByText("No PDF is available. Prepare or provide this cover letter before uploading.")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Download" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Use for application" }));
     expect(mutations.selectLetter).toHaveBeenCalledWith(21);
