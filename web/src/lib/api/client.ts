@@ -98,13 +98,19 @@ export async function unwrap<T>(
   return data as T;
 }
 
+/** A short download capability also lets the native PDF viewer keep filenames. */
+export async function createDownloadUrl(path: string, signal?: AbortSignal): Promise<string> {
+  const link = await unwrap(
+    api.POST("/api/auth/link-token", { body: { purpose: "download" }, signal }),
+  );
+  const url = new URL(apiUrl(path));
+  url.searchParams.set("token", link.token);
+  return url.toString();
+}
+
 /** Mint a purpose-bound capability immediately before a browser download. */
 export async function openDownload(path: string): Promise<void> {
-  const link = await unwrap(
-    api.POST("/api/auth/link-token", { body: { purpose: "download" } }),
-  );
-  const separator = path.includes("?") ? "&" : "?";
-  window.location.assign(`${path}${separator}token=${encodeURIComponent(link.token)}`);
+  window.location.assign(await createDownloadUrl(path));
 }
 
 interface PageEnvelope<T> {

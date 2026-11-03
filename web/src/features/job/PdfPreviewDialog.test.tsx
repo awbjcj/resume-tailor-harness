@@ -1,10 +1,16 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { clearToken, setToken } from "@/lib/api/client";
+import { clearToken, createDownloadUrl, setToken } from "@/lib/api/client";
 import { PdfPreviewDialog } from "./PdfPreviewDialog";
 
+vi.mock("@/lib/api/client", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createDownloadUrl: vi.fn(),
+}));
+
 const TITLE = "Round 0 preview";
+const PREVIEW_URL = "http://localhost/api/resume-versions/7/preview?token=short-download-capability";
 
 function dialog(open: boolean) {
   return (
@@ -31,31 +37,37 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-function pdfResponse(blob: Blob) {
-  return { ok: true, blob: vi.fn().mockResolvedValue(blob) } as unknown as Response;
-}
-
-function pdf(content: string) {
-  return new Blob([content], { type: "application/pdf" });
+function pdfResponse() {
+  return { ok: true, body: { cancel: vi.fn().mockResolvedValue(undefined) } } as unknown as Response;
 }
 
 describe("PdfPreviewDialog", () => {
+  beforeEach(() => {
+    vi.mocked(createDownloadUrl).mockReset().mockResolvedValue(PREVIEW_URL);
+  });
+
   afterEach(() => {
     clearToken();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
-  it("authenticates the preview request and renders the PDF blob in an iframe", async () => {
+  it("authenticates the preview and retains the named HTTP response in the native viewer", async () => {
     setToken("preview-token");
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(pdfResponse(pdf("%PDF"))));
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:preview");
-    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const response = pdfResponse();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+    const createBlob = vi.spyOn(URL, "createObjectURL");
 
     renderDialog();
 
     const frame = await screen.findByTitle(TITLE);
-    expect(frame).toHaveAttribute("src", "blob:preview");
+    expect(frame).toHaveAttribute("src", PREVIEW_URL);
+    expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
+    expect(createBlob).not.toHaveBeenCalled();
+    expect(response.body?.cancel).toHaveBeenCalled();
+    expect(createDownloadUrl).toHaveBeenCalledWith(
+      "/api/resume-versions/7/preview", expect.any(AbortSignal),
+    );
     const [url, options] = vi.mocked(fetch).mock.calls[0];
     expect(String(url)).toContain("/api/resume-versions/7/preview");
     expect(new Headers(options?.headers).get("Authorization")).toBe(
@@ -82,39 +94,33 @@ describe("PdfPreviewDialog", () => {
     expect(screen.queryByTitle(TITLE)).not.toBeInTheDocument();
   });
 
-  it("revokes the object URL when the dialog closes", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(pdfResponse(pdf("%PDF"))));
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:preview");
-    const revoke = vi
-      .spyOn(URL, "revokeObjectURL")
-      .mockImplementation(() => undefined);
+  it("aborts the preview request when the dialog closes", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(pdfResponse()));
 
     const { rerender } = renderDialog();
     await screen.findByTitle(TITLE);
 
     rerender(dialog(false));
 
-    // Deferred past the exit animation rather than revoked on the spot.
-    await waitFor(() => expect(revoke).toHaveBeenCalledWith("blob:preview"));
+    const [, options] = vi.mocked(fetch).mock.calls[0];
+    expect(options?.signal?.aborted).toBe(true);
   });
 
-  it("refetches and swaps in a fresh blob when the dialog is reopened", async () => {
-    const second = pdf("second");
+  it("refetches and mints a fresh capability when the dialog is reopened", async () => {
     const secondFetch = deferred<Response>();
     vi.stubGlobal(
       "fetch",
       vi
         .fn()
-        .mockResolvedValueOnce(pdfResponse(pdf("first")))
+        .mockResolvedValueOnce(pdfResponse())
         .mockReturnValueOnce(secondFetch.promise),
     );
-    vi.spyOn(URL, "createObjectURL").mockImplementation((source) =>
-      source === second ? "blob:second" : "blob:first",
-    );
-    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    vi.mocked(createDownloadUrl)
+      .mockResolvedValueOnce(`${PREVIEW_URL}-first`)
+      .mockResolvedValueOnce(`${PREVIEW_URL}-second`);
 
     const { rerender } = renderDialog();
-    expect(await screen.findByTitle(TITLE)).toHaveAttribute("src", "blob:first");
+    expect(await screen.findByTitle(TITLE)).toHaveAttribute("src", `${PREVIEW_URL}-first`);
 
     rerender(dialog(false));
     rerender(dialog(true));
@@ -124,9 +130,9 @@ describe("PdfPreviewDialog", () => {
     expect(screen.getByLabelText("Loading preview")).toBeInTheDocument();
     expect(screen.queryByTitle(TITLE)).not.toBeInTheDocument();
 
-    secondFetch.resolve(pdfResponse(second));
+    secondFetch.resolve(pdfResponse());
     await waitFor(() =>
-      expect(screen.getByTitle(TITLE)).toHaveAttribute("src", "blob:second"),
+      expect(screen.getByTitle(TITLE)).toHaveAttribute("src", `${PREVIEW_URL}-second`),
     );
     expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
   });
@@ -143,8 +149,6 @@ describe("PdfPreviewDialog", () => {
         } as unknown as Response)
         .mockReturnValueOnce(retry.promise),
     );
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:recovered");
-    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
 
     const { rerender } = renderDialog();
     expect(await screen.findByRole("alert")).toHaveTextContent("Preview exploded");
@@ -156,13 +160,11 @@ describe("PdfPreviewDialog", () => {
     // reopen even for the length of the exit animation.
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 
-    retry.resolve(pdfResponse(pdf("recovered")));
-    expect(await screen.findByTitle(TITLE)).toHaveAttribute("src", "blob:recovered");
+    retry.resolve(pdfResponse());
+    expect(await screen.findByTitle(TITLE)).toHaveAttribute("src", PREVIEW_URL);
   });
 
   it("ignores a stale response that resolves after the reopened one", async () => {
-    const stale = pdf("stale");
-    const fresh = pdf("fresh");
     const firstFetch = deferred<Response>();
     const secondFetch = deferred<Response>();
     vi.stubGlobal(
@@ -172,12 +174,6 @@ describe("PdfPreviewDialog", () => {
         .mockReturnValueOnce(firstFetch.promise)
         .mockReturnValueOnce(secondFetch.promise),
     );
-    vi.spyOn(URL, "createObjectURL").mockImplementation((source) =>
-      source === fresh ? "blob:fresh" : "blob:stale",
-    );
-    const revoke = vi
-      .spyOn(URL, "revokeObjectURL")
-      .mockImplementation(() => undefined);
 
     const { rerender } = renderDialog();
     rerender(dialog(false));
@@ -186,12 +182,28 @@ describe("PdfPreviewDialog", () => {
     const [, firstOptions] = vi.mocked(fetch).mock.calls[0];
     expect(firstOptions?.signal?.aborted).toBe(true);
 
-    secondFetch.resolve(pdfResponse(fresh));
-    expect(await screen.findByTitle(TITLE)).toHaveAttribute("src", "blob:fresh");
+    secondFetch.resolve(pdfResponse());
+    expect(await screen.findByTitle(TITLE)).toHaveAttribute("src", PREVIEW_URL);
 
-    // The abandoned request resolves last; its blob must never reach the frame.
-    firstFetch.resolve(pdfResponse(stale));
-    await waitFor(() => expect(revoke).toHaveBeenCalledWith("blob:stale"));
-    expect(screen.getByTitle(TITLE)).toHaveAttribute("src", "blob:fresh");
+    // An abandoned request must not mint a second capability or change the frame.
+    const stale = pdfResponse();
+    firstFetch.resolve(stale);
+    await waitFor(() => expect(stale.body?.cancel).toHaveBeenCalled());
+    expect(createDownloadUrl).toHaveBeenCalledTimes(1);
+    expect(screen.getByTitle(TITLE)).toHaveAttribute("src", PREVIEW_URL);
+  });
+
+  it("ignores an old capability that resolves after a reopened preview", async () => {
+    const oldLink = deferred<string>();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(pdfResponse()));
+    vi.mocked(createDownloadUrl).mockReturnValueOnce(oldLink.promise);
+    const { rerender } = renderDialog();
+    await waitFor(() => expect(createDownloadUrl).toHaveBeenCalledTimes(1));
+    rerender(dialog(false));
+    rerender(dialog(true));
+    expect(await screen.findByTitle(TITLE)).toHaveAttribute("src", PREVIEW_URL);
+    oldLink.resolve(`${PREVIEW_URL}-stale`);
+    await waitFor(() => expect(createDownloadUrl).toHaveBeenCalledTimes(2));
+    expect(screen.getByTitle(TITLE)).toHaveAttribute("src", PREVIEW_URL);
   });
 });

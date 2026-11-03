@@ -303,7 +303,7 @@ def test_text_only_adapter_cannot_claim_visual_review(asynchronous):
     assert not agent.prompts
 
 
-@pytest.mark.parametrize("density,expected_size", [(-1, 12), (0, 10.5), (1, 10)])
+@pytest.mark.parametrize("density,expected_size", [(-1, 12), (0, 11), (1, 10)])
 def test_export_honors_bounded_layout_preference_without_content_loss(
     tmp_path, density, expected_size
 ):

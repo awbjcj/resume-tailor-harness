@@ -113,7 +113,7 @@ def render_preview(template_id: str) -> bytes:
                 sample_resume_content(template_id),
                 Path(output_directory) / "preview.pdf",
                 info.path,
-                fit_pages=None,
+                fit_pages=1 if info.kind == "bundled" else None,
                 root=info.path.parent,
             )
             return output.read_bytes()
