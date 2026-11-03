@@ -27,7 +27,7 @@ describe("DraftNoteCard", () => {
     expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
     expect(save).toHaveBeenCalledExactlyOnceWith({ ...note, title: "Migration ownership" });
     await act(async () => reject(new Error("Unavailable")));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Your draft is kept");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your draft is still available");
     expect(screen.getByRole("textbox", { name: "Title" })).toHaveValue("  Migration ownership  ");
     expect(screen.getByRole("button", { name: "Save note" })).toBeEnabled();
   });

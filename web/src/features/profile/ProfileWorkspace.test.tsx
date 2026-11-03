@@ -149,7 +149,7 @@ describe("ProfileWorkspace", () => {
     Object.assign(mocks.profile, { freshness: "refresh-needed", publishedAt: "2026-11-01T00:00:00Z", pendingSourceCount: 1 });
     mocks.launch.mockClear();
     renderWorkspace();
-    expect(screen.getByText("Saved evidence needs a profile refresh")).toBeInTheDocument();
+    expect(screen.getByText("Your profile needs a refresh to reflect saved evidence")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("not reflected in your profile yet");
     expect(screen.queryByText(/Profile built/)).not.toBeInTheDocument();
     expect(mocks.launch).not.toHaveBeenCalled();
