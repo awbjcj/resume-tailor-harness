@@ -425,3 +425,76 @@ def test_rebuild_rejects_concurrent_override_changes(library, monkeypatch):
     with pytest.raises(ValueError, match="changed during"):
         build.rebuild_profile_skills(directory, reclassify_only=True)
     assert (directory / "facts.json").read_bytes() == before
+
+
+def test_decisions_profile_grouping_keeps_corrections_and_falls_back_only_for_tail(
+    library, monkeypatch
+):
+    directory, _ = library
+    organization = GroupCorrections(
+        corrections={"python": GroupCorrection(group="languages")}
+    )
+    save_group_corrections(organization, corrections_path(directory))
+    fast_prompts, standard_prompts = [], []
+
+    class Fast:
+        calls = 1
+        accepted = 1
+
+        def choose_sync(self, questions, **kwargs):
+            fast_prompts.extend(q.key for q in questions)
+            return {q.key: "languages" for q in questions if q.key == "python 3"}
+
+    class Standard:
+        def run(self, prompt):
+            data = __import__("json").loads(prompt)
+            standard_prompts.extend(data["skills"])
+            return SimpleNamespace(
+                content=SkillGroupAssignments(
+                    assignments=[
+                        SkillGroupAssignment(token=token, group="other")
+                        for token in data["skills"]
+                    ]
+                )
+            )
+
+    monkeypatch.setattr(build, "DecisionClient", Fast)
+    monkeypatch.setattr(build, "build_profile_group_agent", Standard)
+    build.rebuild_profile_skills(directory, reclassify_only=True)
+    assert "python" not in fast_prompts
+    assert "python" not in standard_prompts and "python 3" not in standard_prompts
+    saved = load_group_corrections(corrections_path(directory))
+    assert saved.corrections["python"].group == "languages"
+    assert saved.automatic["python 3"] == "languages"
+
+
+@pytest.mark.parametrize("invalid_output", [False, True])
+def test_decisions_profile_assignments_survive_failed_standard_tail(
+    library, monkeypatch, invalid_output
+):
+    directory, _ = library
+
+    class Fast:
+        calls = 1
+        accepted = 1
+
+        def choose_sync(self, questions, **kwargs):
+            return {q.key: "languages" for q in questions if q.key == "python 3"}
+
+    class Standard:
+        def run(self, _prompt):
+            if invalid_output:
+                return SimpleNamespace(content="unparsed output")
+            raise RuntimeError("provider unavailable")
+
+    monkeypatch.setattr(build, "DecisionClient", Fast)
+    monkeypatch.setattr(build, "build_profile_group_agent", Standard)
+    report = build.rebuild_profile_skills(directory, reclassify_only=True)
+    assert (
+        load_group_corrections(corrections_path(directory)).automatic["python 3"]
+        == "languages"
+    )
+    assert report["classified"] == 1 and report["unclassified"] > 0
+    assert any(
+        "kept their previous grouping" in warning for warning in report["warnings"]
+    )

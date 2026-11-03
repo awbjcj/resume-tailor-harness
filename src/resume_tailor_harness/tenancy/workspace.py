@@ -19,6 +19,8 @@ _PLATFORM_FIELDS = frozenset(
         "db_url",
         "session_secret",
         "application_vault_keys",
+        "openai_decisions_api_key",
+        "openai_decisions_enabled",
         "h1b_mcp_enabled",
         "h1b_mcp_transport",
         "h1b_mcp_command",

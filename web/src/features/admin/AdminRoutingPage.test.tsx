@@ -19,6 +19,7 @@ const providers = [
 
 function renderPage(savedBodies: Array<Record<string, unknown>> = [], providerData: unknown = providers) {
   server.use(
+    http.get("/api/admin/routing/decisions", () => HttpResponse.json({ enabled: false, keyConfigured: false, endpoint: "https://api.openai.com/v1/decisions", model: "gpt-6-luna" })),
     http.get("/api/auth/me", () => HttpResponse.json({ username: "owner", role: "admin", authRequired: true, needsEmail: false, emailVerified: true, googleLinked: false })),
     http.get("/api/admin/routing", () => HttpResponse.json({ baseUrl: "https://gateway.example.com", providers: providerData })),
     http.put("/api/admin/routing", async ({ request }) => {

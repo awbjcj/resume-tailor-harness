@@ -9,8 +9,14 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal, Mapping
 
-from resume_tailor_harness.concurrency import gather_isolated
+from resume_tailor_harness.concurrency import Result, gather_isolated
 from resume_tailor_harness.llm_runner import Runner, acall
+from resume_tailor_harness.decisions import (
+    BATCH_SIZE as DECISION_BATCH_SIZE,
+    DecisionClient,
+)
+from resume_tailor_harness.tenancy.usage import UsageSettlementError
+from resume_tailor_harness.taxonomy.decision_classification import select_domains
 from resume_tailor_harness.progress import ProgressReporter
 from resume_tailor_harness.taxonomy.clusters import (
     ClusterMap,
@@ -133,6 +139,7 @@ class _DomainBatchResult:
     # to.  It is never an assignment; it only tells a caller where a placement
     # floor should put the token instead of dropping it back into the backlog.
     fallback_categories: dict[str, str] = field(default_factory=dict)
+    deferred_tokens: frozenset[str] = frozenset()
 
 
 class _FlightMeter:
@@ -430,6 +437,7 @@ async def classify_incrementally(
     enforce_candidates: bool = True,
     repair_max_singletons: int = 500,
     budget: ClassificationBudget | None = None,
+    decisions: DecisionClient | None = None,
 ) -> ClassificationOutcome:
     if batch_size < 1:
         raise ValueError("batch_size must be at least 1")
@@ -709,7 +717,12 @@ async def classify_incrementally(
         merged_aliases[token] for token in demanded_tokens if token in merged_aliases
     }
     domain_backlog = demanded_canonicals - existing.domain_of.keys()
-    domain_batches = _shard(domain_backlog, batch_size)
+    domain_batches = _shard(
+        domain_backlog,
+        min(batch_size, DECISION_BATCH_SIZE)
+        if decisions is not None and decisions.enabled
+        else batch_size,
+    )
     domain_assignments: dict[str, _DomainIntent] = {}
     not_skills: frozenset[str] = frozenset()
     fallback_categories: dict[str, str] = {}
@@ -740,7 +753,7 @@ async def classify_incrementally(
         else set()
     )
 
-    async def classify_domains(batch: list[str]):
+    async def classify_domains_standard(batch: list[str]):
         nonlocal prompt_bytes
         allowed_domain_ids: set[str] | None = None
         prompt_context = category_context
@@ -814,24 +827,138 @@ async def classify_incrementally(
             category_of=existing.category_of,
         )
 
+    async def decide_domains(batch: list[str]) -> tuple[dict[str, str], dict[str, str]]:
+        nonlocal prompt_bytes
+        if decisions is None or not decisions.enabled or decisions.domain_bypass:
+            return {}, {}
+        # Do not spend the last call on a category hint when the existing
+        # classifier could still produce a complete placement with that call.
+        if budget is not None and (
+            budget.exhausted or budget.max_calls - budget.calls < 3
+        ):
+            return {}, {}
+
+        def reserve(size: int) -> None:
+            nonlocal prompt_bytes
+            if reporter is not None:
+                reporter.checkpoint()
+            if budget is not None:
+                # A rejected optional payload must leave a smaller ordinary
+                # prompt admissible. Keep one call for generative fallback.
+                if (
+                    budget.exhausted
+                    or budget.max_calls - budget.calls < 2
+                    or budget.prompt_bytes + size > budget.max_prompt_bytes
+                ):
+                    raise _BudgetDeferred("Decisions would consume fallback budget")
+                budget.reserve(size)
+            prompt_bytes += size
+
+        # Use the same semaphore as ordinary model work. Keep category and
+        # domain calls together so a large fan-out cannot buy every category
+        # decision before any domain request has a chance to use the budget.
+        async with semaphore:
+            meter.acquire()
+            try:
+                if (
+                    decisions.domain_bypass
+                    or not decisions.enabled
+                    or (
+                        budget is not None
+                        and (budget.exhausted or budget.max_calls - budget.calls < 3)
+                    )
+                ):
+                    fast, categories = {}, {}
+                else:
+                    try:
+                        fast, categories = await select_domains(
+                            decisions,
+                            batch,
+                            category_context,
+                            resolved_skill_context,
+                            reserve,
+                        )
+                    except _BudgetDeferred:
+                        return {}, {}
+                    if len(batch) >= 20 and len(fast) * 5 < len(batch):
+                        decisions.domain_bypass = True
+            finally:
+                meter.release()
+        return fast, categories
+
+    probe_result: Result[tuple[dict[str, str], dict[str, str]]] | None = None
+
+    async def classify_domains(batch: list[str]):
+        if probe_result is not None and batch == domain_batches[0]:
+            if probe_result.error is not None:
+                raise probe_result.error
+            assert probe_result.value is not None
+            fast, categories = probe_result.value
+        elif decisions is None or not decisions.enabled or decisions.domain_bypass:
+            return await classify_domains_standard(batch)
+        else:
+            fast, categories = await decide_domains(batch)
+        resolved_category_hints.update(categories)
+        assignments = {
+            token: _DomainIntent(existing_domain_id=domain_id)
+            for token, domain_id in fast.items()
+        }
+        remaining = [token for token in batch if token not in fast]
+        if not remaining:
+            return _DomainBatchResult(assignments, frozenset())
+        try:
+            standard = await classify_domains_standard(remaining)
+        except _BudgetDeferred:
+            # Keep already purchased valid siblings; unattempted fallback is
+            # deferred, never falsely recorded as a model's failed judgment.
+            return _DomainBatchResult(
+                assignments, frozenset(), deferred_tokens=frozenset(remaining)
+            )
+        except UsageSettlementError:
+            raise
+        except Exception as exc:
+            failures.append(
+                ClassificationFailure("domain", tuple(remaining), str(exc), kind="call")
+            )
+            return _DomainBatchResult(assignments, frozenset())
+        return _DomainBatchResult(
+            {**assignments, **standard.assignments},
+            standard.failed_tokens,
+            standard.not_skills,
+            standard.fallback_categories,
+        )
+
     if domain_batches:
         if reporter is not None:
             reporter.begin(len(domain_batches), "Grouping skills into domains")
+
+        def report_domain_step(completed: int) -> None:
+            if reporter is not None:
+                reporter.step(completed, label="Grouping skills into domains")
+
+        # Probe one batch before fan-out. Low admission yield should cost one
+        # probe, not two extra requests for every batch in a large regroup.
+        if decisions is not None and decisions.enabled:
+            probe_result = (
+                await gather_isolated(
+                    domain_batches[:1],
+                    decide_domains,
+                    checkpoint=reporter.checkpoint if reporter is not None else None,
+                )
+            )[0]
+            if isinstance(probe_result.error, UsageSettlementError):
+                raise probe_result.error
+        # Fallback for the probe shares the normal fan-out, so a low-yield
+        # workload does not also pay a serial generative batch before the rest.
         domain_results = await gather_isolated(
             domain_batches,
             classify_domains,
-            on_complete=(
-                (
-                    lambda completed: reporter.step(
-                        completed, label="Grouping skills into domains"
-                    )
-                )
-                if reporter is not None
-                else None
-            ),
+            on_complete=report_domain_step,
             checkpoint=reporter.checkpoint if reporter is not None else None,
         )
         for batch, result in zip(domain_batches, domain_results, strict=True):
+            if isinstance(result.error, UsageSettlementError):
+                raise result.error
             if isinstance(result.error, _BudgetDeferred):
                 deferred_tokens.update(batch)
                 continue
@@ -846,6 +973,7 @@ async def classify_incrementally(
                 )
                 continue
             domain_assignments.update(result.value.assignments)
+            deferred_tokens.update(result.value.deferred_tokens)
             not_skills |= result.value.not_skills
             for token, category in result.value.fallback_categories.items():
                 fallback_categories.setdefault(token, category)

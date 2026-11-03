@@ -13,6 +13,7 @@ import { SaveBar } from "@/features/settings/SaveBar";
 import { useMe } from "@/features/auth/AuthGate";
 import type { components } from "@/lib/api/schema";
 import { AdminSectionNav } from "./AdminSectionNav";
+import { AdminDecisionsCard } from "./AdminDecisionsCard";
 import { providerConfigurationErrorLabel, ProviderRouteCard, type RouteMode } from "./ProviderRouteCard";
 import { useAdminRouting, useSaveAdminRouting } from "./use-admin-routing";
 
@@ -110,6 +111,8 @@ export function AdminRoutingPage() {
         sub="Choose which providers use your subscription gateway and which stay on their direct metered APIs."
       />
       <AdminSectionNav current="/admin/routing" />
+
+      <AdminDecisionsCard />
 
       <Alert className="-mt-5">
         <Network aria-hidden="true" />
