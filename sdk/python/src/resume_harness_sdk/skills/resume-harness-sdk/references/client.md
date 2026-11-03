@@ -17,12 +17,16 @@ retrieved from a secret manager and an optional HTTPX transport for offline test
 | Method | Result / behavior |
 | --- | --- |
 | `me()` | Account/auth JSON |
+| `setup_status()` | Read readiness and profile freshness/publication/pending-source metadata |
 | `list_sources()` | Configured sources response |
 | `list_jobs(board="triage", page=1, page_size=50, **filters)` | `data` and `pagination` (`totalPages`) |
 | `iter_jobs(board="shortlist", **filters)` | Iterates all board pages |
 | `get_job(job_id)` | Full JD, criteria, versions, company intelligence |
 | `approve_job(job_id)` | PATCH chosen raw/shortlisted job to approved; only for user-authorized preparation, never reset tailored/rendered stages |
 | `add_job(jd_text=..., company=..., title=..., url=...)` | Immediately adds supplied text; returns job detail |
+| `create_job(body)` | Complete camelCase text-import request, including `jdText` and optional metadata |
+| `add_job_url(url, company=None, title=None, location=None, allow_browser=True, public_extraction=False)` | Starts ingestion of a requested URL; inspect result for job/duplicate/recovery |
+| `redo_jobs([job_id], stages=["render"], deep=False)` | Explicit stage rerun; stages are pull/extract/tailor/render; keeps earlier artifacts and progress |
 | `pull_jobs(source_ids=None, limit=None, refresh=False)` | Starts configured-source fetch; returns a run |
 | `discover_jobs()` | Starts classification of raw jobs; returns a run |
 | `tailor([job_id], deep=False)` | Starts hosted authoring and review; returns a run |
@@ -34,11 +38,18 @@ retrieved from a secret manager and an optional HTTPX transport for offline test
 | `list_runs(page=1, page_size=100)` | Active/recent runs in the server's visibility window |
 | `wait(run_or_id, timeout=600, poll_interval=1)` | Terminal `done` record; raises on error/cancel/timeout |
 | `cancel_run(run_id)` | Requests cancellation |
+| `list_run_completions(limit=50, unread_only=False, surface="operations")` | Durable terminal history as a list; surface is operations or notifications |
+| `get_run_completion(run_id)` | Durable result destination after a transient run record expires |
+| `get_run_logs(completion_id)` | Retained log entries by integer completion ID; older records may have none |
 | `get_resume(version_id)` | Native structured resume JSON |
+| `get_evidence_portfolio(version_id)` | Saved coverage, selected facts, and excerpts; legacy versions may 404 |
 | `render_resume(version_id)` | Renders PDF and returns version metadata |
 | `download_resume(version_id)` | PDF bytes; caller chooses file destination |
 | `list_application_jobs(page=1, page_size=50)` / `iter_application_jobs(page_size=50)` | Approved/tailored/rendered, unarchived jobs without submission history |
-| `application_context(job_id)` | Full job, readable prompt, personal `profile`, `profileRevision`, questions, attachments and `submissionPolicy` |
+| `application_context(job_id)` | Eligible-job context: full JD, prompt, profile/revision, questions, attachments, optional `materials` and `submissionPolicy` |
+| `get_application_prompt(job_id)` | Clipboard handoff envelope for any existing job, with prompt/materials; does not establish queue eligibility |
+| `get_application_materials(job_id)` | Exact selected IDs and material items; `None` means missing metadata on an older server |
+| `application_next_step(job_id)` | Server projection of current work and local destination from job detail; may be `None` |
 | `list_application_accounts()` | Vault availability, registration preference, revision, and account metadata; no passwords |
 | `prepare_application_account(job_id, browser_url=..., username=None, password_length=24, password_symbols="!@#$%*-_")` | Selects a matching login or durably generates a pending account when enabled; no browser action |
 | `fill_application_account(job_id, account, form=PasswordForm(...))` | Sends credentials to verified host password fields; returns metadata only; never clicks Submit |
@@ -46,14 +57,18 @@ retrieved from a secret manager and an optional HTTPX transport for offline test
 | `application_prompt(job_id)` | Full Markdown prompt including job description and personal information |
 | `get_application_profile()` | `profile` and current `revision` |
 | `update_application_profile(changes, revision=..., user_confirmed=True)` | Partial update of confirmed personal fields; camelCase keys. Name/address parts merge; lists replace in full (`[]` clears); empty strings clear text, nullable answers use null for unknown. |
+| `patch_application_profile(body)` | Public complete-envelope variant; preserves unknown fields for server validation |
 | `list_application_questions(job_id=None, status=None, page=1, page_size=50)` | Paginated questions; job filter also includes reusable profile questions |
 | `iter_application_questions(job_id=None, status=None, page_size=50)` | Iterates matching questions across pages |
 | `record_application_question(question, job_id=None, scope="job", context="")` | Idempotently records an unanswered question; job scope requires job ID |
+| `create_application_question(body)` | Public complete-envelope create variant |
 | `answer_application_question(id, answer, revision=..., user_confirmed=True)` | Saves confirmed answer; `None` clears it |
+| `update_application_question(id, body)` | Public complete-envelope answer update variant; requires revision and confirmed answer |
 | `get_application_question(id)` | Question and its current revision for conflict reconciliation |
 | `download_cover_letter(id)` | PDF bytes through the authenticated fixed API route |
 | `select_resume(job_id, version_id)` | Stores a resume attachment choice; creates/updates a ready tracking application |
 | `select_cover_letter(job_id, cover_letter_id)` | Stores a cover-letter attachment choice; does not upload or submit |
+| `deselect_resume(job_id)` / `deselect_cover_letter(job_id)` | Clear a chosen attachment pointer when requested; retain stored documents |
 | `list_application_events(job_id)` | Timeline records; inspect before preparing a duplicate or retrying an event write |
 | `record_application_event(job_id, event)` | Appends an event using camelCase JSON; `application_submitted` advances tracking, so use only after verified submission |
 
@@ -72,6 +87,12 @@ download URLs with the bearer token. `download_resume` uses a fixed API route.
 Application response types live in `resume_harness_sdk.applications`. These
 responses are validated at the HTTP boundary and keep additive fields. Invalid
 responses raise `ResponseValidationError` without echoing personal data.
+Request types include `ApplicationProfileUpdate`, `ApplicationQuestionCreate`,
+`ApplicationQuestionUpdate`, and `ApplicationEventCreate`. Complete-envelope
+methods accept these or mappings and forward all keys, allowing the server to
+reject unknown input. The CLI uses these public methods; integrations do not
+need the private transport. `resume_harness_sdk.operations` contains typed
+setup status, evidence portfolio, text-import, and durable completion contracts.
 `PROFILE_STALE` / `QUESTION_STALE` are 409 conflicts: read and reconcile before
 retrying. Questions are private workspace data and do not become resume evidence.
 Only set `user_confirmed=True` after the user supplies or confirms the answer.
@@ -88,10 +109,16 @@ for question/answer JSON, review and resumption, and submission tracking.
 | `approve JOB_ID` | Approve a specifically chosen raw/shortlisted job |
 | `application-jobs --page N --page-size N` | Inspect the live eligible queue |
 | `application-context JOB_ID` / `application-prompt JOB_ID` | Full JSON context / full Markdown prompt |
+| `application-handoff JOB_ID` / `application-materials JOB_ID` | Clipboard envelope / exact selection and eligibility metadata for any existing job |
+| `application-next-step JOB_ID` | Current work, chosen resume ID, and local app destination |
+| `setup-status` | Profile readiness and evidence incorporation state |
+| `add-job-url URL [--no-browser]` / `add-job --input FILE` | Start requested URL import / import actual JD text in camelCase JSON |
 | `tailor JOB_ID` / `cover-letter JOB_ID` | Start missing document generation; wait on the returned run ID |
 | `render VERSION_ID` / `download VERSION_ID --output FILE` | Render with current workspace settings / download local resume PDF |
 | `download-cover-letter LETTER_ID --output FILE` | Download the generated letter PDF |
 | `select-resume JOB_ID VERSION_ID` / `select-cover-letter JOB_ID LETTER_ID` | Remember exactly which eligible documents are being uploaded |
+| `deselect-resume JOB_ID` / `deselect-cover-letter JOB_ID` | Clear an attachment choice when requested |
+| `evidence-portfolio VERSION_ID` | Inspect saved coverage and cited evidence; no content mutation |
 | `application-questions --job-id JOB_ID --status unanswered` | Matching job and reusable profile questions |
 | `record-application-question --input FILE` | Record an exact live question and its context |
 | `application-question QUESTION_ID` | Read its current answer/revision |
@@ -99,6 +126,9 @@ for question/answer JSON, review and resumption, and submission tracking.
 | `application-profile` / `update-application-profile --input FILE` | Read / PATCH only confirmed common fields |
 | `application-events JOB_ID` | Read timeline and previous submission evidence |
 | `record-application-event JOB_ID --input FILE` | Record a verified event; never use to represent a merely filled form |
+| `run-completions [--limit N] [--unread-only]` / `run-completion RUN_ID` | Durable history / current result destination for one operation |
+| `run-logs COMPLETION_ID` | Read retained progress logs |
+| `redo JOB_ID --stage render` | Explicitly rerun a requested stage; inspect per-stage outcomes |
 
 Event creation is not idempotent. For a verified employer submission the body is
 `{"kind": "application_submitted", "occurredAt": "ACTUAL_ISO_TIME_WITH_OFFSET",

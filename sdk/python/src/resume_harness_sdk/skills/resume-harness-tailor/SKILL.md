@@ -10,6 +10,11 @@ come only from `RESUME_HARNESS_URL` and `RESUME_HARNESS_API_KEY`; never include 
 key in a prompt or output. If the user has not identified a job, inspect
 `resume-harness jobs --board shortlist` and select within their stated criteria.
 Ask for a choice when the user's priorities do not determine a target.
+When tailoring is part of an application, inspect `application-next-step JOB_ID`
+and `application-materials JOB_ID` first. A suitable explicitly selected older
+resume stays selected; do not generate a replacement just because newer work
+exists. `setup-status` distinguishes missing evidence from published evidence
+with pending sources. Collect needed facts through the app's profile workflow.
 
 Fetch `resume-harness context JOB_ID` and save its `contextRevision` alongside
 the draft. This is the source for the JD, renderable profile, `resumeSchema`,
@@ -70,6 +75,10 @@ claim success. `CONTEXT_STALE` requires a fresh context and actual rebase, not
 merely swapping the revision string. Wait timeouts leave the run active, so
 resume polling instead of resubmitting. After ambiguous write failures, inspect
 job versions before retrying to avoid duplicate versions.
+If the transient run record expired, inspect `run-completion RUN_ID` and
+`run-logs COMPLETION_ID`, then re-read the job's saved versions and review
+outcomes. A durable succeeded completion is not the original verdict. Do not
+repeat a paid review merely to recreate a missing run record.
 
 For a passing result, use its `versionId`:
 
@@ -94,4 +103,7 @@ deliverable and distinguish preflight, saved review, and rendered output.
 When authoring is part of an application request, return to
 [resume-harness-apply](../resume-harness-apply/SKILL.md): re-fetch the application's
 eligible attachments, select/download the accepted version, and continue the
-live form and user interaction. Do not end an application task at PDF generation.
+live form and user interaction. Preserve an existing explicit selection unless
+the user requested its replacement. `evidence-portfolio VERSION_ID` can explain
+saved requirement coverage and source excerpts; it does not substitute for the
+verdict, and legacy versions may lack one. Do not end an application task at PDF generation.

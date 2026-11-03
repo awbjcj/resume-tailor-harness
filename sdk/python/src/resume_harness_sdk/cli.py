@@ -10,14 +10,12 @@ from pathlib import Path
 
 import httpx
 
-from . import applications
 from .client import (
     APIError,
     ResponseValidationError,
     ResumeHarness,
     RunFailed,
     RunTimeout,
-    _validated,
 )
 
 
@@ -33,7 +31,18 @@ def main() -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("me")
     commands.add_parser("sources")
-    commands.add_parser("runs")
+    commands.add_parser("setup-status")
+    runs = commands.add_parser("runs")
+    runs.add_argument("--page", type=int, default=1)
+    runs.add_argument("--page-size", type=int, default=100)
+    completions = commands.add_parser("run-completions")
+    completions.add_argument("--limit", type=int, default=50)
+    completions.add_argument("--unread-only", action="store_true")
+    completions.add_argument(
+        "--surface", choices=["operations", "notifications"], default="operations"
+    )
+    logs = commands.add_parser("run-logs")
+    logs.add_argument("completion_id", type=int)
     commands.add_parser("application-profile")
     commands.add_parser("application-accounts")
     account_prepare = commands.add_parser("prepare-application-account")
@@ -57,6 +66,7 @@ def main() -> int:
         "record-application-question",
         "answer-application-question",
         "record-application-event",
+        "add-job",
     ):
         sub = commands.add_parser(name)
         sub.add_argument(
@@ -71,17 +81,39 @@ def main() -> int:
         "--board", choices=["triage", "shortlist", "pipeline"], default="triage"
     )
     jobs.add_argument("--page", type=int, default=1)
+    jobs.add_argument("--page-size", type=int, default=50)
     jobs.add_argument("--query")
     pull = commands.add_parser("pull")
     pull.add_argument("--source-id", action="append")
     pull.add_argument("--limit", type=int)
     commands.add_parser("discover")
+    add_url = commands.add_parser("add-job-url")
+    add_url.add_argument("url")
+    add_url.add_argument("--company")
+    add_url.add_argument("--title")
+    add_url.add_argument("--location")
+    add_url.add_argument("--no-browser", action="store_true")
+    add_url.add_argument("--public-extraction", action="store_true")
+    redo = commands.add_parser("redo")
+    redo.add_argument("job_id", type=int)
+    redo.add_argument(
+        "--stage",
+        choices=["pull", "extract", "tailor", "render"],
+        action="append",
+        required=True,
+    )
+    redo.add_argument("--deep", action="store_true")
     for name in (
         "job",
         "context",
         "tailor",
         "application-context",
         "application-prompt",
+        "application-handoff",
+        "application-materials",
+        "application-next-step",
+        "deselect-resume",
+        "deselect-cover-letter",
         "approve",
         "cover-letter",
         "application-events",
@@ -99,7 +131,7 @@ def main() -> int:
         sub.add_argument("--revision", required=True)
         if name == "submit":
             sub.add_argument("--agent", default="external")
-    for name in ("run", "wait", "cancel"):
+    for name in ("run", "wait", "cancel", "run-completion"):
         sub = commands.add_parser(name)
         sub.add_argument("run_id")
         if name == "wait":
@@ -109,6 +141,8 @@ def main() -> int:
         sub.add_argument("version_id", type=int)
         if name in {"download", "download-cover-letter"}:
             sub.add_argument("--output", type=Path, required=True)
+    portfolio = commands.add_parser("evidence-portfolio")
+    portfolio.add_argument("version_id", type=int)
     install = commands.add_parser("install-skills")
     install.add_argument(
         "--directory",
@@ -133,14 +167,32 @@ def main() -> int:
                     result = client.me()
                 elif command == "sources":
                     result = client.list_sources()
+                elif command == "setup-status":
+                    result = client.setup_status()
                 elif command == "runs":
-                    result = client.list_runs()
+                    result = client.list_runs(page=args.page, page_size=args.page_size)
+                elif command == "run-completions":
+                    result = client.list_run_completions(
+                        limit=args.limit,
+                        unread_only=args.unread_only,
+                        surface=args.surface,
+                    )
+                elif command == "run-completion":
+                    result = client.get_run_completion(args.run_id)
+                elif command == "run-logs":
+                    result = client.get_run_logs(args.completion_id)
                 elif command == "application-jobs":
                     result = client.list_application_jobs(
                         page=args.page, page_size=args.page_size
                     )
                 elif command == "application-context":
                     result = client.application_context(args.job_id)
+                elif command == "application-handoff":
+                    result = client.get_application_prompt(args.job_id)
+                elif command == "application-materials":
+                    result = client.get_application_materials(args.job_id)
+                elif command == "application-next-step":
+                    result = client.application_next_step(args.job_id)
                 elif command == "application-accounts":
                     result = client.list_application_accounts()
                 elif command == "prepare-application-account":
@@ -164,6 +216,10 @@ def main() -> int:
                     result = client.select_resume(args.job_id, args.artifact_id)
                 elif command == "select-cover-letter":
                     result = client.select_cover_letter(args.job_id, args.artifact_id)
+                elif command == "deselect-resume":
+                    result = client.deselect_resume(args.job_id)
+                elif command == "deselect-cover-letter":
+                    result = client.deselect_cover_letter(args.job_id)
                 elif command == "application-profile":
                     result = client.get_application_profile()
                 elif command == "application-question":
@@ -184,29 +240,34 @@ def main() -> int:
                     # Pass the full body through the public validation boundary;
                     # unknown fields must not be silently dropped by the CLI.
                     if command == "update-application-profile":
-                        result = _validated(
-                            client._request("PATCH", "application-profile", json=body),
-                            applications.PROFILE,
-                        )
+                        result = client.patch_application_profile(body)
                     elif command == "record-application-question":
-                        result = _validated(
-                            client._request("POST", "application-questions", json=body),
-                            applications.QUESTION,
-                        )
+                        result = client.create_application_question(body)
                     else:
-                        if args.question_id < 1:
-                            raise ValueError("ID must be a positive integer")
-                        result = _validated(
-                            client._request(
-                                "PATCH",
-                                f"application-questions/{args.question_id}",
-                                json=body,
-                            ),
-                            applications.QUESTION,
+                        result = client.update_application_question(
+                            args.question_id, body
                         )
                 elif command == "jobs":
                     result = client.list_jobs(
-                        board=args.board, page=args.page, q=args.query or ""
+                        board=args.board,
+                        page=args.page,
+                        page_size=args.page_size,
+                        q=args.query or "",
+                    )
+                elif command == "add-job":
+                    result = client.create_job(_read_object(args.input))
+                elif command == "add-job-url":
+                    result = client.add_job_url(
+                        args.url,
+                        company=args.company,
+                        title=args.title,
+                        location=args.location,
+                        allow_browser=not args.no_browser,
+                        public_extraction=args.public_extraction,
+                    )
+                elif command == "redo":
+                    result = client.redo_jobs(
+                        [args.job_id], stages=args.stage, deep=args.deep
                     )
                 elif command == "pull":
                     result = client.pull_jobs(
@@ -245,7 +306,9 @@ def main() -> int:
                     result = client.cancel_run(args.run_id)
                 elif command == "render":
                     result = client.render_resume(args.version_id)
-                else:
+                elif command == "evidence-portfolio":
+                    result = client.get_evidence_portfolio(args.version_id)
+                elif command in {"download", "download-cover-letter"}:
                     data = (
                         client.download_cover_letter(args.version_id)
                         if command == "download-cover-letter"
@@ -254,6 +317,8 @@ def main() -> int:
                     with args.output.open("xb") as output:
                         output.write(data)
                     result = {"path": str(args.output), "bytes": len(data)}
+                else:
+                    raise ValueError("Unsupported command")
         print(json.dumps(result, ensure_ascii=False))
         return 0
     except (

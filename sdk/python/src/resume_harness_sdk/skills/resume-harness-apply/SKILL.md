@@ -14,6 +14,8 @@ Use the installed `resume_harness_sdk` package or `resume-harness` CLI. Read
 [the client reference](../resume-harness-sdk/references/client.md) for signatures;
 read [the interaction examples](references/interactive-application.md) when asking,
 saving, or resuming answers and when recording the final outcome.
+Read [preparation and recovery](references/workflow-recovery.md) for document
+eligibility, next-step guidance, URL import, and recovery after a run expires.
 
 ## Start or resume the chosen application
 
@@ -29,14 +31,21 @@ saving, or resuming answers and when recording the final outcome.
   `application-events JOB_ID`. A user instruction to prepare this role permits
   `approve JOB_ID` for a raw/shortlisted job. Keep tailored/rendered stages.
   Do not reopen an archived job or a submitted/progressed application to bypass
-  eligibility. For a new URL, check for an existing harness job first; capture
-  the real JD with browser tools and use `add_job(jd_text=..., url=..., ...)` if
-  the user wants it added. Never invent a JD from the title or URL.
+  eligibility. For a new URL, check for an existing harness job first. If adding
+  it is requested, use `add-job-url URL` and inspect the completed result. When
+  extraction needs browser recovery, capture the actual JD and use `add-job
+  --input FILE` with `jdText`, `url`, and known metadata. Never invent a JD from
+  a title or blindly repeat an import after a timeout.
 - Fetch fresh `application-context JOB_ID` before starting or resuming. It
   includes the full JD, readable `prompt`, personal `profile`, `profileRevision`,
-  scoped `questions`, eligible `attachments`, and `submissionPolicy`. This is
+  scoped `questions`, eligible `attachments`, `materials`, and `submissionPolicy`. This is
   different from authoring `context` and the concise web application prompt.
   `application-prompt JOB_ID` emits this full prompt as Markdown.
+- Read `application-next-step JOB_ID` to distinguish triage, approval, tailoring,
+  review, rendering, applying, and tracking. This is current work, independent
+  of historical job status. `application-handoff` / `application-materials` can
+  inspect any existing job, including after submission; they do not grant queue
+  eligibility or permission to repeat an application.
 - Verify the live employer, title, requisition, country, and application status.
   If the role changed, closed, or was already applied to, explain the finding
   before proceeding. The queue has no claims/leases; avoid two agents operating
@@ -49,14 +58,28 @@ of restarting or replaying the last action.
 
 ## Prepare the actual uploads
 
-Inspect context attachments. Prefer an appropriate selected document; otherwise
-choose an eligible version for this job and explain the choice. An attachment
-in this context passed the server's required factual gates. A non-null
-`downloadPath` means its PDF is available; use `download_resume(id)` or
+Inspect `context.materials` first. Preserve `selectedResumeVersionId` and
+`selectedCoverLetterId` exactly, including an older version. Never substitute a
+newer document automatically. `items` includes safe alternatives and blocked or
+missing selections; require `applicationEligible` and `pdfAvailable` before
+uploading. A blocked selection's `blockReason` explains what needs repair: ask
+the user to choose a replacement or clear it through `deselect-resume` /
+`deselect-cover-letter`. Clearing a choice keeps the stored document.
+
+With no selected document, choose an eligible version for this job within the
+user's request and explain the choice. On an older server without `materials`,
+read job detail's `application` selected IDs and reconcile them with eligible
+`attachments` and their `isSelected` flags. A selected ID missing from eligible
+attachments needs repair or a replacement choice. Absent metadata is not an
+empty selection. A non-null `downloadPath` means its PDF is available; use `download_resume(id)` or
 `download_cover_letter(id)` through the fixed authenticated route and save the
 bytes to a local file. A server `pdfPath` is not a path on the agent's computer.
 
-If the resume is eligible but its PDF is unavailable, use `render VERSION_ID`.
+If the selected resume is eligible but its PDF is unavailable, use `render
+VERSION_ID` for that exact version. Do not render a blocked version to bypass
+its failed review. `evidence-portfolio VERSION_ID` can explain saved requirement
+coverage and excerpts; legacy versions may have no portfolio. Excerpts do not
+replace review approval or make gaps into applicant facts.
 If no eligible resume exists and tailoring is within the user's request, use
 `tailor JOB_ID` or [external authoring](../resume-harness-tailor/SKILL.md), wait,
 and inspect the actual review outcome. Generate a missing cover letter with
@@ -240,5 +263,10 @@ write-back check after submission/reconciliation for anything newly learned.
 On `PROFILE_STALE` / `QUESTION_STALE`, read and reconcile the user's actual edit
 before writing; never attach a new revision to an old payload blindly. On
 `APPLICATION_NOT_READY`, inspect the job and timeline. A wait timeout leaves its
-run active: poll that run again. After any ambiguous write failure, read current
-state before retrying. Never persist a guess as a confirmed answer.
+run active: poll that run again. If its transient record expired, use
+`run-completion RUN_ID`, `run-logs COMPLETION_ID`, fresh job/material reads, and
+the real employer page to recover. `resultHref` is a local UI destination,
+never an API download URL or an instruction to replay work. Use `redo JOB_ID
+--stage STAGE` only for an explicitly requested rerun; inspect per-stage outcomes.
+After any ambiguous write failure, read current state before retrying. Never
+persist a guess as a confirmed answer.
