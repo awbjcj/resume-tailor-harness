@@ -392,6 +392,54 @@ it("coalesces concurrent reconciliations into one request", async () => {
   expect(listCalls).toHaveLength(1);
 });
 
+it("recovers runs immediately when remounting during the previous initial poll", async () => {
+  let resolvePrevious!: (value: ReturnType<typeof page>) => void;
+  const previousResponse = new Promise<ReturnType<typeof page>>((resolve) => {
+    resolvePrevious = resolve;
+  });
+  mocks.apiGet
+    .mockReturnValueOnce(previousResponse)
+    .mockResolvedValue(page([payload({ runId: "remounted-run", state: "running" })]));
+  const seen = vi.fn();
+  addTerminalListener(seen);
+
+  const previousPoll = pollRunsNow();
+  stopRunPoller();
+  const remountedPoll = pollRunsNow();
+  resolvePrevious(page([payload({ runId: "obsolete-completion" })]));
+  await Promise.all([previousPoll, remountedPoll]);
+
+  expect(mocks.apiGet).toHaveBeenCalledTimes(2);
+  expect(isTracking("remounted-run")).toBe(true);
+  expect(useRunStore.getState().runs["remounted-run"].status).toBe("running");
+  expect(useRunStore.getState().runs["obsolete-completion"]).toBeUndefined();
+  expect(seen).not.toHaveBeenCalled();
+});
+
+it("keeps the new poll coalesced after a previous mount's request settles", async () => {
+  let resolvePrevious!: (value: ReturnType<typeof page>) => void;
+  let resolveCurrent!: (value: ReturnType<typeof page>) => void;
+  mocks.apiGet
+    .mockReturnValueOnce(new Promise<ReturnType<typeof page>>((resolve) => {
+      resolvePrevious = resolve;
+    }))
+    .mockReturnValueOnce(new Promise<ReturnType<typeof page>>((resolve) => {
+      resolveCurrent = resolve;
+    }));
+
+  const previousPoll = pollRunsNow();
+  stopRunPoller();
+  const currentPoll = pollRunsNow();
+  resolvePrevious(page([]));
+  await previousPoll;
+  const joinedPoll = pollRunsNow();
+  resolveCurrent(page([]));
+  await Promise.all([currentPoll, joinedPoll]);
+
+  expect(joinedPoll).toBe(currentPoll);
+  expect(mocks.apiGet).toHaveBeenCalledTimes(2);
+});
+
 it("keeps a completion found by a poll that raced the idle stop", async () => {
   // The idle stop used to bump the generation, so whichever concurrent poll
   // finished first invalidated the others -- discarding a completion they had
