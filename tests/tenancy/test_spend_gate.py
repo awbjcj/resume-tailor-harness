@@ -16,7 +16,13 @@ from sqlalchemy.orm import Session
 
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.tenancy.context import UserContext, use_context
-from resume_tailor_harness.tenancy.costs import seed_llm_rates
+from resume_tailor_harness.tenancy.costs import (
+    OPENAI_DECISIONS_RATE_MODEL,
+    MeteredUsage,
+    calculate_cost,
+    invalidate_rate_cache,
+    seed_llm_rates,
+)
 from resume_tailor_harness.tenancy.limits import (
     BudgetExceededError,
     CostRateUnavailableError,
@@ -26,10 +32,13 @@ from resume_tailor_harness.tenancy.quotas import (
     GlobalCostQuotaExceededError,
     charge_shared_cost,
     ensure_quota_account,
+    quota_snapshot,
 )
 from resume_tailor_harness.tenancy.spend import SpendGate
 from resume_tailor_harness.tenancy.system_db import (
+    LlmRate,
     UsageEvent,
+    UsageLineItem,
     User,
     init_system_db,
     make_system_engine,
@@ -38,6 +47,79 @@ from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 
 NOW = datetime(2026, 7, 30, 12, 0, tzinfo=UTC)
 MODEL = "claude-sonnet-5"
+
+
+def test_decisions_requires_its_endpoint_rate_even_when_responses_is_priced(tmp_path):
+    engine = _engine(tmp_path)
+    with Session(engine) as session:
+        session.query(LlmRate).filter_by(model=OPENAI_DECISIONS_RATE_MODEL).delete()
+        session.commit()
+    invalidate_rate_cache(engine)
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_decisions_enabled=True,
+        openai_decisions_api_key="decisions-key",
+        cost_quota_enforcement="enforce",
+    )
+    usage = MeteredUsage(
+        provider="openai",
+        model="gpt-6-luna",
+        input_tokens=1_000,
+        reasoning_mode="decisions",
+    )
+    assert calculate_cost(engine, usage).pricing_status == "RATE_UNAVAILABLE"
+    with use_context(_context(tmp_path, engine, settings=settings)):
+        with pytest.raises(CostRateUnavailableError, match="gpt-6-luna:decisions"):
+            SpendGate().open_decisions()
+    assert (
+        calculate_cost(
+            engine,
+            MeteredUsage(provider="openai", model="gpt-6-luna", input_tokens=1_000),
+        ).total_micros
+        == 100
+    )
+
+
+def test_decisions_cache_cost_settles_member_allowance_and_rate_snapshot_once(tmp_path):
+    from resume_tailor_harness.tenancy.usage import record_direct_usage
+
+    engine = _engine(tmp_path)
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        openai_decisions_enabled=True,
+        openai_decisions_api_key="decisions-key",
+        cost_quota_enforcement="enforce",
+    )
+    usage = MeteredUsage(
+        provider="openai",
+        model="gpt-6-luna",
+        input_tokens=10_000,
+        cache_read_tokens=2_000,
+        cache_write_tokens=1_000,
+        total_tokens=10_000,
+        reasoning_mode="decisions",
+    )
+    with use_context(_context(tmp_path, engine, settings=settings)):
+        SpendGate().open_decisions()
+        before = quota_snapshot(engine, "abc123def456")
+        record_direct_usage(usage, own_key=False, request_id="decisions:cached")
+        record_direct_usage(usage, own_key=False, request_id="decisions:cached")
+    after = quota_snapshot(engine, "abc123def456")
+    assert before.remaining_micros is not None and after.remaining_micros is not None
+    assert before.remaining_micros - after.remaining_micros == 845
+    with Session(engine) as session:
+        event = session.query(UsageEvent).one()
+        assert event.model == "gpt-6-luna"
+        assert event.reasoning_mode == "decisions"
+        assert event.cost_micros == event.quota_cost_micros == 845
+        rate = session.get(LlmRate, event.rate_id)
+        assert rate is not None and rate.model == OPENAI_DECISIONS_RATE_MODEL
+        lines = session.query(UsageLineItem).all()
+        assert {line.kind: line.cost_micros for line in lines} == {
+            "INPUT": 700,
+            "CACHE_READ": 20,
+            "CACHE_WRITE": 125,
+        }
 
 
 def test_decisions_dedicated_key_bypasses_gateway_and_byok_but_not_shared_policy(
