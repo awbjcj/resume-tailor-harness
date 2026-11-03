@@ -12,6 +12,8 @@ it does not run a browser or submit applications to employers.
 For the agent's interactive operating instructions, use the bundled
 [resume-harness-apply skill](../sdk/python/src/resume_harness_sdk/skills/resume-harness-apply/SKILL.md)
 and its [conversation and resumption examples](../sdk/python/src/resume_harness_sdk/skills/resume-harness-apply/references/interactive-application.md).
+Its [preparation and recovery guide](../sdk/python/src/resume_harness_sdk/skills/resume-harness-apply/references/workflow-recovery.md)
+covers the SDK's material, continuation, import, evidence, and durable-run interfaces.
 The [SDK guide](../sdk/python/README.md#prepare-job-applications-with-your-agent)
 explains installation and invocation. This document describes the server contract.
 
@@ -24,6 +26,8 @@ existing `{ "error": { "code", "message", "details" } }` envelope.
 | --- | --- |
 | `GET /api/application-jobs?page=1&pageSize=50` | Approved, tailored, or rendered jobs, excluding archived jobs and applications with submission history or a status beyond ready. Ordered by job ID ascending; live pagination. |
 | `GET /api/jobs/{job_id}/application-context` | Rechecks queue eligibility; returns the full JD, readable prompt, saved personal answers and revision, applicable saved questions, and fact-checked artifact IDs/download routes. |
+| `GET /api/jobs/{job_id}/application-prompt` | Clipboard handoff envelope for any existing job, with prompt and exact `materials`; SDK: `get_application_prompt`, `get_application_materials`. Does not establish queue eligibility. |
+| `GET /api/jobs/{job_id}` | Includes additive `nextStep` with current work and a local destination; SDK: `application_next_step`. |
 | `GET /api/application-profile` | Returns the existing application settings as `profile` plus `revision`. |
 | `PATCH /api/application-profile` | `{revision, profile: {onlyChangedFields}, userConfirmed: true}`. Omitted fields and nested name/address parts stay unchanged. Lists replace in full; `[]` clears them. Empty strings clear text; null is accepted only for nullable answers/dates. Unknown fields are rejected. |
 | `GET /api/application-questions` | Paginated personal question list; optional `jobId` includes global and matching job questions; optional `status=unanswered\|answered`. |
@@ -35,6 +39,13 @@ existing `{ "error": { "code", "message", "details" } }` envelope.
 | `POST /api/resume-versions/{id}/render` | Renders a stored resume using workspace settings; choose eligible versions through application context. SDK: `render_resume`. Page overflow returns `422 resume_page_overflow`. |
 | `POST /api/jobs/{job_id}/select-resume/{id}` | Remembers the chosen resume; creates/updates ready tracking, without uploading. SDK: `select_resume`. |
 | `POST /api/jobs/{job_id}/select-cover-letter/{id}` | Remembers the chosen cover letter. SDK: `select_cover_letter`. |
+| `DELETE /api/jobs/{job_id}/select-resume` / `select-cover-letter` | Clears a selection when requested, retaining stored documents. SDK: `deselect_resume`, `deselect_cover_letter`. |
+| `GET /api/resume-versions/{id}/evidence-portfolio` | Saved requirement coverage and fact excerpts. SDK: `get_evidence_portfolio`; legacy versions may return 404. |
+| `GET /api/setup/status` | Readiness and profile publication/freshness/pending-source metadata. SDK: `setup_status`. |
+| `POST /api/jobs` / `POST /api/jobs/from-url` | Import supplied JD text / launch URL ingestion. SDK: `create_job` or `add_job`, `add_job_url`. |
+| `POST /api/redo` | Explicit stage rerun, retaining progress and prior artifacts. SDK: `redo_jobs`; inspect per-stage outcomes. |
+| `GET /api/run-completions` / `by-run/{run_id}` | Durable terminal history list / current result destination. SDK: `list_run_completions`, `get_run_completion`. Reads do not mark history read. |
+| `GET /api/run-completions/{id}/logs` | Retained logs by integer completion ID. SDK: `get_run_logs`. |
 | `GET /api/jobs/{job_id}/events` | Existing timeline history, including earlier submission evidence. SDK: `list_application_events`. |
 | `POST /api/jobs/{job_id}/events` | Existing timeline write. An observed `application_submitted` event advances tracking; requires `occurredAt` with UTC offset. SDK: `record_application_event`. |
 
@@ -44,6 +55,20 @@ reconcile with the user's answer instead of overwriting another edit. A missing
 job/question returns `404 NOT_FOUND`; an ineligible context returns
 `409 APPLICATION_NOT_READY`. Application context, profile, and question responses
 use `Cache-Control: no-store`.
+
+Both application handoffs include optional `materials` with
+`selectedResumeVersionId`, `selectedCoverLetterId`, and `items`. Preserve explicit
+older choices. Items expose `applicationEligible`, `pdfAvailable`, and nullable
+`blockReason`/`downloadPath`; blocked or missing selections stay visible without
+becoming upload-safe attachments. Do not substitute a newer alternative silently.
+An eligible selected resume with no PDF needs rendering of that exact version.
+Missing/null metadata on an older server is distinct from an empty selection.
+The SDK validates known nested response fields while preserving additive JSON.
+
+The CLI's complete-envelope writes use public `patch_application_profile`,
+`create_application_question`, and `update_application_question` SDK methods;
+integrations can use the same typed camelCase request interfaces without private
+transport calls. Unknown keys reach the server's strict validation boundary.
 
 ## Agent behavior
 

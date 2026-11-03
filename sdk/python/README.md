@@ -1,6 +1,12 @@
 # Resume Harness SDK
 
-Version 0.4 adds an encrypted employer-account workflow. Use
+Version 0.5 adds material eligibility and exact selections, next-step guidance,
+URL/text job import, evidence portfolios, setup readiness, and durable run
+recovery to the Python client and JSON CLI. Existing calls remain available.
+The bundled skills use these interfaces throughout preparation and resumption;
+see [preparation and recovery](src/resume_harness_sdk/skills/resume-harness-apply/references/workflow-recovery.md).
+
+The encrypted employer-account workflow uses
 `list_application_accounts`, `prepare_application_account`, and
 `fill_application_account(..., form=PasswordForm(...))` in the trusted
 computer-use runtime, then record the observed authentication outcome. Normal
@@ -156,10 +162,33 @@ resume-harness application-events 42
 
 `application-prompt` emits complete Markdown directly; the other commands emit
 JSON. The context includes the full JD, personal answers, saved resume facts in
-the prompt, scoped questions, and fact-checked resume/cover-letter attachment IDs.
+the prompt, scoped questions, fact-checked resume/cover-letter attachment IDs,
+and `materials` with exact selections and document availability.
 Approved jobs remain eligible after tailoring/rendering; archived jobs and jobs
 with submission history are excluded. Reading a context creates no application
 record and submits nothing.
+
+Use `application_next_step(job_id)` / `application-next-step JOB_ID` for the
+server's current work: triage, approve, tailor, review, render, apply, or track.
+This projection is independent of historical job status. Missing/null guidance
+on an older server means inspect the job and events, not assume ready.
+
+`get_application_prompt(job_id)` / `application-handoff JOB_ID` returns the
+clipboard envelope for any existing job. `get_application_materials(job_id)` /
+`application-materials JOB_ID` reads its material metadata. These reads remain
+available outside the queue, including after submission; they do not establish
+eligibility to start or repeat an application.
+
+Preserve `selectedResumeVersionId` and `selectedCoverLetterId` even when newer
+documents exist. Inspect each item's `applicationEligible`, `pdfAvailable`, and
+`blockReason`: a selected document can be blocked or missing. Render the exact
+eligible selected resume when its PDF is absent. Obtain a replacement choice or
+use `deselect_resume(job_id)` / `deselect_cover_letter(job_id)` when the user
+requests clearing a selection; these keep stored documents. Missing/null
+`materials` means an older server supplied no metadata; reconcile job detail's
+`application` selected IDs with eligible `attachments` and their `isSelected`
+flags. A selected ID absent from eligible attachments still needs repair or a
+replacement choice.
 
 ```python
 from resume_harness_sdk import ResumeHarness
@@ -220,6 +249,14 @@ resume-harness download-cover-letter 12 --output cover-letter.pdf
 "answer": "USER_CONFIRMED_ANSWER", "userConfirmed": true }`. Never set the
 confirmation flag for a model guess. Keep files containing personal data private.
 
+Integrations holding full camelCase request bodies can use the public
+`patch_application_profile(body)`, `create_application_question(body)`, and
+`update_application_question(id, body)` methods. They forward every supplied key
+to server validation, preserving partial-update semantics, revision conflicts,
+and unknown-field rejection. Existing convenience methods delegate to these
+interfaces. Request/response types live in `resume_harness_sdk.applications`;
+setup, import, evidence, and completion types live in `resume_harness_sdk.operations`.
+
 Attachments with a non-null `downloadPath` have an available PDF. Use
 `download_resume(id)` or `download_cover_letter(id)` through the SDK; never send
 the token to an employer or arbitrary returned URL. If an eligible resume lacks a
@@ -256,6 +293,30 @@ Application return types live in `resume_harness_sdk.applications` and are
 validated at the HTTP boundary. `ResponseValidationError` signals an invalid
 response without exposing personal data; additive response fields are preserved.
 See [the API contract](../../docs/agent-applications.md) for endpoint details.
+
+## Import roles and recover interrupted preparation
+
+Use `add_job_url(url)` / `add-job-url URL` to ingest a requested posting and
+inspect its completed run for job IDs, duplicates, or recovery requirements.
+For an actual supplied JD use `create_job(body)` / `add-job --input FILE`, with
+camelCase `jdText` and optional posting metadata. `setup_status()` / `setup-status`
+reports readiness and whether profile sources await incorporation.
+`get_evidence_portfolio(version_id)` / `evidence-portfolio VERSION_ID` explains
+saved requirement coverage and excerpts; older versions may lack a portfolio.
+
+A wait timeout leaves its run active. If the transient run record expires,
+`get_run_completion(run_id)` / `run-completion RUN_ID` finds the durable record
+and its current result destination. `list_run_completions(...)` returns a list,
+not a paginated envelope. `get_run_logs(completion_id)` / `run-logs COMPLETION_ID`
+reads retained logs without marking history read. `resultHref` is a local UI
+link, not an API download route or the original review verdict. Re-read current
+job versions, materials and events before deciding what remains.
+
+For an explicitly requested stage rerun, use `redo_jobs([job_id],
+stages=["render"])` / `redo JOB_ID --stage render`; valid stages are pull,
+extract, tailor, render. Prior artifacts/progress remain, and duplicate stages
+are removed. Inspect every `result.outcomes` entry. Recovery reads never replay
+a write or authorize an employer submission.
 
 ## Agent skills
 

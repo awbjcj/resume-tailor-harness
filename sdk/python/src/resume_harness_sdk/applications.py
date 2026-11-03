@@ -3,7 +3,7 @@
 from typing import Generic, Literal, TypeVar
 
 from pydantic import TypeAdapter
-from typing_extensions import Required, TypedDict
+from typing_extensions import NotRequired, Required, TypedDict
 
 
 class ApplicationName(TypedDict, total=False):
@@ -160,6 +160,80 @@ class ApplicationAttachment(TypedDict):
     downloadPath: str | None
 
 
+class ApplicationMaterial(ApplicationAttachment):
+    applicationEligible: bool
+    pdfAvailable: bool
+    blockReason: NotRequired[
+        Literal["fact_lock_failed", "fact_check_failed", "material_missing"] | None
+    ]
+
+
+class ApplicationMaterials(TypedDict):
+    selectedResumeVersionId: int | None
+    selectedCoverLetterId: int | None
+    items: list[ApplicationMaterial]
+
+
+class ApplicationPrompt(TypedDict):
+    prompt: str
+    materials: NotRequired[ApplicationMaterials | None]
+    submissionPolicy: NotRequired[Literal["stop_before_submit"]]
+
+
+class ApplicationNextStep(TypedDict):
+    jobId: int
+    kind: Literal["triage", "approve", "tailor", "review", "render", "apply", "track"]
+    href: str
+    resumeVersionId: NotRequired[int | None]
+
+
+class JobContinuation(TypedDict):
+    id: int
+    nextStep: NotRequired[ApplicationNextStep | None]
+
+
+class ApplicationProfileUpdate(TypedDict):
+    revision: str
+    profile: ApplicationProfile
+    userConfirmed: bool
+
+
+class ApplicationQuestionCreate(TypedDict):
+    question: str
+    context: NotRequired[str]
+    scope: NotRequired[Literal["job", "profile"]]
+    jobId: NotRequired[int | None]
+
+
+class ApplicationQuestionUpdate(TypedDict):
+    revision: int
+    answer: str | None
+    userConfirmed: bool
+
+
+class ApplicationEventCreate(TypedDict, total=False):
+    kind: Required[str]
+    customLabel: str | None
+    sequence: int | None
+    occurredAt: str | None
+    allDay: bool
+    timezone: str | None
+    durationMinutes: int | None
+    modality: str | None
+    platform: str | None
+    platformOther: str | None
+    locationOrLink: str | None
+    interviewers: str | None
+    result: str
+    notes: str | None
+    reflection: str | None
+    compBase: int | None
+    compBonus: int | None
+    compEquityAnnual: int | None
+    compSigning: int | None
+    compCurrency: str | None
+
+
 class ApplicationRecord(TypedDict):
     id: int
     jobId: int
@@ -208,6 +282,7 @@ class ApplicationContext(TypedDict):
     profileRevision: str
     questions: list[ApplicationQuestion]
     attachments: list[ApplicationAttachment]
+    materials: NotRequired[ApplicationMaterials | None]
     submissionPolicy: Literal["stop_before_submit"]
 
 
@@ -228,6 +303,8 @@ class Page(TypedDict, Generic[T]):
 
 JOBS = TypeAdapter(Page[ApplicationJob])
 CONTEXT = TypeAdapter(ApplicationContext)
+PROMPT = TypeAdapter(ApplicationPrompt)
+CONTINUATION = TypeAdapter(JobContinuation)
 PROFILE = TypeAdapter(ApplicationProfileSnapshot)
 QUESTION = TypeAdapter(ApplicationQuestion)
 QUESTIONS = TypeAdapter(Page[ApplicationQuestion])
