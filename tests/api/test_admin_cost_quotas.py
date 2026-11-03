@@ -184,6 +184,27 @@ def test_member_usage_exposes_cost_quota_and_separate_token_totals(mu_app, mu_cl
     assert body["byokTokens"]["totalTokens"] == 0
 
 
+def test_admin_rate_catalog_exposes_decisions_separately_from_responses(mu_client):
+    assert _login(mu_client).status_code == 200
+    response = mu_client.get("/api/admin/llm-rates")
+    assert response.status_code == 200
+    body = response.json()
+    rows = body["data"]
+    for page in range(2, body["pagination"]["totalPages"] + 1):
+        response = mu_client.get("/api/admin/llm-rates", params={"page": page})
+        assert response.status_code == 200
+        rows.extend(response.json()["data"])
+    decisions = [row for row in rows if row["model"] == "gpt-6-luna:decisions"]
+    assert len(decisions) == 2
+    assert {row["contextMinTokens"] for row in decisions} == {0, 272_001}
+    assert all(row["provider"] == "openai" for row in decisions)
+    assert all(row["outputMicrosPerMillion"] == 0 for row in decisions)
+    assert any(
+        row["model"] == "gpt-6-luna" and row["outputMicrosPerMillion"] == 500_000
+        for row in rows
+    )
+
+
 def test_future_rate_version_closes_matching_open_version(mu_app, mu_client):
     assert _login(mu_client).status_code == 200
     effective_from = "2027-01-01T00:00:00Z"

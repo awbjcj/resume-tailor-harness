@@ -32,7 +32,10 @@ from sqlalchemy.orm import Session
 
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.tenancy.context import UserContext, current_context
-from resume_tailor_harness.tenancy.costs import has_active_rate
+from resume_tailor_harness.tenancy.costs import (
+    OPENAI_DECISIONS_RATE_MODEL,
+    has_active_rate,
+)
 from resume_tailor_harness.tenancy.limits import (
     DEFAULT_WEEKLY_TOKEN_BUDGET,
     BudgetExceededError,
@@ -331,7 +334,9 @@ class SpendGate:
         ):
             raise ValueError("OpenAI Decisions is not configured and enabled")
         if context is not None:
-            verdict = _evaluate_shared(context, "openai", "gpt-6-luna", now=None)
+            verdict = _evaluate_shared(
+                context, "openai", OPENAI_DECISIONS_RATE_MODEL, now=None
+            )
             if verdict.denial is not None:
                 raise verdict.denial
         return SpendDecision(

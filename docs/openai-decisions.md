@@ -71,8 +71,14 @@ eligibility on every call. Member allowances and the global platform cap still
 apply; administrators remain subject to the global cap. Concurrent BYOK calls
 cannot reclassify this usage as user-funded. Usage records include input,
 cache-read and cache-write counts, zero output tokens and `reasoning_mode=decisions`.
-The standard Luna input/cache rates apply. Receipt IDs make settlement
-repeat-safe. Missing or incompatible receipts and settlement failures are errors.
+The quota rate card lists this endpoint separately as `gpt-6-luna:decisions`.
+This is an internal billing identity; requests and usage receipts retain the
+native `gpt-6-luna` model ID. Both preflight and settlement require the endpoint's
+rate, so an ordinary Luna rate cannot silently substitute for a missing one.
+The Standard input/cache rates and zero output price are documented in
+[cost quota operations](cost-quotas.md#openai-decisions-endpoint-2026-11-03).
+Receipt IDs make settlement repeat-safe. Missing or incompatible receipts and
+settlement failures are errors.
 
 Run traces record separate `profile-groups-decisions`, `skill-categories-decisions`
 and `skill-domains-decisions` families without prompt or completion text. Regroup

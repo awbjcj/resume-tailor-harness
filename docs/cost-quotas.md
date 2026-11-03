@@ -35,6 +35,37 @@ Administrators use `/admin/quotas` for tier, account, bulk operation, rate-card,
 and audit views. Bulk operations require a frozen preview, reason, and
 idempotency key. All-member scope includes disabled non-admin accounts.
 
+## OpenAI Decisions endpoint (2026-11-03)
+
+Verified against the [Decisions billing guide](https://developers.openai.com/api/docs/guides/decisions#pricing-and-availability),
+[Luna model notes](https://developers.openai.com/api/docs/models/gpt-6-luna),
+and [Standard pricing](https://developers.openai.com/api/docs/pricing).
+The admin rate card lists `gpt-6-luna:decisions` separately from ordinary
+`gpt-6-luna` generation. It is an internal rate identity for `POST /v1/decisions`,
+not a provider model ID. The two rows are effective from GA on October 22.
+
+USD per million tokens, global Standard processing:
+
+| Full prompt input | Ordinary input | Cached read | 30m cache write | Output |
+| --- | ---: | ---: | ---: | ---: |
+| At most 272,000 | $0.10 | $0.01 | $0.125 | $0 |
+| More than 272,000 | $0.20 | $0.02 | $0.25 | $0 |
+
+Input totals include cache reads and writes; those tokens are subtracted once
+before applying the ordinary input rate. The long band prices the full request.
+For example, 10,000 input tokens including 2,000 cached reads and 1,000 writes
+cost $0.000845 (845 USD micros), deducted once from shared funding. Decisions
+usage retains the native model ID and `reasoning_mode=decisions`, with a receipt
+pointing to this endpoint's rate snapshot and individual input/cache line items.
+Both member allowances and the global cap include these costs; administrators
+remain subject to the global cap.
+
+The current Decisions request schema supports only the default 30m cache TTL.
+The adapter uses the global endpoint, with no regional premium. Twelve-hour
+Responses caching and ordinary Luna output pricing do not apply here. No paid
+inference was used to refresh these rates. Existing installations receive the
+rate rows at the next system-database initialization; prior receipts are retained.
+
 ## DeepSeek Search and Fetch
 
 Verified 2026-10-18 against the [official pricing](https://api-docs.deepseek.com/quick_start/pricing/)
