@@ -85,6 +85,17 @@ combined below rather than copied wholesale into every model prompt.
    review.
    Previews stay in memory after temporary PDF cleanup, with at most four images
    of 1600px per edge and a 12MiB byte cap. No preview URLs or cross-tenant cache.
+9. **Metadata consistency:** role labels in work, projects, portfolio and
+   volunteering, plus skill-category labels, use title case (`Sole Author`,
+   `Sole Author and Maintainer`). Keep connecting words such as `and`/`of`
+   lowercase inside labels, and preserve acronyms and mixed-case names such as
+   `API`, `iOS`, `eBay` and `OpenAI`. Collapse incidental metadata whitespace.
+   Display known month dates as `Mon YYYY` (`2026-03` becomes `Mar 2026`;
+   `September`/`Sept.` become `Sep`). Full dates retain their day, year-only dates
+   remain year-only, and ambiguous or unrecognized dates are not guessed.
+   These rules apply to a display copy at the shared renderer; master facts,
+   saved resume content, claims, identities, links and provenance stay intact.
+   Every template and visual review receives the same formatted metadata.
 
 ## Validation
 
