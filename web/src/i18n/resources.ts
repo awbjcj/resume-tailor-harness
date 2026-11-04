@@ -9,6 +9,7 @@ import type { applicationUpdatesEn } from "./application-updates";
 import type { profileChangesEn } from "./profile-changes";
 import type { profilePublicationEn } from "./profile-publication";
 import type { decisionsEn } from "./decisions";
+import type { InteractionCopy } from "./interaction-copy";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -20,7 +21,13 @@ export async function loadAutoTranslations(
   return translations as typeof autoEn;
 }
 
+export async function loadChineseInteractionTranslations(): Promise<InteractionCopy> {
+  const { interactionCopyZh } = await import("./interaction-copy-zh");
+  return interactionCopyZh;
+}
+
 const en = {
+  interactionCopy: {} as InteractionCopy,
   decisions: {} as typeof decisionsEn,
   workflow: {} as typeof workflowEn,
   deferred: { loading: "Loading…", failed: "This form could not load. Try again.", appFailed: "The workspace could not load. Try again.", retry: "Try again", reload: "Reload page" },
@@ -692,7 +699,7 @@ const en = {
       applied: "Applied",
     },
     deskHealth: "Workspace status",
-    deskReady: "Your workspace is ready. Every setup check passes.",
+    deskReady: "Workspace is ready",
     resumeSetup: "Resume setup",
     health: {
       apiKey: "LLM API key",
@@ -875,6 +882,7 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  interactionCopy: {} as InteractionCopy,
   decisions: {} as typeof decisionsEn,
   workflow: {} as typeof workflowEn,
   deferred: { loading: "正在加载…", failed: "无法加载此表单，请重试。", appFailed: "无法加载工作区，请重试。", retry: "重试", reload: "重新加载页面" },
@@ -1518,7 +1526,7 @@ const zhCN = {
       applied: "已申请",
     },
     deskHealth: "工作台状态",
-    deskReady: "工作区已准备就绪。所有设置检查均已通过。",
+    deskReady: "工作区已就绪",
     resumeSetup: "继续设置",
     health: {
       apiKey: "大模型 API 密钥",

@@ -17,7 +17,7 @@ import { StageFlowChart } from "./StageFlowChart";
 import { CycleTimeChart } from "./CycleTimeChart";
 import { PipelineTimelineChart } from "./PipelineTimelineChart";
 import { OfferComparisonChart } from "./OfferComparisonChart";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { components } from "@/lib/api/schema";
 
 type Cohort = components["schemas"]["CohortOut"];
@@ -82,9 +82,7 @@ export function AnalyticsContainer() {
   return (
     <>
       <PageHeader
-        kicker={t("analytics.header.kicker")}
         title={t("analytics.header.title")}
-        sub={t("analytics.header.description")}
       />
       <MetricRow
         items={[
@@ -95,20 +93,20 @@ export function AnalyticsContainer() {
       />
       <div className="grid min-w-0 gap-6 xl:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle><h2>{t("analytics.panels.stageFlow.title")}</h2></CardTitle><CardDescription>{t("analytics.panels.stageFlow.description")}</CardDescription></CardHeader>
+          <CardHeader><CardTitle><h2>{t("analytics.panels.stageFlow.title")}</h2></CardTitle></CardHeader>
           <CardContent><StageFlowChart flows={timeline.data?.flows ?? []} /></CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle><h2>{t("analytics.panels.cycleTime.title")}</h2></CardTitle><CardDescription>{t("analytics.panels.cycleTime.description")}</CardDescription></CardHeader>
+          <CardHeader><CardTitle><h2>{t("analytics.panels.cycleTime.title")}</h2></CardTitle></CardHeader>
           <CardContent><CycleTimeChart cycleTimes={timeline.data?.cycleTimes ?? []} /></CardContent>
         </Card>
         <Card className="xl:col-span-2">
-          <CardHeader><CardTitle><h2>{t("analytics.panels.activePipeline.title")}</h2></CardTitle><CardDescription>{t("analytics.panels.activePipeline.description")}</CardDescription></CardHeader>
+          <CardHeader><CardTitle><h2>{t("analytics.panels.activePipeline.title")}</h2></CardTitle></CardHeader>
           <CardContent><PipelineTimelineChart pipeline={timeline.data?.activePipeline ?? []} /></CardContent>
         </Card>
         {(timeline.data?.offers.length ?? 0) > 0 ? (
           <Card className="xl:col-span-2">
-            <CardHeader><CardTitle><h2>{t("analytics.panels.offerComparison.title")}</h2></CardTitle><CardDescription>{t("analytics.panels.offerComparison.description")}</CardDescription></CardHeader>
+            <CardHeader><CardTitle><h2>{t("analytics.panels.offerComparison.title")}</h2></CardTitle></CardHeader>
             <CardContent><OfferComparisonChart offers={timeline.data!.offers} /></CardContent>
           </Card>
         ) : null}

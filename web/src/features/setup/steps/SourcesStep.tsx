@@ -11,7 +11,7 @@ export function SourcesStep() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sources</CardTitle>
+        <CardTitle><h1>Sources</h1></CardTitle>
         <CardDescription>
           Add at least one board or careers page to pull jobs from.
         </CardDescription>

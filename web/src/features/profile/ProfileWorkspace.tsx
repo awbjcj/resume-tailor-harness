@@ -175,9 +175,7 @@ export function ProfileWorkspace() {
       <GuidedWorkspaceHeader
         tone="coach"
         icon={<Sparkles />}
-        eyebrow="Step 1 · Your profile"
         title="Profile"
-        description="Build your profile from your resume and project evidence to tailor your applications."
         meta={
           <Badge variant="outline" className="h-auto min-h-5 max-w-full whitespace-normal">
             {t(`profilePublication.${freshnessKey}`)}
@@ -220,38 +218,6 @@ export function ProfileWorkspace() {
         </p>
       ) : null}
 
-      <ol
-        aria-label="Profile building steps"
-        className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-3 [overflow-wrap:anywhere]"
-      >
-        <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">01</span>
-          <div>
-            <p className="text-sm font-medium">Add your evidence</p>
-            <p className="text-sm text-muted-foreground">
-              Resume and supporting documents
-            </p>
-          </div>
-        </li>
-        <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">02</span>
-          <div>
-            <p className="text-sm font-medium">Choose GitHub branches (optional)</p>
-            <p className="text-sm text-muted-foreground">
-              Choose the branch with each project's documents
-            </p>
-          </div>
-        </li>
-        <li className="flex items-start gap-3 rounded-lg border border-border px-4 py-3">
-          <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">03</span>
-          <div>
-            <p className="text-sm font-medium">Build your profile</p>
-            <p className="text-sm text-muted-foreground">
-              Extract facts from your saved sources
-            </p>
-          </div>
-        </li>
-      </ol>
       {dirty ? (
         <p role="status" className="text-sm text-muted-foreground">
           Save your GitHub changes before syncing or building. Your selected
@@ -289,10 +255,6 @@ export function ProfileWorkspace() {
                   <FolderGit2 className="size-5" aria-hidden="true" />
                   GitHub projects
                 </h2>
-                <p className="max-w-prose text-sm text-muted-foreground">
-                  Choose a branch for each repository. Sync saves project
-                  documents; building extracts facts for your profile.
-                </p>
               </div>
               <Button
                 variant="outline"
@@ -309,13 +271,12 @@ export function ProfileWorkspace() {
               </Button>
             </div>
             <FieldGroup>
-              <Field className="grid min-w-0 @3xl/github:grid-cols-[minmax(0,12rem)_minmax(0,20rem)_minmax(0,1fr)] @3xl/github:items-center @3xl/github:gap-4">
+              <Field className="grid min-w-0 @3xl/github:grid-cols-[minmax(0,12rem)_minmax(0,24rem)] @3xl/github:items-center @3xl/github:gap-4">
                 <FieldLabel htmlFor="githubUsername">
                   GitHub username
                 </FieldLabel>
                 <Input
                   id="githubUsername"
-                  aria-describedby="githubUsername-help"
                   value={draft.githubUsername ?? ""}
                   disabled={busy}
                   onChange={(e) =>
@@ -325,10 +286,6 @@ export function ProfileWorkspace() {
                     })
                   }
                 />
-                <FieldDescription id="githubUsername-help">
-                  Optional. Save your username before loading repositories.
-                  Builds also sync your saved branch choices.
-                </FieldDescription>
               </Field>
             </FieldGroup>
             <GithubRepositoryPicker

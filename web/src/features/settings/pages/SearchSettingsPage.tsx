@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buttonVariants } from "@/components/ui/button";
 import { SearchConfigForm } from "../forms/SearchConfigForm";
@@ -16,14 +17,7 @@ export function SearchSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Search</h1>
-          <p className="text-sm text-muted-foreground">
-            Set the roles to search for. More specific role keywords help reduce irrelevant results.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <PageHeader title="Search" actions={<>
           <a
             className={buttonVariants({ variant: "outline", size: "sm" })}
             data-slot="button"
@@ -33,8 +27,7 @@ export function SearchSettingsPage() {
             Ask the Scout
           </a>
           <ResetSectionButton sectionId="search" label="Search" onReset={() => setDraft(null)} />
-        </div>
-      </header>
+      </>} />
       <SearchConfigForm value={draft} onChange={setDraft} />
       <SaveBar
         dirty={dirty}

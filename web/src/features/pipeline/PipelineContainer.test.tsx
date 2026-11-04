@@ -152,6 +152,27 @@ describe("PipelineContainer", () => {
     expect(screen.getByRole("link", { name: "Open posting" })).toBeInTheDocument();
   });
 
+  it("loads and closes job details when a job is selected", async () => {
+    server.use(
+      statusAware([pipelineItem(9, "tailored", "Operator")]),
+      http.get("/api/jobs/9", () => HttpResponse.json({
+        id: 9, source: "greenhouse", url: null, company: "tailored Co", title: "Operator",
+        location: "Remote", jdText: "Build things.", status: "tailored", fitScore: 80,
+        fitRationale: null, criteriaJson: null, postedAt: null, archivedAt: null,
+        createdAt: "2026-06-01T00:00:00Z", hasProgress: false, application: null,
+        resumeVersions: [], skills: [],
+      })),
+    );
+    const user = userEvent.setup();
+    wrap(<PipelineContainer />);
+
+    await user.click(await screen.findByRole("button", { name: /Operator/ }));
+    expect(await screen.findByRole("heading", { name: "Operator" }, { timeout: 10_000 })).toBeInTheDocument();
+    expect(screen.getByText("Build things.")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
   it("shows a compact details column with filtered reasons in list view", async () => {
     localStorage.setItem("pipeline-view", "list");
     const user = userEvent.setup();

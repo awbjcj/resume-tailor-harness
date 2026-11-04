@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-selection";
 import { Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
@@ -10,21 +12,22 @@ import { Checkbox } from "@/components/ui/checkbox";
  * so a job with a single applied artifact shows no cleanup affordance at all.
  */
 export function ArtifactSelectionBar({
-  noun,
+  kind,
   selectedCount,
   allSelected,
   onToggleAll,
   onDelete,
   disabled,
 }: {
-  noun: string;
+  kind: "version" | "coverLetter";
   selectedCount: number;
   allSelected: boolean;
   onToggleAll: () => void;
   onDelete: () => void;
   disabled?: boolean;
 }) {
-  const plural = `${noun}${selectedCount === 1 ? "" : "s"}`;
+  const { t } = useTranslation();
+  const version = kind === "version";
 
   return (
     <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 px-3 py-2">
@@ -32,9 +35,9 @@ export function ArtifactSelectionBar({
         <Checkbox
           checked={allSelected}
           onCheckedChange={onToggleAll}
-          aria-label={`Select all deletable ${noun}s`}
+          aria-label={t(version ? "interactionCopy.selection.selectVersions" : "interactionCopy.selection.selectLetters")}
         />
-        {selectedCount > 0 ? `${selectedCount} selected` : "Select all"}
+        {selectedCount > 0 ? t("interactionCopy.selection.count", { count: selectedCount }) : "Select all"}
       </label>
       <ConfirmDialog
         trigger={
@@ -44,11 +47,13 @@ export function ArtifactSelectionBar({
             disabled={disabled || selectedCount === 0}
           >
             <Trash2 data-icon="inline-start" />
-            Delete {selectedCount > 0 ? selectedCount : ""} selected
+            {selectedCount > 0
+              ? t("interactionCopy.selection.deleteSelectedCount", { count: selectedCount })
+              : t("interactionCopy.selection.deleteSelected")}
           </Button>
         }
-        title={`Delete ${selectedCount} ${plural}?`}
-        description={`The ${plural} and any rendered PDF will be removed. This cannot be undone.`}
+        title={t(version ? "interactionCopy.selection.deleteVersion" : "interactionCopy.selection.deleteLetter", { count: selectedCount })}
+        description={t(version ? "interactionCopy.selection.versionDescription" : "interactionCopy.selection.letterDescription", { count: selectedCount })}
         confirmLabel="Confirm delete"
         onConfirm={onDelete}
       />

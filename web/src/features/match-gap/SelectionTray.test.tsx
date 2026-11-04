@@ -5,6 +5,7 @@ import { expect, it, vi } from "vitest";
 
 import type { SuggestionState, SuggestionTarget } from "./aggregate";
 import { SelectionTray } from "./SelectionTray";
+import { changeLanguage } from "@/i18n";
 
 const targets: SuggestionTarget[] = [
   { kind: "domain", key: "cloud:platform", label: "Cloud platform" },
@@ -69,6 +70,14 @@ it("opens a titled mobile sheet from the selection action", async () => {
   expect(within(sheet).getByRole("heading", { name: "Research selection" })).toBeInTheDocument();
   await userEvent.click(within(sheet).getByRole("button", { name: "Close" }));
   expect(trigger).toHaveFocus();
+});
+
+it("shows the selected count in natural Chinese in the tray and mobile trigger", async () => {
+  await changeLanguage("zh-CN");
+  render(<SelectionTray targets={targets} stateOf={() => "queued"} onRemove={vi.fn()}
+    onClear={vi.fn()} onGenerateAll={vi.fn()} onRetry={vi.fn()} generating={false} launchError={null} />);
+  expect(within(screen.getByTestId("desktop-selection-tray")).getByText("已选择 2 项")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "打开已选内容面板" })).toHaveTextContent("所选项目（2）");
 });
 
 it("does not launch targets that already have active runs", async () => {

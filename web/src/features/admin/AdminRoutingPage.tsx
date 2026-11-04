@@ -106,15 +106,13 @@ export function AdminRoutingPage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        kicker="LLM infrastructure"
         title="Provider routing"
-        sub="Choose which providers use your subscription gateway and which stay on their direct metered APIs."
       />
       <AdminSectionNav current="/admin/routing" />
 
       <AdminDecisionsCard />
 
-      <Alert className="-mt-5">
+      <Alert>
         <Network aria-hidden="true" />
         <AlertTitle>Endpoint and credential move together</AlertTitle>
         <AlertDescription>

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSessionSelection } from "@/lib/chat/use-session-selection";
-import { FileText, ListChecks, MessageCircleMore, Sparkles, SquareCheckBig } from "lucide-react";
+import { MessageCircleMore, Sparkles, SquareCheckBig } from "lucide-react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatSessionHistory, type ChatSessionHistoryItem } from "@/components/chat/ChatSessionHistory";
@@ -244,15 +244,8 @@ export function CareerLabPage() {
       <GuidedWorkspaceHeader
         tone="career-lab"
         icon={<Sparkles />}
-        eyebrow={active ? "Career Lab" : "Drafting studio"}
         title={active?.title || "Career Lab"}
-        description={active?.goal || "Work through a career question using one verified skill at a time. Outputs remain drafts until you decide what to do next."}
-        meta={
-          <>
-            <Badge variant={active?.status === "active" ? "secondary" : "outline"}>{active ? (active.status === "active" ? "Session live" : "Session ended") : "Ready to explore"}</Badge>
-            <Badge variant="outline">No external actions</Badge>
-          </>
-        }
+        meta={active ? <Badge variant={active.status === "active" ? "secondary" : "outline"}>{active.status === "active" ? "Session live" : "Session ended"}</Badge> : undefined}
         actions={active?.status === "active" ? (
           <AlertDialog>
             <AlertDialogTrigger render={<Button variant="outline"><SquareCheckBig aria-hidden="true" />End session</Button>} />
@@ -287,11 +280,11 @@ export function CareerLabPage() {
       ) : null}
 
       <div className={cn("grid items-start gap-6", active && "xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]")}>
-        <main className="flex min-w-0 flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <Card className="min-w-0 overflow-hidden rounded-2xl">
-            <CardContent className={cn("flex flex-col gap-4", showThread ? "p-4 sm:p-6" : "p-0", CHAT_SURFACE_HEIGHT)}>
+            <CardContent className={cn("flex flex-col gap-4", showThread ? `p-4 sm:p-6 ${CHAT_SURFACE_HEIGHT}` : "min-h-96 p-0")}>
               {sessionLoading ? <Skeleton className="h-full w-full" /> : null}
-              {!sessionLoading && !showThread ? <WorkspaceEmptyState icon={MessageCircleMore} title="Turn a career question into a useful draft" description="Start with one focused request. After the session begins, you can add only the career context that should shape the next draft." actionLabel="Create Career Lab session" onAction={() => setNewOpen(true)} steps={[{ icon: MessageCircleMore, title: "Ask one focused question", description: "Start with the decision, draft, comparison, or next step you need." }, { icon: ListChecks, title: "Set context when needed", description: "Once the session starts, include a profile, job, resume version, or offer references." }, { icon: FileText, title: "Review the draft", description: "Keep every output as a draft until you decide how to use it." }]} /> : null}
+              {!sessionLoading && !showThread ? <WorkspaceEmptyState icon={MessageCircleMore} title="Turn a career question into a useful draft" description="Start with one focused request. After the session begins, you can add only the career context that should shape the next draft." actionLabel="Create Career Lab session" onAction={() => setNewOpen(true)} /> : null}
               {showThread ? (
                 <ChatThread
                   messages={chatMessages}
@@ -331,7 +324,7 @@ export function CareerLabPage() {
               />
             </div> : active?.status === "ended" ? <div className="border-t bg-muted/20 p-4 text-center text-sm text-muted-foreground">This draft session has ended. Start a new session when you are ready to explore another question.</div> : null}
           </Card>
-        </main>
+        </div>
 
         {active ? (
           <aside className="min-w-0 space-y-4 xl:sticky xl:top-4" aria-label="Career Lab controls">
@@ -353,7 +346,7 @@ export function CareerLabPage() {
         isLoading={sessions.isPending}
         isError={sessions.isError}
         onRetry={() => void sessions.refetch()}
-        emptyMessage="No saved Career Lab sessions yet. Start one to create a draft."
+        emptyMessage="No saved sessions."
         createLabel={unanchoredActive ? undefined : "New Career Lab session"}
         onCreate={unanchoredActive ? undefined : () => setNewOpen(true)}
         onRename={(sessionId, title) => void rename.mutateAsync({ sessionId, title })}

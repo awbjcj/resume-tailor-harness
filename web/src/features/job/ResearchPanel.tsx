@@ -6,17 +6,13 @@ import { cn } from "@/lib/utils";
 export function ResearchPanelHeader({
   titleId,
   icon,
-  eyebrow,
   title,
-  description,
   context,
   action,
 }: {
   titleId: string;
   icon: ReactNode;
-  eyebrow: ReactNode;
   title: ReactNode;
-  description: ReactNode;
   context?: ReactNode;
   action: ReactNode;
 }) {
@@ -28,15 +24,9 @@ export function ResearchPanelHeader({
             {icon}
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              {eyebrow}
-            </p>
-            <h2 id={titleId} className="mt-1 font-heading text-xl font-semibold">
+            <h2 id={titleId} className="font-heading text-lg font-semibold">
               {title}
             </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-              {description}
-            </p>
             {context && (
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
                 {context}

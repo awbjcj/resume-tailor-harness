@@ -1,3 +1,4 @@
+import "@/i18n/interaction-copy-filters";
 import { SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,6 +26,7 @@ import { SavedViewsControl } from "@/features/board/SavedViewsControl";
 import type { BoardName } from "@/features/board/use-saved-views";
 import { fieldLabel } from "@/lib/format";
 import { industryLabel } from "@/lib/filters/industry-label";
+import { facetLabel } from "@/i18n/facet-labels";
 import {
   emptyFilterState,
   type FilterState,
@@ -176,7 +178,7 @@ export function FilterDesk({
   savedViewBoard?: BoardName;
   defaultSort?: SortKey;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [primaryDraft, setPrimaryDraft] = useState(() =>
     primaryDraftFromFilter(filter),
   );
@@ -264,10 +266,10 @@ export function FilterDesk({
 
   const facetSpecs: FacetSpec[] = [
     { key: "source", label: "Source", getLabel: fieldLabel },
-    { key: "remote", label: "Remote", options: REMOTE, getLabel: fieldLabel },
-    { key: "sponsorship", label: "Sponsorship", options: SPONSORSHIP, getLabel: fieldLabel },
-    { key: "seniority", label: "Seniority", options: SENIORITY, getLabel: fieldLabel },
-    { key: "employmentType", label: "Type", options: EMPLOYMENT_TYPE, getLabel: fieldLabel },
+    { key: "remote", label: "Remote", options: REMOTE, getLabel: (value) => facetLabel("remote", value, i18n.resolvedLanguage) },
+    { key: "sponsorship", label: "Sponsorship", options: SPONSORSHIP, getLabel: (value) => facetLabel("sponsorship", value, i18n.resolvedLanguage) },
+    { key: "seniority", label: "Seniority", options: SENIORITY, getLabel: (value) => facetLabel("seniority", value, i18n.resolvedLanguage) },
+    { key: "employmentType", label: "Type", options: EMPLOYMENT_TYPE, getLabel: (value) => facetLabel("employmentType", value, i18n.resolvedLanguage) },
     { key: "industry", label: "Industry", getLabel: industryLabel },
     { key: "country", label: "Country" },
     { key: "region", label: "Region" },
@@ -303,10 +305,9 @@ export function FilterDesk({
       className="mb-6 rounded-lg border bg-card p-4"
     >
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-        <span className="text-sm font-semibold">Filter &amp; sort</span>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">
           <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-            {total.toLocaleString()} matching
+            {t("interactionCopy.filters.matching", { count: total.toLocaleString() })}
           </span>
           {savedViewBoard && (
             <SavedViewsControl
@@ -328,7 +329,7 @@ export function FilterDesk({
         <FieldGroup className="flex-row flex-wrap items-end gap-2">
           {showStatus && (
             <Field className="w-full gap-1.5 sm:w-30">
-              <FieldTitle className={CONTROL_LABEL_CLASS}>Status</FieldTitle>
+              <FieldTitle className="sr-only">Status</FieldTitle>
               <FacetPopover
                 label="Status"
                 counts={statusCounts}
@@ -338,7 +339,7 @@ export function FilterDesk({
                 onOpenChange={(nextOpen) =>
                   handleFacetOpenChange("status", nextOpen)
                 }
-                getLabel={statusLabel ?? pretty}
+                getLabel={statusLabel ?? ((value) => facetLabel("status", value, i18n.resolvedLanguage))}
                 presentation="field"
               />
             </Field>
@@ -517,7 +518,6 @@ export function FilterDesk({
 
       <ActiveFilterSummary
         filter={filter}
-        total={total}
         onRemove={removeFilter}
         onClear={clearFilters}
       />

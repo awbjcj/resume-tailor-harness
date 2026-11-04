@@ -48,7 +48,7 @@ export function CoverLettersTab({
     <>
       {deletableIds.length > 0 && (
         <ArtifactSelectionBar
-          noun="cover letter"
+          kind="coverLetter"
           selectedCount={selection.selectedIds.length}
           allSelected={selection.allSelected}
           onToggleAll={selection.toggleAll}

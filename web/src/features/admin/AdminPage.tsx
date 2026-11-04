@@ -20,13 +20,9 @@ export function AdminPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader
-        kicker="Workspace governance"
-        title="Administration"
-        sub="Manage member access, operational limits, invitation codes, and complete system backups."
-      />
+      <PageHeader title="Administration" />
       <AdminSectionNav current="/admin" />
-      <Alert className="-mt-5">
+      <Alert>
         <ShieldCheck aria-hidden="true" />
         <AlertTitle>Administrators are exempt from individual limits</AlertTitle>
         <AlertDescription>
@@ -37,50 +33,22 @@ export function AdminPage() {
       <MailWarning />
 
       <section aria-labelledby="admin-controls" className="flex flex-col gap-4">
-        <div>
-          <h2 id="admin-controls" className="text-lg font-semibold">
-            Access and capacity
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Invite new members and set operating limits for their workspaces.
-          </p>
-        </div>
+        <h2 id="admin-controls" className="text-lg font-semibold">Access and capacity</h2>
         <div className="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)]">
           <AdminInviteCard />
           <AdminLimitsCard />
         </div>
       </section>
 
-      <section aria-labelledby="admin-data" className="flex flex-col gap-4">
-        <div>
-          <h2 id="admin-data" className="text-lg font-semibold">
-            System data
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Keep a complete portable snapshot before maintenance or migration.
-          </p>
-        </div>
-        <DataArchiveCard
-          title="System backup"
-          description="Export or replace the complete server data root, including every workspace."
-          exportLabel="Export all data"
-          exportPath="/api/admin/export"
-          importPath="/api/admin/import"
-          successMessage="Data imported"
-        />
-      </section>
-
-      <section aria-labelledby="admin-members" className="flex flex-col gap-4">
-        <div>
-          <h2 id="admin-members" className="text-lg font-semibold">
-            Members
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Each action requires administrator authorization.
-          </p>
-        </div>
-        <AdminUsersCard currentUsername={me.data.username ?? ""} />
-      </section>
+      <DataArchiveCard
+        title="System backup"
+        description="Export or replace the complete server data root, including every workspace."
+        exportLabel="Export all data"
+        exportPath="/api/admin/export"
+        importPath="/api/admin/import"
+        successMessage="Data imported"
+      />
+      <AdminUsersCard currentUsername={me.data.username ?? ""} />
     </div>
   );
 }

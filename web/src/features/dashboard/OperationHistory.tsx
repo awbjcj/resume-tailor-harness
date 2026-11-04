@@ -57,8 +57,7 @@ export function OperationHistory({ activeRuns }: { activeRuns?: ReactNode }) {
   const clear = useClearOperationHistory();
   return <Card>
     <CardHeader className="flex flex-wrap items-start justify-between gap-3">
-      <div><CardTitle>{t("dashboard.recentRuns")}</CardTitle>
-        <p className="mt-1 text-xs text-muted-foreground">{t("runHistory.historyHint")}</p></div>
+      <CardTitle>{t("dashboard.recentRuns")}</CardTitle>
       <ClearHistoryButton label={t("runHistory.clearOperations")} pending={clear.isPending}
         disabled={!history.data?.length} error={clear.error}
         onClear={(onSuccess) => clear.mutate(undefined, { onSuccess })} />

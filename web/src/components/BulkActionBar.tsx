@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-selection";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -20,16 +22,17 @@ export function BulkActionBar({
   onClear: () => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   if (count === 0) return null;
   return (
     <div className="mb-4 rounded-lg border bg-card shadow-sm">
       <div className="flex flex-wrap items-center gap-2 p-3">
         <span
           role="status"
-          aria-label={`${count.toLocaleString()} selected`}
+          aria-label={t("interactionCopy.selection.count", { count: count.toLocaleString() })}
           className="rounded-full bg-secondary px-3 py-1 text-sm"
         >
-          <strong>{count.toLocaleString()}</strong> selected
+          {t("interactionCopy.selection.count", { count: count.toLocaleString() })}
         </span>
         {children}
         <Button variant="ghost" size="sm" className="ml-auto" onClick={onClear}>
@@ -40,14 +43,14 @@ export function BulkActionBar({
         <>
           <Separator />
           <div className="bg-primary/5 px-3 py-2 text-sm text-primary">
-            All {pageCount.toLocaleString()} loaded selected.{" "}
+            {t("interactionCopy.selection.loaded", { count: pageCount.toLocaleString() })}{" "}
             <Button
               variant="link"
               size="sm"
               className="h-auto px-1 py-0"
               onClick={onSelectAllMatching}
             >
-              Select all {total.toLocaleString()} matching this filter
+              {t("interactionCopy.selection.selectMatching", { count: total.toLocaleString() })}
             </Button>
           </div>
         </>

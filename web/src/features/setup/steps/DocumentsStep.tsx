@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { DocumentManager } from "@/features/settings/forms/DocumentManager";
@@ -30,8 +30,7 @@ export function DocumentsStep() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Documents</CardTitle>
-        <CardDescription>Upload a resume. The profile is built from it.</CardDescription>
+        <CardTitle><h1>Documents</h1></CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <DocumentManager />

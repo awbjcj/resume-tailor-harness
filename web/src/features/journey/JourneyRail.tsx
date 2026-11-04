@@ -73,24 +73,7 @@ function Node({
 export function JourneyRail() {
   const { t } = useTranslation();
   const journey = useJourney();
-  if (!journey) return null;
-
-  // Once the loop is running, the rail recedes to a single quiet orientation
-  // line — still present, but no longer demanding action.
-  if (journey.complete) {
-    return (
-      <div
-        aria-label={t("journey.label")}
-        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground shadow-card"
-      >
-        <span className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Check className="size-3" aria-hidden="true" />
-        </span>
-        <span className="font-medium text-foreground">{t("journey.completeTitle")}</span>
-        <span>{t("journey.completeSummary")}</span>
-      </div>
-    );
-  }
+  if (!journey || journey.complete) return null;
 
   const current = journey.stages.find((s) => s.state === "current");
 

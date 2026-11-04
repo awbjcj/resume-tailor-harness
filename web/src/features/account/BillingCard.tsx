@@ -1,28 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CheckCircle2,
-  Clock3,
-  ExternalLink,
-  LoaderCircle,
-  LockKeyhole,
-  Wallet,
-} from "lucide-react";
+import { CheckCircle2, Clock3, ExternalLink, LoaderCircle, LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, unwrap } from "@/lib/api/client";
 import { formatUserDateTime } from "@/lib/date-time";
@@ -143,10 +128,6 @@ export function BillingCard({
     <section aria-labelledby="account-billing">
       <Card className="[--card-spacing:--spacing(5)] sm:[--card-spacing:--spacing(6)]">
         <CardHeader className="gap-2 border-b">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            <Wallet className="size-4" aria-hidden="true" />
-            {t("billing.kicker")}
-          </div>
           <CardTitle>
             <h2
               id="account-billing"
@@ -155,9 +136,6 @@ export function BillingCard({
               {t("billing.title")}
             </h2>
           </CardTitle>
-          <CardDescription className="max-w-[65ch] leading-6">
-            {t("billing.description")}
-          </CardDescription>
           {catalog.data?.portalAvailable ? (
             <CardAction>
               <Button

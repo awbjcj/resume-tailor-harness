@@ -688,14 +688,7 @@ test("profile controls remain usable with enlarged text in English and Chinese",
     });
     await expect(resume).toBeVisible();
     await expect(resume).toContainText(language === "en" ? "Ready" : "已就绪");
-    await expect(
-      page.getByText(
-        language === "en"
-          ? "Choose GitHub branches (optional)"
-          : "选择 GitHub 分支（可选）",
-        { exact: true },
-      ),
-    ).toBeVisible();
+    await expect(page.locator("#githubUsername")).toBeVisible();
     await page.evaluate(() => {
       document.documentElement.style.fontSize = "200%";
     });
@@ -1548,9 +1541,14 @@ test("compact skills and click contexts reflow across languages, themes and text
       await page.getByRole("button", { name: "Python", exact: true }).click();
       const popup = page.getByRole("dialog", { name: "Python", exact: true });
       await expect(popup).toBeVisible();
-      expect(
-        await page.evaluate(() => document.documentElement.scrollWidth),
-      ).toBeLessThanOrEqual(width);
+      const enlargedLayout = await page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        overflow: [...document.querySelectorAll("body *")]
+          .filter((node) => node.getBoundingClientRect().right > innerWidth + 1 && getComputedStyle(node).position !== "fixed")
+          .slice(0, 12)
+          .map((node) => ({ tag: node.tagName, className: node.className, text: node.textContent?.slice(0, 60) })),
+      }));
+      expect(enlargedLayout.width, JSON.stringify(enlargedLayout.overflow)).toBeLessThanOrEqual(width);
       await expect(popup).toHaveJSProperty(
         "scrollWidth",
         await popup.evaluate((node) => node.clientWidth),

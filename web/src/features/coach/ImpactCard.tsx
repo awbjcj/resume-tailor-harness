@@ -2,7 +2,7 @@ import { ArrowUpRight, ChartNoAxesColumnIncreasing, Sparkles } from "lucide-reac
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { components } from "@/lib/api/schema";
 
 type Impact = components["schemas"]["CoachImpactOut"];
@@ -15,7 +15,6 @@ export function ImpactCard({ impact }: { impact: Impact }) {
     <Card className="border-primary/25 bg-gradient-to-br from-card via-card to-primary/[0.06]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Sparkles className="size-4 text-primary" aria-hidden="true" />Coaching impact</CardTitle>
-        <CardDescription>What changed in the rebuilt profile.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-3">
         <div><div className="text-2xl font-semibold tabular-nums">{(impact.newFactIds ?? []).length}</div><div className="text-xs text-muted-foreground">new facts backed by evidence</div></div>

@@ -51,7 +51,7 @@ export function SessionsRail({ selectedId }: { selectedId: string | null }) {
         isLoading={sessions.isPending}
         isError={sessions.isError}
         onRetry={() => void sessions.refetch()}
-        emptyMessage="No interview sessions yet. Start one when you are ready to practice."
+        emptyMessage="No saved sessions."
         createLabel="New interview"
         onCreate={() => setNewOpen(true)}
         onRename={(sessionId, title) => rename.mutate({ sessionId, title })}

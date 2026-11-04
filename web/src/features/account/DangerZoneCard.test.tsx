@@ -32,6 +32,7 @@ describe("DangerZoneCard", () => {
       await user.click(screen.getByRole("button", { name: "重置数据" }));
 
       const dialog = screen.getByRole("alertdialog");
+      expect(within(dialog).getByText(/所选数据将被永久删除。/)).toHaveTextContent(/请输入 RESET 继续。/);
       expect(
         within(dialog).getByText(
           "配置、API 密钥和手动填写的个人资料覆盖项会保留。",

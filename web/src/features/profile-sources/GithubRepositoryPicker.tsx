@@ -181,10 +181,6 @@ export function GithubRepositoryPicker({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="font-medium">Repository branches</h3>
-          <p className="text-sm text-muted-foreground">
-            Use the default branch, or choose the branch with your project
-            documents.
-          </p>
         </div>
         <Button
           variant="outline"

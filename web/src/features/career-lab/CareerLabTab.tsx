@@ -31,12 +31,8 @@ export function CareerLabTab({
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Career Lab
-        </h3>
         <p className="text-sm text-muted-foreground">
-          Discuss this role with the job description as context. Use this thread
-          for application answers, outreach, or negotiation preparation.
+          Draft application answers, outreach, or negotiation notes for this role.
         </p>
         {activeRow ? (
           <p className="text-sm text-muted-foreground">

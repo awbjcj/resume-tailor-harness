@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -53,7 +53,6 @@ export function ChatSessionHistory({
   deletePending = false,
   deleteTitle = "Delete this session?",
   deleteDescription = "This permanently removes the saved conversation. This cannot be undone.",
-  description = "Open a saved thread or manage it without leaving the workspace.",
   ariaLabel = "Session history",
 }: {
   items: ChatSessionHistoryItem[];
@@ -76,7 +75,6 @@ export function ChatSessionHistory({
   deletePending?: boolean;
   deleteTitle?: ReactNode | ((item: ChatSessionHistoryItem) => ReactNode);
   deleteDescription?: ReactNode | ((item: ChatSessionHistoryItem) => ReactNode);
-  description?: ReactNode;
   ariaLabel?: string;
 }) {
   const [pendingRename, setPendingRename] = useState<ChatSessionHistoryItem | null>(null);
@@ -97,22 +95,18 @@ export function ChatSessionHistory({
             <Clock3 className="size-4 text-primary" aria-hidden="true" />
             <CardTitle className="text-base">Session history</CardTitle>
           </div>
-          {onCreate && createLabel ? (
-            <Button size="sm" disabled={createDisabled} onClick={onCreate}>
-              <Plus aria-hidden="true" />
-              {createLabel}
-            </Button>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardDescription>{description}</CardDescription>
-          <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-            <Checkbox
-              checked={showArchived}
-              onCheckedChange={(checked) => onShowArchivedChange(checked === true)}
-            />
-            Show archived
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox checked={showArchived} onCheckedChange={(checked) => onShowArchivedChange(checked === true)} />
+              Show archived
+            </label>
+            {onCreate && createLabel ? (
+              <Button variant="outline" size="sm" disabled={createDisabled} onClick={onCreate}>
+                <Plus aria-hidden="true" />
+                {createLabel}
+              </Button>
+            ) : null}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-1">

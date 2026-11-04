@@ -3,7 +3,7 @@ import type { RefObject } from "react";
 import { BriefcaseBusiness, SlidersHorizontal } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { components } from "@/lib/api/schema";
@@ -229,7 +229,6 @@ export function CareerLabContextRail({
             <SlidersHorizontal className="size-4 text-primary" aria-hidden="true" />
             Session setup
           </CardTitle>
-          <CardDescription>Set the drafting mode for your next response and keep the session focus visible.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <CareerLabSkillPicker skill={skill} setSkill={setSkill} skills={skills} selectRef={skillRef} />
@@ -246,7 +245,6 @@ export function CareerLabContextRail({
             <BriefcaseBusiness className="size-4 text-primary" aria-hidden="true" />
             Reference context
           </CardTitle>
-          <CardDescription>Add only the material that should shape the next draft.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <label className="flex items-start gap-3 rounded-lg border bg-muted/20 p-3 text-sm">
@@ -257,7 +255,6 @@ export function CareerLabContextRail({
             />
             <span>
               <span className="block font-medium">Include current profile</span>
-              <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">Use the current profile as a draft reference, limited to the facts it contains.</span>
             </span>
           </label>
 

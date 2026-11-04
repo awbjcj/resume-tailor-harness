@@ -4,14 +4,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -74,11 +67,8 @@ export function AdminUsersCard({ currentUsername }: { currentUsername: string })
           </div>
           <div className="flex flex-col gap-1">
             <CardTitle>
-              <h3>Workspace members</h3>
+              <h2>Workspace members</h2>
             </CardTitle>
-            <CardDescription>
-              Review access, live usage, and account status from one roster.
-            </CardDescription>
           </div>
         </div>
         <CardAction>

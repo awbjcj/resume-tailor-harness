@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 import type { DashboardSummary } from "./use-dashboard-summary";
@@ -77,7 +77,6 @@ export function ActionQueue({ summary }: { summary: DashboardSummary }) {
                 {count}
               </div>
               <CardTitle className="text-sm">{t(card.verbKey)}</CardTitle>
-              <CardDescription className="text-xs">{t(card.subKey)}</CardDescription>
             </Card>
           </Link>
         );

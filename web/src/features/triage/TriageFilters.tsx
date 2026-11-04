@@ -1,5 +1,7 @@
+import "@/i18n/interaction-copy-filters";
 import { SearchIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { ActiveFilterSummary } from "@/components/filters/ActiveFilterSummary";
 import { FacetPopover } from "@/components/filters/FacetPopover";
@@ -25,6 +27,7 @@ import type { Facets } from "@/features/board/use-board-query";
 import { SavedViewsControl } from "@/features/board/SavedViewsControl";
 import { ImportJobsButton } from "@/features/runs/ImportJobsDialog";
 import { ManualJobDialog } from "@/features/runs/ManualJobDialog";
+import { facetLabel } from "@/i18n/facet-labels";
 import {
   emptyFilterState,
   type FilterState,
@@ -34,13 +37,6 @@ const SET_FILTER_KEYS: (keyof FilterState)[] = [
   "source", "status", "remote", "sponsorship", "seniority",
   "employmentType", "industry", "country", "region", "city",
   "companySize", "skills",
-];
-const STALE_OPTIONS = [
-  { value: "any", label: "Any age" },
-  ...[7, 14, 30, 45, 60, 90].map((days) => ({
-    value: String(days),
-    label: `Older than ${days} days`,
-  })),
 ];
 const CONTROL_LABEL =
   "text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground";
@@ -64,6 +60,14 @@ export function TriageFilters({
   onArchivedChange: (archived: boolean) => void;
   onChange: (filter: FilterState) => void;
 }) {
+  const { t, i18n } = useTranslation();
+  const staleOptions = [
+    { value: "any", label: "Any age" },
+    ...[7, 14, 30, 45, 60, 90].map((days) => ({
+      value: String(days),
+      label: `Older than ${days} days`,
+    })),
+  ];
   const [searchDraft, setSearchDraft] = useState(() => ({
     value: filter.q,
     committed: filter.q,
@@ -122,10 +126,9 @@ export function TriageFilters({
   return (
     <section aria-label="Triage filters" className="mb-5 rounded-lg border bg-card p-4">
       <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">Filter triage</h2>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">
           <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-            {total.toLocaleString()} matching
+            {t("interactionCopy.filters.matching", { count: total.toLocaleString() })}
           </span>
           <SavedViewsControl
             board="triage"
@@ -150,18 +153,19 @@ export function TriageFilters({
       }}>
         <FieldGroup className="flex-row flex-wrap items-end gap-2">
           <Field className="w-full gap-1.5 sm:w-30">
-            <FieldTitle className={CONTROL_LABEL}>Status</FieldTitle>
+            <FieldTitle className="sr-only">Status</FieldTitle>
             <FacetPopover
               label="Status"
               counts={statusCounts}
               selected={filter.status}
+              getLabel={(value) => facetLabel("status", value, i18n.resolvedLanguage)}
               onChange={(status) => onChange({ ...filter, status })}
               presentation="field"
             />
           </Field>
 
           <Field className="w-full gap-1.5 sm:w-36">
-            <FieldTitle className={CONTROL_LABEL}>Source</FieldTitle>
+            <FieldTitle className="sr-only">Source</FieldTitle>
             <FacetPopover
               label="Source"
               counts={sourceCounts}
@@ -212,7 +216,7 @@ export function TriageFilters({
               Posted age
             </FieldLabel>
             <Select
-              items={STALE_OPTIONS}
+              items={staleOptions}
               value={filter.staleMinDays == null ? "any" : String(filter.staleMinDays)}
               onValueChange={(value) => onChange({
                 ...filter,
@@ -224,7 +228,7 @@ export function TriageFilters({
               </SelectTrigger>
               <SelectContent align="start" alignItemWithTrigger={false}>
                 <SelectGroup>
-                  {STALE_OPTIONS.map((option) => (
+                  {staleOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -264,7 +268,6 @@ export function TriageFilters({
 
       <ActiveFilterSummary
         filter={filter}
-        total={total}
         onRemove={removeFilter}
         onClear={clearFilters}
       />

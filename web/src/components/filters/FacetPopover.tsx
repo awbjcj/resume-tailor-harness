@@ -1,4 +1,7 @@
+import "@/i18n/interaction-copy-filters";
+import "@/i18n/interaction-copy-selection";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDownIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -12,14 +15,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 type FacetPopoverProps = {
@@ -45,6 +41,7 @@ export function FacetPopover({
   presentation = "chip",
   className,
 }: FacetPopoverProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const isControlled = open !== undefined;
@@ -114,26 +111,25 @@ export function FacetPopover({
       >
         <PopoverHeader className="shrink-0 gap-2 p-4 pb-3">
           <div className="flex items-center justify-between gap-3">
-            <PopoverTitle>Filter by {label}</PopoverTitle>
+            <PopoverTitle>{t("interactionCopy.filters.title", { label })}</PopoverTitle>
             <Badge variant="secondary">
-              {selected.size} selected
+              {t("interactionCopy.selection.count", { count: selected.size })}
             </Badge>
           </div>
-          <PopoverDescription>Select options to narrow this view.</PopoverDescription>
         </PopoverHeader>
 
         <Command className="min-h-0 flex-1">
           <CommandInput
-            placeholder={`Search ${label.toLowerCase()}...`}
-            aria-label={`Search ${label}`}
+            placeholder={t("interactionCopy.filters.search", { label: label.toLowerCase() })}
+            aria-label={t("interactionCopy.filters.searchAria", { label })}
             value={query}
             onValueChange={setQuery}
           />
           <CommandList className="min-h-0 max-h-64 flex-1">
             {shown.length === 0 && (
-              <CommandEmpty>No matching {label.toLowerCase()}</CommandEmpty>
+              <CommandEmpty>{t("interactionCopy.filters.empty", { label: label.toLowerCase() })}</CommandEmpty>
             )}
-            <CommandGroup role="group" aria-label={`${label} options`} className="flex flex-col gap-1">
+            <CommandGroup role="group" aria-label={t("interactionCopy.filters.options", { label })} className="flex flex-col gap-1">
               {shown.map((option) => {
                 const checked = selected.has(option);
                 const optionLabel = getLabel ? getLabel(option) : option;
@@ -162,7 +158,7 @@ export function FacetPopover({
             type="button"
             variant="ghost"
             size="sm"
-            aria-label={`Clear ${label} filter`}
+            aria-label={t("interactionCopy.filters.clear", { label })}
             disabled={selected.size === 0}
             onClick={() => onChange(new Set())}
           >
@@ -171,7 +167,7 @@ export function FacetPopover({
           <Button
             type="button"
             size="sm"
-            aria-label={`Done filtering ${label}`}
+            aria-label={t("interactionCopy.filters.done", { label })}
             onClick={() => handleOpenChange(false)}
           >
             Done

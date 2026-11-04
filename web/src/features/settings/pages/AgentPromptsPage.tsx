@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
 import { CircleAlert, LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -134,17 +135,8 @@ export function AgentPromptsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Agent prompts</h1>
-          <p className="text-sm text-muted-foreground">
-            Review each built-in prompt and add supporting guidance. Guidance can
-            shape tone, emphasis, and process. It cannot change facts or integrity rules.
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{t("agentPrompts.originalLanguage")}</p>
-        </div>
-        <ResetSectionButton sectionId="agent_guidance" label="Agent prompts" />
-      </header>
+      <PageHeader title="Agent prompts" actions={<ResetSectionButton sectionId="agent_guidance" label="Agent prompts" />} />
+      <p className="text-sm text-muted-foreground">{t("agentPrompts.originalLanguage")}</p>
       {STAGES.map(([stage, label]) => {
         const items = prompts.data.filter((item) => item.stage === stage);
         if (items.length === 0) return null;

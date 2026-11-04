@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-selection";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
 import { BulkActionBar } from "@/components/BulkActionBar";
@@ -6,7 +8,6 @@ import { BulkPreviewButton } from "@/components/BulkPreviewButton";
 import { EmptyState } from "@/components/EmptyState";
 import { JobModal } from "@/components/JobModal";
 import { JobTable } from "@/components/JobTable";
-import { MetricRow } from "@/components/MetricRow";
 import { PageHeader } from "@/components/PageHeader";
 import { BoardSkeleton } from "@/components/skeletons";
 import { StaleQuickFilters } from "@/components/StaleQuickFilters";
@@ -60,6 +61,7 @@ function TriageNote({ row }: { row: TriageNoteRow }) {
 }
 
 export function TriageContainer() {
+  const { t } = useTranslation();
   const [archived, setArchived] = useState(false);
   const [rawFilter, setRawFilter] = useBoardFilters("recency");
   const filter: FilterState = { ...rawFilter, fitMin: null, maxFit: null };
@@ -114,15 +116,8 @@ export function TriageContainer() {
   return (
     <>
       <PageHeader
-        kicker="Intake"
-        title="Triage Desk"
-        sub="Review new and rejected jobs before they reach the shortlist. Archive irrelevant jobs, delete those you no longer want, or clean up in bulk."
-      />
-      <MetricRow
-        items={[
-          ["Loaded", rows.length.toLocaleString()],
-          ["Matching", total.toLocaleString()],
-        ]}
+        title="Triage"
+        className="mb-6"
       />
       <TriageFilters
         filter={filter}
@@ -156,7 +151,7 @@ export function TriageContainer() {
           >
             <BulkPreviewButton
               label={archived ? "Restore" : "Archive"}
-              title={`${archived ? "Restore" : "Archive"} ${selection.count.toLocaleString()} selected job(s)?`}
+              title={t(archived ? "interactionCopy.selection.restoreJobs" : "interactionCopy.selection.archiveJobs", { count: selection.count, formattedCount: selection.count.toLocaleString() })}
               preview={() => bulk.preview({ ...bulkArgs, action })}
               run={() =>
                 bulk.run({ ...bulkArgs, action }).then((result) => {
@@ -167,7 +162,7 @@ export function TriageContainer() {
             />
             <BulkPreviewButton
               label="Delete"
-              title={`Delete ${selection.count.toLocaleString()} selected job(s)?`}
+              title={t("interactionCopy.selection.deleteJobs", { count: selection.count, formattedCount: selection.count.toLocaleString() })}
               confirmLabel="Confirm delete"
               variant="destructive"
               preview={() => bulk.preview({ ...bulkArgs, action: "delete" })}

@@ -4,7 +4,7 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SecretsForm } from "@/features/settings/forms/SecretsForm";
 import { useSaveSecrets, useSecrets } from "@/features/settings/use-secrets";
 import { useSetupContinuation } from "../use-setup-continuation";
@@ -21,10 +21,7 @@ export function KeysStep() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>API keys</CardTitle>
-        <CardDescription>
-          Needed for tailoring. Everything else works without it.
-        </CardDescription>
+        <CardTitle><h1>API keys</h1></CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {secrets.data && (
