@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 import re
 import threading
 import time
@@ -17,6 +18,12 @@ from pydantic import BaseModel
 from resume_tailor_harness.agent_trace import record_agent_run
 from resume_tailor_harness.career_skills.models import AgentRunMeta
 from resume_tailor_harness.config import Settings, get_settings
+from resume_tailor_harness.llm_limits import llm_call, retry_after_seconds
+from resume_tailor_harness.structured_output import (
+    StructuredOutputError,
+    parse_structured_content,
+    retry_prompt,
+)
 from resume_tailor_harness.provider_registry import (
     PROVIDERS,
     PROVIDER_SPECS,
@@ -89,7 +96,12 @@ class _ModelWithAsyncClient(Protocol):
 # Matched by status code and class name so no provider SDK is imported here
 # (the same lazy-import rule build_model follows).
 _TRANSIENT_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
-_TRANSIENT_STREAM_CODES = {"server_error", "rate_limit_exceeded", "overloaded_error"}
+_TRANSIENT_STREAM_CODES = {
+    "server_error",
+    "rate_limit_exceeded",
+    "overloaded_error",
+    "gateway_concurrency_limit",
+}
 _TRANSIENT_NAMES = {
     "APIConnectionError",
     "APITimeoutError",
@@ -114,9 +126,10 @@ class _UnparsedRetry(Exception):
     call site's ``expect_schema`` raises its own rich diagnostic.
     """
 
-    def __init__(self, response: Any) -> None:
+    def __init__(self, response: Any, reason: str) -> None:
         super().__init__("agent returned unparsed structured output")
         self.response = response
+        self.reason = reason
 
 
 class _StreamFailure(Exception):
@@ -146,7 +159,37 @@ def _unparsed_structured_output(agent: Any, response: Any) -> bool:
     schema = getattr(agent, "output_schema", None)
     if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
         return False
-    return not isinstance(getattr(response, "content", None), schema)
+    return _incomplete_detail(response) is not None or not isinstance(
+        getattr(response, "content", None), schema
+    )
+
+
+def _recover_structured_output(agent: Any, response: Any) -> None:
+    if not _unparsed_structured_output(agent, response):
+        return
+    try:
+        if _incomplete_detail(response) is not None:
+            raise StructuredOutputError(
+                "provider stopped before completing the response"
+            )
+        parsed = parse_structured_content(
+            getattr(response, "content", None), agent.output_schema
+        )
+    except StructuredOutputError as exc:
+        # Per-response metadata is safe when one agent serves concurrent jobs.
+        previous = getattr(response, "model_provider_data", None)
+        data = dict(previous) if isinstance(previous, dict) else {}
+        data["structured_output_error"] = str(exc)
+        response.model_provider_data = data
+        raise _UnparsedRetry(response, str(exc)) from exc
+    response.content = parsed
+    if hasattr(response, "content_type"):
+        response.content_type = agent.output_schema.__name__
+
+
+def _retry_delay(settings: Settings, attempt: int, error: Any = None) -> float:
+    delay = settings.llm_retry_delay * (2**attempt)
+    return max(delay + random.uniform(0, delay * 0.25), retry_after_seconds(error) or 0)
 
 
 def is_transient(exc: BaseException) -> bool:
@@ -380,12 +423,15 @@ class AgentRunner:
 
     def run(self, prompt: str, *, images: tuple[bytes, ...] = ()) -> Any:
         settings = self._settings or get_settings()
+        attempt_prompt = prompt
         for attempt in range(settings.llm_retries + 1):
             try:
                 self._enter(settings)
                 try:
                     with capture_errors() as errors:
-                        response = self._agent.run(prompt, **_image_kwargs(images))
+                        response = self._agent.run(
+                            attempt_prompt, **_image_kwargs(images)
+                        )
                     record_call(self._agent, response)
                 finally:
                     self._exit()
@@ -397,29 +443,33 @@ class AgentRunner:
                     and attempt < settings.llm_retries
                 ):
                     raise errors[-1]
-                if _unparsed_structured_output(self._agent, response):
-                    raise _UnparsedRetry(response)
+                _recover_structured_output(self._agent, response)
                 return response
             except _UnparsedRetry as unparsed:
                 if attempt >= settings.llm_retries:
                     return unparsed.response
                 logger.warning(
-                    "agent returned unparsed structured output; retrying (%d/%d)",
+                    "agent structured output invalid (%s); retrying (%d/%d)",
+                    unparsed.reason,
                     attempt + 1,
                     settings.llm_retries,
                 )
-                time.sleep(settings.llm_retry_delay * (2**attempt))
+                attempt_prompt = retry_prompt(
+                    prompt, self._agent.output_schema.__name__, unparsed.reason
+                )
+                time.sleep(_retry_delay(settings, attempt))
             except Exception as exc:
                 if attempt >= settings.llm_retries or not is_transient(exc):
                     record_agent_run(
                         self, None, retries=attempt, status="error", error=str(exc)
                     )
                     raise
-                time.sleep(settings.llm_retry_delay * (2**attempt))
+                time.sleep(_retry_delay(settings, attempt, exc))
         raise AssertionError("unreachable")
 
     async def arun(self, prompt: str, *, images: tuple[bytes, ...] = ()) -> Any:
         settings = self._settings or get_settings()
+        attempt_prompt = prompt
         for attempt in range(settings.llm_retries + 1):
             try:
                 # Both hops are synchronous SQLite I/O, and one of them can
@@ -429,7 +479,7 @@ class AgentRunner:
                 try:
                     with capture_errors() as errors:
                         response = await self._agent.arun(
-                            prompt, **_image_kwargs(images)
+                            attempt_prompt, **_image_kwargs(images)
                         )
                     recording = asyncio.create_task(
                         asyncio.to_thread(record_call, self._agent, response)
@@ -449,25 +499,28 @@ class AgentRunner:
                     and attempt < settings.llm_retries
                 ):
                     raise errors[-1]
-                if _unparsed_structured_output(self._agent, response):
-                    raise _UnparsedRetry(response)
+                _recover_structured_output(self._agent, response)
                 return response
             except _UnparsedRetry as unparsed:
                 if attempt >= settings.llm_retries:
                     return unparsed.response
                 logger.warning(
-                    "agent returned unparsed structured output; retrying (%d/%d)",
+                    "agent structured output invalid (%s); retrying (%d/%d)",
+                    unparsed.reason,
                     attempt + 1,
                     settings.llm_retries,
                 )
-                await asyncio.sleep(settings.llm_retry_delay * (2**attempt))
+                attempt_prompt = retry_prompt(
+                    prompt, self._agent.output_schema.__name__, unparsed.reason
+                )
+                await asyncio.sleep(_retry_delay(settings, attempt))
             except Exception as exc:
                 if attempt >= settings.llm_retries or not is_transient(exc):
                     record_agent_run(
                         self, None, retries=attempt, status="error", error=str(exc)
                     )
                     raise
-                await asyncio.sleep(settings.llm_retry_delay * (2**attempt))
+                await asyncio.sleep(_retry_delay(settings, attempt, exc))
         raise AssertionError("unreachable")
 
     def stream(
@@ -513,7 +566,10 @@ class AgentRunner:
                                         or event.code in _TRANSIENT_NAMES
                                         or event.code in _TRANSIENT_STREAM_CODES
                                     )
-                                    raise _StreamFailure(event, retryable)
+                                    failure = _StreamFailure(event, retryable)
+                                    if errors:
+                                        raise failure from errors[-1]
+                                    raise failure
                                 emitted = True
                                 yield event
                     if terminal_output is None:
@@ -529,7 +585,12 @@ class AgentRunner:
                             getattr(terminal_output, "content", None)
                             or "The model reported an error."
                         )
-                        yield Failed(str(message), "RUN_ERROR")
+                        failure = Failed(str(message), "RUN_ERROR")
+                        if errors and is_transient(errors[-1]):
+                            raise _StreamFailure(failure, retryable=True) from errors[
+                                -1
+                            ]
+                        yield failure
                         return
                     if _incomplete_detail(terminal_output):
                         yield Failed(
@@ -584,7 +645,7 @@ class AgentRunner:
                         else Failed(str(exc), type(exc).__name__)
                     )
                     return
-                delay = settings.llm_retry_delay * (2**attempt)
+                delay = _retry_delay(settings, attempt, exc)
                 if checkpoint is None:
                     time.sleep(delay)
                 else:
@@ -836,6 +897,9 @@ def _describe_unparsed(result: Any, content: Any, headline: str) -> str:
             f"cut off: reason={incomplete.get('reason') or '?'} "
             f"ceiling={incomplete.get('ceiling') or '?'}"
         )
+    data = getattr(result, "model_provider_data", None)
+    if isinstance(data, dict) and data.get("structured_output_error"):
+        fields.append(f"JSON: {data['structured_output_error']}")
     metrics = getattr(result, "metrics", None)
     if metrics is not None:
         # reasoning tokens are how we tell whether provider-side thinking was
@@ -858,7 +922,11 @@ def expect_schema(result: Any, schema: type[_SchemaT], *, source: str) -> _Schem
     failure is diagnosable from the error alone instead of needing a redeploy.
     """
     content = getattr(result, "content", None)
-    if isinstance(content, schema):
+    if (
+        isinstance(content, schema)
+        and not _run_failed(result)
+        and _incomplete_detail(result) is None
+    ):
         return content
     headline = (
         f"Expected {schema.__name__} from {source} agent, got {type(content).__name__}"
@@ -2163,6 +2231,8 @@ def _build_openai_responses(
         # An uncatalogued id sends no reasoning config, so it asks for nothing.
         reasoning_summary="auto" if effort is not None else None,
         max_output_tokens=_openai_max_output_tokens(reasoning=reasoning),
+        # AgentRunner owns retries so every attempt re-enters shared admission.
+        max_retries=0,
         # Agno requests encrypted reasoning for stateless tool-call replay.
         store=False,
     )
@@ -2197,6 +2267,7 @@ def _build_deepseek_responses(
         # non-streaming echo needs its own override in the model class.
         reasoning_summary="auto" if effort is not None else None,
         max_output_tokens=_openai_max_output_tokens(reasoning=reasoning),
+        max_retries=0,
         # Documented as unsupported and always reported back as false. Sent
         # anyway so the value we ask for matches the value we get.
         store=False,
@@ -2276,6 +2347,10 @@ def _build_model_from_route(
         )
     if provider == "gemini":
         Gemini = _compatible_gemini_class()
+        options = _endpoint_kwargs("gemini", base_url)
+        options.setdefault("client_params", {}).setdefault("http_options", {})[
+            "retry_options"
+        ] = {"attempts": 1}
 
         # Gemini treats an unset thinking config as "provider decides" (an
         # automatic, unbounded budget) rather than off, so a non-reasoning agent
@@ -2288,7 +2363,6 @@ def _build_model_from_route(
         # with thinking_level="low" instead; that reports no thought tokens.
         # Pre-3 ids have no thinking_level, so there 0 is still the way off.
         if model.casefold().startswith(("gemini-3", "gemini-4")):
-            options = _endpoint_kwargs("gemini", base_url)
             if model.casefold() == "gemini-4-argon":
                 # This adapter uses generateContent, whose non-streaming hop
                 # cap is 32K (Interactions instead permits 64K synchronously).
@@ -2315,7 +2389,7 @@ def _build_model_from_route(
             api_key=key,
             thinking_budget=None if reasoning else 0,
             include_thoughts=reasoning,
-            **_endpoint_kwargs("gemini", base_url),
+            **options,
         )
     if provider == "deepseek":
         return _build_deepseek_responses(
@@ -2326,6 +2400,8 @@ def _build_model_from_route(
     thinking, output_config = _anthropic_thinking(model, reasoning=reasoning)
     if output_config is not None and reasoning_effort is not None:
         output_config = {"effort": reasoning_effort}
+    options = _endpoint_kwargs("anthropic", base_url)
+    options.setdefault("client_params", {})["max_retries"] = 0
     return Claude(
         id=model,
         api_key=key,
@@ -2337,7 +2413,7 @@ def _build_model_from_route(
         # request before sending it. Give Haiku's reasoning ceiling fifteen
         # minutes explicitly, retaining room for thinking plus structured output.
         timeout=900.0 if model == "claude-haiku-5-5" and reasoning else None,
-        **_endpoint_kwargs("anthropic", base_url),
+        **options,
     )
 
 
@@ -2512,13 +2588,14 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
         from google.genai import types
 
         client = genai.Client(api_key=key)
-        response = client.models.generate_content(
-            model=model,
-            contents=[
-                types.Part.from_bytes(data=audio, mime_type=mime_type),
-                _TRANSCRIBE_PROMPT,
-            ],
-        )
+        with llm_call():
+            response = client.models.generate_content(
+                model=model,
+                contents=[
+                    types.Part.from_bytes(data=audio, mime_type=mime_type),
+                    _TRANSCRIBE_PROMPT,
+                ],
+            )
         usage = getattr(response, "usage_metadata", None)
         from resume_tailor_harness.tenancy.costs import MeteredUsage
         from resume_tailor_harness.tenancy.usage import record_direct_usage
@@ -2554,7 +2631,8 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
     )
     buffer = io.BytesIO(audio)
     buffer.name = _OPENAI_AUDIO_NAMES.get(mime_type, "audio.webm")
-    result = client.audio.transcriptions.create(model=model, file=buffer)
+    with llm_call():
+        result = client.audio.transcriptions.create(model=model, file=buffer)
     usage = getattr(result, "usage", None)
     from resume_tailor_harness.tenancy.costs import MeteredUsage
     from resume_tailor_harness.tenancy.usage import record_direct_usage
@@ -2629,11 +2707,12 @@ def synthesize_speech(
             provider, direct_api_base_url(provider, settings)
         ),
     )
-    response = client.audio.speech.create(
-        model=model,
-        voice=voice or settings.speech_voice,
-        input=cleaned,
-        instructions=_SPEECH_INSTRUCTIONS,
-        response_format="mp3",
-    )
-    return bytes(response.read())
+    with llm_call():
+        response = client.audio.speech.create(
+            model=model,
+            voice=voice or settings.speech_voice,
+            input=cleaned,
+            instructions=_SPEECH_INSTRUCTIONS,
+            response_format="mp3",
+        )
+        return bytes(response.read())

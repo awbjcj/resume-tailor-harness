@@ -15,6 +15,11 @@ from typing import Any, cast
 from uuid import uuid4
 
 from resume_tailor_harness.sessions.stream import Failed, ToolCompleted, ToolStarted
+from resume_tailor_harness.llm_limits import (
+    async_llm_call,
+    defer_rate_limited_calls,
+    llm_call,
+)
 
 STREAM_KEY = "resume_stream"
 
@@ -34,6 +39,11 @@ def attach(parsed: Any, *events: ToolStarted | ToolCompleted | Failed) -> Any:
     state = _request.get()
     filtered = []
     for event in events:
+        if isinstance(event, Failed) and event.code in {
+            "rate_limit_exceeded",
+            "gateway_concurrency_limit",
+        }:
+            defer_rate_limited_calls()
         if isinstance(event, ToolStarted) and state is not None:
             snapshot = (event.name, event.args_preview)
             if state.previews.get(event.call_id) == snapshot:
@@ -104,7 +114,8 @@ class StreamLifecycle:
         from agno.models.base import Model
 
         try:
-            return cast(Model, super()).invoke(*args, **kwargs)
+            with llm_call():
+                return cast(Model, super()).invoke(*args, **kwargs)
         except Exception as exc:
             errors = _errors.get()
             if errors is not None:
@@ -115,7 +126,8 @@ class StreamLifecycle:
         from agno.models.base import Model
 
         try:
-            return await cast(Model, super()).ainvoke(*args, **kwargs)
+            async with async_llm_call():
+                return await cast(Model, super()).ainvoke(*args, **kwargs)
         except Exception as exc:
             errors = _errors.get()
             if errors is not None:
@@ -166,13 +178,20 @@ class StreamLifecycle:
 
         state = RequestState()
         token = _request.set(state)
-        stream = cast(Generator, cast(Model, super()).invoke_stream(*args, **kwargs))
+        stream = None
         try:
-            for chunk in stream:
-                capture = _errors.get()
-                if capture is not None:
-                    capture.collect(chunk)
-                yield chunk
+            with llm_call():
+                stream = cast(
+                    Generator, cast(Model, super()).invoke_stream(*args, **kwargs)
+                )
+                try:
+                    for chunk in stream:
+                        capture = _errors.get()
+                        if capture is not None:
+                            capture.collect(chunk)
+                        yield chunk
+                finally:
+                    stream.close()
             if not state.terminal:
                 yield attach(
                     ModelResponse(),
@@ -187,10 +206,7 @@ class StreamLifecycle:
                 errors.append(exc)
             raise
         finally:
-            try:
-                stream.close()
-            finally:
-                _request.reset(token)
+            _request.reset(token)
 
     async def ainvoke_stream(self, *args, **kwargs):
         from collections.abc import AsyncGenerator
@@ -200,15 +216,20 @@ class StreamLifecycle:
 
         state = RequestState()
         token = _request.set(state)
-        stream = cast(
-            AsyncGenerator, cast(Model, super()).ainvoke_stream(*args, **kwargs)
-        )
+        stream = None
         try:
-            async for chunk in stream:
-                capture = _errors.get()
-                if capture is not None:
-                    capture.collect(chunk)
-                yield chunk
+            async with async_llm_call():
+                stream = cast(
+                    AsyncGenerator, cast(Model, super()).ainvoke_stream(*args, **kwargs)
+                )
+                try:
+                    async for chunk in stream:
+                        capture = _errors.get()
+                        if capture is not None:
+                            capture.collect(chunk)
+                        yield chunk
+                finally:
+                    await stream.aclose()
             if not state.terminal:
                 yield attach(
                     ModelResponse(),
@@ -223,10 +244,7 @@ class StreamLifecycle:
                 errors.append(exc)
             raise
         finally:
-            try:
-                await stream.aclose()
-            finally:
-                _request.reset(token)
+            _request.reset(token)
 
 
 def responses_delta(model, event, message, calls, parse):

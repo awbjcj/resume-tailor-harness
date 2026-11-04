@@ -15,6 +15,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from resume_tailor_harness.config import Settings
+from resume_tailor_harness.llm_limits import defer_rate_limited_calls, llm_call
 from resume_tailor_harness.tenancy.costs import MeteredUsage
 from resume_tailor_harness.tenancy.spend import SpendGate
 from resume_tailor_harness.tenancy.usage import record_direct_usage
@@ -38,11 +39,14 @@ class DeepSeekSearchTools:
                 origin = (route.base_url or "https://api.deepseek.com").rstrip("/")
                 base = origin if origin.endswith("/v1") else f"{origin}/v1"
                 try:
-                    response = client.post(
-                        f"{base}/tools/{operation}",
-                        headers={"Authorization": f"Bearer {route.api_key}"},
-                        json=payload,
-                    )
+                    with llm_call():
+                        response = client.post(
+                            f"{base}/tools/{operation}",
+                            headers={"Authorization": f"Bearer {route.api_key}"},
+                            json=payload,
+                        )
+                        if response.status_code == 429:
+                            defer_rate_limited_calls(response)
                 except (httpx.TimeoutException, httpx.TransportError):
                     if attempt == 2:
                         raise

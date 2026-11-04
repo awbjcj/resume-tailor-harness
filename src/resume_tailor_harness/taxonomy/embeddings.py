@@ -30,6 +30,7 @@ from typing import Protocol
 from pydantic import Field
 
 from resume_tailor_harness.config import get_settings
+from resume_tailor_harness.llm_limits import llm_call
 from resume_tailor_harness.models.base import ExtensibleModel
 from resume_tailor_harness.taxonomy.clusters import ClusterMap
 from resume_tailor_harness.taxonomy.state import taxonomy_root
@@ -95,14 +96,15 @@ class OpenAIEmbeddingProvider:
             )
             from openai import OpenAI
 
-            response = OpenAI(
-                api_key=route.api_key,
-                base_url=provider_sdk_base_url(provider, route.base_url),
-            ).embeddings.create(
-                model=model,
-                input=texts,
-                encoding_format="float",
-            )
+            with llm_call():
+                response = OpenAI(
+                    api_key=route.api_key,
+                    base_url=provider_sdk_base_url(provider, route.base_url),
+                ).embeddings.create(
+                    model=model,
+                    input=texts,
+                    encoding_format="float",
+                )
         except EmbeddingUnavailable:
             raise
         except Exception as exc:  # noqa: BLE001 - caller has a deterministic fallback

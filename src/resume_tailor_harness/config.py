@@ -101,6 +101,14 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:5173"
     # Concurrency + retry for LLM fan-out (discovery + tailor).
     llm_concurrency: int = Field(default=8, ge=1)
+    # Deployment-owned gate shared by ALL runs/users/providers in this process.
+    # Accounts may span several credentials, so changing keys never adds slots.
+    llm_global_concurrency: int = Field(default=2, ge=1)
+    llm_global_requests_per_minute: int = Field(default=0, ge=0)
+    llm_queue_timeout_seconds: float = Field(default=300.0, gt=0, allow_inf_nan=False)
+    llm_rate_limit_cooldown_seconds: float = Field(
+        default=2.0, ge=0, allow_inf_nan=False
+    )
     pull_concurrency: int = Field(default=4, ge=1)
     # Per-host bound on the list-then-detail fan-out. Kept modest so a
     # concurrent detail pass does not turn a board's 429 retry into a
