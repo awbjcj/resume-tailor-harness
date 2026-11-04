@@ -101,6 +101,8 @@ _TRANSIENT_STREAM_CODES = {
     "rate_limit_exceeded",
     "overloaded_error",
     "gateway_concurrency_limit",
+    "slow_down",
+    "server_is_overloaded",
 }
 _TRANSIENT_NAMES = {
     "APIConnectionError",
@@ -139,42 +141,39 @@ class _StreamFailure(Exception):
         self.retryable = retryable
 
 
-def _unparsed_structured_output(agent: Any, response: Any) -> bool:
-    """Whether a completed run failed to produce the schema it was asked for.
+def _structured_content(response: Any) -> Any:
+    """Read the final assistant body before Agno's permissive JSON repairs.
 
-    agno does not raise when it cannot coerce a response into ``output_schema``
-    -- it leaves ``RunOutput.content`` as the raw ``str``. That is a *successful*
-    provider call, so nothing in the transient-error path sees it and the single
-    bad parse goes straight to whatever fallback the caller has. Detected here,
-    where the retry budget already lives, so one malformed body costs a retry
-    rather than a degraded result.
+    Agno may merge multiple documents or overwrite duplicate keys when it
+    creates RunOutput.content. Messages retain the original provider text.
+    Only inspect the final assistant message, never earlier tool turns.
     """
+    for message in reversed(getattr(response, "messages", None) or []):
+        if value(message, "role") == "assistant":
+            content = value(message, "content")
+            if isinstance(content, str):
+                return content
+            break
+    return getattr(response, "content", None)
+
+
+def _recover_structured_output(agent: Any, response: Any) -> None:
     status = getattr(response, "status", None)
     status = getattr(status, "value", status)
     if status is not None and str(status).lower() != "completed":
         # Agno also returns error text as content for rejected requests. It is
         # not generated output to repair; keep the original status/diagnostic
         # for expect_schema instead of replaying a permanent provider failure.
-        return False
+        return
     schema = getattr(agent, "output_schema", None)
     if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
-        return False
-    return _incomplete_detail(response) is not None or not isinstance(
-        getattr(response, "content", None), schema
-    )
-
-
-def _recover_structured_output(agent: Any, response: Any) -> None:
-    if not _unparsed_structured_output(agent, response):
         return
     try:
         if _incomplete_detail(response) is not None:
             raise StructuredOutputError(
                 "provider stopped before completing the response"
             )
-        parsed = parse_structured_content(
-            getattr(response, "content", None), agent.output_schema
-        )
+        parsed = parse_structured_content(_structured_content(response), schema)
     except StructuredOutputError as exc:
         # Per-response metadata is safe when one agent serves concurrent jobs.
         previous = getattr(response, "model_provider_data", None)
@@ -199,10 +198,17 @@ def is_transient(exc: BaseException) -> bool:
     llm_retries x tokens for the same answer — so anything unrecognized is
     treated as permanent.
     """
-    status = getattr(exc, "status_code", None)
-    if isinstance(status, int):
-        return status in _TRANSIENT_STATUS
-    return any(klass.__name__ in _TRANSIENT_NAMES for klass in type(exc).__mro__)
+    seen: set[int] = set()
+    error: BaseException | None = exc
+    while error is not None and id(error) not in seen:
+        seen.add(id(error))
+        status = getattr(error, "status_code", None)
+        if isinstance(status, int):
+            return status in _TRANSIENT_STATUS
+        if any(klass.__name__ in _TRANSIENT_NAMES for klass in type(error).__mro__):
+            return True
+        error = error.__cause__ or error.__context__
+    return False
 
 
 def _agent_model_id(agent: Any) -> str:
@@ -528,6 +534,7 @@ class AgentRunner:
     ) -> Iterator[StreamEvent]:
         """Yield provider-neutral events, retrying only before visible output."""
         settings = self._settings or get_settings()
+        attempt_prompt = prompt
         for attempt in range(settings.llm_retries + 1):
             emitted = False
             raw_stream = None
@@ -544,11 +551,11 @@ class AgentRunner:
                             )
 
                             raw_stream = interruptible_stream(
-                                self._agent, prompt, checkpoint, self.aclose
+                                self._agent, attempt_prompt, checkpoint, self.aclose
                             )
                         else:
                             raw_stream = self._agent.run(
-                                prompt,
+                                attempt_prompt,
                                 stream=True,
                                 stream_events=True,
                                 yield_run_output=True,
@@ -602,6 +609,7 @@ class AgentRunner:
                             "INCOMPLETE_RESPONSE",
                         )
                         return
+                    _recover_structured_output(self._agent, terminal_output)
                     record_agent_run(self, terminal_output, retries=attempt)
                     yield Completed(terminal_output)
                     return
@@ -630,20 +638,28 @@ class AgentRunner:
                         finally:
                             self._exit()
             except Exception as exc:
-                retryable = (
-                    exc.retryable
-                    if isinstance(exc, _StreamFailure)
-                    else is_transient(exc)
-                )
-                if emitted or attempt >= settings.llm_retries or not retryable:
-                    record_agent_run(
-                        self, None, retries=attempt, status="error", error=str(exc)
+                if isinstance(exc, _UnparsedRetry):
+                    retryable = True
+                    failure_event = Failed(exc.reason, "INVALID_STRUCTURED_OUTPUT")
+                    attempt_prompt = retry_prompt(
+                        prompt, self._agent.output_schema.__name__, exc.reason
                     )
-                    yield (
+                else:
+                    retryable = (
+                        exc.retryable
+                        if isinstance(exc, _StreamFailure)
+                        else is_transient(exc)
+                    )
+                    failure_event = (
                         exc.event
                         if isinstance(exc, _StreamFailure)
                         else Failed(str(exc), type(exc).__name__)
                     )
+                if emitted or attempt >= settings.llm_retries or not retryable:
+                    record_agent_run(
+                        self, None, retries=attempt, status="error", error=str(exc)
+                    )
+                    yield failure_event
                     return
                 delay = _retry_delay(settings, attempt, exc)
                 if checkpoint is None:
@@ -922,10 +938,12 @@ def expect_schema(result: Any, schema: type[_SchemaT], *, source: str) -> _Schem
     failure is diagnosable from the error alone instead of needing a redeploy.
     """
     content = getattr(result, "content", None)
+    data = getattr(result, "model_provider_data", None)
     if (
         isinstance(content, schema)
         and not _run_failed(result)
         and _incomplete_detail(result) is None
+        and not (isinstance(data, dict) and data.get("structured_output_error"))
     ):
         return content
     headline = (

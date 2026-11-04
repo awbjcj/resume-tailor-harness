@@ -130,7 +130,17 @@ def test_typed_but_incomplete_or_failed_response_is_never_accepted():
 
 
 @pytest.mark.parametrize("mode", ["sync", "async"])
-@pytest.mark.parametrize("first_output", ["", '{"value":', '{"value":"wrong-type"}'])
+@pytest.mark.parametrize(
+    "first_output",
+    [
+        None,  # SDK connection error, wrapped by Agno with no status code.
+        "",
+        '{"value":',
+        '{"value":"wrong-type"}',
+        '{"value":1,"value":7,"evidence":"original evidence"}',
+        '{"value":7} {"evidence":"original evidence"}',
+    ],
+)
 async def test_real_agno_and_sdk_recover_invalid_json_with_correction_feedback(
     mode, first_output
 ):
@@ -155,6 +165,8 @@ async def test_real_agno_and_sdk_recover_invalid_json_with_correction_feedback(
 
     def respond(request):
         requests.append(json.loads(request.content))
+        if first_output is None and len(requests) == 1:
+            raise httpx.ConnectError("temporary connection failure", request=request)
         text = (
             first_output
             if len(requests) == 1
@@ -198,5 +210,69 @@ async def test_real_agno_and_sdk_recover_invalid_json_with_correction_feedback(
         value=7, evidence="original evidence"
     )
     assert len(requests) == 2
-    assert "OUTPUT CORRECTION" in json.dumps(requests[1]["input"])
+    assert ("OUTPUT CORRECTION" in json.dumps(requests[1]["input"])) == (
+        first_output is not None
+    )
     assert requests[1]["text"]["format"]["type"] == "json_schema"
+
+
+@pytest.mark.parametrize("mode", ["sync", "async", "stream"])
+async def test_typed_output_from_ambiguous_raw_json_is_rejected_when_exhausted(mode):
+    from resume_tailor_harness.sessions.stream import Completed, Failed
+
+    raw = '{"value":1,"value":7}'
+    response = SimpleNamespace(
+        content=Output(value=7),
+        messages=[SimpleNamespace(role="assistant", content=raw)],
+    )
+
+    class ParsedAgent:
+        output_schema = Output
+
+        def run(self, prompt, **kwargs):
+            return iter([response]) if kwargs.get("stream") else response
+
+        async def arun(self, prompt):
+            return response
+
+    settings = Settings(_env_file=None, llm_retries=0)  # type: ignore[call-arg]
+    runner = AgentRunner(ParsedAgent(), settings=settings)
+    if mode == "stream":
+        events = list(runner.stream("p"))
+        assert not any(isinstance(event, Completed) for event in events)
+        assert isinstance(events[-1], Failed)
+        assert events[-1].code == "INVALID_STRUCTURED_OUTPUT"
+    else:
+        result = await runner.arun("p") if mode == "async" else runner.run("p")
+        with pytest.raises(UnparsedAgentOutput, match="duplicate object keys"):
+            expect_schema(result, Output, source="test")
+
+
+@pytest.mark.parametrize("visible", [False, True])
+def test_structured_stream_retries_only_before_visible_output(visible):
+    from agno.run.agent import RunEvent
+
+    from resume_tailor_harness.sessions.stream import Completed, Failed
+
+    class StreamingAgent:
+        output_schema = Output
+
+        def __init__(self):
+            self.prompts = []
+
+        def run(self, prompt, **kwargs):
+            self.prompts.append(prompt)
+            if len(self.prompts) == 1:
+                if visible:
+                    yield SimpleNamespace(event=RunEvent.run_content, content="partial")
+                yield SimpleNamespace(content='{"value":')
+            else:
+                yield SimpleNamespace(content='{"value":7}')
+
+    agent = StreamingAgent()
+    settings = Settings(_env_file=None, llm_retries=1, llm_retry_delay=0)  # type: ignore[call-arg]
+    events = list(AgentRunner(agent, settings=settings).stream("Original task"))
+    assert len(agent.prompts) == (1 if visible else 2)
+    assert isinstance(events[-1], Failed if visible else Completed)
+    if not visible:
+        assert "OUTPUT CORRECTION" in agent.prompts[1]

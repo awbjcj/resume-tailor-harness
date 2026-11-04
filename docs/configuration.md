@@ -78,6 +78,15 @@ The queue covers one Python process, matching the current single-process API
 deployment. Separate API/CLI processes or replicas have independent queues;
 divide the account allowance between them or enforce a distributed limit at
 the gateway. Traffic from other applications still needs gateway enforcement.
+For example, an account allowing five simultaneous requests can allocate
+`LLM_GLOBAL_CONCURRENCY=4` to a single Railway process and `1` to a single local
+process. These are separate budgets: setting both to five permits ten requests.
+Reserve additional slots if other apps share that account; idle local capacity
+is not automatically transferred to Railway. Keep `LLM_CONCURRENCY` at least
+as high as the process budget to let one operation use its available slots.
+Set `LLM_GLOBAL_REQUESTS_PER_MINUTE=0` only when no separate RPM cap is needed.
+Environment edits take effect after restarting the app with limiter-enabled
+code; saving Railway variables without a redeploy does not change running code.
 The RPM cap counts SDK invocations, including runner retries and tool hops.
 Agent model SDK retries are disabled so `AgentRunner` owns those retries;
 direct audio/embedding SDK retries retain their SDK policy inside one slot.
@@ -89,6 +98,10 @@ Pydantic schema. Invalid output is retried within `LLM_RETRIES`, with bounded
 validator feedback added to the original task. Recovery never fills missing
 values, closes truncated JSON, or merges separate documents. Final failures
 retain their provider/status/token diagnostics and the parsing reason.
+The final assistant's original text is revalidated even when Agno has already
+produced a typed object, so duplicate keys and merged documents cannot bypass
+the checks. Structured streams fail instead of emitting a successful completion
+for invalid JSON; correction retries are allowed only before visible output.
 
 The default mid tier uses GPT-6.1 Terra (`openai:gpt-6.1-terra`), requiring
 OpenAI API access or a configured OpenAI subscription route. Existing explicit
