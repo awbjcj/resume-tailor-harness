@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-selection";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -20,6 +22,7 @@ export function BulkPreviewButton({
   preview: () => Promise<BulkResult>;
   run: () => Promise<BulkResult>;
 }) {
+  const { t } = useTranslation();
   const [result, setResult] = useState<BulkResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,9 +47,15 @@ export function BulkPreviewButton({
       description={
         loading || !result
           ? "Fetching preview count..."
-          : `${result.affected.toLocaleString()} job(s) affected${
-              result.skipped ? ` · ${result.skipped.toLocaleString()} skipped` : ""
-            }.`
+          : t("interactionCopy.selection.preview", {
+              affected: t("interactionCopy.selection.affected", {
+                count: result.affected,
+                formattedCount: result.affected.toLocaleString(),
+              }),
+              skipped: result.skipped
+                ? ` · ${t("interactionCopy.selection.skipped", { count: result.skipped.toLocaleString() })}`
+                : "",
+            })
       }
       confirmLabel={confirmLabel ?? label}
       confirmDisabled={loading || !result}

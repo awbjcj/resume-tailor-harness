@@ -366,6 +366,27 @@ class SpendGate:
             raise fatal
         return decision
 
+    def recheck(
+        self,
+        provider: str,
+        model: str,
+        *,
+        own_key: bool,
+        now: datetime | None = None,
+    ) -> None:
+        """Revalidate selected funding after admission without changing its route.
+
+        A queued call can outlive its allowance or shared-access permission.
+        Check authoritative eligibility even in shadow mode, without selecting
+        a BYOK fallback that would relabel an already-bound shared credential.
+        """
+        context = current_context()
+        if context is None or own_key:
+            return
+        verdict = _evaluate_shared(context, provider, model, now=now)
+        if verdict.denial is not None:
+            raise verdict.denial
+
     def _resolve(
         self, model_id: str, *, now: datetime | None
     ) -> tuple[SpendDecision, RuntimeError | None]:

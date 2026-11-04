@@ -24,7 +24,8 @@ describe("AuthLayout", () => {
     expect(copy).toBeInTheDocument();
     expect(story).toContainElement(copy as HTMLElement);
     expect(container.querySelector("[data-slot='auth-brand'] img")).toBeNull();
-    expect(screen.getAllByText("Secure workspace")).toHaveLength(1);
+    expect(screen.queryByText("Secure workspace")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("region", { name: "AI agents, guided by your evidence" })).toBeInTheDocument();
     expect(container.querySelector("[data-slot='auth-brand']")).not.toContainElement(screen.getByRole("main"));
   });

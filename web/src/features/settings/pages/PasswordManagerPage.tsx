@@ -1,8 +1,9 @@
+import { PageHeader } from "@/components/PageHeader";
 import "@/i18n/password-manager";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -97,10 +98,7 @@ export function PasswordManagerPage() {
 
   return (
     <div className="flex min-w-0 max-w-3xl flex-col gap-7">
-      <header className="space-y-2">
-        <h1 className="flex items-center gap-2 text-xl font-semibold"><KeyRound aria-hidden="true" className="size-5 shrink-0" />{t("passwordManager.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("passwordManager.description")}</p>
-      </header>
+      <PageHeader title={t("passwordManager.title")} />
       {vault.isPending && <p role="status">{t("passwordManager.loading")}</p>}
       {vault.isError && (
         <Alert variant="destructive"><AlertDescription>

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -110,7 +110,7 @@ describe("NotificationsBell", () => {
     render(<NotificationsBell />, { wrapper: withQueryClient });
 
     await user.click(await screen.findByRole("button", { name: /通知/i }));
-    expect(await screen.findByText("Gmail 同步 失败")).toBeInTheDocument();
+    expect(await screen.findByText("Gmail 同步失败")).toBeInTheDocument();
     expect(screen.getByText("Gmail 尚未连接到此工作区。")).toBeInTheDocument();
     expect(screen.queryByText(/GmailNotConnected|is not connected for this workspace/)).not.toBeInTheDocument();
   });
@@ -143,6 +143,30 @@ describe("NotificationsBell", () => {
     expect(
       await screen.findByRole("button", { name: /draft follow-up/i }),
     ).toBeInTheDocument();
+  });
+
+  it("localizes generated reminders and status updates while preserving email evidence", async () => {
+    await changeLanguage("zh-CN");
+    const base = { applicationId: 1, messageId: "x", state: "pending", createdAt: "2026-08-31T18:00:00Z", jobId: 7, company: "Acme", title: "Engineer" };
+    server.use(
+      http.get("*/api/notifications", () => HttpResponse.json([
+        { ...base, id: 1, kind: "follow_up", proposedStatus: "", evidence: "No activity for 20 days: Acme · Engineer" },
+        { ...base, id: 2, kind: "interview_soon", proposedStatus: "", evidence: "Interview Sep 01, 18:00 UTC: Acme · Engineer" },
+        { ...base, id: 3, kind: "rejected", proposedStatus: "rejected", evidence: "Thank you for applying." },
+      ])),
+      http.get("*/api/run-completions", () => HttpResponse.json([])),
+    );
+    const user = userEvent.setup();
+    render(<MemoryRouter><NotificationsBell /></MemoryRouter>, { wrapper: withQueryClient });
+    await user.click(await screen.findByRole("button", { name: "通知（3 条待处理）" }));
+    expect(screen.getByText("跟进：Acme")).toBeInTheDocument();
+    expect(await screen.findByText("20 天没有新动态：Acme · Engineer")).toBeInTheDocument();
+    expect(await screen.findByText("面试：9月1日 18:00 UTC · Acme · Engineer")).toBeInTheDocument();
+    expect(screen.getByText("更新状态为已拒绝")).toBeInTheDocument();
+    expect(screen.getByText("Thank you for applying.")).toBeInTheDocument();
+    await act(() => changeLanguage("en"));
+    expect(screen.getByText("No activity for 20 days: Acme · Engineer")).toBeInTheDocument();
+    expect(screen.getByText("Move to Rejected")).toBeInTheDocument();
   });
 
   it("presents event nudges as navigation, never as accept actions", async () => {

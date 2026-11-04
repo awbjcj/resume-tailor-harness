@@ -50,7 +50,11 @@ hosted-only settings such as `APP_BASE_URL`, `AUTH_PASSWORD_HASH`, or
 | `SPEECH_MODEL` | `openai:gpt-4o-mini-tts` | Text-to-speech model used by audio-preferred mock interviews. |
 | `SPEECH_VOICE` | `marin` | Voice used for generated interviewer speech. |
 | `PROMPT_CACHE_ENABLED` | `true` | Enables supported providers' static system-prompt cache. |
-| `LLM_CONCURRENCY` | `8` | Maximum LLM fan-out; integer at least 1. |
+| `LLM_CONCURRENCY` | `8` | Per-operation LLM fan-out; integer at least 1. Shared provider admission below also applies. |
+| `LLM_GLOBAL_CONCURRENCY` | `2` | Process-wide simultaneous provider invocations across every agent, run, user and credential; integer at least 1. |
+| `LLM_GLOBAL_REQUESTS_PER_MINUTE` | `0` | Process-wide rolling 60-second provider invocation budget; non-negative integer, `0` disables the RPM cap. |
+| `LLM_QUEUE_TIMEOUT_SECONDS` | `300.0` | Maximum wait for shared provider capacity; positive seconds. |
+| `LLM_RATE_LIMIT_COOLDOWN_SECONDS` | `2.0` | Minimum shared cooldown after a provider 429; non-negative seconds. A longer Retry-After also applies. |
 | `LLM_RETRIES` | `2` | Structured/provider retry count; non-negative integer. |
 | `LLM_RETRY_DELAY` | `1` | Base retry delay in seconds; non-negative integer. |
 | `RUN_ANNOUNCE_WINDOW_SECONDS` | `3600` | How recently a background run must have finished to be announced on reconnect; integer seconds from 0 through 86400. |
@@ -59,6 +63,49 @@ Model IDs can use `openai:`, `gemini:`, or `deepseek:` prefixes. A bare model
 ID uses Anthropic. Reasoning-effort strings are provider-specific. Leave them
 unset unless the selected provider and model document support for the chosen
 value.
+
+All agents share one FIFO provider queue. Tool-loop hops, sync/async requests,
+streaming, embeddings, audio, Decisions and DeepSeek search/fetch use the same
+slots. A stream keeps its slot until the provider iterator closes. Provider 429s
+pause queued calls together; ordinary run retries use exponential delay with
+jitter and honor `Retry-After`. Failed or cancelled calls release capacity.
+These deployment settings cannot be increased through a member's workspace.
+After admission, each call rechecks its selected funding against current
+allowance, platform caps and shared-access permission. A queued call cannot
+keep spending after its funding is denied, including on later tool-loop hops.
+The recheck preserves its key and endpoint; genuine BYOK remains exempt.
+Choose `LLM_GLOBAL_CONCURRENCY` at or below the shared account's allowance;
+use `1` for an account that permits only one concurrent request. Distinct keys
+do not increase the allowance because they may fund the same gateway account.
+
+The queue covers one Python process, matching the current single-process API
+deployment. Separate API/CLI processes or replicas have independent queues;
+divide the account allowance between them or enforce a distributed limit at
+the gateway. Traffic from other applications still needs gateway enforcement.
+For example, an account allowing five simultaneous requests can allocate
+`LLM_GLOBAL_CONCURRENCY=4` to a single Railway process and `1` to a single local
+process. These are separate budgets: setting both to five permits ten requests.
+Reserve additional slots if other apps share that account; idle local capacity
+is not automatically transferred to Railway. Keep `LLM_CONCURRENCY` at least
+as high as the process budget to let one operation use its available slots.
+Set `LLM_GLOBAL_REQUESTS_PER_MINUTE=0` only when no separate RPM cap is needed.
+Environment edits take effect after restarting the app with limiter-enabled
+code; saving Railway variables without a redeploy does not change running code.
+The RPM cap counts SDK invocations, including runner retries and tool hops.
+Agent model SDK retries are disabled so `AgentRunner` owns those retries;
+direct audio/embedding SDK retries retain their SDK policy inside one slot.
+
+Structured-output retries distinguish provider failures from generated JSON.
+Complete JSON with a BOM, an outer JSON fence, a leading thinking block, or
+trailing commas can be recovered and then validated against the original
+Pydantic schema. Invalid output is retried within `LLM_RETRIES`, with bounded
+validator feedback added to the original task. Recovery never fills missing
+values, closes truncated JSON, or merges separate documents. Final failures
+retain their provider/status/token diagnostics and the parsing reason.
+The final assistant's original text is revalidated even when Agno has already
+produced a typed object, so duplicate keys and merged documents cannot bypass
+the checks. Structured streams fail instead of emitting a successful completion
+for invalid JSON; correction retries are allowed only before visible output.
 
 The default mid tier uses GPT-6.1 Terra (`openai:gpt-6.1-terra`), requiring
 OpenAI API access or a configured OpenAI subscription route. Existing explicit

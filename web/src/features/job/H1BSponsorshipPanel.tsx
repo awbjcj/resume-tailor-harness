@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-sponsorship";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   BadgeCheck,
@@ -216,6 +218,7 @@ function SponsorshipTrend({
   periods: PeriodStat[];
   selectedPeriod: string;
 }) {
+  const { t } = useTranslation();
   const chartData = periods
     .slice()
     .reverse()
@@ -237,7 +240,7 @@ function SponsorshipTrend({
           </p>
         </div>
         <p className="text-xs font-medium text-foreground">
-          {periodLabel(selectedPeriod)}: {selected?.filingCount ?? 0} filings
+          {t("interactionCopy.sponsorship.filings", { period: periodLabel(selectedPeriod), count: selected?.filingCount ?? 0 })}
         </p>
       </div>
       <ChartContainer
@@ -261,7 +264,7 @@ function SponsorshipTrend({
       <ul className="sr-only">
         {chartData.map((entry) => (
           <li key={entry.period}>
-            {entry.label}: {entry.filingCount} H-1B filings
+            {t("interactionCopy.sponsorship.filings", { period: entry.label, count: entry.filingCount })}
           </li>
         ))}
       </ul>
@@ -329,9 +332,7 @@ export function H1BSponsorshipPanel({
       <ResearchPanelHeader
         titleId="h1b-sponsorship-title"
         icon={<ShieldCheck className="size-5" aria-hidden="true" />}
-        eyebrow="Research signal"
         title="Historical H-1B sponsorship"
-        description="Check employer filing history without changing the posting’s current sponsorship signal."
         context={
           company?.trim()
             ? "Refreshing updates every job at this company."

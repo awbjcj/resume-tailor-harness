@@ -1,7 +1,9 @@
+import "@/i18n/interaction-copy-filters";
 import { XIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { fieldLabel } from "@/lib/format";
+import { facetLabel } from "@/i18n/facet-labels";
 import type { FilterState } from "@/lib/filters/types";
 
 const SET_KEYS: (keyof FilterState)[] = [
@@ -19,38 +21,21 @@ const SET_KEYS: (keyof FilterState)[] = [
   "skills",
 ];
 
-// Canonical job-brief enum facets get the shared title-cased label; free-text
-// facets (skills, country, region, city) keep their own canonical casing.
-const FIELD_LABEL_KEYS = new Set<keyof FilterState>([
-  "source",
-  "remote",
-  "sponsorship",
-  "seniority",
-  "employmentType",
-  "industry",
-  "companySize",
-]);
-
-function chipLabel(key: keyof FilterState, value: string): string {
-  return FIELD_LABEL_KEYS.has(key) ? fieldLabel(value) : value.replace(/_/g, " ");
-}
-
 export function ActiveFilterSummary({
   filter,
-  total,
   onRemove,
   onClear,
 }: {
   filter: FilterState;
-  total: number;
   onRemove: (key: keyof FilterState, value: string) => void;
   onClear: () => void;
 }) {
+  const { i18n } = useTranslation();
   // Chips key removal off the raw wire value while displaying readable labels.
   const chips: { key: keyof FilterState; value: string; label: string }[] = [];
   for (const key of SET_KEYS) {
     for (const value of filter[key] as Set<string>) {
-      const label = chipLabel(key, value);
+      const label = facetLabel(key, value, i18n.resolvedLanguage);
       chips.push({ key, value, label });
     }
   }
@@ -70,10 +55,7 @@ export function ActiveFilterSummary({
   if (!chips.length && !scalars.length) return null;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3">
-      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        Active
-      </span>
+    <div role="group" aria-label="Active filters" className="mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3">
       {[...chips, ...scalars].map(({ key, value, label }) => (
         <Button
           key={`${key}:${value}`}
@@ -86,12 +68,9 @@ export function ActiveFilterSummary({
           <XIcon data-icon="inline-end" />
         </Button>
       ))}
-      <span className="ml-auto text-xs text-muted-foreground">
-        {total.toLocaleString()} matching
-        <Button variant="link" size="sm" className="h-auto px-2 py-0" onClick={onClear}>
-          Clear all
-        </Button>
-      </span>
+      <Button variant="link" size="sm" className="ml-auto h-auto px-2 py-0" onClick={onClear}>
+        Clear all
+      </Button>
     </div>
   );
 }

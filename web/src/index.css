@@ -183,18 +183,9 @@
     transform 160ms var(--ease-out-strong);
 }
 
-.guided-workspace-hero { --workspace-tone: var(--primary); }
-.guided-workspace-hero[data-tone="interview"] { --workspace-tone: var(--chart-3); }
-.guided-workspace-hero[data-tone="scout"] { --workspace-tone: var(--chart-2); }
-.guided-workspace-hero[data-tone="career-lab"] { --workspace-tone: var(--chart-1); }
-.guided-workspace-hero {
-  background-color: var(--card);
-  background-image: radial-gradient(
-    80% 140% at 100% 0%,
-    color-mix(in oklab, var(--workspace-tone), transparent 87%),
-    transparent 62%
-  );
-}
+.guided-workspace-icon { color: var(--primary); }
+.guided-workspace-icon[data-tone="interview"] { color: var(--chart-3); }
+.guided-workspace-icon[data-tone="scout"] { color: var(--chart-2); }
 
 /* Compact chrome on narrow screens: keep launch actions in one tactile rail
    instead of allowing six controls to wrap into a second toolbar-sized page
@@ -214,16 +205,6 @@
   background-image:
     radial-gradient(90% 24% at 18% 0%, color-mix(in oklab, var(--sidebar-primary), transparent 87%), transparent 72%),
     linear-gradient(180deg, color-mix(in oklab, var(--sidebar), var(--sidebar-accent) 10%), var(--sidebar) 38%);
-}
-
-.command-sidebar-brief {
-  background-color: color-mix(in oklab, var(--sidebar), transparent 4%);
-  background-image: radial-gradient(
-    90% 160% at 100% 0%,
-    color-mix(in oklab, var(--sidebar-primary), transparent 88%),
-    transparent 66%
-  );
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--sidebar-foreground), transparent 94%);
 }
 
 .command-panel [data-sidebar="menu-button"][aria-current="page"] {

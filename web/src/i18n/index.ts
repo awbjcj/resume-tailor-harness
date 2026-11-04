@@ -1,7 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
-import { loadAutoTranslations, resources } from "./resources";
+import { loadAutoTranslations, loadChineseInteractionTranslations, resources } from "./resources";
 
 export const supportedLanguages = ["en", "zh-CN"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
@@ -63,10 +63,14 @@ function languageChanged(language: string): void {
 
 async function ensureLanguageResources(language: SupportedLanguage): Promise<void> {
   if (language === DEFAULT_LANGUAGE) return;
-  const auto = await loadAutoTranslations(language);
+  const [auto, interactionCopy] = await Promise.all([
+    loadAutoTranslations(language),
+    loadChineseInteractionTranslations(),
+  ]);
   Object.assign(resources[language].translation.auto, auto);
+  Object.assign(resources[language].translation.interactionCopy, interactionCopy);
   if (i18n.isInitialized) {
-    i18n.addResourceBundle(language, "translation", { auto }, true, true);
+    i18n.addResourceBundle(language, "translation", { auto, interactionCopy }, true, true);
   }
 }
 

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, type Mock, vi } from "vitest";
 
 import { FacetPopover } from "./FacetPopover";
+import { changeLanguage } from "@/i18n";
 
 const counts = { python: 52, react: 38, go: 11 };
 
@@ -48,6 +49,17 @@ describe("FacetPopover", () => {
 
     expect(screen.getByText("Filter by Skills")).toBeInTheDocument();
     expect(screen.getByText("1 selected")).toBeInTheDocument();
+  });
+
+  it("shows a complete localized filter heading, count, and actions after a selection", async () => {
+    await changeLanguage("zh-CN");
+    const onChange = vi.fn<(selected: Set<string>) => void>();
+    render(<FacetPopover label="技能" counts={counts} selected={new Set(["python"])} onChange={onChange} open />);
+    expect(screen.getByText("按技能筛选")).toBeInTheDocument();
+    expect(screen.getByText("已选择 1 项")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("搜索技能…")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "清除技能筛选条件" }));
+    expect(onChange).toHaveBeenCalledWith(new Set());
   });
 
   it("clears the selected Skills", () => {

@@ -4,14 +4,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEventLabels, REPEATABLE_KINDS } from "@/features/job/event-labels";
 import { openDownload } from "@/lib/api/client";
 import { formatCalendarDate } from "@/lib/calendar-date";
@@ -56,7 +49,6 @@ export function UpcomingCard({ events }: { events: UpcomingEvent[] }) {
           <CalendarDays className="size-4 text-primary" aria-hidden="true" />
           <h2>{t("dashboard.nextSevenDays")}</h2>
         </CardTitle>
-        <CardDescription>{t("dashboard.upcomingDescription")}</CardDescription>
         <CardAction>
           <Button
             size="sm"

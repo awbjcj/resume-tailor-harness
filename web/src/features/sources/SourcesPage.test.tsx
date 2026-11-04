@@ -116,8 +116,8 @@ describe("SourcesPage", () => {
 
     await waitFor(() => expect(screen.getByText(/Latest pull result/i)).toBeInTheDocument());
     expect(screen.getByText("+3 added")).toBeInTheDocument();
-    expect(screen.getByText("1 upd")).toBeInTheDocument();
-    expect(screen.getByText("8 skip")).toBeInTheDocument();
+    expect(screen.getByText("1 upgraded")).toBeInTheDocument();
+    expect(screen.getByText("8 skipped")).toBeInTheDocument();
   });
 
   it("shows and commits a per-source limit", async () => {

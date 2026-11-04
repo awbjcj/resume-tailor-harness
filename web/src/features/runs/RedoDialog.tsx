@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-redo";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,13 +46,6 @@ const STAGES: { id: RedoStage; label: string; hint: string }[] = [
   },
   { id: "render", label: "Re-render PDF", hint: "Re-render the selected version." },
 ];
-
-const VERBS: Record<RedoStage, string> = {
-  pull: "Re-pull",
-  extract: "Re-extract",
-  tailor: "Re-tailor",
-  render: "Re-render",
-};
 
 export interface RedoDialogProps {
   open: boolean;
@@ -98,6 +93,7 @@ function RedoDialogBody({
   onOpenChange,
   onLaunch,
 }: RedoDialogProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<RedoStage>>(
     () => new Set(initialStages),
   );
@@ -106,9 +102,12 @@ function RedoDialogBody({
 
   const ordered = STAGES.filter((stage) => selected.has(stage.id)).map((s) => s.id);
   const count = jobIds.length;
-  const jobCountText = `${count} job${count === 1 ? "" : "s"}`;
+  const jobCountText = t("interactionCopy.redo.jobCount", { count });
   const label = ordered.length
-    ? `${ordered.map((stage) => VERBS[stage]).join(" + ")} ${jobCountText}`
+    ? t("interactionCopy.redo.button", {
+        stages: ordered.map((stage) => t(`interactionCopy.redo.${stage}`)).join(" + "),
+        jobs: jobCountText,
+      })
     : "Choose a stage";
 
   const toggle = (stage: RedoStage, checked: boolean) =>
@@ -139,8 +138,7 @@ function RedoDialogBody({
       <DialogHeader>
         <DialogTitle>Redo pipeline stages</DialogTitle>
         <DialogDescription>
-          Re-run any stage on {jobCountText}, whatever their status. Existing resume
-          versions and PDFs are kept.
+          {t("interactionCopy.redo.description", { jobs: jobCountText })}
         </DialogDescription>
       </DialogHeader>
 

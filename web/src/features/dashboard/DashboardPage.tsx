@@ -1,7 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { useTranslation } from "react-i18next";
 import { BoardSkeleton } from "@/components/skeletons";
-import { GettingStartedChecklist } from "@/features/journey/GettingStartedChecklist";
 import { JourneyRail } from "@/features/journey/JourneyRail";
 import { formatUserDate } from "@/lib/date-time";
 
@@ -33,23 +32,21 @@ export function DashboardPage() {
     (sum, [status, count]) => (status === "rejected" ? sum : sum + count),
     0,
   );
-  const eyebrow = `${t("dashboard.operations")} · ${formatUserDate(new Date(), i18n.resolvedLanguage, {
+  const date = formatUserDate(new Date(), i18n.resolvedLanguage, {
     month: "short",
     day: "numeric",
-  })}`;
+  });
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        kicker={eyebrow}
         title={waiting === 0
           ? t("dashboard.waiting_zero", { count: waiting })
           : waiting === 1
             ? t("dashboard.waiting_one", { count: waiting })
             : t("dashboard.waiting_other", { count: waiting })}
-        sub={t("dashboard.subtitle")}
+        meta={<time dateTime={new Date().toLocaleDateString("en-CA")}>{date}</time>}
       />
-      <GettingStartedChecklist />
       {totalJobs > 0 && <ActionQueue summary={summary} />}
       <JourneyRail />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">

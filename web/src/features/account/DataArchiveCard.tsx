@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-reset";
 import { useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Archive, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,16 +17,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -45,6 +39,7 @@ export function DataArchiveCard({
   importPath: string;
   successMessage: string;
 }) {
+  const { t } = useTranslation();
   const fileId = useId();
   const confirmId = useId();
   const [file, setFile] = useState<File | null>(null);
@@ -90,9 +85,6 @@ export function DataArchiveCard({
             <CardDescription>{description}</CardDescription>
           </div>
         </div>
-        <CardAction>
-          <Badge variant="outline">Portable archive</Badge>
-        </CardAction>
       </CardHeader>
       <CardContent>
         <p className="text-sm leading-6 text-muted-foreground">
@@ -115,7 +107,7 @@ export function DataArchiveCard({
               <AlertDialogMedia>
                 <Upload aria-hidden="true" />
               </AlertDialogMedia>
-              <AlertDialogTitle>Replace {title.toLowerCase()}?</AlertDialogTitle>
+              <AlertDialogTitle>{t("interactionCopy.reset.replace", { title: title.toLowerCase() })}</AlertDialogTitle>
               <AlertDialogDescription>
                 This replaces the current data. Export a backup first. Select a
                 tar.gz archive and type REPLACE to continue.

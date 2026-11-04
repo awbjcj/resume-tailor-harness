@@ -80,6 +80,22 @@ def test_retry_kwargs_disables_agno_retry():
     assert llm_runner.retry_kwargs() == {"retries": 0}
 
 
+def test_retry_cause_walk_stops_at_explicit_permanent_status_or_cycle():
+    cause = _TransientError()
+    wrapper = RuntimeError("wrapped")
+    wrapper.__cause__ = cause
+    assert is_transient(wrapper)
+
+    class Permanent(Exception):
+        status_code = 401
+
+    permanent = Permanent("unauthorized")
+    permanent.__context__ = cause
+    assert not is_transient(permanent)
+    wrapper.__cause__ = wrapper
+    assert not is_transient(wrapper)
+
+
 class _Schema(BaseModel):
     value: int
 

@@ -11,10 +11,16 @@ from contextvars import ContextVar
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any, cast
 from uuid import uuid4
 
 from resume_tailor_harness.sessions.stream import Failed, ToolCompleted, ToolStarted
+from resume_tailor_harness.llm_limits import (
+    async_llm_call,
+    defer_rate_limited_calls,
+    llm_call,
+)
 
 STREAM_KEY = "resume_stream"
 
@@ -34,6 +40,12 @@ def attach(parsed: Any, *events: ToolStarted | ToolCompleted | Failed) -> Any:
     state = _request.get()
     filtered = []
     for event in events:
+        if isinstance(event, Failed) and event.code in {
+            "rate_limit_exceeded",
+            "gateway_concurrency_limit",
+            "slow_down",
+        }:
+            defer_rate_limited_calls()
         if isinstance(event, ToolStarted) and state is not None:
             snapshot = (event.name, event.args_preview)
             if state.previews.get(event.call_id) == snapshot:
@@ -72,6 +84,7 @@ class StreamCapture(list[Exception]):
     """Retain reported usage even if failure prevents Agno's final RunOutput."""
 
     metrics: Any = None
+    invocations: int = 0
 
     def collect(self, chunk):
         usage = chunk.response_usage
@@ -100,11 +113,21 @@ class StreamLifecycle:
     # This cooperative mixin precedes an Agno Model in every adapter's MRO.
     # Cast the super proxy so static analysis can see that provider contract.
 
+    def _recheck_funding(self) -> None:
+        from resume_tailor_harness.tenancy.limits import recheck_agent_budget
+
+        recheck_agent_budget(SimpleNamespace(model=self))
+        capture = _errors.get()
+        if capture is not None:
+            capture.invocations += 1
+
     def invoke(self, *args, **kwargs):
         from agno.models.base import Model
 
         try:
-            return cast(Model, super()).invoke(*args, **kwargs)
+            with llm_call():
+                self._recheck_funding()
+                return cast(Model, super()).invoke(*args, **kwargs)
         except Exception as exc:
             errors = _errors.get()
             if errors is not None:
@@ -112,10 +135,14 @@ class StreamLifecycle:
             raise
 
     async def ainvoke(self, *args, **kwargs):
+        import asyncio
+
         from agno.models.base import Model
 
         try:
-            return await cast(Model, super()).ainvoke(*args, **kwargs)
+            async with async_llm_call():
+                await asyncio.to_thread(self._recheck_funding)
+                return await cast(Model, super()).ainvoke(*args, **kwargs)
         except Exception as exc:
             errors = _errors.get()
             if errors is not None:
@@ -166,13 +193,21 @@ class StreamLifecycle:
 
         state = RequestState()
         token = _request.set(state)
-        stream = cast(Generator, cast(Model, super()).invoke_stream(*args, **kwargs))
+        stream = None
         try:
-            for chunk in stream:
-                capture = _errors.get()
-                if capture is not None:
-                    capture.collect(chunk)
-                yield chunk
+            with llm_call():
+                self._recheck_funding()
+                stream = cast(
+                    Generator, cast(Model, super()).invoke_stream(*args, **kwargs)
+                )
+                try:
+                    for chunk in stream:
+                        capture = _errors.get()
+                        if capture is not None:
+                            capture.collect(chunk)
+                        yield chunk
+                finally:
+                    stream.close()
             if not state.terminal:
                 yield attach(
                     ModelResponse(),
@@ -187,12 +222,11 @@ class StreamLifecycle:
                 errors.append(exc)
             raise
         finally:
-            try:
-                stream.close()
-            finally:
-                _request.reset(token)
+            _request.reset(token)
 
     async def ainvoke_stream(self, *args, **kwargs):
+        import asyncio
+
         from collections.abc import AsyncGenerator
 
         from agno.models.base import Model
@@ -200,15 +234,21 @@ class StreamLifecycle:
 
         state = RequestState()
         token = _request.set(state)
-        stream = cast(
-            AsyncGenerator, cast(Model, super()).ainvoke_stream(*args, **kwargs)
-        )
+        stream = None
         try:
-            async for chunk in stream:
-                capture = _errors.get()
-                if capture is not None:
-                    capture.collect(chunk)
-                yield chunk
+            async with async_llm_call():
+                await asyncio.to_thread(self._recheck_funding)
+                stream = cast(
+                    AsyncGenerator, cast(Model, super()).ainvoke_stream(*args, **kwargs)
+                )
+                try:
+                    async for chunk in stream:
+                        capture = _errors.get()
+                        if capture is not None:
+                            capture.collect(chunk)
+                        yield chunk
+                finally:
+                    await stream.aclose()
             if not state.terminal:
                 yield attach(
                     ModelResponse(),
@@ -223,10 +263,7 @@ class StreamLifecycle:
                 errors.append(exc)
             raise
         finally:
-            try:
-                await stream.aclose()
-            finally:
-                _request.reset(token)
+            _request.reset(token)
 
 
 def responses_delta(model, event, message, calls, parse):

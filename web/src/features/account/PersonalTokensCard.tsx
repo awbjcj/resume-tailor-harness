@@ -80,7 +80,7 @@ export function PersonalTokensCard() {
                 <h3>Personal access tokens</h3>
               </CardTitle>
               <CardDescription>
-                Create named credentials for scripts and local automation. New tokens are shown once.
+                New tokens are shown once.
               </CardDescription>
             </div>
           </div>

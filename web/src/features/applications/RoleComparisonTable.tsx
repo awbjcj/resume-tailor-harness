@@ -55,15 +55,9 @@ export function RoleComparisonTable({ comparison }: { comparison: RoleComparison
   return (
     <section aria-labelledby="role-comparison-title" className="space-y-3">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-          {t("applications.comparison.kicker")}
-        </p>
         <h2 id="role-comparison-title" className="mt-1 text-lg font-semibold">
           {t("applications.comparison.title")}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("applications.comparison.description")}
-        </p>
       </div>
       <div className="min-w-0 overflow-x-auto rounded-lg border bg-card shadow-card">
         <Table className="min-w-[980px]">

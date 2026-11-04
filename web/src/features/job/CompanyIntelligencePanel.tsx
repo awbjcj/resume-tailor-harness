@@ -67,9 +67,7 @@ export function CompanyIntelligencePanel({
       <ResearchPanelHeader
         titleId="company-intelligence-title"
         icon={<Building2 className="size-5" aria-hidden="true" />}
-        eyebrow="Cited employer dossier"
         title="Company intelligence"
-        description="Public evidence about strategy, recent moves, culture, challenges, and competitive position. Refresh the research to update it."
         context={
           company?.trim()
             ? `${DEPTH_COPY[depth]} Refreshing updates every job at this company.`

@@ -505,13 +505,11 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
         <div className="min-w-0 max-w-prose space-y-1">
           <h2
             id="skill-library-heading"
-            className="text-xl font-semibold tracking-tight"
+            className="sr-only"
           >
             {copy.your_skill_library}
           </h2>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {copy.libraryDescription}
-          </p>
+          <p className="text-sm text-muted-foreground">{`${rows.length} skills · ${groups.length} groups`}</p>
         </div>
         <div className="flex min-w-0 flex-wrap gap-2">
           <Button
@@ -536,9 +534,6 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4 text-sm">
-        <p className="text-muted-foreground">
-          {`${rows.length} skills · ${groups.length} groups`}
-        </p>
         <div
           role="group"
           aria-label={copy.viewLabel}

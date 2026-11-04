@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { DataArchiveCard } from "./DataArchiveCard";
+import { changeLanguage } from "@/i18n";
 
 describe("DataArchiveCard", () => {
   it("gates a selected archive behind typed destructive confirmation", async () => {
@@ -28,5 +29,14 @@ describe("DataArchiveCard", () => {
     );
     await userEvent.type(confirm, "REPLACE");
     expect(submit).toBeEnabled();
+  });
+
+  it("puts the translated archive name inside the confirmation question", async () => {
+    await changeLanguage("zh-CN");
+    render(<DataArchiveCard title="我的工作区数据" description="说明" exportLabel="导出"
+      exportPath="/api/account/export" importPath="/api/account/import" successMessage="完成" />);
+    await userEvent.click(screen.getByRole("button", { name: "导入压缩包" }));
+    expect(screen.getByRole("alertdialog", { name: "确定替换我的工作区数据？" })).toBeInTheDocument();
+    expect(screen.getByLabelText("输入 REPLACE 以确认")).toBeInTheDocument();
   });
 });

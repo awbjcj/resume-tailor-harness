@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSessionSelection } from "@/lib/chat/use-session-selection";
 import "@/i18n/profile-publication";
-import { Bot, Clock3, FileCheck2, MessageCircleQuestion, SearchCheck, Sparkles, SquareCheckBig } from "lucide-react";
+import { Bot, Clock3, Sparkles, SquareCheckBig } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -300,16 +300,14 @@ export function CoachPage() {
       <GuidedWorkspaceHeader
         tone="coach"
         icon={<Sparkles />}
-        eyebrow="Guided evidence discovery"
         title="Profile Coach"
-        description={t("profileChanges.description")}
-        meta={<>
-          <Badge variant={active?.status === "active" ? "secondary" : "outline"}>{active?.status === "active" ? "Session live" : active?.status === "ended" ? "Session complete" : "Ready when you are"}</Badge>
-          {active ? <Badge variant="outline">{t("profileChanges.topics", { count: active.topics?.length ?? 0 })}</Badge> : null}
-          {active && pendingCount > 0 ? <Badge variant="outline">{t("profileChanges.drafts", { count: pendingCount })}</Badge> : null}
-          {active ? <Badge variant="outline">{t("profileChanges.savedNotes", { count: savedDrafts.length })}</Badge> : null}
-        </>}
-        actions={<>{active?.status === "active" ? (
+        meta={active ? <>
+          <Badge variant={active.status === "active" ? "secondary" : "outline"}>{active.status === "active" ? "Session live" : "Session complete"}</Badge>
+          <Badge variant="outline">{t("profileChanges.topics", { count: active.topics?.length ?? 0 })}</Badge>
+          {pendingCount > 0 ? <Badge variant="outline">{t("profileChanges.drafts", { count: pendingCount })}</Badge> : null}
+          <Badge variant="outline">{t("profileChanges.savedNotes", { count: savedDrafts.length })}</Badge>
+        </> : undefined}
+        actions={active?.status === "active" ? (
           <AlertDialog>
             <AlertDialogTrigger render={<Button variant="outline"><SquareCheckBig aria-hidden="true" />End session</Button>} />
             <AlertDialogContent>
@@ -332,14 +330,14 @@ export function CoachPage() {
             {starting || start.isPending ? <Spinner data-icon="inline-start" /> : <Sparkles aria-hidden="true" />}
             Start another session
           </Button>
-        ) : null}</>}
+        ) : undefined}
       />
 
       {runError && runState !== "error" ? <Alert variant="destructive"><AlertTitle>Profile Coach error</AlertTitle><AlertDescription>{runError}</AlertDescription></Alert> : null}
 
       {!active ? (
         <Card className="min-w-0 overflow-hidden rounded-2xl bg-card/90">
-          <CardContent className={cn("flex flex-col gap-4", starting && attachedRunId ? "p-4 sm:p-6" : "p-0", CHAT_SURFACE_HEIGHT)}>
+          <CardContent className={cn("flex flex-col gap-4", starting && attachedRunId ? `p-4 sm:p-6 ${CHAT_SURFACE_HEIGHT}` : "min-h-96 p-0")}>
             {starting && attachedRunId ? (
               <>
                 <ChatThread
@@ -367,11 +365,6 @@ export function CoachPage() {
                 actionIcon={starting || start.isPending ? <Spinner data-icon="inline-start" /> : <Sparkles aria-hidden="true" />}
                 busy={starting || start.isPending}
                 onAction={() => void startSession()}
-                steps={[
-                  { icon: SearchCheck, title: "Review gaps", description: "Start with evidence your current profile does not yet show." },
-                  { icon: MessageCircleQuestion, title: "Answer one question", description: "Answer each question while the coach follows up on useful details." },
-                  { icon: FileCheck2, title: "Approve notes backed by evidence", description: "Review every claim and its supporting words before saving." },
-                ]}
               />
             )}
           </CardContent>
@@ -505,8 +498,7 @@ export function CoachPage() {
         isLoading={sessions.isPending}
         isError={sessions.isError}
         onRetry={() => void sessions.refetch()}
-        description="Resume or manage a coaching session."
-        emptyMessage="No coaching sessions yet. Start one to explore evidence for your profile."
+        emptyMessage="No saved sessions."
         createLabel="New coaching session"
         createDisabled={starting || start.isPending}
         onCreate={() => void startSession()}

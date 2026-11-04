@@ -80,7 +80,9 @@ test("mobile chrome keeps launch actions compact and horizontally contained", as
   await page.goto("/");
 
   const chrome = page.locator("header.app-chrome");
-  await expect(chrome.getByText("Dashboard", { exact: true }).first()).toBeVisible();
+  await expect(chrome.getByText("Dashboard", { exact: true })).toHaveCount(0);
+  await expect(chrome.getByRole("button", { name: "Toggle Sidebar" })).toBeVisible();
+  await expect(page.getByRole("main")).toHaveCount(1);
   await expect(chrome.getByText("Command Center", { exact: true })).toHaveCount(0);
 
   const chromeBox = await chrome.boundingBox();

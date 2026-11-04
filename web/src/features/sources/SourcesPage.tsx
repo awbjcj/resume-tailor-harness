@@ -1,4 +1,7 @@
+import "@/i18n/interaction-copy-sources";
+import { PageHeader } from "@/components/PageHeader";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Play, Sparkles, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -134,6 +137,7 @@ function SourceRow({
 }
 
 function LatestPullResult({ sources }: { sources: Source[] }) {
+  const { t } = useTranslation();
   const runsMap = useRunStore((state) => state.runs);
   const latestPull = Object.values(runsMap)
     .reverse()
@@ -174,13 +178,13 @@ function LatestPullResult({ sources }: { sources: Source[] }) {
                 {labels.get(id) ?? id}
               </span>
               <span className="tabular-nums">
-                +{result.totals?.[id] ?? 0} added
+                {t("interactionCopy.sources.added", { count: result.totals?.[id] ?? 0 })}
               </span>
               <span className="tabular-nums">
-                {result.upgraded?.[id] ?? 0} upd
+                {t("interactionCopy.sources.updated", { count: result.upgraded?.[id] ?? 0 })}
               </span>
               <span className="tabular-nums">
-                {result.skipped?.[id] ?? 0} skip
+                {t("interactionCopy.sources.skipped", { count: result.skipped?.[id] ?? 0 })}
               </span>
               <span
                 className={
@@ -236,6 +240,7 @@ function SourceSection({
 }
 
 export function SourcesManager() {
+  const { t } = useTranslation();
   const { data = [], isLoading } = useSources();
   const { launch } = useLaunchRun();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -287,7 +292,7 @@ export function SourcesManager() {
             ])
           }
         >
-          Pull selected ({selected.size})
+          {t("interactionCopy.sources.pullSelected", { count: selected.size })}
         </Button>
         <Button
           size="sm"
@@ -332,15 +337,7 @@ export function SourcesManager() {
 export function SourcesPage() {
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Sources</h1>
-          <p className="text-sm text-muted-foreground">
-            Choose the job boards, careers pages, and feeds used to find jobs.
-          </p>
-        </div>
-        <ResetSectionButton sectionId="sources" label="Company sources" />
-      </header>
+      <PageHeader title="Sources" actions={<ResetSectionButton sectionId="sources" label="Company sources" />} />
       <ScrapeSources />
       <SourcesManager />
     </div>

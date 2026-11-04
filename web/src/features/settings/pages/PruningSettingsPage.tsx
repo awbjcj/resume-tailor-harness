@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import {
   Field,
   FieldContent,
@@ -36,15 +37,8 @@ export function PruningSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Pruning</h1>
-          <p className="text-sm text-muted-foreground">
-            You can restore archived jobs. Jobs with progress are not archived.
-          </p>
-        </div>
-        <ResetSectionButton sectionId="prune" label="Pruning" onReset={() => setDraft(null)} />
-      </header>
+      <PageHeader title="Pruning" actions={<ResetSectionButton sectionId="prune" label="Pruning" onReset={() => setDraft(null)} />} />
+      <p className="text-sm text-muted-foreground">You can restore archived jobs. Jobs with progress are not archived.</p>
       <FieldGroup>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field>

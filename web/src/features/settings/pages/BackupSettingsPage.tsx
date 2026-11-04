@@ -4,6 +4,7 @@ import { Archive, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -92,10 +93,11 @@ export function BackupSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PageHeader title="Backup" />
       <Card>
         <CardHeader className="border-b">
           <CardTitle>
-            <h3>Settings bundle</h3>
+            <h2>Settings bundle</h2>
           </CardTitle>
           <CardDescription>
             Move your customizations between installs. A bundle includes only the
@@ -156,11 +158,8 @@ export function BackupSettingsPage() {
             </div>
             <div className="flex flex-col gap-1">
               <CardTitle>
-                <h3>Customizable settings</h3>
+                <h2>Customizable settings</h2>
               </CardTitle>
-              <CardDescription>
-                Everything a bundle can carry, and everything you can reset.
-              </CardDescription>
             </div>
           </div>
         </CardHeader>

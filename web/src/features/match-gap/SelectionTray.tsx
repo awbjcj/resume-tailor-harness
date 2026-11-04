@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-selection";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertCircleIcon,
   CheckCircle2Icon,
@@ -66,6 +68,7 @@ function TrayContents({
   generating,
   launchError,
 }: SelectionTrayProps) {
+  const { t } = useTranslation();
   const launchableTargets = targets.filter((target) => {
     const state = stateOf(target.kind, target.key);
     return state !== "queued" && state !== "researching";
@@ -75,7 +78,7 @@ function TrayContents({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
         <span className="font-mono text-xs text-muted-foreground">
-          {targets.length} selected
+          {t("interactionCopy.selection.trayCount", { count: targets.length })}
         </span>
         <Button variant="ghost" size="sm" onClick={onClear} disabled={targets.length === 0}>
           <Trash2Icon data-icon="inline-start" />
@@ -171,6 +174,7 @@ interface SelectionTrayProps {
 }
 
 export function SelectionTray(props: SelectionTrayProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   return (
@@ -200,7 +204,7 @@ export function SelectionTray(props: SelectionTrayProps) {
             aria-label="Open selection tray"
           >
             <FlaskConicalIcon data-icon="inline-start" />
-            Selection ({props.targets.length})
+            {t("interactionCopy.selection.trayOpen", { count: props.targets.length })}
           </SheetTrigger>
           <SheetContent side="bottom" className="max-h-[85vh] gap-0 xl:hidden">
             <SheetHeader className="border-b pr-12">

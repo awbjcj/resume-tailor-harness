@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -106,15 +107,7 @@ export function ReviewSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-lg font-semibold">Review panel</h1>
-          <p className="text-sm text-muted-foreground">
-            Set how tailored resumes are written, scored, and sized before you approve them.
-          </p>
-        </div>
-        <ResetSectionButton sectionId="review" label="Review panel" onReset={() => setResetVersion((version) => version + 1)} />
-      </header>
+      <PageHeader title="Review panel" actions={<ResetSectionButton sectionId="review" label="Review panel" onReset={() => setResetVersion((version) => version + 1)} />} />
 
       {/* Fast/Deep is the SCOPE of this page, not a setting on it — every
           control below belongs to the selected roster. Rendering it as a

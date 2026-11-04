@@ -2,7 +2,7 @@ import { useId } from "react";
 import { Check, Circle, FileCheck2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
 
@@ -71,9 +71,6 @@ export function AgendaRail({ topics, currentTopicId, currentQuestion }: AgendaRa
             {openCount} open · {fulfilledCount} fulfilled
           </span>
         </div>
-        <CardDescription className="text-xs leading-5">
-          Current focus and the rest of the agenda.
-        </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
         <div

@@ -142,9 +142,7 @@ export function MatchGapContainer() {
   return (
     <>
       <PageHeader
-        kicker="Demand intelligence"
         title="Match / Gap"
-        sub="Compare role requirements with evidence in your profile, then identify skills to develop."
       />
 
       {data && data.targetTotal === 0 && (
@@ -248,9 +246,6 @@ export function MatchGapContainer() {
                       Outline
                     </TabsTrigger>
                   </TabsList>
-                  <span className="hidden text-xs text-muted-foreground sm:inline">
-                    Select any domain or skill to research it.
-                  </span>
                 </div>
                 <TabsContent value="map">
                   <SkillMap

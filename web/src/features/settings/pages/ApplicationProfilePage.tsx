@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { Fragment, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -130,15 +131,7 @@ export function ApplicationProfilePage() {
 
   return (
     <form ref={form} className="flex flex-col gap-6" onSubmit={(event) => event.preventDefault()}>
-      <header className="space-y-1">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold">Application profile</h1>
-          <ResetSectionButton sectionId="application_profile" label="Application profile" onReset={() => setDraft(null)} />
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Optional answers for the English application prompt on each job. Saved resume facts supply your education, experience, skills, and contact details; contact answers here take precedence.
-        </p>
-      </header>
+      <PageHeader title="Application profile" actions={<ResetSectionButton sectionId="application_profile" label="Application profile" onReset={() => setDraft(null)} />} />
       <Alert role="note">
         <AlertDescription>
           These details are included when you copy an application prompt and in settings exports. Only save information you want to share with your application assistant.

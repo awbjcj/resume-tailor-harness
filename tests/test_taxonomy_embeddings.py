@@ -288,7 +288,11 @@ def test_openai_embedding_provider_records_usage_through_direct_usage_seam(
         llm_runner,
         "resolve_route",
         lambda _model: SimpleNamespace(
-            api_key="key", base_url="https://gateway.example"
+            api_key="key",
+            base_url="https://gateway.example",
+            provider="openai",
+            model="text-embedding-3-small",
+            own_key=False,
         ),
     )
     monkeypatch.setattr(

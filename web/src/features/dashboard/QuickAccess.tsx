@@ -71,7 +71,6 @@ export function QuickAccess() {
       <div className="flex items-center justify-between gap-4 border-b bg-muted/35 px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">{t("dashboard.quickAccess")}</span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">{t("dashboard.quickAccessHint")}</span>
         </div>
         <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden="true" />
       </div>
@@ -95,7 +94,6 @@ export function QuickAccess() {
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2 text-sm font-medium">{t(shortcut.labelKey)}</span>
-              <span className="block text-xs leading-4 text-muted-foreground">{t(shortcut.detailKey)}</span>
             </span>
             <ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground/70" aria-hidden="true" />
           </Link>

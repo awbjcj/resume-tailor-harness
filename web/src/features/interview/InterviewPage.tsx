@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { localizeDisplayValue } from "@/i18n/dynamic-labels";
-import { Bot, BriefcaseBusiness, ChartNoAxesColumnIncreasing, Clock3, MessageCircleQuestion, MessagesSquare, SquareCheckBig } from "lucide-react";
+import { Bot, Clock3, MessagesSquare, SquareCheckBig } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import { ChatRunProgress } from "@/components/chat/ChatRunProgress";
@@ -149,7 +149,7 @@ export function InterviewPage() {
   if (session.isLoading && displayedSessionId) {
     return (
       <div className={cn("space-y-6", CHAT_PAGE_WIDTH)}>
-        <GuidedWorkspaceHeader tone="interview" icon={<MessagesSquare />} eyebrow="Focused rehearsal" title="Mock Interviews" description="Practice interview questions, focus on the conversation, and review a scored debrief afterward." />
+        <GuidedWorkspaceHeader tone="interview" icon={<MessagesSquare />} title="Mock Interviews" />
         <div className="flex flex-col gap-6">
           <div className="flex min-w-0 flex-col gap-4">
             <Skeleton className="h-16 w-full" />
@@ -170,30 +170,22 @@ export function InterviewPage() {
         <GuidedWorkspaceHeader
           tone="interview"
           icon={<MessagesSquare />}
-          eyebrow="Focused rehearsal"
           title="Mock Interviews"
-          description="Practice realistic questions and review a scored debrief."
-          meta={<Badge variant="outline">{noSessions ? "No sessions yet" : "Choose a session"}</Badge>}
         />
         <div className="flex flex-col gap-6">
-          <main>
+          <div>
             <Card className="min-w-0 overflow-hidden rounded-2xl bg-card/90">
-              <CardContent className={cn("flex p-0", CHAT_SURFACE_HEIGHT)}>
+              <CardContent className="flex min-h-96 p-0">
                 <WorkspaceEmptyState
                   icon={MessagesSquare}
                   title={noSessions ? "Start a focused rehearsal" : "Choose a rehearsal to continue"}
                   description="Practice questions for a role with a tailored resume, then review a scored debrief."
                   actionLabel="Start a mock interview"
                   onAction={() => setNewOpen(true)}
-                  steps={[
-                    { icon: BriefcaseBusiness, title: "Choose a role", description: "Select a job with a tailored resume so the questions reflect the role." },
-                    { icon: MessageCircleQuestion, title: "Answer one at a time", description: "Stay in the conversation while the interviewer adapts its follow-ups." },
-                    { icon: ChartNoAxesColumnIncreasing, title: "Review the debrief", description: "Review strengths, gaps, and better answer patterns after the rehearsal." },
-                  ]}
                 />
               </CardContent>
             </Card>
-          </main>
+          </div>
           <SessionsRail selectedId={displayedSessionId} />
         </div>
         <NewInterviewDialog open={newOpen} onOpenChange={setNewOpen} />
@@ -256,9 +248,7 @@ export function InterviewPage() {
       <GuidedWorkspaceHeader
         tone="interview"
         icon={<MessagesSquare />}
-        eyebrow="Mock Interview"
         title={<>{active.company || "Mock Interview"} · {active.title}</>}
-        description="Answer as you would in an interview. The questions adapt to your responses, and the completed rehearsal includes coaching."
         meta={<>
           <Badge variant={ended ? "outline" : "secondary"}>{ended ? "Rehearsal complete" : "Interview live"}</Badge>
           <Badge variant="outline" className="capitalize">{localizeDisplayValue(active.style.stage, i18n.resolvedLanguage)}</Badge>
@@ -291,7 +281,7 @@ export function InterviewPage() {
       />
 
       <div className="flex flex-col gap-6">
-      <main className="flex min-w-0 flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-6">
 
       {visibleError ? (
         <Alert variant="destructive">
@@ -360,7 +350,7 @@ export function InterviewPage() {
       </Card>
 
       {ended && active.debrief ? <DebriefCard debrief={active.debrief} plan={active.plan ?? []} /> : null}
-      </main>
+      </div>
       <SessionsRail selectedId={displayedSessionId} />
       </div>
     </div>

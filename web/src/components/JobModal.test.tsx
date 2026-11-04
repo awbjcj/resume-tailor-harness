@@ -40,7 +40,7 @@ describe("JobModal", () => {
   it("opens the requested tab when continuing a specific Job", async () => {
     server.use(http.get("/api/jobs/42", () => HttpResponse.json(jobPayload())));
     wrap(<JobModal jobId={42} onClose={() => {}} />, "/pipeline?job=42&tab=resumes");
-    expect(await screen.findByRole("heading", { name: "Resume versions" })).toBeInTheDocument();
+    expect(await screen.findByRole("tabpanel", { name: "Resumes" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Resumes" })).toHaveAttribute("aria-selected", "true");
   });
   it("renders job detail with a heading and the JD text", async () => {
@@ -237,14 +237,14 @@ describe("JobModal", () => {
     expect(dialog.className).toContain("sm:max-w-7xl");
     expect(dialog.className).not.toContain("1760px");
     expect(
-      screen.getByRole("heading", { name: "Job Brief" }),
+      screen.getByRole("tabpanel", { name: "Job details" }),
     ).toBeInTheDocument();
     const user = userEvent.setup();
     await user.click(screen.getByRole("tab", { name: /resumes/i }));
     expect(
-      screen.getByRole("heading", { name: "Resume versions" }),
+      screen.getByRole("tabpanel", { name: "Resumes 3" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("3 versions")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Resumes 3" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("opens redo for the single job it is showing", async () => {

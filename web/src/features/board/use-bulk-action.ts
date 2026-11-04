@@ -1,5 +1,7 @@
+import "@/i18n/interaction-copy-selection";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import i18n from "@/i18n";
 
 import { api, unwrap } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
@@ -33,6 +35,14 @@ const SET_ARRAY: [keyof FilterState, keyof BulkRequest][] = [
   ["companySize", "companySize"],
   ["skills", "skills"],
 ];
+
+const BULK_RESULT_KEYS = {
+  archive: "interactionCopy.selection.bulkArchive",
+  restore: "interactionCopy.selection.bulkRestore",
+  delete: "interactionCopy.selection.bulkDelete",
+  approve: "interactionCopy.selection.bulkApprove",
+  setStatus: "interactionCopy.selection.bulkSetStatus",
+} as const;
 
 function buildBody(board: Board, args: Args, dryRun: boolean): BulkRequest {
   const filter = args.filter;
@@ -73,8 +83,14 @@ export function useBulkAction(board: Board) {
       for (const key of ["shortlist", "pipeline", "triage", "job", "dashboard-summary"]) {
         qc.invalidateQueries({ queryKey: [key] });
       }
-      const skippedText = result.skipped ? ` · ${result.skipped} skipped` : "";
-      toast.success(`${args.action}: ${result.affected} job(s)${skippedText}`);
+      const message = i18n.t(BULK_RESULT_KEYS[args.action], {
+        count: result.affected,
+        formattedCount: result.affected.toLocaleString(),
+      });
+      const skipped = result.skipped
+        ? ` · ${i18n.t("interactionCopy.selection.skipped", { count: result.skipped.toLocaleString() })}`
+        : "";
+      toast.success(message + skipped);
       return result;
     },
   };

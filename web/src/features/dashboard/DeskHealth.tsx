@@ -63,6 +63,7 @@ export function DeskHealth() {
   // Fail-open: a broken status endpoint must not break the dashboard (spec §7).
   if (isPending || isError || !status) return null;
   const allOk = HEALTH_ITEMS.every((item) => item.ok(status));
+  if (allOk) return <Card className="py-4"><CardContent><p className="flex items-center gap-2 text-sm"><CheckCircle2 className="size-4 text-primary" aria-hidden="true" />{t("dashboard.deskReady")}</p></CardContent></Card>;
   return (
     <Card>
       <CardHeader>
@@ -71,12 +72,6 @@ export function DeskHealth() {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
-        {allOk ? (
-          <p className="flex items-center gap-2 text-sm">
-            <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
-            {t("dashboard.deskReady")}
-          </p>
-        ) : (
           <ul className="flex flex-col gap-2">
             {HEALTH_ITEMS.map((item) => {
               const ok = item.ok(status);
@@ -107,7 +102,6 @@ export function DeskHealth() {
               );
             })}
           </ul>
-        )}
         {!status.complete && (
           <Link
             to="/setup"

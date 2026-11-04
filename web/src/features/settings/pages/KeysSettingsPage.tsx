@@ -1,4 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
+import { PageHeader } from "@/components/PageHeader";
 
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
@@ -54,12 +55,8 @@ export function KeysSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-lg font-semibold">API keys & models</h1>
-        <p className="text-sm text-muted-foreground">
-          Keys are write-only: once saved, only the last four characters are shown.
-        </p>
-      </header>
+      <PageHeader title="API keys & models" />
+      <p className="text-sm text-muted-foreground">Saved keys show only their last four characters.</p>
       <SecretsForm statuses={secrets.data.filter((secret) =>
         secret.key !== "googleOauthClientId" && secret.key !== "googleOauthClientSecret",
       )} saving={saveSecrets.isPending}

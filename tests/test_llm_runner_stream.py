@@ -270,5 +270,54 @@ def test_stream_without_terminal_run_output_fails_closed():
     assert events[-1].code == "MISSING_RUN_OUTPUT"
 
 
+@pytest.mark.parametrize("visible", [False, True])
+@pytest.mark.parametrize(
+    "code", ["gateway_concurrency_limit", "slow_down", "server_is_overloaded"]
+)
+def test_gateway_concurrency_limit_stream_retries_only_before_output(
+    visible, code, monkeypatch
+):
+    monkeypatch.setattr(
+        "resume_tailor_harness.llm_runner.get_settings", lambda: _settings(retries=1)
+    )
+    failure = _Event(
+        RunEvent.run_error,
+        content="Concurrency limit exceeded for user, please retry later",
+        error_type=code,
+    )
+    prefix = [_Event(RunEvent.run_content, content="partial")] if visible else []
+    agent = _FakeAgent([prefix + [failure], [_Output("recovered")]])
+    runner = AgentRunner(agent)
+    events = list(runner.stream("p"))
+    assert agent.calls == (1 if visible else 2)
+    assert isinstance(events[-1], Failed if visible else Completed)
+
+
+def test_transient_terminal_error_with_captured_cause_retries(monkeypatch):
+    from resume_tailor_harness.provider_stream import _errors
+
+    monkeypatch.setattr(
+        "resume_tailor_harness.llm_runner.get_settings", lambda: _settings(retries=1)
+    )
+
+    class Agent(_FakeAgent):
+        def run(self, prompt, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                captured = _errors.get()
+                assert captured is not None
+                captured.append(_Transient("temporary provider failure"))
+                output = _Output("temporary provider failure")
+                output.status = "ERROR"
+                yield output
+            else:
+                yield _Output("recovered")
+
+    agent = Agent([])
+    events = list(AgentRunner(agent).stream("p"))
+    assert agent.calls == 2
+    assert isinstance(events[-1], Completed)
+
+
 def _settings(retries: int):
     return SimpleNamespace(llm_retries=retries, llm_retry_delay=0.0)

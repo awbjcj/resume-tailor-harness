@@ -5,6 +5,10 @@ import { SUMMARY } from "./fixtures";
 import { InsightsCard } from "./InsightsCard";
 
 describe("InsightsCard", () => {
+  it("keeps absent practice and source data out of the dashboard", () => {
+    const { container } = render(<InsightsCard summary={{ ...SUMMARY, practiceStats: undefined, sourceHealth: undefined }} />);
+    expect(container).toBeEmptyDOMElement();
+  });
   it("shows practice progress and a healthy source state", () => {
     render(<InsightsCard summary={SUMMARY} />);
 

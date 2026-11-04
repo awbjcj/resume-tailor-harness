@@ -38,16 +38,12 @@ export function LoginPage() {
   return (
     <AuthLayout
       title={t("auth.welcomeBack")}
-      description={t("auth.signInDescription")}
       icon={<KeyRound aria-hidden="true" />}
       footer={<p className="text-center text-muted-foreground">{t("auth.newHere")} <Link className="font-medium text-foreground underline underline-offset-4" to={withTaskDestination("/register", taskDestination(params))}>{t("auth.createAccount")}</Link></p>}
     >
       {calloutError ? <AuthNotice tone="error">{calloutError}</AuthNotice> : null}
       <form onSubmit={submit}>
         <GoogleButton mode="login" />
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          {t("auth.googleSignInHint")}
-        </p>
         <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />{t("auth.emailDivider")}<span className="h-px flex-1 bg-border" /></div>
         <FieldGroup>
           <Field>
