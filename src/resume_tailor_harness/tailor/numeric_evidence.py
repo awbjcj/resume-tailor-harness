@@ -34,9 +34,9 @@ _DIGITS = re.compile(r"\d[\d,]*(?:\.\d+)?")
 # the token fail `_QUANTITY` and pass unexamined.
 _EDGE_PUNCTUATION = "\"'`()[]{}<>,.;:!?—–-$€£¥"
 
-# Identity and structure, not evidence. `bullets` is excluded so citing a parent
-# Experience does not inherit the numbers stated by its child bullets -- the
-# writer is required to cite the narrowest supporting fact.
+# Identity, ranking metadata, and structure are not evidence. Exclude `bullets`
+# so citing a parent Experience does not inherit its child bullets' numbers --
+# the writer is required to cite the narrowest supporting fact.
 _SKIP_FIELDS = frozenset(
     {
         "id",
@@ -45,6 +45,8 @@ _SKIP_FIELDS = frozenset(
         "source_ref",
         "source_refs",
         "evidence_fact_ids",
+        "importance",
+        "importance_score",
         "bullets",
     }
 )

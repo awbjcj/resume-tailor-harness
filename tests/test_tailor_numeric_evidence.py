@@ -1,3 +1,9 @@
+import pytest
+
+from resume_tailor_harness.models.importance import (
+    FactImportanceScore,
+    FactImportanceSignals,
+)
 from resume_tailor_harness.models.profile import (
     Award,
     Bullet,
@@ -15,6 +21,7 @@ from resume_tailor_harness.models.resume import (
     TailoredProject,
 )
 from resume_tailor_harness.models.review import Severity
+from resume_tailor_harness.profile.importance import score_profile
 from resume_tailor_harness.tailor.numeric_evidence import (
     NUMERIC_EVIDENCE_REVIEWER,
     claim_numbers,
@@ -85,6 +92,64 @@ def test_evidence_ids_and_source_references_cannot_supply_quantities():
         source_refs=["dossier-888"],
     )
     assert fact_numbers(skill) == set()
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        {"importance": FactImportanceSignals(significance=4, ownership=3)},
+        {
+            "importance_score": FactImportanceScore(
+                score=42.5, components={"significance": 12.5}
+            )
+        },
+    ],
+    ids=["assessment", "computed-score"],
+)
+def test_importance_metadata_cannot_supply_quantities(metadata):
+    bullet = Bullet.model_validate({"text": "Implemented a service", **metadata})
+
+    assert fact_numbers(bullet) == set()
+
+
+@pytest.mark.parametrize("text", ["Improved throughput by 12.5%", "Shipped 1 service"])
+def test_scoring_and_round_trip_cannot_authorize_unsupported_quantities(text):
+    facts = score_profile(_facts())
+    facts = ProfileFacts.model_validate_json(facts.model_dump_json())
+
+    critique = numeric_evidence_critique(_bullet_resume(text, "b2"), facts)
+
+    assert critique.passed is False
+    assert critique.score == 0
+    assert [issue.severity for issue in critique.issues] == [Severity.blocking]
+
+
+def test_scored_nested_highlights_keep_only_source_numbers_as_evidence():
+    facts = _facts()
+    facts.projects[0].highlights = [
+        Bullet(
+            text="Improved throughput by 12.5% across 1 service",
+            importance=FactImportanceSignals(significance=4, ownership=3),
+        )
+    ]
+    facts = score_profile(facts)
+    content = _resume(
+        projects=[
+            TailoredProject(
+                name="Looms",
+                description="Improved throughput by 12.5% across 1 service",
+                provenance="p1",
+            )
+        ]
+    )
+
+    assert fact_numbers(facts.projects[0]) == {"12.5", "1"}
+    assert numeric_evidence_critique(content, facts).passed is True
+
+    content.projects[0].description = "Shipped 4 services"
+    critique = numeric_evidence_critique(content, facts)
+    assert critique.passed is False
+    assert [issue.severity for issue in critique.issues] == [Severity.blocking]
 
 
 def test_number_absent_from_the_cited_fact_blocks():
