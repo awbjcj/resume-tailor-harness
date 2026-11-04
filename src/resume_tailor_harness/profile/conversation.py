@@ -497,6 +497,13 @@ def apply_change(
         # extraction/classification assesses the approved replacement.
         item.importance = None
         item.importance_score = None
+        if (
+            isinstance(item, Bullet)
+            and "text" in change.values
+            and "aspect" not in change.values
+        ):
+            # Fallback scores must not reuse the former claim's classification.
+            item.aspect = None
         # Existing pointers were inferred from the old content, even though its
         # addressable id remains stable. They cannot certify the corrected claim.
         _clean_evidence(facts, {item.id})
