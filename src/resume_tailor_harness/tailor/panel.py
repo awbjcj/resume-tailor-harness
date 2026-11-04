@@ -10,6 +10,7 @@ from resume_tailor_harness.llm_runner import (
     expect_schema,
 )
 from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import MergedPanelReview, ReviewCritique
 from resume_tailor_harness.render.layout_review import (
@@ -116,6 +117,7 @@ def run_panel(
     coverage: str = "",
     render_config: RenderConfig | None = None,
     highlight_terms: list[str] | None = None,
+    evidence_portfolio: EvidencePortfolio | None = None,
 ) -> list[ReviewCritique]:
     """Run configured reviewers with the smallest sufficient input per role."""
     budget = config.length_budget.for_pages(
@@ -123,7 +125,7 @@ def run_panel(
     )
     depth_plan = (
         f"LENGTH BUDGET:\n{format_budget(budget)}\n\n"
-        f"{format_depth_plan(profile_facts, budget)}"
+        f"{format_depth_plan(profile_facts, budget, evidence_portfolio)}"
     )
     layout = (
         render_layout_preview(content, render_config, highlight_terms=highlight_terms)
@@ -244,6 +246,7 @@ async def arun_panel(
     coverage: str = "",
     render_config: RenderConfig | None = None,
     highlight_terms: list[str] | None = None,
+    evidence_portfolio: EvidencePortfolio | None = None,
 ) -> list[ReviewCritique]:
     """Run configured reviewers concurrently; results stay in reviewer order."""
     budget = config.length_budget.for_pages(
@@ -251,7 +254,7 @@ async def arun_panel(
     )
     depth_plan = (
         f"LENGTH BUDGET:\n{format_budget(budget)}\n\n"
-        f"{format_depth_plan(profile_facts, budget)}"
+        f"{format_depth_plan(profile_facts, budget, evidence_portfolio)}"
     )
     layout = None
     if render_config is not None:

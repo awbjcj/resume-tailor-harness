@@ -5,6 +5,11 @@ from typing import Any, Union, get_origin
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from resume_tailor_harness.models.importance import (
+    FactImportanceScore,
+    FactImportanceSignals,
+)
+
 
 class Source(str, Enum):
     """Where an atomic fact originated."""
@@ -88,3 +93,5 @@ class FactItem(ExtensibleModel):
     source: Source = Source.resume
     source_ref: str | None = None
     synthesized: bool = False
+    importance: FactImportanceSignals | None = None
+    importance_score: FactImportanceScore | None = None

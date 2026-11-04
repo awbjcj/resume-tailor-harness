@@ -3,6 +3,7 @@ from typing import Any, Literal
 from pydantic import Field
 
 from resume_tailor_harness.models.base import ExtensibleModel
+from resume_tailor_harness.models.importance import FactContext
 
 
 CoverageState = Literal["covered", "adjacent", "gap"]
@@ -16,6 +17,7 @@ class EvidenceFactCandidate(ExtensibleModel):
     text: str
     source_order: int = 0
     metric_count: int = 0
+    importance_score: float = Field(default=0, ge=0, le=100)
     direct_must_requirements: list[str] = Field(default_factory=list)
     direct_requirements: list[str] = Field(default_factory=list)
     adjacent_requirements: list[str] = Field(default_factory=list)
@@ -30,6 +32,8 @@ class EvidenceOwnerCandidate(ExtensibleModel):
     current: bool = False
     source_order: int = 0
     strength: float = 0.0
+    importance_score: float = Field(default=0, ge=0, le=100)
+    importance_context: FactContext = "unknown"
     suggested_bullet_count: int = 1
     direct_must_requirements: list[str] = Field(default_factory=list)
     direct_requirements: list[str] = Field(default_factory=list)

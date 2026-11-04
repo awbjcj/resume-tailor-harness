@@ -16,7 +16,7 @@ from resume_tailor_harness.llm_runner import (
     retry_kwargs,
     use_json_mode_for,
 )
-from resume_tailor_harness.models.base import ExtensibleModel
+from resume_tailor_harness.models.base import ExtensibleModel, FactItem
 from resume_tailor_harness.models.profile import (
     Bullet,
     Experience,
@@ -218,6 +218,19 @@ def _merge_record(
     doc: SourceDoc,
     report: MergeReport,
 ) -> None:
+    if isinstance(base, FactItem) and isinstance(other, FactItem):
+        if base.importance is None:
+            base.importance = (
+                other.importance.model_copy(deep=True) if other.importance else None
+            )
+        elif (
+            base.importance.context == "unknown"
+            and other.importance is not None
+            and other.importance.context != "unknown"
+        ):
+            base.importance = base.importance.model_copy(
+                update={"context": other.importance.context}
+            )
     for field_name in scalar_fields:
         base_value = getattr(base, field_name)
         other_value = getattr(other, field_name)

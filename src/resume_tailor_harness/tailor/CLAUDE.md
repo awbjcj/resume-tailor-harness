@@ -39,6 +39,16 @@ not same canonical token) are never claimable as the JD's own term.
 
 ## Review/scoring design notes
 
+- **Fact importance guides allocation, never truth.** The evidence catalog
+  exposes weighted owner/fact scores and individual project highlights.
+  Direct job coverage ranks before intrinsic importance. Fallback and portfolio
+  normalization distribute distinct bullets by relevance and importance under
+  source capacity and page caps. Stored project-owner selections remain valid;
+  new highlight selections narrow project evidence. Writers and revisers receive
+  scores even without portfolio planning. Keep work reverse chronological and
+  avoid claim duplication. All provenance and evidence gates remain unchanged.
+  Policy and additive contracts: `docs/fact-importance.md`.
+
 - **Format review observes rendered pages.** Production tailoring and requested
   re-review pass the selected render config into the panel. The `concision`
   reviewer receives PNGs and measured page-fit diagnostics, including when it

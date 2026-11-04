@@ -118,6 +118,16 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   and explicit evidence links, including broad skills absent from tech lists.
   Increment `PROJECT_PROMPT_VERSION` when this projection changes so cached
   project fragments rebuild. The bundled project-dossier skill is hash pinned.
+- **Fact importance is selection metadata.** `profile/importance.py` computes a
+  versioned 0-100 weighted score for every addressable fact. Source-grounded
+  significance, essentiality, impact and ownership are separate from the
+  application-computed total; context and evidence traceability complete the
+  score. Unknown project context stays unknown. `load_facts` backfills in memory,
+  and `save_facts` recomputes on a copy before atomic publication. The existing
+  aspect classifier also backfills missing bullet assessments, including copied
+  dossier evidence. Populated assessments survive the pass. Scores never add
+  facts, remove evidence, establish authorship, or legalize inferred claims.
+  See `docs/fact-importance.md` for the scales, weights and lifecycle.
 - **Bullet aspects are durable classifications.** New extractors emit the closed
   aspect vocabulary, while profile build backfills only bullets with
   `aspect is None`. A hand-corrected aspect therefore survives rebuilds; an

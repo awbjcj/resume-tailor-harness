@@ -159,7 +159,9 @@ def _deterministic_critiques(
     ]
     if (coverage := coverage_critique(content, skill_context)) is not None:
         critiques.append(coverage)
-    if (depth := depth_critique(content, profile_facts, budget)) is not None:
+    if (
+        depth := depth_critique(content, profile_facts, budget, evidence_portfolio)
+    ) is not None:
         critiques.append(depth)
     if (
         alignment := portfolio_alignment_critique(content, evidence_portfolio)
@@ -351,6 +353,7 @@ def run_tailor_review(
             coverage=coverage,
             render_config=render_config,
             highlight_terms=portfolio.highlight_terms if portfolio else None,
+            evidence_portfolio=portfolio,
         )
         state.pending["panel"] = time.monotonic() - started
         verdict = state.record(panel)
@@ -437,6 +440,7 @@ async def arun_tailor_review(
             coverage=coverage,
             render_config=render_config,
             highlight_terms=portfolio.highlight_terms if portfolio else None,
+            evidence_portfolio=portfolio,
         )
         state.pending["panel"] = time.monotonic() - started
         verdict = state.record(panel)

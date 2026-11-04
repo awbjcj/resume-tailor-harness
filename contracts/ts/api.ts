@@ -4982,6 +4982,8 @@ export interface components {
             description?: string | null;
             /** Id */
             id?: string;
+            importance?: components["schemas"]["FactImportanceSignals"] | null;
+            importance_score?: components["schemas"]["FactImportanceScore"] | null;
             /** Organization */
             organization?: string | null;
             /**
@@ -7511,6 +7513,8 @@ export interface components {
             honors?: string[];
             /** Id */
             id?: string;
+            importance?: components["schemas"]["FactImportanceSignals"] | null;
+            importance_score?: components["schemas"]["FactImportanceScore"] | null;
             /** Institution */
             institution: string;
             /** Relevant Coursework */
@@ -7836,6 +7840,68 @@ export interface components {
             content: components["schemas"]["ResumeContent"];
             /** Contextrevision */
             contextRevision: string;
+        };
+        /**
+         * FactImportanceScore
+         * @description Application-computed score and weighted contributions, never model authority.
+         */
+        FactImportanceScore: {
+            /** Components */
+            components?: {
+                [key: string]: number;
+            };
+            /**
+             * Context
+             * @default unknown
+             * @enum {string}
+             */
+            context: "professional" | "personal_project" | "academic_project" | "research" | "education" | "volunteer" | "unknown";
+            /**
+             * Method
+             * @default fallback
+             * @enum {string}
+             */
+            method: "assessed" | "fallback";
+            /** Score */
+            score: number;
+            /**
+             * Version
+             * @default 1
+             * @constant
+             */
+            version: 1;
+        };
+        /**
+         * FactImportanceSignals
+         * @description Source-grounded ordinal assessments, each on a closed 0..4 scale.
+         */
+        FactImportanceSignals: {
+            /**
+             * Context
+             * @default unknown
+             * @enum {string}
+             */
+            context: "professional" | "personal_project" | "academic_project" | "research" | "education" | "volunteer" | "unknown";
+            /**
+             * Essentiality
+             * @default 2
+             */
+            essentiality: number;
+            /**
+             * Impact
+             * @default 0
+             */
+            impact: number;
+            /**
+             * Ownership
+             * @default 0
+             */
+            ownership: number;
+            /**
+             * Significance
+             * @default 2
+             */
+            significance: number;
         };
         /** FieldIssue */
         FieldIssue: {
@@ -8686,6 +8752,8 @@ export interface components {
         Language: {
             /** Id */
             id?: string;
+            importance?: components["schemas"]["FactImportanceSignals"] | null;
+            importance_score?: components["schemas"]["FactImportanceScore"] | null;
             /** Language */
             language: string;
             /** Proficiency */

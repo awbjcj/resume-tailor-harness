@@ -5,6 +5,7 @@ from resume_tailor_harness.models.profile import (
     ProfileFacts,
     Project,
 )
+from resume_tailor_harness.models.importance import FactImportanceSignals
 from resume_tailor_harness.profile.aspect_classifier import (
     AspectAssignment,
     AspectAssignments,
@@ -40,7 +41,12 @@ def _facts() -> ProfileFacts:
                 title="Engineer",
                 bullets=[
                     Bullet(id="b1", text="Built the platform"),
-                    Bullet(id="b2", text="Led the rollout", aspect="leadership"),
+                    Bullet(
+                        id="b2",
+                        text="Led the rollout",
+                        aspect="leadership",
+                        importance=FactImportanceSignals(ownership=3),
+                    ),
                 ],
             )
         ],
@@ -77,11 +83,40 @@ def test_classifier_only_sends_and_updates_unclassified_bullets():
     assert classified.projects[0].highlights[0].aspect == "tooling"
 
 
-def test_classifier_skips_the_model_when_all_bullets_already_have_aspects():
+def test_classifier_skips_the_model_when_all_bullets_have_aspects_and_assessments():
     facts = _facts()
     facts.experience[0].bullets[0].aspect = "technical"
     facts.projects[0].highlights[0].aspect = "tooling"
+    facts.experience[0].bullets[0].importance = FactImportanceSignals()
+    facts.projects[0].highlights[0].importance = FactImportanceSignals()
     agent = _Agent(AspectAssignments())
 
     assert classify_aspects(facts, agent) == facts
     assert agent.prompts == []
+
+
+def test_classifier_backfills_missing_importance_without_replacing_aspect():
+    facts = _facts()
+    facts.experience[0].bullets[0].aspect = "technical"
+    rating = FactImportanceSignals(significance=4, essentiality=4, ownership=2)
+    agent = _Agent(
+        AspectAssignments(
+            assignments=[
+                AspectAssignment(
+                    bullet_id="b1", aspect="leadership", importance=rating
+                ),
+                AspectAssignment(bullet_id="b2", aspect="scope", importance=rating),
+                AspectAssignment(bullet_id="ghost", aspect="scope", importance=rating),
+            ]
+        )
+    )
+
+    classified = classify_aspects(facts, agent)
+
+    assert classified.experience[0].bullets[0].aspect == "technical"
+    assert classified.experience[0].bullets[0].importance == rating
+    assert (
+        classified.experience[0].bullets[1].importance
+        == facts.experience[0].bullets[1].importance
+    )
+    assert facts.experience[0].bullets[0].importance is None

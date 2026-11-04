@@ -5,6 +5,7 @@ import re
 
 from resume_tailor_harness.models.base import FactItem
 from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.profile.importance import score_profile
 
 _NORM = re.compile(r"[^a-z0-9]+")
 
@@ -76,4 +77,4 @@ def assign_fact_ids(facts: ProfileFacts, doc_id: str) -> ProfileFacts:
                     for fact_id in skill.evidence_fact_ids
                 )
             )
-    return output
+    return score_profile(output)

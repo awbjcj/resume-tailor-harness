@@ -23,6 +23,7 @@ from resume_tailor_harness.tailor.panel import run_panel
 from resume_tailor_harness.tailor.provenance import (
     provenance_critique,
     renderable_profile,
+    same_fact_values,
 )
 from resume_tailor_harness.tailor.review_config import load_review_config
 from resume_tailor_harness.tailor.skill_naming import skill_naming_critique
@@ -88,11 +89,17 @@ def deterministic_checks(
         raise ExternalTailoringError(
             "IDENTITY_MISMATCH", "Carry profile contact verbatim"
         )
-    if any(item not in facts.education for item in content.education):
+    education = {item.id: item for item in facts.education}
+    if any(
+        not same_fact_values(item, education.get(item.id)) for item in content.education
+    ):
         raise ExternalTailoringError(
             "IDENTITY_MISMATCH", "Carry education entries verbatim"
         )
-    if any(item not in facts.languages for item in content.languages):
+    languages = {item.id: item for item in facts.languages}
+    if any(
+        not same_fact_values(item, languages.get(item.id)) for item in content.languages
+    ):
         raise ExternalTailoringError(
             "IDENTITY_MISMATCH", "Carry language entries verbatim"
         )
