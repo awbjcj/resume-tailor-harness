@@ -14,7 +14,12 @@ builder imports a concrete agno model class directly.
   `LLM_GLOBAL_CONCURRENCY` defaults to 2; optional rolling-minute admission,
   queue timeout and shared 429/Retry-After cooldown also apply. `StreamLifecycle`
   gates each model invocation and holds streaming slots until iterator close;
-  direct SDK seams use the same gate. Never gate an entire tool loop: tools
+  direct SDK seams use the same gate. After admission, `SpendGate.recheck`
+  checks the bound funding against current eligibility, bypassing phase caches
+  without switching keys or relabeling shared funding as BYOK. Async checks run
+  off the event loop. Queued calls and subsequent tool hops must stop once
+  their funding is denied; Agno-wrapped denials retain their typed errors.
+  Never gate an entire tool loop: tools
   may themselves need provider capacity. Agent SDK retries are disabled and
   `AgentRunner` owns exponential/jittered retries. This is not a distributed
   limiter; separate processes must share the allowance at the gateway.

@@ -138,6 +138,19 @@ def enforce_agent_budget(agent: object, *, now: datetime | None = None) -> None:
     SpendGate().open(prefixed, now=now)
 
 
+def recheck_agent_budget(agent: object) -> None:
+    """Check the model's bound funding immediately after provider admission."""
+    from resume_tailor_harness.tenancy.spend import SpendGate
+
+    context = current_context()
+    if context is None or context.system_engine is None:
+        return
+    provider, model_id = _agent_identity(agent)
+    SpendGate().recheck(
+        provider, model_id, own_key=selected_key_is_own(provider, agent)
+    )
+
+
 def enforce_budget(
     engine: Engine,
     *,

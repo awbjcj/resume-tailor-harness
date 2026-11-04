@@ -95,8 +95,12 @@ class OpenAIEmbeddingProvider:
                 SimpleNamespace(model=SimpleNamespace(id=model, provider=provider))
             )
             from openai import OpenAI
+            from resume_tailor_harness.tenancy.spend import SpendGate
 
             with llm_call():
+                SpendGate().recheck(
+                    route.provider, route.model, own_key=route.own_key
+                )
                 response = OpenAI(
                     api_key=route.api_key,
                     base_url=provider_sdk_base_url(provider, route.base_url),

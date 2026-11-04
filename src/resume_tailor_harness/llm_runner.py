@@ -191,6 +191,30 @@ def _retry_delay(settings: Settings, attempt: int, error: Any = None) -> float:
     return max(delay + random.uniform(0, delay * 0.25), retry_after_seconds(error) or 0)
 
 
+def _raise_spend_denial(errors: list[Exception]) -> None:
+    """Preserve admission denials that Agno reduced to a failed run's text."""
+    from resume_tailor_harness.tenancy.limits import (
+        BudgetExceededError,
+        CostRateUnavailableError,
+    )
+    from resume_tailor_harness.tenancy.quotas import (
+        CostQuotaExceededError,
+        GlobalCostQuotaExceededError,
+    )
+
+    for error in reversed(errors):
+        if isinstance(
+            error,
+            (
+                BudgetExceededError,
+                CostRateUnavailableError,
+                CostQuotaExceededError,
+                GlobalCostQuotaExceededError,
+            ),
+        ):
+            raise error
+
+
 def is_transient(exc: BaseException) -> bool:
     """Whether an LLM-call failure is worth retrying.
 
@@ -438,10 +462,14 @@ class AgentRunner:
                         response = self._agent.run(
                             attempt_prompt, **_image_kwargs(images)
                         )
+                    if not errors.invocations and _run_failed(response):
+                        _raise_spend_denial(errors)
                     record_call(self._agent, response)
                 finally:
                     self._exit()
                 record_agent_run(self, response, retries=attempt)
+                if _run_failed(response):
+                    _raise_spend_denial(errors)
                 if (
                     errors
                     and _run_failed(response)
@@ -487,6 +515,8 @@ class AgentRunner:
                         response = await self._agent.arun(
                             attempt_prompt, **_image_kwargs(images)
                         )
+                    if not errors.invocations and _run_failed(response):
+                        _raise_spend_denial(errors)
                     recording = asyncio.create_task(
                         asyncio.to_thread(record_call, self._agent, response)
                     )
@@ -498,6 +528,8 @@ class AgentRunner:
                 finally:
                     self._exit()
                 record_agent_run(self, response, retries=attempt)
+                if _run_failed(response):
+                    _raise_spend_denial(errors)
                 if (
                     errors
                     and _run_failed(response)
@@ -568,6 +600,7 @@ class AgentRunner:
                                 continue
                             for event in _map_stream_event(tag, raw):
                                 if isinstance(event, Failed):
+                                    _raise_spend_denial(errors)
                                     retryable = (
                                         any(is_transient(error) for error in errors)
                                         or event.code in _TRANSIENT_NAMES
@@ -585,9 +618,12 @@ class AgentRunner:
                             "MISSING_RUN_OUTPUT",
                         )
                         return
+                    if not errors.invocations and _run_failed(terminal_output):
+                        _raise_spend_denial(errors)
                     accounted = True
                     record_call(self._agent, terminal_output)
                     if _run_failed(terminal_output):
+                        _raise_spend_denial(errors)
                         message = (
                             getattr(terminal_output, "content", None)
                             or "The model reported an error."
@@ -2596,17 +2632,22 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
         raise ValueError(
             f"no API key configured for transcription provider {provider!r}"
         )
-    from resume_tailor_harness.tenancy.limits import enforce_agent_budget
-
-    enforce_agent_budget(
-        SimpleNamespace(model=SimpleNamespace(id=model, provider=provider))
+    from resume_tailor_harness.tenancy.limits import (
+        enforce_agent_budget,
+        selected_key_is_own,
     )
+    from resume_tailor_harness.tenancy.spend import SpendGate
+
+    budget_agent = SimpleNamespace(model=SimpleNamespace(id=model, provider=provider))
+    enforce_agent_budget(budget_agent)
+    own_key = selected_key_is_own(provider, budget_agent)
     if provider == "gemini":
         from google import genai
         from google.genai import types
 
         client = genai.Client(api_key=key)
         with llm_call():
+            SpendGate().recheck(provider, model, own_key=own_key)
             response = client.models.generate_content(
                 model=model,
                 contents=[
@@ -2650,6 +2691,7 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
     buffer = io.BytesIO(audio)
     buffer.name = _OPENAI_AUDIO_NAMES.get(mime_type, "audio.webm")
     with llm_call():
+        SpendGate().recheck(provider, model, own_key=own_key)
         result = client.audio.transcriptions.create(model=model, file=buffer)
     usage = getattr(result, "usage", None)
     from resume_tailor_harness.tenancy.costs import MeteredUsage
@@ -2706,11 +2748,15 @@ def synthesize_speech(
     if not api_key:
         raise ValueError(f"no API key configured for speech provider {provider!r}")
 
-    from resume_tailor_harness.tenancy.limits import enforce_agent_budget
-
-    enforce_agent_budget(
-        SimpleNamespace(model=SimpleNamespace(id=model, provider=provider))
+    from resume_tailor_harness.tenancy.limits import (
+        enforce_agent_budget,
+        selected_key_is_own,
     )
+    from resume_tailor_harness.tenancy.spend import SpendGate
+
+    budget_agent = SimpleNamespace(model=SimpleNamespace(id=model, provider=provider))
+    enforce_agent_budget(budget_agent)
+    own_key = selected_key_is_own(provider, budget_agent)
     from openai import OpenAI
 
     # Speech is deliberately not subscription-routed. The configured gateway
@@ -2726,6 +2772,7 @@ def synthesize_speech(
         ),
     )
     with llm_call():
+        SpendGate().recheck(provider, model, own_key=own_key)
         response = client.audio.speech.create(
             model=model,
             voice=voice or settings.speech_voice,

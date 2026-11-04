@@ -53,6 +53,11 @@ admin-users API.
   is retained only in `shadow` mode. `AgentRunner.arun` runs blocking gate and
   settlement work through `asyncio.to_thread`. Key changes still wait for a
   shared model's in-flight calls to finish.
+  Provider admission rechecks the already-selected funding after the queue
+  wait through `SpendGate.recheck`, without reading the phase cache or
+  selecting a different key/endpoint. The model-specific funding flag wins
+  over provider-wide hints. Direct SDK calls retain their selected funding
+  too; Decisions rechecks its dedicated endpoint rate and shared allowance.
 - **Subscription terms are finite.** `tenancy/subscriptions.py` applies audited,
   idempotent activation, renewal and revocation under `BEGIN IMMEDIATE`.
   Active renewals extend expiry without resetting usage; expired terms restart

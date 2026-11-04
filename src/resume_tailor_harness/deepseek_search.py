@@ -40,6 +40,9 @@ class DeepSeekSearchTools:
                 base = origin if origin.endswith("/v1") else f"{origin}/v1"
                 try:
                     with llm_call():
+                        SpendGate(settings=self.settings).recheck(
+                            route.provider, route.model, own_key=route.own_key
+                        )
                         response = client.post(
                             f"{base}/tools/{operation}",
                             headers={"Authorization": f"Bearer {route.api_key}"},

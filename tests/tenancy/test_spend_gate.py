@@ -325,6 +325,32 @@ def test_disabled_shared_access_raises_its_own_error(tmp_path):
             SpendGate().open(MODEL)
 
 
+@pytest.mark.parametrize("mode", ["shadow", "enforce"])
+def test_recheck_does_not_relabel_bound_shared_funding_as_byok(tmp_path, mode):
+    engine = _engine(tmp_path)
+    settings = Settings(_env_file=None, cost_quota_enforcement=mode)  # type: ignore[call-arg]
+    context = _context(
+        tmp_path,
+        engine,
+        settings=settings,
+        user_provider_keys={"anthropic": "personal-key"},
+    )
+    with use_context(context):
+        gate = SpendGate()
+        decision = gate.open(MODEL)
+        assert not decision.own_key
+        with Session(engine) as session:
+            user = session.get(User, context.user_id)
+            assert user is not None
+            user.shared_key_access = False
+            session.commit()
+        with pytest.raises(BudgetExceededError, match="shared platform models"):
+            gate.recheck(decision.provider, decision.model, own_key=decision.own_key)
+        assert context.selected_own_key_providers["anthropic"] is False
+        gate.recheck("anthropic", MODEL, own_key=True)
+        assert decision.api_key == "railway-key"
+
+
 def test_unknown_rate_raises_cost_rate_unavailable_under_enforcement(tmp_path):
     engine = _engine(tmp_path)
     settings = Settings(_env_file=None, cost_quota_enforcement="enforce")  # type: ignore[call-arg]

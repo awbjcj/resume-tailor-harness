@@ -11,6 +11,7 @@ from contextvars import ContextVar
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any, cast
 from uuid import uuid4
 
@@ -83,6 +84,7 @@ class StreamCapture(list[Exception]):
     """Retain reported usage even if failure prevents Agno's final RunOutput."""
 
     metrics: Any = None
+    invocations: int = 0
 
     def collect(self, chunk):
         usage = chunk.response_usage
@@ -111,11 +113,20 @@ class StreamLifecycle:
     # This cooperative mixin precedes an Agno Model in every adapter's MRO.
     # Cast the super proxy so static analysis can see that provider contract.
 
+    def _recheck_funding(self) -> None:
+        from resume_tailor_harness.tenancy.limits import recheck_agent_budget
+
+        recheck_agent_budget(SimpleNamespace(model=self))
+        capture = _errors.get()
+        if capture is not None:
+            capture.invocations += 1
+
     def invoke(self, *args, **kwargs):
         from agno.models.base import Model
 
         try:
             with llm_call():
+                self._recheck_funding()
                 return cast(Model, super()).invoke(*args, **kwargs)
         except Exception as exc:
             errors = _errors.get()
@@ -124,10 +135,13 @@ class StreamLifecycle:
             raise
 
     async def ainvoke(self, *args, **kwargs):
+        import asyncio
+
         from agno.models.base import Model
 
         try:
             async with async_llm_call():
+                await asyncio.to_thread(self._recheck_funding)
                 return await cast(Model, super()).ainvoke(*args, **kwargs)
         except Exception as exc:
             errors = _errors.get()
@@ -182,6 +196,7 @@ class StreamLifecycle:
         stream = None
         try:
             with llm_call():
+                self._recheck_funding()
                 stream = cast(
                     Generator, cast(Model, super()).invoke_stream(*args, **kwargs)
                 )
@@ -210,6 +225,8 @@ class StreamLifecycle:
             _request.reset(token)
 
     async def ainvoke_stream(self, *args, **kwargs):
+        import asyncio
+
         from collections.abc import AsyncGenerator
 
         from agno.models.base import Model
@@ -220,6 +237,7 @@ class StreamLifecycle:
         stream = None
         try:
             async with async_llm_call():
+                await asyncio.to_thread(self._recheck_funding)
                 stream = cast(
                     AsyncGenerator, cast(Model, super()).ainvoke_stream(*args, **kwargs)
                 )

@@ -70,6 +70,10 @@ slots. A stream keeps its slot until the provider iterator closes. Provider 429s
 pause queued calls together; ordinary run retries use exponential delay with
 jitter and honor `Retry-After`. Failed or cancelled calls release capacity.
 These deployment settings cannot be increased through a member's workspace.
+After admission, each call rechecks its selected funding against current
+allowance, platform caps and shared-access permission. A queued call cannot
+keep spending after its funding is denied, including on later tool-loop hops.
+The recheck preserves its key and endpoint; genuine BYOK remains exempt.
 Choose `LLM_GLOBAL_CONCURRENCY` at or below the shared account's allowance;
 use `1` for an account that permits only one concurrent request. Distinct keys
 do not increase the allowance because they may fund the same gateway account.
