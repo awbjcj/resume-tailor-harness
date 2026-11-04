@@ -1,10 +1,22 @@
 from sqlmodel import Session
 
 from resume_tailor_harness.db import init_db, make_engine
-from resume_tailor_harness.models.profile import Bullet, Contact, Experience, ProfileFacts
-from resume_tailor_harness.models.resume import ResumeContent, TailoredBullet, TailoredExperience
+from resume_tailor_harness.models.profile import (
+    Bullet,
+    Contact,
+    Experience,
+    ProfileFacts,
+)
+from resume_tailor_harness.models.resume import (
+    ResumeContent,
+    TailoredBullet,
+    TailoredExperience,
+)
 from resume_tailor_harness.models.review import ReviewCritique
-from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
+from resume_tailor_harness.models.evidence_portfolio import (
+    EvidencePortfolio,
+    PortfolioSelection,
+)
 from resume_tailor_harness.services.agents import TailorBundle
 from resume_tailor_harness.services.revision import revise_resume_version
 from resume_tailor_harness.tracking.repository import save_job, save_resume_version
@@ -114,8 +126,17 @@ def test_revise_resume_version_persists_lineage_and_fact_flag(monkeypatch):
 def test_revise_resume_version_records_gate_roster_on_re_review(monkeypatch, tmp_path):
     engine = make_engine("sqlite://")
     init_db(engine)
+    facts = _facts()
+    facts.experience.append(
+        Experience(
+            id="omitted",
+            company="Other",
+            title="Assistant",
+            bullets=[Bullet(id="other-bullet", text="Filed reports")],
+        )
+    )
     monkeypatch.setattr(
-        "resume_tailor_harness.services.revision.load_facts", lambda path: _facts()
+        "resume_tailor_harness.services.revision.load_facts", lambda path: facts
     )
     monkeypatch.setattr(
         "resume_tailor_harness.services.revision.export_job_artifacts",
@@ -130,7 +151,9 @@ def test_revise_resume_version_records_gate_roster_on_re_review(monkeypatch, tmp
         "    weight: 0\n"
         "  - name: ats-keyword\n"
         "    gate: true\n"
-        "    weight: 0\n",
+        "    weight: 0\n"
+        "  - name: hiring-manager\n"
+        "    weight: 1\n",
         encoding="utf-8",
     )
 
@@ -142,7 +165,19 @@ def test_revise_resume_version_records_gate_roster_on_re_review(monkeypatch, tmp
         parent = save_resume_version(
             session,
             ResumeVersion(
-                job_id=job.id, round=1, content_json=_content().model_dump(mode="json")
+                job_id=job.id,
+                round=1,
+                content_json=_content().model_dump(mode="json"),
+                evidence_portfolio_json=EvidencePortfolio(
+                    selections=[
+                        PortfolioSelection(
+                            owner_id="exp1",
+                            owner_kind="experience",
+                            selected_fact_ids=["b1"],
+                            bullet_budget=1,
+                        )
+                    ]
+                ).model_dump(mode="json"),
             ),
         )
         assert parent.id is not None
@@ -150,10 +185,17 @@ def test_revise_resume_version_records_gate_roster_on_re_review(monkeypatch, tmp
             ReviewCritique(reviewer="fact-check", score=100, passed=True)
         )
         ats = _Agent(ReviewCritique(reviewer="ats-keyword", score=100, passed=True))
+        hiring = _Agent(
+            ReviewCritique(reviewer="hiring-manager", score=100, passed=True)
+        )
         bundle = TailorBundle(
             tailor=_Agent(_content()),
             reviser=_Agent(_content()),
-            reviewers={"fact-check": fact_check, "ats-keyword": ats},
+            reviewers={
+                "fact-check": fact_check,
+                "ats-keyword": ats,
+                "hiring-manager": hiring,
+            },
             revision=_Agent(_content()),
         )
 
@@ -169,3 +211,5 @@ def test_revise_resume_version_records_gate_roster_on_re_review(monkeypatch, tmp
         assert child is not None
         # Recorded from the round's OWN config, gated reviewers only.
         assert child.gate_reviewers_json == ["ats-keyword", "fact-check"]
+        assert 'exp1 "Acme: Engineer": 1 source -> render 1' in hiring.seen
+        assert 'omitted "Other: Assistant"' not in hiring.seen

@@ -23,6 +23,7 @@ from resume_tailor_harness.models.profile import (
     Skill,
 )
 from resume_tailor_harness.profile.matrix import SkillMatch, SkillMatchContext
+from resume_tailor_harness.profile.importance import importance_value, score_profile
 from resume_tailor_harness.tailor.provenance import index_facts, renderable_profile
 from resume_tailor_harness.tailor.numeric_evidence import claim_numbers
 from resume_tailor_harness.tailor.review_config import LengthBudget
@@ -118,6 +119,7 @@ def build_evidence_catalog(
 ) -> EvidenceCatalog:
     """Index selectable work/project evidence with deterministic JD signals."""
     del criteria  # requirements are already represented by the authoritative context
+    facts = score_profile(facts)
     owners: list[EvidenceOwnerCandidate] = []
     for source_order, experience in enumerate(facts.experience):
         owner_ids = {experience.id, *(bullet.id for bullet in experience.bullets)}
@@ -130,6 +132,7 @@ def build_evidence_catalog(
                     text=bullet.text,
                     source_order=fact_order,
                     metric_count=len(claim_numbers(bullet.text)),
+                    importance_score=importance_value(bullet),
                     direct_must_requirements=_requirements_for_ids(
                         ids, context, "covered", "must"
                     ),
@@ -158,6 +161,8 @@ def build_evidence_catalog(
                 current=experience.current,
                 source_order=source_order,
                 strength=round(strength, 2),
+                importance_score=importance_value(experience),
+                importance_context="professional",
                 direct_must_requirements=_requirements_for_ids(
                     owner_ids, context, "covered", "must"
                 ),
@@ -189,6 +194,12 @@ def build_evidence_catalog(
                 end=project.end or project.last_updated,
                 source_order=project_offset + source_order,
                 strength=round(strength, 2),
+                importance_score=importance_value(project),
+                importance_context=(
+                    project.importance_score.context
+                    if project.importance_score
+                    else "unknown"
+                ),
                 suggested_bullet_count=max(
                     1,
                     len(project.highlights) or int(bool(project.description)),
@@ -203,12 +214,32 @@ def build_evidence_catalog(
                         fact_id=project.id,
                         text=text,
                         metric_count=len(claim_numbers(text)),
+                        importance_score=importance_value(project),
                         direct_must_requirements=_requirements_for_ids(
                             ids, context, "covered", "must"
                         ),
                         direct_requirements=direct,
                         adjacent_requirements=adjacent,
-                    )
+                    ),
+                    *(
+                        EvidenceFactCandidate(
+                            fact_id=highlight.id,
+                            text=highlight.text,
+                            source_order=index + 1,
+                            metric_count=len(claim_numbers(highlight.text)),
+                            importance_score=importance_value(highlight),
+                            direct_must_requirements=_requirements_for_ids(
+                                {highlight.id}, context, "covered", "must"
+                            ),
+                            direct_requirements=_requirements_for_ids(
+                                {highlight.id}, context, "covered"
+                            ),
+                            adjacent_requirements=_requirements_for_ids(
+                                {highlight.id}, context, "adjacent"
+                            ),
+                        )
+                        for index, highlight in enumerate(project.highlights)
+                    ),
                 ],
             )
         )
@@ -216,12 +247,14 @@ def build_evidence_catalog(
 
 
 def _owner_rank(owner: EvidenceOwnerCandidate) -> tuple:
-    metric_count = sum(fact.metric_count for fact in owner.facts)
+    # Verbose dossiers do not win simply by repeating numbers and citations.
+    metric_count = max((fact.metric_count for fact in owner.facts), default=0)
     date = owner.end or owner.start or ""
     return (
         len(owner.direct_must_requirements),
         len(owner.direct_requirements),
         len(owner.adjacent_requirements),
+        owner.importance_score,
         metric_count,
         owner.current,
         date,
@@ -235,6 +268,7 @@ def _fact_rank(fact: EvidenceFactCandidate) -> tuple:
         len(fact.direct_must_requirements),
         len(fact.direct_requirements),
         len(fact.adjacent_requirements),
+        fact.importance_score,
         fact.metric_count,
         -fact.source_order,
     )
@@ -396,11 +430,12 @@ def _fallback_selections(
     experience_count = 0
     project_count = 0
     bridge_count = 0
-    remaining = budget.target_total_bullets
     ranked = sorted(catalog.owners, key=_owner_rank, reverse=True)
     has_direct_evidence = any(owner.direct_requirements for owner in ranked)
     for owner in ranked:
-        if len(selections) >= budget.max_evidence_owners or remaining <= 0:
+        if len(selections) >= min(
+            budget.max_evidence_owners, budget.target_total_bullets
+        ):
             break
         if owner.owner_kind == "experience":
             if experience_count >= budget.max_experiences:
@@ -408,20 +443,17 @@ def _fallback_selections(
             bridge = has_direct_evidence and not owner.direct_requirements
             if bridge and bridge_count >= 1:
                 continue
-            supporting = [
+            relevant = [
                 fact
                 for fact in owner.facts
-                if fact.direct_requirements
-                or fact.adjacent_requirements
-                or fact.metric_count
+                if fact.direct_requirements or fact.adjacent_requirements
             ]
-            candidates = sorted(supporting or owner.facts, key=_fact_rank, reverse=True)
+            candidates = sorted(relevant or owner.facts, key=_fact_rank, reverse=True)
             limit = 1 if bridge else budget.max_bullets_per_role
             selected_ids = [fact.fact_id for fact in candidates[:limit]]
             if not selected_ids:
                 continue
-            bullet_budget = min(len(selected_ids), remaining)
-            selected_ids = selected_ids[:bullet_budget]
+            bullet_budget = len(selected_ids)
             experience_count += 1
             bridge_count += int(bridge)
         else:
@@ -429,16 +461,17 @@ def _fallback_selections(
                 continue
             if has_direct_evidence and not owner.direct_requirements:
                 continue
-            selected_ids = [owner.owner_id]
-            bullet_budget = min(
-                budget.max_bullets_per_project,
-                owner.suggested_bullet_count,
-                remaining,
-            )
+            highlights = [
+                fact for fact in owner.facts if fact.fact_id != owner.owner_id
+            ]
+            candidates = sorted(highlights or owner.facts, key=_fact_rank, reverse=True)
+            selected_ids = [
+                fact.fact_id for fact in candidates[: budget.max_bullets_per_project]
+            ]
+            bullet_budget = min(budget.max_bullets_per_project, len(selected_ids))
             project_count += 1
         if bullet_budget <= 0:
             continue
-        remaining -= bullet_budget
         selections.append(
             PortfolioSelection(
                 owner_id=owner.owner_id,
@@ -456,11 +489,50 @@ def _fallback_selections(
                     "strongest deterministic match for "
                     + ", ".join(owner.direct_requirements)
                     if owner.direct_requirements
-                    else "most recent remaining evidence"
+                    else "highest remaining weighted importance"
                 ),
             )
         )
-    return selections
+    return _allocate_bullets(selections, catalog, budget.target_total_bullets)
+
+
+def _allocate_bullets(
+    selections: list[PortfolioSelection], catalog: EvidenceCatalog, total: int
+) -> list[PortfolioSelection]:
+    """Allocate distinct bullets by relevance and importance within supplied caps.
+
+    Every selected owner gets one slot, then the highest weight per next slot
+    wins. No extra facts are selected and no owner exceeds its source capacity.
+    """
+    owners = {owner.owner_id: owner for owner in catalog.owners}
+    selections = selections[:total]
+    counts = [1 for _ in selections]
+    weights = [
+        4 * len(owners[item.owner_id].direct_must_requirements)
+        + 2 * len(owners[item.owner_id].direct_requirements)
+        + len(owners[item.owner_id].adjacent_requirements)
+        + max(owners[item.owner_id].importance_score, 1) / 100
+        for item in selections
+    ]
+    while sum(counts) < total:
+        available = [
+            index
+            for index, item in enumerate(selections)
+            if counts[index] < item.bullet_budget
+        ]
+        if not available:
+            break
+        chosen = max(available, key=lambda index: weights[index] / (counts[index] + 1))
+        counts[chosen] += 1
+    return [
+        item.model_copy(
+            update={
+                "bullet_budget": count,
+                "selected_fact_ids": item.selected_fact_ids[:count],
+            }
+        )
+        for item, count in zip(selections, counts)
+    ]
 
 
 def _normalized_selections(
@@ -473,20 +545,23 @@ def _normalized_selections(
     seen: set[str] = set()
     experience_count = 0
     project_count = 0
-    remaining = budget.target_total_bullets
     for selection in sorted(draft.selections, key=lambda item: item.rank):
         owner = owners.get(selection.owner_id)
         if owner is None or owner.owner_kind != selection.owner_kind:
             continue
-        if owner.owner_id in seen or len(result) >= budget.max_evidence_owners:
+        if owner.owner_id in seen or len(result) >= min(
+            budget.max_evidence_owners, budget.target_total_bullets
+        ):
             continue
         if owner.owner_kind == "experience":
             if experience_count >= budget.max_experiences:
                 continue
-            valid = {fact.fact_id for fact in owner.facts}
-            selected_ids = _unique(
-                fact_id for fact_id in selection.selected_fact_ids if fact_id in valid
-            )
+            supplied = set(selection.selected_fact_ids)
+            selected_ids = [
+                fact.fact_id
+                for fact in sorted(owner.facts, key=_fact_rank, reverse=True)
+                if fact.fact_id in supplied
+            ]
             if not selected_ids:
                 selected_ids = [
                     fact.fact_id
@@ -496,23 +571,35 @@ def _normalized_selections(
                 ]
             limit = 1 if selection.bridge else budget.max_bullets_per_role
             selected_ids = selected_ids[:limit]
-            bullet_budget = min(selection.bullet_budget, len(selected_ids), remaining)
+            bullet_budget = min(selection.bullet_budget, len(selected_ids))
             selected_ids = selected_ids[:bullet_budget]
             experience_count += 1
         else:
             if project_count >= budget.max_projects:
                 continue
-            selected_ids = [owner.owner_id]
+            supplied = set(selection.selected_fact_ids)
+            selected_ids = [
+                fact.fact_id
+                for fact in sorted(owner.facts, key=_fact_rank, reverse=True)
+                if fact.fact_id != owner.owner_id and fact.fact_id in supplied
+            ]
+            # Stored portfolios selecting an entire project remain compatible.
+            if not selected_ids:
+                selected_ids = [owner.owner_id]
+            supply = (
+                len(selected_ids)
+                if owner.owner_id not in selected_ids
+                else owner.suggested_bullet_count
+            )
             bullet_budget = min(
                 selection.bullet_budget,
                 budget.max_bullets_per_project,
-                remaining,
+                supply,
             )
             project_count += 1
         if bullet_budget <= 0:
             continue
         seen.add(owner.owner_id)
-        remaining -= bullet_budget
         result.append(
             selection.model_copy(
                 update={
@@ -527,7 +614,7 @@ def _normalized_selections(
                 }
             )
         )
-    return result
+    return _allocate_bullets(result, catalog, budget.target_total_bullets)
 
 
 def _excerpts(
@@ -766,6 +853,7 @@ def portfolio_profile(
     facts: ProfileFacts, portfolio: EvidencePortfolio
 ) -> ProfileFacts:
     """Prune only selectable work/project/skill facts for generation."""
+    facts = score_profile(facts)
     selections = {selection.owner_id: selection for selection in portfolio.selections}
     source_order = {
         experience.id: index for index, experience in enumerate(facts.experience)
@@ -790,15 +878,15 @@ def portfolio_profile(
         selection = selections.get(experience.id)
         if selection is None or selection.owner_kind != "experience":
             continue
-        selected = set(selection.selected_fact_ids)
+        by_id = {bullet.id: bullet for bullet in experience.bullets}
         experiences.append(
             experience.model_copy(
                 deep=True,
                 update={
                     "bullets": [
-                        bullet.model_copy(deep=True)
-                        for bullet in experience.bullets
-                        if bullet.id in selected
+                        by_id[fact_id].model_copy(deep=True)
+                        for fact_id in selection.selected_fact_ids
+                        if fact_id in by_id
                     ]
                 },
             )
@@ -809,7 +897,25 @@ def portfolio_profile(
         if project.id in selections and selections[project.id].owner_kind == "project"
     ]
     selected_projects.sort(key=lambda project: selections[project.id].rank)
-    projects = [project.model_copy(deep=True) for project in selected_projects]
+    projects = []
+    for project in selected_projects:
+        selected_ids = selections[project.id].selected_fact_ids
+        by_id = {highlight.id: highlight for highlight in project.highlights}
+        highlights = (
+            project.highlights
+            if project.id in selected_ids
+            else [by_id[fact_id] for fact_id in selected_ids if fact_id in by_id]
+        )
+        projects.append(
+            project.model_copy(
+                deep=True,
+                update={
+                    "highlights": [
+                        highlight.model_copy(deep=True) for highlight in highlights
+                    ]
+                },
+            )
+        )
     selected_skills = set(portfolio.selected_skill_fact_ids)
     skills = {
         category: [

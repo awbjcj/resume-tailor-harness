@@ -5,7 +5,13 @@ from sqlmodel import Session, select
 
 from resume_tailor_harness.api.runs.manager import RunCancelled
 from resume_tailor_harness.db import init_db, make_engine
-from resume_tailor_harness.models.profile import Contact, ProfileFacts, Skill
+from resume_tailor_harness.models.profile import (
+    Contact,
+    Education,
+    Language,
+    ProfileFacts,
+    Skill,
+)
 from resume_tailor_harness.models.resume import ResumeContent, TailoredSkill
 from resume_tailor_harness.models.review import ReviewCritique
 from resume_tailor_harness.profile.store import save_facts
@@ -104,6 +110,27 @@ def test_deterministic_failures_never_call_models_or_save(
 def test_identity_changes_rejected(external_case):
     session, job_id, path, content, revision, _, _ = external_case
     content.contact = Contact(name="Invented person")
+    with pytest.raises(service.ExternalTailoringError, match="verbatim"):
+        service.validate_draft(session, job_id, path, content, revision)
+
+
+@pytest.mark.parametrize("section", ["education", "languages"])
+def test_external_verbatim_entries_ignore_only_ranking_metadata(external_case, section):
+    session, job_id, path, content, _, facts, _ = external_case
+    facts.education = [Education(id="degree", institution="University")]
+    facts.languages = [Language(id="language", language="English")]
+    save_facts(facts, path)
+    revision = service.load_context(session, job_id, path)[2]
+    # External authors can omit optional ranking fields when copying source values.
+    content.education = [facts.education[0].model_copy(deep=True)]
+    content.languages = [facts.languages[0].model_copy(deep=True)]
+    assert service.validate_draft(session, job_id, path, content, revision)["valid"]
+    result = service.submit_draft(session, job_id, path, content, revision, "test")
+    assert result["passed"] and result["versionId"]
+    if section == "education":
+        content.education[0].institution = "Other University"
+    else:
+        content.languages[0].proficiency = "Fluent"
     with pytest.raises(service.ExternalTailoringError, match="verbatim"):
         service.validate_draft(session, job_id, path, content, revision)
 

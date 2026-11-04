@@ -36,6 +36,7 @@ from resume_tailor_harness.profile.merge import (
 from resume_tailor_harness.profile.resume_reader import read_resume_text
 from resume_tailor_harness.profile.synthesis import profile_skeleton
 from resume_tailor_harness.profile.publication import SourceInputs, source_inputs
+from resume_tailor_harness.profile.importance import score_profile
 
 
 def build_profile(
@@ -265,4 +266,4 @@ def build_corpus_profile(
         if report.doc_status.get(key) in {"cached", "extracted", "source-changed"}
     }
     report.source_inputs = inputs
-    return merged, report
+    return score_profile(merged), report

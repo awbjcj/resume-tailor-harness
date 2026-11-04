@@ -70,6 +70,8 @@ _HOST_FIELDS = {
     "source_refs",
     "synthesized",
     "schema_version",
+    "importance",
+    "importance_score",
 }
 _NESTED_FACTS = {"bullets", "highlights"}
 _FILES = (
@@ -491,6 +493,10 @@ def apply_change(
         (change.entity == "fact" and change.values.keys() - {"aspect"})
         or (change.entity == "skill" and change.values.keys() & {"name", "context"})
     ):
+        # Assessments describe the former claim; use conservative fallback until
+        # extraction/classification assesses the approved replacement.
+        item.importance = None
+        item.importance_score = None
         # Existing pointers were inferred from the old content, even though its
         # addressable id remains stable. They cannot certify the corrected claim.
         _clean_evidence(facts, {item.id})

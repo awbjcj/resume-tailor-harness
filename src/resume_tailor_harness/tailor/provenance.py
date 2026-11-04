@@ -2,7 +2,7 @@ from typing import Any, Literal
 
 from pydantic import Field
 
-from resume_tailor_harness.models.base import ExtensibleModel
+from resume_tailor_harness.models.base import ExtensibleModel, FactItem
 from resume_tailor_harness.models.profile import ProfileFacts, Skill
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import ReviewCritique, ReviewIssue, Severity
@@ -157,7 +157,7 @@ def check_provenance(content: ResumeContent, facts: ProfileFacts) -> ProvenanceR
             for entry in source.entries
         }
         for entry in section.entries:
-            if entry != originals.get(entry.id):
+            if not same_fact_values(entry, originals.get(entry.id)):
                 invalid.add(
                     f"{section.title}:{entry.id}: must match a verified source section verbatim"
                 )
@@ -183,7 +183,7 @@ def check_provenance(content: ResumeContent, facts: ProfileFacts) -> ProvenanceR
     for section in ("education", "languages"):
         originals = {record.id: record for record in getattr(facts, section)}
         for record in getattr(content, section):
-            if record != originals.get(record.id):
+            if not same_fact_values(record, originals.get(record.id)):
                 invalid.add(
                     f"{section}:{record.id}: must match a verified profile entry verbatim"
                 )
@@ -204,6 +204,16 @@ def check_provenance(content: ResumeContent, facts: ProfileFacts) -> ProvenanceR
         ok=not missing and not ordered_invalid,
         missing=missing,
         invalid=ordered_invalid,
+    )
+
+
+def same_fact_values(candidate: FactItem, original: FactItem | None) -> bool:
+    """Compare source values exactly while ignoring optional ranking metadata."""
+    # Writers may omit or recompute ranking metadata when copying a record.
+    # Every pre-existing field still has to match its source exactly.
+    excluded = {"importance", "importance_score"}
+    return original is not None and (
+        candidate.model_dump(exclude=excluded) == original.model_dump(exclude=excluded)
     )
 
 

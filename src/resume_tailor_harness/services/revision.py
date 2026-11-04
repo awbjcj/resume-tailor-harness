@@ -56,6 +56,11 @@ def revise_resume_version(
         bundle = build_tailor_bundle(config, style_guide=style_guide)
 
     current = ResumeContent.model_validate(parent.content_json or {})
+    portfolio = (
+        EvidencePortfolio.model_validate(parent.evidence_portfolio_json)
+        if parent.evidence_portfolio_json is not None
+        else None
+    )
     revised = apply_revision(
         compose_user_revision_input(current, instruction, facts),
         bundle.revision,
@@ -74,13 +79,6 @@ def revise_resume_version(
         assert config is not None
         render_config = _load_config(DEFAULT_RENDER)
         config = for_rendering(config, render_config)
-        highlights = (
-            EvidencePortfolio.model_validate(
-                parent.evidence_portfolio_json
-            ).highlight_terms
-            if parent.evidence_portfolio_json is not None
-            else None
-        )
         critiques.extend(
             run_panel(
                 revised,
@@ -89,7 +87,8 @@ def revise_resume_version(
                 config,
                 bundle.reviewers,
                 render_config=render_config,
-                highlight_terms=highlights,
+                highlight_terms=portfolio.highlight_terms if portfolio else None,
+                evidence_portfolio=portfolio,
             )
         )
         verdict = aggregate(critiques, config)
@@ -100,11 +99,9 @@ def revise_resume_version(
     skill_uses = parent.skill_uses_json
     if getattr(bundle.revision, "run_meta", None) is not None:
         skill_uses = append_skill_use(skill_uses, bundle.revision, "revised")
-    inherited_portfolio = None
-    if parent.evidence_portfolio_json is not None:
-        inherited_portfolio = EvidencePortfolio.model_validate(
-            parent.evidence_portfolio_json
-        ).model_copy(update={"status": "inherited"})
+    inherited_portfolio = (
+        portfolio.model_copy(update={"status": "inherited"}) if portfolio else None
+    )
     child = save_resume_version(
         session,
         ResumeVersion(

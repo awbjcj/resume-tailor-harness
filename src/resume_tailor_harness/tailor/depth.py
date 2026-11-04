@@ -5,6 +5,7 @@ from typing import cast
 from pydantic import Field
 
 from resume_tailor_harness.models.base import ExtensibleModel
+from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import ReviewCritique, ReviewIssue, Severity
@@ -59,7 +60,10 @@ def _rendered_aspects(content: ResumeContent, owner: OwnerRef) -> list[Aspect]:
 
 
 def depth_report(
-    content: ResumeContent, facts: ProfileFacts, budget: LengthBudget
+    content: ResumeContent,
+    facts: ProfileFacts,
+    budget: LengthBudget,
+    portfolio: EvidencePortfolio | None = None,
 ) -> DepthReport:
     """Per selected owner: rendered count, floor, and cited-aspect spread."""
     counts = _rendered_counts(content)
@@ -74,7 +78,7 @@ def depth_report(
                 aspects_rendered=_rendered_aspects(content, owner),
                 absent=owner.id not in counts,
             )
-            for owner in planned_owners(facts, budget)
+            for owner in planned_owners(facts, budget, portfolio)
         ]
     )
 
@@ -130,10 +134,13 @@ def _issues(report: DepthReport, budget: LengthBudget) -> list[ReviewIssue]:
 
 
 def depth_critique(
-    content: ResumeContent, facts: ProfileFacts, budget: LengthBudget
+    content: ResumeContent,
+    facts: ProfileFacts,
+    budget: LengthBudget,
+    portfolio: EvidencePortfolio | None = None,
 ) -> DepthCritique | None:
     """Return advisory depth feedback, or no measurement when no owner is planned."""
-    report = depth_report(content, facts, budget)
+    report = depth_report(content, facts, budget, portfolio)
     if not report.owners:
         return None
     owners_met = sum(

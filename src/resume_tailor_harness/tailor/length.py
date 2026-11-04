@@ -1,4 +1,5 @@
 from resume_tailor_harness.models.resume import ResumeContent
+from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.profile.depth import (
     clamped_ceiling,
     clamped_floor,
@@ -66,10 +67,14 @@ def format_budget(budget: LengthBudget) -> str:
     )
 
 
-def format_depth_plan(facts: ProfileFacts, budget: LengthBudget) -> str:
+def format_depth_plan(
+    facts: ProfileFacts,
+    budget: LengthBudget,
+    portfolio: EvidencePortfolio | None = None,
+) -> str:
     """Deterministic, fact-clamped render ranges for the selected owners."""
     budget = budget.for_pages()
-    owners = planned_owners(facts, budget)
+    owners = planned_owners(facts, budget, portfolio)
     if not owners:
         return ""
     lines = ["BULLET DEPTH PLAN (deterministic; per evidence owner):"]

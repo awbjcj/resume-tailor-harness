@@ -50,6 +50,9 @@ def portfolio_alignment_critique(
         for fact_id in selection.selected_fact_ids
         if fact_id not in portfolio.selected_skill_fact_ids
     }
+    selected_context_ids.update(
+        selection.owner_id for selection in portfolio.selections
+    )
     issues: list[ReviewIssue] = []
     earned = 0
     possible = 0

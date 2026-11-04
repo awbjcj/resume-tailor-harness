@@ -1,4 +1,5 @@
 from resume_tailor_harness.models.base import Source
+from resume_tailor_harness.models.importance import FactImportanceSignals
 from resume_tailor_harness.models.profile import (
     Award,
     Bullet,
@@ -275,6 +276,42 @@ def test_duplicate_projects_merge_all_fields_and_report_conflicts():
     assert any(
         "project Compiler: description" in conflict for conflict in report.conflicts
     )
+
+
+def test_merge_preserves_primary_importance_and_fills_only_unknown_context():
+    primary = ProfileFacts(
+        contact=Contact(name="Ada"),
+        projects=[
+            Project(
+                name="Compiler",
+                importance=FactImportanceSignals(significance=1),
+            )
+        ],
+    )
+    secondary = ProfileFacts(
+        contact=Contact(name=""),
+        projects=[
+            Project(
+                name="Compiler",
+                importance=FactImportanceSignals(
+                    context="academic_project",
+                    significance=4,
+                ),
+            )
+        ],
+    )
+    merged, _ = merge_fragments(
+        [
+            (_doc("resume", primary=True), primary),
+            (_doc("dossier"), secondary),
+        ]
+    )
+    rating = merged.projects[0].importance
+    assert rating is not None
+    assert rating.significance == 1
+    assert rating.context == "academic_project"
+    assert primary.projects[0].importance is not None
+    assert primary.projects[0].importance.context == "unknown"
 
 
 def test_duplicate_other_entities_merge_scalars_and_collections():
