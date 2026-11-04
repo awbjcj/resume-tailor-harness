@@ -197,7 +197,7 @@ def facts_sha256(facts: ProfileFacts) -> str:
             items = dict(enumerate(value))
         else:
             return {}
-        excluded = {
+        excluded: dict = {
             key: nested
             for key, item in items.items()
             if (nested := ranking_fields(item))
