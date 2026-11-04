@@ -286,3 +286,19 @@ def test_retry_after_is_read_through_provider_exception_wrappers(header, expecte
     wrapper = RuntimeError("Agno wrapper")
     wrapper.__cause__ = cause
     assert retry_after_seconds(wrapper) == expected
+
+
+def test_closed_waiter_loop_cannot_leak_an_admitted_slot(policy):
+    limiter = llm_limits._limiter
+    closed_loop = asyncio.new_event_loop()
+    closed_loop.close()
+    first = llm_limits._Waiter()
+    abandoned = llm_limits._Waiter(closed_loop, asyncio.Event())
+    with limiter._condition:
+        limiter._waiters.extend([first, abandoned])
+        assert limiter._try_acquire(first, policy) == (True, None)
+    limiter.release()
+    assert limiter._active == 0
+    assert not limiter._waiters
+    with llm_call():
+        assert limiter._active == 1

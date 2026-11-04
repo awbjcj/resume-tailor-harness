@@ -83,10 +83,19 @@ class CallLimiter:
     def _notify(self) -> None:
         self._condition.notify_all()
         # Wake only the head: later callers cannot overtake it anyway.
-        if self._waiters:
+        while self._waiters:
             head = self._waiters[0]
             if head.loop is not None and head.event is not None:
-                head.loop.call_soon_threadsafe(head.event.set)
+                try:
+                    head.loop.call_soon_threadsafe(head.event.set)
+                except RuntimeError:
+                    if not head.loop.is_closed():
+                        raise
+                    # A discarded loop cannot resume its waiter. Do not let
+                    # it strand the queue or leak an already admitted slot.
+                    self._waiters.popleft()
+                    continue
+            break
 
     def _try_acquire(
         self, waiter: _Waiter, settings: Settings

@@ -19,12 +19,14 @@ builder imports a concrete agno model class directly.
   `AgentRunner` owns exponential/jittered retries. This is not a distributed
   limiter; separate processes must share the allowance at the gateway.
 - **Malformed structured output gets validator feedback.** After Agno's
-  parser, `structured_output.py` recovers only complete documents with known
+  parser, `structured_output.py` revalidates the final assistant's original
+  text (even if Agno produced a typed object) and recovers complete documents with known
   presentation/syntax noise and validates the original schema. It never
   completes a truncated document or merges separate JSON values. Retries add
   bounded field/type feedback to the original prompt without mutating the
   shared agent. Errored runs bypass parsing; incomplete runs remain failures
-  even if their content happens to validate. Usage is recorded per attempt.
+  even if their content happens to validate. Structured streams use the same
+  validator and only retry before visible output. Usage is recorded per attempt.
 
 - **Provider-prefixed model ids.** `split_provider` reads a `provider:model`
   prefix: `openai:` / `gemini:` / `deepseek:` route to that provider; a bare id

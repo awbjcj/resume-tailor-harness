@@ -271,8 +271,11 @@ def test_stream_without_terminal_run_output_fails_closed():
 
 
 @pytest.mark.parametrize("visible", [False, True])
+@pytest.mark.parametrize(
+    "code", ["gateway_concurrency_limit", "slow_down", "server_is_overloaded"]
+)
 def test_gateway_concurrency_limit_stream_retries_only_before_output(
-    visible, monkeypatch
+    visible, code, monkeypatch
 ):
     monkeypatch.setattr(
         "resume_tailor_harness.llm_runner.get_settings", lambda: _settings(retries=1)
@@ -280,7 +283,7 @@ def test_gateway_concurrency_limit_stream_retries_only_before_output(
     failure = _Event(
         RunEvent.run_error,
         content="Concurrency limit exceeded for user, please retry later",
-        error_type="gateway_concurrency_limit",
+        error_type=code,
     )
     prefix = [_Event(RunEvent.run_content, content="partial")] if visible else []
     agent = _FakeAgent([prefix + [failure], [_Output("recovered")]])

@@ -42,6 +42,7 @@ def attach(parsed: Any, *events: ToolStarted | ToolCompleted | Failed) -> Any:
         if isinstance(event, Failed) and event.code in {
             "rate_limit_exceeded",
             "gateway_concurrency_limit",
+            "slow_down",
         }:
             defer_rate_limited_calls()
         if isinstance(event, ToolStarted) and state is not None:
