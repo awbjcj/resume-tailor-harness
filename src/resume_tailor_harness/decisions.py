@@ -19,6 +19,7 @@ import httpx
 
 from resume_tailor_harness.agent_trace import record_agent_run
 from resume_tailor_harness.config import Settings, get_settings
+from resume_tailor_harness.llm_limits import async_llm_call
 from resume_tailor_harness.tenancy.costs import MeteredUsage
 from resume_tailor_harness.tenancy.limits import (
     BudgetExceededError,
@@ -246,7 +247,7 @@ class DecisionClient:
         try:
             # The fixed origin, explicit key, no redirects and disabled ambient
             # proxies prevent general OpenAI/sub2api settings from taking over.
-            async with asyncio.timeout(REQUEST_TIMEOUT_SECONDS):
+            async with async_llm_call(), asyncio.timeout(REQUEST_TIMEOUT_SECONDS):
                 async with httpx.AsyncClient(
                     timeout=REQUEST_TIMEOUT_SECONDS,
                     follow_redirects=False,

@@ -8,6 +8,24 @@ Every LLM agent is built through one seam — `build_model(model_id)` in
 `llm_runner.py` — which is the **only** place that knows about provider SDKs. No
 builder imports a concrete agno model class directly.
 
+- **Provider admission is global to the process.** `llm_limits.py` shares a
+  FIFO across threads and event loops, independent of tenant, agent, provider
+  and credential (several keys may fund one gateway account). Deployment-owned
+  `LLM_GLOBAL_CONCURRENCY` defaults to 2; optional rolling-minute admission,
+  queue timeout and shared 429/Retry-After cooldown also apply. `StreamLifecycle`
+  gates each model invocation and holds streaming slots until iterator close;
+  direct SDK seams use the same gate. Never gate an entire tool loop: tools
+  may themselves need provider capacity. Agent SDK retries are disabled and
+  `AgentRunner` owns exponential/jittered retries. This is not a distributed
+  limiter; separate processes must share the allowance at the gateway.
+- **Malformed structured output gets validator feedback.** After Agno's
+  parser, `structured_output.py` recovers only complete documents with known
+  presentation/syntax noise and validates the original schema. It never
+  completes a truncated document or merges separate JSON values. Retries add
+  bounded field/type feedback to the original prompt without mutating the
+  shared agent. Errored runs bypass parsing; incomplete runs remain failures
+  even if their content happens to validate. Usage is recorded per attempt.
+
 - **Provider-prefixed model ids.** `split_provider` reads a `provider:model`
   prefix: `openai:` / `gemini:` / `deepseek:` route to that provider; a bare id
   (or an unknown prefix, e.g. a Workday `tenant:site`) defaults to **Anthropic**,
