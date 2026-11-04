@@ -10,6 +10,7 @@ import typst
 from pypdf import PdfReader
 
 from resume_tailor_harness.models.resume import ResumeContent
+from resume_tailor_harness.render.formatting import format_resume_metadata
 
 _FONT_DIRECTORY = Path(__file__).resolve().parents[3] / "templates" / "fonts"
 _BODY_SIZE_PT = 11
@@ -122,7 +123,7 @@ def render_pdf(
         raise ValueError("layout_density must be between -1 and 1")
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    data = content.model_dump_json()
+    data = format_resume_metadata(content).model_dump_json()
     source = Path(template_path).resolve()
     resolved_root = Path(root).resolve() if root is not None else source.parent
     # A fresh compiler belongs to this render/tenant; its font and source cache

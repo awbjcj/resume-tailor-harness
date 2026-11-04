@@ -19,6 +19,13 @@ fitOnePage}`; legacy `template_path` and `output_dir` remain runtime-only CLI
   Default body text is 11pt with separate entry/metadata blocks. Compact fitting
   must preserve the shared spacing floors; real PDF glyph-bound tests cover all
   layouts/densities. Bundled catalog previews use the one-page export fitter.
+- **Metadata has one presentation policy.** `render/formatting.py` formats a
+  deep display copy before compilation, shared by exports and visual review.
+  Role and skill-category labels use title case while retaining acronyms and
+  mixed-case product names. Known month dates use `Mon YYYY`; full dates retain
+  their day and year-only/unknown formats retain their precision. Source names,
+  claims, links, skill names, stored content and provenance are never rewritten.
+  Categories that converge after formatting merge without losing entries.
 - **Export length is validated before publication.** `fit_one_page` selects
   one page or a maximum of two. Bundled fitting uses bounded compression/expansion (at most twelve calls),
   10–12pt body text, and at least 80% printable-height fill on both pages.

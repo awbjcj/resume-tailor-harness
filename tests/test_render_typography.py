@@ -115,7 +115,7 @@ def test_readable_gaps_survive_every_template_and_density(
                 ("https://example.com/case-study", "Rust · REST APIs"),
                 ("Rust · REST APIs", "A service integration case study."),
                 (
-                    "Hard skills: Python, PostgreSQL, SQL, TypeScript",
+                    "Hard Skills: Python, PostgreSQL, SQL, TypeScript",
                     "Engineering: API design",
                 ),
                 ("GPA: 3.9", "Coursework: Distributed Systems"),
