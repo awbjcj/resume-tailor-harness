@@ -196,6 +196,9 @@ def apply_manual_skill_entry(
         if found is None:
             return updated, None
         bucket, skill = found
+        if normalize_skill(skill.name) != normalize_skill(entry.name):
+            skill.importance = None
+            skill.importance_score = None
         skill.name = entry.name
         skill.aliases = list(entry.aliases)
         skill.category = entry.category

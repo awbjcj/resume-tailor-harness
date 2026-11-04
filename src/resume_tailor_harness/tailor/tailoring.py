@@ -6,6 +6,7 @@ from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.models.job import JobCriteria
 from resume_tailor_harness.models.match_plan import MatchPlan
 from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.profile.importance import score_profile
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import ReviewCritique, Severity
 from resume_tailor_harness.tailor.length import format_budget, format_depth_plan
@@ -37,11 +38,12 @@ def compose_tailor_input(
     coverage: str = "",
     evidence_portfolio: EvidencePortfolio | None = None,
 ) -> str:
+    profile_facts = score_profile(profile_facts)
     budget_line = (
         f"\n\nLENGTH BUDGET:\n{format_budget(length_budget)}" if length_budget else ""
     )
     depth_line = (
-        f"\n\n{format_depth_plan(profile_facts, length_budget)}"
+        f"\n\n{format_depth_plan(profile_facts, length_budget, evidence_portfolio)}"
         if length_budget
         else ""
     )
@@ -100,6 +102,7 @@ def compose_revise_input(
     *,
     round_context: RevisionRoundContext | None = None,
 ) -> str:
+    profile_facts = score_profile(profile_facts)
     grouped: dict[Severity, list[str]] = {severity: [] for severity in Severity}
     failed_gates = set(round_context.failed_gates) if round_context else set()
     for critique in critiques:
@@ -149,7 +152,7 @@ def compose_revise_input(
         f"\n\nLENGTH BUDGET:\n{format_budget(length_budget)}" if length_budget else ""
     )
     depth_line = (
-        f"\n\n{format_depth_plan(profile_facts, length_budget)}"
+        f"\n\n{format_depth_plan(profile_facts, length_budget, evidence_portfolio)}"
         if length_budget
         else ""
     )

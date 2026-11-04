@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.profile.importance import score_profile
 
 
 def save_facts(facts: ProfileFacts, path: str | Path) -> Path:
@@ -10,6 +11,7 @@ def save_facts(facts: ProfileFacts, path: str | Path) -> Path:
     from resume_tailor_harness.tenancy.paths import resolve_tenant_path
 
     destination = resolve_tenant_path(path)
+    facts = score_profile(facts)
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
@@ -52,6 +54,8 @@ def load_facts(path: str | Path) -> ProfileFacts:
         stat.st_size,
     ):
         return cached[2]
-    facts = ProfileFacts.model_validate_json(resolved.read_text(encoding="utf-8"))
+    facts = score_profile(
+        ProfileFacts.model_validate_json(resolved.read_text(encoding="utf-8"))
+    )
     _FACTS_CACHE[resolved] = (stat.st_mtime_ns, stat.st_size, facts)
     return facts

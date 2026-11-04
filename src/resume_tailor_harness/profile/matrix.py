@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
-from resume_tailor_harness.models.base import ExtensibleModel
+from resume_tailor_harness.models.base import ExtensibleModel, FactItem
 from resume_tailor_harness.models.job import JobCriteria
 from resume_tailor_harness.models.profile import Experience, ProfileFacts, Project
 from resume_tailor_harness.profile.group_corrections import (
@@ -179,8 +179,37 @@ def effective_cluster_map(cluster_map: ClusterMap, overrides: Overrides) -> Clus
 
 
 def facts_sha256(facts: ProfileFacts) -> str:
+    def ranking_fields(value: object) -> dict:
+        # Ranking metadata does not affect skill evidence. Excluding the new
+        # fields also preserves bindings made before importance scoring existed.
+        # Match typed fact nodes, not arbitrary category/extension dictionary keys.
+        if isinstance(value, BaseModel):
+            items = {
+                name: getattr(value, name)
+                for name in type(value).model_fields
+                if name not in {"importance", "importance_score"}
+                or not isinstance(value, FactItem)
+            }
+            items.update(value.model_extra or {})
+        elif isinstance(value, dict):
+            items = value
+        elif isinstance(value, (list, tuple)):
+            items = dict(enumerate(value))
+        else:
+            return {}
+        excluded = {
+            key: nested
+            for key, item in items.items()
+            if (nested := ranking_fields(item))
+        }
+        if isinstance(value, FactItem):
+            excluded.update(importance=True, importance_score=True)
+        return excluded
+
     payload = json.dumps(
-        facts.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
+        facts.model_dump(mode="json", exclude=ranking_fields(facts)),
+        sort_keys=True,
+        separators=(",", ":"),
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 

@@ -1,4 +1,10 @@
-from resume_tailor_harness.models.profile import Contact, Experience, ProfileFacts, Project
+from resume_tailor_harness.models.profile import (
+    Contact,
+    Experience,
+    ProfileFacts,
+    Project,
+)
+from resume_tailor_harness.models.importance import FactImportanceSignals
 from resume_tailor_harness.profile.corpus import SourceDoc
 from resume_tailor_harness.profile.synthesis import (
     ClaimVerdict,
@@ -17,6 +23,43 @@ from resume_tailor_harness.profile.synthesis import (
 class _FakeResult:
     def __init__(self, content):
         self.content = content
+
+
+def test_verified_fragment_conversion_preserves_ratings_and_verbatim_support():
+    doc = SourceDoc(
+        id="deck",
+        filename="deck.txt",
+        sha256="0" * 64,
+        added_at="2026-11-03",
+        mode="synthesis",
+    )
+    rating = FactImportanceSignals(
+        context="academic_project", significance=4, essentiality=3, ownership=2
+    )
+    fragment = SynthesizedFragment(
+        entries=[
+            SynthesizedEntry(
+                kind="project",
+                title="Compiler",
+                importance=rating,
+                claims=[
+                    SynthesizedClaim(
+                        text="Implemented the parser",
+                        support=["Implemented the parser"],
+                        aspect="technical",
+                        importance=rating,
+                    )
+                ],
+            )
+        ]
+    )
+    facts, evidence = fragment_to_facts(doc, fragment, [])
+    project = facts.projects[0]
+    assert project.importance == rating
+    assert project.highlights[0].importance == rating
+    assert project.importance_score is not None
+    assert project.importance_score.context == "academic_project"
+    assert evidence[project.id]["claims"][0]["support"] == ["Implemented the parser"]
 
 
 class _FakeAgent:

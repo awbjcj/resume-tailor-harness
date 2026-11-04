@@ -728,6 +728,26 @@
             "title": "Id",
             "type": "string"
           },
+          "importance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FactImportanceSignals"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "importance_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FactImportanceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "organization": {
             "anyOf": [
               {
@@ -7318,6 +7338,26 @@
             "title": "Id",
             "type": "string"
           },
+          "importance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FactImportanceSignals"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "importance_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FactImportanceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "institution": {
             "title": "Institution",
             "type": "string"
@@ -8104,6 +8144,109 @@
           "contextRevision"
         ],
         "title": "ExternalDraftIn",
+        "type": "object"
+      },
+      "FactImportanceScore": {
+        "additionalProperties": false,
+        "description": "Application-computed score and weighted contributions, never model authority.",
+        "properties": {
+          "components": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Components",
+            "type": "object"
+          },
+          "context": {
+            "default": "unknown",
+            "enum": [
+              "professional",
+              "personal_project",
+              "academic_project",
+              "research",
+              "education",
+              "volunteer",
+              "unknown"
+            ],
+            "title": "Context",
+            "type": "string"
+          },
+          "method": {
+            "default": "fallback",
+            "enum": [
+              "assessed",
+              "fallback"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "score": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score",
+            "type": "number"
+          },
+          "version": {
+            "const": 1,
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "score"
+        ],
+        "title": "FactImportanceScore",
+        "type": "object"
+      },
+      "FactImportanceSignals": {
+        "additionalProperties": false,
+        "description": "Source-grounded ordinal assessments, each on a closed 0..4 scale.",
+        "properties": {
+          "context": {
+            "default": "unknown",
+            "enum": [
+              "professional",
+              "personal_project",
+              "academic_project",
+              "research",
+              "education",
+              "volunteer",
+              "unknown"
+            ],
+            "title": "Context",
+            "type": "string"
+          },
+          "essentiality": {
+            "default": 2,
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Essentiality",
+            "type": "integer"
+          },
+          "impact": {
+            "default": 0,
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Impact",
+            "type": "integer"
+          },
+          "ownership": {
+            "default": 0,
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Ownership",
+            "type": "integer"
+          },
+          "significance": {
+            "default": 2,
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Significance",
+            "type": "integer"
+          }
+        },
+        "title": "FactImportanceSignals",
         "type": "object"
       },
       "FieldIssue": {
@@ -10528,6 +10671,26 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "importance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FactImportanceSignals"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "importance_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FactImportanceScore"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "language": {
             "title": "Language",

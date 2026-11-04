@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Literal
 from pydantic import BaseModel, Field
 
 from resume_tailor_harness.models.base import ExtensibleModel, FactItem
+from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.models.profile import Bullet, ProfileFacts
 from resume_tailor_harness.profile.aspects import ASPECTS, Aspect
 from resume_tailor_harness.profile.coach_store import CoachTopic
@@ -58,7 +59,11 @@ def evidence_owners(facts: ProfileFacts) -> list[OwnerRef]:
     ]
 
 
-def planned_owners(facts: ProfileFacts, budget: "LengthBudget") -> list[OwnerRef]:
+def planned_owners(
+    facts: ProfileFacts,
+    budget: "LengthBudget",
+    portfolio: EvidencePortfolio | None = None,
+) -> list[OwnerRef]:
     """Owners that can receive a non-zero instruction under this render budget.
 
     Empty owners remain visible to profile-supply tooling but cannot be planned:
@@ -68,6 +73,44 @@ def planned_owners(facts: ProfileFacts, budget: "LengthBudget") -> list[OwnerRef
     """
     budget = budget.for_pages()
     owners = evidence_owners(facts)
+    if portfolio is not None:
+        by_id = {owner.id: owner for owner in owners}
+        planned: list[OwnerRef] = []
+        remaining = budget.target_total_bullets
+        counts: dict[OwnerKind, int] = {"experience": 0, "project": 0}
+        seen: set[str] = set()
+        for selection in sorted(portfolio.selections, key=lambda item: item.rank):
+            owner = by_id.get(selection.owner_id)
+            if owner is None or owner.kind != selection.owner_kind or owner.id in seen:
+                continue
+            cap = (
+                budget.max_experiences
+                if owner.kind == "experience"
+                else budget.max_projects
+            )
+            if counts[owner.kind] >= cap or len(planned) >= budget.max_evidence_owners:
+                continue
+            bullet_by_id = {bullet.id: bullet for bullet in owner.bullets}
+            bullets = (
+                owner.bullets
+                if owner.kind == "project" and owner.id in selection.selected_fact_ids
+                else tuple(
+                    bullet_by_id[fact_id]
+                    for fact_id in dict.fromkeys(selection.selected_fact_ids)
+                    if fact_id in bullet_by_id
+                )
+            )
+            limit = min(
+                selection.bullet_budget, clamped_ceiling(owner, budget), remaining
+            )
+            bullets = bullets[:limit]
+            if not bullets:
+                continue
+            planned.append(OwnerRef(owner.id, owner.kind, owner.label, bullets))
+            counts[owner.kind] += 1
+            seen.add(owner.id)
+            remaining -= len(bullets)
+        return planned
     experiences = [
         owner
         for owner in owners
