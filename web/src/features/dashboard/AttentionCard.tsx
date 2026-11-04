@@ -78,6 +78,8 @@ export function AttentionCard() {
     ? activeGroups
     : distributeVisibleBudget(activeGroups, VISIBLE_LIMIT);
 
+  if (!records.isPending && !records.isError && !rows.length) return null;
+
   return (
     <Card>
       {/* CardHeader is `display: grid`, so the `flex-row items-center
@@ -123,10 +125,6 @@ export function AttentionCard() {
               </Button>
             </AlertDescription>
           </Alert>
-        ) : null}
-
-        {!records.isPending && !records.isError && !rows.length ? (
-          <p className="text-sm text-muted-foreground">{t("dashboard.noOpenErrors")}</p>
         ) : null}
 
         {grouped.map((group) => (

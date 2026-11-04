@@ -1,7 +1,9 @@
-import { useState } from "react";
+import "@/i18n/interaction-copy-notifications";
+import { useEffect, useState } from "react";
 import { Bell, Check, CircleCheck, Inbox, Loader2, RefreshCw, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,13 +31,19 @@ function isEventNudge(kind: string): boolean {
   return kind === "interview_soon" || kind === "offer_deadline_soon";
 }
 
-function notificationTitle(item: { kind: string; company?: string | null; proposedStatus: string }) {
-  const company = item.company ?? "application";
-  if (item.kind === "follow_up") return `Follow up: ${company}`;
-  if (item.kind === "interview_soon") return `Interview soon: ${company}`;
-  if (item.kind === "offer_deadline_soon") return `Offer deadline: ${company}`;
-  return `Move to ${item.proposedStatus}`;
+function notificationTitle(t: TFunction, item: { kind: string; company?: string | null; proposedStatus: string }) {
+  const company = item.company || t("interactionCopy.notifications.application");
+  if (item.kind === "follow_up") return t("interactionCopy.notifications.followUp", { company });
+  if (item.kind === "interview_soon") return t("interactionCopy.notifications.interviewSoon", { company });
+  if (item.kind === "offer_deadline_soon") return t("interactionCopy.notifications.offerDeadline", { company });
+  const knownStatus = /^(ready|submitted|interview|offer|rejected|closed)$/.test(item.proposedStatus);
+  const status = knownStatus
+    ? t(`application.statuses.${item.proposedStatus}` as "application.statuses.ready")
+    : item.proposedStatus;
+  return t("interactionCopy.notifications.moveTo", { status });
 }
+
+type NotificationEvidenceLocalizer = typeof import("./notification-evidence").notificationEvidence;
 
 export function NotificationsBell() {
   const { t, i18n } = useTranslation();
@@ -48,6 +56,16 @@ export function NotificationsBell() {
   const sync = useGmailSync();
   const clear = useClearNotificationHistory();
   const [draftJobId, setDraftJobId] = useState<number | null>(null);
+  const [localizeEvidence, setLocalizeEvidence] = useState<NotificationEvidenceLocalizer | null>(null);
+  useEffect(() => {
+    if (!items.length) return;
+    let active = true;
+    void import("./notification-evidence").then(
+      (module) => { if (active) setLocalizeEvidence(() => module.notificationEvidence); },
+      () => { /* Preserve the original evidence if this optional copy cannot load. */ },
+    );
+    return () => { active = false; };
+  }, [items.length]);
   const unreadRuns = runItems.filter((item) => item.readAt == null);
   const count = items.length + unreadRuns.length;
 
@@ -59,7 +77,7 @@ export function NotificationsBell() {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={`Notifications${count ? ` (${count} pending)` : ""}`}
+            aria-label={count ? t("interactionCopy.notifications.ariaPending", { count }) : t("interactionCopy.notifications.aria")}
             className="relative"
           >
             <Bell className="size-4" aria-hidden="true" />
@@ -155,7 +173,7 @@ export function NotificationsBell() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="font-medium">
-                            {kind} {status}
+                            {t("interactionCopy.notifications.runStatus", { kind, status })}
                           </div>
                           <p className="mt-1 text-xs leading-5 text-muted-foreground">
                             {localizeRunError(item.error, i18n.resolvedLanguage)
@@ -196,9 +214,9 @@ export function NotificationsBell() {
               <li key={item.id} className="rounded-lg border bg-background p-3 text-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-medium">{notificationTitle(item)}</div>
+                    <div className="font-medium">{notificationTitle(t, item)}</div>
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                      {item.evidence}
+                      {localizeEvidence?.(t, i18n.resolvedLanguage, item.kind, item.evidence) ?? item.evidence}
                     </p>
                   </div>
                 </div>

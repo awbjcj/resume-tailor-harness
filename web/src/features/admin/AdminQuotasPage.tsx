@@ -1571,9 +1571,7 @@ export function AdminQuotasPage() {
   return (
     <div className="flex flex-col gap-7">
       <PageHeader
-        kicker="Metering console"
         title="Cost quotas"
-        sub="Manage recurring allowances and credits, check pricing coverage, and view the audit trail for balance changes."
       />
 
       <section aria-labelledby="platform-runway-title" className="overflow-hidden rounded-xl border bg-card shadow-sm">

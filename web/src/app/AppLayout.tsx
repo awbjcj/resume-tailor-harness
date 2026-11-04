@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
@@ -24,7 +24,6 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -117,20 +116,6 @@ const ADMIN_ITEMS: NavItem[] = [
   { to: "/admin/routing", labelKey: "nav.providerRouting", icon: Network },
 ];
 
-const ALL_NAV_ITEMS = [
-  ...NAV_GROUPS.flatMap((group) => group.items),
-  ...WORKSPACE_ITEMS,
-  ...ADMIN_ITEMS,
-].sort((a, b) => b.to.length - a.to.length);
-
-function activeNavItem(pathname: string): NavItem | undefined {
-  return ALL_NAV_ITEMS.find((item) =>
-    item.end || item.to === "/"
-      ? pathname === item.to
-      : pathname === item.to || pathname.startsWith(`${item.to}/`),
-  );
-}
-
 function NavMenuItem({ item, badge }: { item: NavItem; badge?: number }) {
   const { t } = useTranslation();
   // base-ui render prop keeps a single interactive element (the NavLink);
@@ -165,16 +150,11 @@ function NavMenuItem({ item, badge }: { item: NavItem; badge?: number }) {
 
 export function AppLayout() {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
   // Registered before the first reconciliation so a completion recovered on
   // load cannot be dispatched to an empty listener set.
   useRunCompletionEffects();
   useRehydrateRuns();
   const me = useMe();
-  const currentNavItem = activeNavItem(pathname);
-  const currentLabel = currentNavItem
-    ? t(currentNavItem.labelKey)
-    : t("shell.operations");
   // Shares the cached query the interview banner already runs, so the nav count
   // costs no extra request.
   const interviewSessions = useInterviewSessions();
@@ -193,27 +173,11 @@ export function AppLayout() {
       </a>
       <Sidebar className="border-r border-sidebar-border/80 bg-sidebar">
         <div className="command-panel flex min-h-0 flex-1 flex-col">
-          <SidebarHeader className="relative gap-5 border-b border-sidebar-border/70 p-5 pb-4">
+          <SidebarHeader className="border-b border-sidebar-border/70 p-5">
             <div className="text-lg font-semibold leading-tight tracking-[-0.025em]">
               Résumé Tailor Harness
             </div>
 
-            <div className="command-sidebar-brief rounded-xl border border-sidebar-border/80 p-3.5">
-              <div className="flex items-center gap-2 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/55">
-                <Target className="size-3.5 text-sidebar-primary" aria-hidden="true" />
-                {t("shell.operationalFlow")}
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-sidebar-foreground/72">
-                {t("shell.operationalFlowBody")}
-              </p>
-              <div className="mt-3 flex items-center gap-1.5 text-[0.66rem] font-medium text-sidebar-foreground/65">
-                <span>{t("shell.review")}</span>
-                <span className="h-px flex-1 bg-sidebar-border" />
-                <span>{t("shell.tailor")}</span>
-                <span className="h-px flex-1 bg-sidebar-border" />
-                <span>{t("shell.track")}</span>
-              </div>
-            </div>
           </SidebarHeader>
           <SidebarContent className="py-2">
             {NAV_GROUPS.map((group, i) => (
@@ -250,33 +214,15 @@ export function AppLayout() {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="border-t border-sidebar-border/70 p-4">
-            <div className="rounded-xl border border-sidebar-border/80 bg-sidebar/72 p-3.5 shadow-[inset_0_1px_0_color-mix(in_oklab,var(--sidebar-foreground),transparent_94%)]">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <span className="size-1.5 rounded-full bg-ready shadow-[0_0_0_4px_color-mix(in_oklab,var(--ready),transparent_86%)]" />
-                {t("shell.dailyFocus")}
-              </div>
-              <p className="mt-1.5 text-xs leading-relaxed text-sidebar-foreground/66">
-                {t("shell.dailyFocusBody")}
-              </p>
-            </div>
-          </SidebarFooter>
         </div>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="@container/shell">
         {/* `app-chrome` is the hook that makes this translucent layer become an
             opaque surface under prefers-reduced-transparency / prefers-contrast
             (see index.css) — blur is a material here, not decoration. */}
-        <header className="app-chrome sticky top-0 z-10 border-b bg-background/88 backdrop-blur-md">
-          <div className="flex min-h-16 flex-wrap items-center gap-3 px-[clamp(1rem,3vw,2.5rem)] py-3">
+        <header className="app-chrome sticky top-0 z-10 grid min-w-0 border-b bg-background/95 backdrop-blur-md @4xl/shell:grid-cols-[minmax(0,1fr)_auto] @4xl/shell:items-center">
+          <div className="flex min-h-14 min-w-0 flex-wrap items-center gap-3 px-[clamp(1rem,3vw,2.5rem)] py-2 @4xl/shell:col-start-2 @4xl/shell:row-start-1 @4xl/shell:pl-2">
             <SidebarTrigger className="md:hidden" />
-            <div className="min-w-0 md:hidden">
-              <div className="truncate text-sm font-semibold leading-tight">{currentLabel}</div>
-            </div>
-            <div className="hidden min-w-0 flex-1 [overflow-wrap:anywhere] md:block">
-              <div className="text-sm font-medium">{currentLabel}</div>
-              <div className="text-xs text-muted-foreground">{t("shell.operationsSummary")}</div>
-            </div>
             <div className="ml-auto flex max-w-full flex-wrap items-center gap-1">
               <NotificationsBell />
               <LanguageSwitcher persist />
@@ -284,7 +230,7 @@ export function AppLayout() {
               <LogoutButton />
             </div>
           </div>
-          <div className="shell-action-rail border-t border-border/70 px-[clamp(1rem,3vw,2.5rem)] py-2">
+          <div className="shell-action-rail min-w-0 border-t border-border/70 px-[clamp(1rem,3vw,2.5rem)] py-2 @4xl/shell:col-start-1 @4xl/shell:row-start-1 @4xl/shell:border-0 @4xl/shell:pr-2">
             <RunActions className="w-max flex-nowrap justify-start" />
           </div>
         </header>

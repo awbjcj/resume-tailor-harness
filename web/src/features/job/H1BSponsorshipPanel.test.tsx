@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/test/server";
 import { useRunStore } from "@/lib/runs/store";
+import { changeLanguage } from "@/i18n";
 import { H1BSponsorshipPanel } from "./H1BSponsorshipPanel";
 
 const mocks = vi.hoisted(() => ({ trackRun: vi.fn() }));
@@ -223,6 +224,19 @@ describe("H1BSponsorshipPanel", () => {
     await waitFor(() => expect(screen.getByText("4")).toBeInTheDocument());
     expect(screen.queryByText("10")).not.toBeInTheDocument();
     expect(screen.getByText("Historical filings found")).toBeInTheDocument();
+  });
+
+  it("localizes the selected quarter's filing count and keeps the selection when switching languages", async () => {
+    await changeLanguage("zh-CN");
+    const user = userEvent.setup();
+    render(<H1BSponsorshipPanel jobId={42} company="Acme"
+      initialResult={{ capability: "available", stale: false, evidence: quarterlyEvidence }} />, { wrapper });
+    await user.click(screen.getByRole("combobox"));
+    await user.click(await screen.findByRole("option", { name: /FY2025 Q4/i }));
+    expect(screen.getAllByText("FY2025 Q4：4 条 H-1B 申请记录")).toHaveLength(2);
+    await act(() => changeLanguage("en"));
+    expect(screen.getAllByText("FY2025 Q4: 4 H-1B filings")).toHaveLength(2);
+    expect(screen.getByRole("combobox")).toHaveTextContent("FY2025 Q4");
   });
 
   it("falls back to the newest quarter when a refetch replaces the selected period", async () => {

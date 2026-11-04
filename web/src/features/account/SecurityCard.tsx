@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useMe } from "@/features/auth/AuthGate";
 import { GoogleButton } from "@/features/auth/GoogleButton";
@@ -47,7 +47,7 @@ export function SecurityCard() {
       <CardHeader className="border-b">
         <div className="flex items-start gap-3">
           <div className="flex size-9 items-center justify-center rounded-lg bg-muted"><ShieldCheck aria-hidden="true" /></div>
-          <div><CardTitle><h3>Sign-in security</h3></CardTitle><CardDescription>Manage linked identity and active sessions.</CardDescription></div>
+          <div><CardTitle><h3>Sign-in security</h3></CardTitle></div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

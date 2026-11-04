@@ -66,9 +66,7 @@ export function ApplicationsPage() {
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <PageHeader
-        kicker="Retrospective"
         title="Applications"
-        sub="Read every application across the same timeline, then export the complete event history."
       />
       <section aria-label="Application controls" className="grid gap-3 rounded-lg border bg-card p-4 shadow-card lg:grid-cols-2 lg:items-end 2xl:grid-cols-[minmax(15rem,1fr)_11rem_13rem_auto]">
         <label className="grid min-w-0 gap-1.5 text-sm font-medium" htmlFor="application-company-search">

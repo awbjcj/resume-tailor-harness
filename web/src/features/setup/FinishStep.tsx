@@ -3,7 +3,7 @@ import "@/i18n/workflow";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { useSetupStatus } from "@/features/settings/use-setup-status";
@@ -27,8 +27,7 @@ export function FinishStep() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Finish setup</CardTitle>
-        <CardDescription>Build the profile from what you've configured.</CardDescription>
+        <CardTitle><h1>Finish setup</h1></CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <ul className="flex flex-col gap-2">

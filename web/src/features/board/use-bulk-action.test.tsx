@@ -2,10 +2,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 
 import { emptyFilterState } from "@/lib/filters/types";
 import { server } from "@/test/server";
+import { changeLanguage } from "@/i18n";
 
 import { useBulkAction } from "./use-bulk-action";
 
@@ -39,5 +41,15 @@ describe("useBulkAction", () => {
       dryRun: true,
     });
     expect(res.affected).toBe(10);
+  });
+
+  it("announces the result in Chinese without exposing the action identifier", async () => {
+    await changeLanguage("zh-CN");
+    const notice = vi.spyOn(toast, "success").mockImplementation(() => "toast-id");
+    server.use(http.post("/api/jobs/bulk", () => HttpResponse.json({ affected: 2, skipped: 1, reasons: {} })));
+    const { result } = renderHook(() => useBulkAction("pipeline"), { wrapper });
+    await result.current.run({ action: "setStatus", selection: { mode: "ids", ids: new Set([1, 2]) }, filter: emptyFilterState(), status: "approved" });
+    expect(notice).toHaveBeenCalledWith("已更新 2 个职位的状态 · 跳过 1 个");
+    notice.mockRestore();
   });
 });

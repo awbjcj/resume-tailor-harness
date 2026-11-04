@@ -34,16 +34,9 @@ export function AccountPage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        kicker="Personal workspace"
         title="Account"
-        sub={`Signed in as ${me.data.username}. Manage credentials, automation access, and the data held in your workspace.`}
+        meta={<>{me.data.username ? <span>{me.data.username}</span> : null}<Badge variant="outline">{me.data.role ?? "user"}</Badge></>}
       />
-      <div className="-mt-5 flex items-center gap-2 text-sm text-muted-foreground">
-        <span>Access level</span>
-        <Badge variant={me.data.role === "admin" ? "default" : "outline"}>
-          {me.data.role ?? "user"}
-        </Badge>
-      </div>
 
       {me.data.authRequired && me.data.role !== "admin" ? <BillingCard quota={usage.data.quota} /> : null}
       <section aria-labelledby="account-security" className="flex flex-col gap-4">
@@ -51,9 +44,6 @@ export function AccountPage() {
           <h2 id="account-security" className="text-lg font-semibold">
             Security and access
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Review usage, update sign-in credentials, and issue automation tokens.
-          </p>
         </div>
         <div className="grid gap-6 xl:grid-cols-2">
           <AccountUsageCard usage={usage.data} isAdmin={me.data.role === "admin"} />
@@ -68,13 +58,10 @@ export function AccountPage() {
           <h2 id="account-data" className="text-lg font-semibold">
             Workspace data
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Keep a portable archive or delete data within a chosen scope.
-          </p>
         </div>
         <DataArchiveCard
           title="My workspace data"
-          description="Export your workspace to fetch jobs with a local browser, then import the updated workspace without affecting anyone else's data. The archive contains operational secrets."
+          description="Export or replace the data in your workspace."
           exportLabel="Export my data"
           exportPath="/api/account/export"
           importPath="/api/account/import"

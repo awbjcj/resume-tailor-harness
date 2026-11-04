@@ -1,4 +1,6 @@
 import { toast } from "sonner";
+import i18n from "@/i18n";
+import { localizeRunKind, localizeRunLogMessage } from "@/i18n/dynamic-labels";
 
 import { api, unwrap } from "@/lib/api/client";
 import { DEFAULT_INVALIDATE, rememberInvalidation } from "@/lib/runs/invalidation";
@@ -55,7 +57,9 @@ export function useLaunchRun() {
       trackRun({ runId: run.runId, kind });
       return true;
     } catch (e) {
-      toast.error(`Failed to start ${kind}: ${(e as Error).message}`);
+      const label = localizeRunKind(kind, i18n.resolvedLanguage, (key) => i18n.t(key));
+      const message = localizeRunLogMessage((e as Error).message, i18n.resolvedLanguage);
+      toast.error(`Failed to start ${label}: ${message}`);
       return false;
     }
   };
@@ -78,7 +82,8 @@ export async function cancelRun(runId: string): Promise<boolean> {
     if (current && latest?.status === "cancelling") {
       useRunStore.getState().upsert({ ...latest, status: current.status, phase: current.phase });
     }
-    toast.error(`Couldn't cancel run: ${(e as Error).message}`);
+    const message = localizeRunLogMessage((e as Error).message, i18n.resolvedLanguage);
+    toast.error(`Couldn't cancel run: ${message}`);
     return false;
   }
 }

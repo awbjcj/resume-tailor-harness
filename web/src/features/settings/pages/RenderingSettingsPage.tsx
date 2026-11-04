@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader";
 import { Eye, Trash2, Upload } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -54,14 +55,7 @@ export function RenderingSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Rendering</h1>
-          <p className="text-sm text-muted-foreground">
-            Choose the layout used for generated resumes and preview it with
-            sample data.
-          </p>
-        </div>
+      <PageHeader title="Rendering" actions={
         <ResetSectionButton
           sectionId="render"
           onReset={() => setDraft(null)}
@@ -69,7 +63,7 @@ export function RenderingSettingsPage() {
           buttonLabel="Reset options"
           note="Custom uploaded templates are kept. Reset them separately below."
         />
-      </header>
+      } />
 
       <FieldSet>
         <FieldLegend>Resume template</FieldLegend>

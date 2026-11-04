@@ -1,30 +1,24 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { GmailCard } from "../GmailCard";
 import { MailboxConnections } from "../MailboxConnections";
-import { useTranslation } from "react-i18next";
 import { SecretsForm } from "../forms/SecretsForm";
 import { useGmailConnectOutcome } from "../use-gmail";
 import { useSaveSecrets, useSecrets } from "../use-secrets";
 import { EmailNotificationsPage } from "./EmailNotificationsPage";
 
 export function EmailSettingsPage() {
-  const { t } = useTranslation();
   const secrets = useSecrets();
   const saveSecrets = useSaveSecrets();
   useGmailConnectOutcome();
 
   return (
     <div className="flex min-w-0 flex-col gap-8">
-      <header className="space-y-1">
-        <h1 className="text-lg font-semibold">Email & notifications</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("mailboxes.description")}
-        </p>
-      </header>
+      <PageHeader title="Email & notifications" />
       <div className="flex min-w-0 flex-col gap-4">
         <GmailCard />
         <MailboxConnections />

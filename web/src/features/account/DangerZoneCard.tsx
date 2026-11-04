@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-reset";
 import { useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   BriefcaseBusiness,
   ContactRound,
@@ -81,6 +83,7 @@ export function DangerZoneCard({
 }: {
   reloadPage?: () => void;
 }) {
+  const { t } = useTranslation();
   const confirmId = useId();
   const [scope, setScope] = useState<Scope>("jobs");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -217,11 +220,10 @@ export function DangerZoneCard({
                 <TriangleAlert aria-hidden="true" />
               </AlertDialogMedia>
               <AlertDialogTitle>
-                Reset {selected.label.toLowerCase()}?
+                {t("interactionCopy.reset.title", { scope: selected.label.toLowerCase() })}
               </AlertDialogTitle>
               <AlertDialogDescription>
-                This permanently deletes {selected.description.toLowerCase()} Type
-                RESET to continue.
+                {t("interactionCopy.reset.description", { description: selected.description })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <FieldGroup>

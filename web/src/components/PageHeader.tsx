@@ -1,28 +1,27 @@
+import type { ReactNode } from "react";
+
+import { cn } from "@/lib/utils";
+
 export function PageHeader({
-  kicker,
   title,
-  sub,
+  meta,
+  actions,
+  className,
 }: {
-  kicker: string;
-  title: string;
-  sub?: string;
+  title: ReactNode;
+  meta?: ReactNode;
+  actions?: ReactNode;
+  className?: string;
 }) {
   return (
-    <header className="grid gap-2.5 border-b pb-5 sm:gap-3 sm:pb-6">
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">{kicker}</p>
-        {/* Tracking and leading are size-specific: as display type grows the
-            letters read too far apart and the lines too loose, so both tighten
-            here while the small uppercase kicker above keeps positive tracking. */}
-        <h1 className="mt-1.5 max-w-[24ch] text-balance font-heading text-[clamp(2rem,4vw,3.25rem)] font-semibold leading-[1.04] tracking-[-0.035em] text-foreground sm:mt-2">
+    <header className={cn("flex min-w-0 flex-wrap items-center justify-between gap-4 border-b pb-5", className)}>
+      <div className="min-w-0 flex-1 basis-60 [overflow-wrap:anywhere]">
+        <h1 className="text-balance font-heading text-2xl font-semibold leading-tight tracking-[-0.03em] text-foreground sm:text-3xl">
           {title}
         </h1>
+        {meta ? <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">{meta}</div> : null}
       </div>
-      {sub ? (
-        <p className="max-w-[68ch] text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-          {sub}
-        </p>
-      ) : null}
+      {actions ? <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 [&>[data-slot=button]]:h-auto [&>[data-slot=button]]:min-h-10 [&>[data-slot=button]]:max-w-full [&>[data-slot=button]]:whitespace-normal">{actions}</div> : null}
     </header>
   );
 }

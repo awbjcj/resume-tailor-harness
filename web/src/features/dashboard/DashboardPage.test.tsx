@@ -73,7 +73,7 @@ describe("DashboardPage", () => {
     ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it("guides a fresh install with the getting-started checklist, not the drained-funnel card", async () => {
+  it("guides a fresh install with one journey and an actionable next step", async () => {
     const zero = Object.fromEntries(
       Object.keys(SUMMARY.statusCounts).map((k) => [k, 0]),
     );
@@ -94,15 +94,13 @@ describe("DashboardPage", () => {
       ),
     );
     renderPage();
-    // The onboarding checklist owns first-run guidance...
     await waitFor(() =>
-      expect(screen.getByText("Getting started")).toBeInTheDocument(),
+      expect(screen.getByLabelText("Job-search journey")).toBeInTheDocument(),
     );
-    // ...the "next step" (sources not enabled) is surfaced as a real CTA...
     const sourceLinks = screen.getAllByRole("link", { name: /add sources/i });
-    expect(sourceLinks.length).toBeGreaterThan(0);
+    expect(sourceLinks).toHaveLength(1);
     expect(sourceLinks[0]).toHaveAttribute("href", "/settings/sources");
-    // ...and the populated funnel does not show.
+    expect(screen.queryByText("Getting started")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Pipeline stages")).not.toBeInTheDocument();
   });
 

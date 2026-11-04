@@ -1,4 +1,6 @@
+import "@/i18n/interaction-copy-selection";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
 import { BulkActionBar } from "@/components/BulkActionBar";
@@ -28,6 +30,7 @@ import { useBoardFilters } from "./use-board-filters";
 import { ShortlistDetails } from "./ShortlistDetails";
 
 export function ShortlistContainer() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useBoardFilters();
   const { rows, facets, total, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error } =
     useBoardQuery<ShortlistItem>("shortlist", filters);
@@ -82,17 +85,15 @@ export function ShortlistContainer() {
   return (
     <>
       <PageHeader
-        kicker="Human checkpoint"
-        title="The Shortlist"
-        sub="Review jobs before the premium tailoring step. Approve the ones worth the cost."
+        title="Shortlist"
+        className="mb-6"
       />
-      <MetricRow
+      {rows.length > 0 && <MetricRow
         items={[
-          ["Awaiting review", total.toLocaleString()],
           ["Avg fit in view", String(avg)],
           ["Sponsorship offered in view", String(sponsored)],
         ]}
-      />
+      />}
       <FilterDesk
         filter={filters}
         facets={facets}
@@ -125,7 +126,7 @@ export function ShortlistContainer() {
           >
             <BulkPreviewButton
               label="Approve"
-              title={`Approve ${selection.count.toLocaleString()} selected job(s)?`}
+              title={t("interactionCopy.selection.approveJobs", { count: selection.count, formattedCount: selection.count.toLocaleString() })}
               preview={() => bulk.preview({ ...bulkArgs, action: "approve" })}
               run={() =>
                 bulk.run({ ...bulkArgs, action: "approve" }).then((result) => {
@@ -136,7 +137,7 @@ export function ShortlistContainer() {
             />
             <BulkPreviewButton
               label="Archive"
-              title={`Archive ${selection.count.toLocaleString()} selected job(s)?`}
+              title={t("interactionCopy.selection.archiveJobs", { count: selection.count, formattedCount: selection.count.toLocaleString() })}
               preview={() => bulk.preview({ ...bulkArgs, action: "archive" })}
               run={() =>
                 bulk.run({ ...bulkArgs, action: "archive" }).then((result) => {
@@ -147,7 +148,7 @@ export function ShortlistContainer() {
             />
             <BulkPreviewButton
               label="Delete"
-              title={`Delete ${selection.count.toLocaleString()} selected job(s)?`}
+              title={t("interactionCopy.selection.deleteJobs", { count: selection.count, formattedCount: selection.count.toLocaleString() })}
               confirmLabel="Confirm delete"
               variant="destructive"
               preview={() => bulk.preview({ ...bulkArgs, action: "delete" })}

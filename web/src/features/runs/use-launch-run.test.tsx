@@ -11,6 +11,7 @@ import {
   resetInvalidationForTests,
 } from "@/lib/runs/invalidation";
 import { useRunStore } from "@/lib/runs/store";
+import { changeLanguage } from "@/i18n";
 
 const mocks = vi.hoisted(() => ({
   trackRun: vi.fn(),
@@ -79,6 +80,15 @@ describe("useLaunchRun", () => {
     );
 
     expect(invalidationKeys("r2", "tailor")).toEqual([...DEFAULT_INVALIDATE]);
+  });
+
+  it("localizes the run name and known error when launching fails", async () => {
+    await changeLanguage("zh-CN");
+    const { result } = renderHook(() => useLaunchRun());
+    await act(() => result.current.launch("gmailSync", async () => {
+      throw new Error("Connect Gmail in Settings before syncing");
+    }));
+    expect(mocks.toastError).toHaveBeenCalledWith("启动 Gmail 同步 失败：请先在设置中连接 Gmail，再同步。");
   });
 
   it("keeps durable artifact metadata on the optimistic run", async () => {

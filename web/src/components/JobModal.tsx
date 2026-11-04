@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { useDeferredComponent } from "@/lib/use-deferred-component";
 import { useTranslation } from "react-i18next";
 
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
@@ -216,7 +216,7 @@ export function JobModal({
                     Job details
                   </TabsTrigger>
                   <TabsTrigger value="resumes" className={tabTriggerClass}>
-                    Resumes
+                    Resumes{" "}
                     {job.resumeVersions.length > 0 && (
                       <span className={tabCountClass}>
                         {job.resumeVersions.length}
@@ -230,7 +230,7 @@ export function JobModal({
                     Research
                   </TabsTrigger>
                   <TabsTrigger value="coverLetters" className={tabTriggerClass}>
-                    Cover letters
+                    Cover letters{" "}
                     {coverLetters.length > 0 && (
                       <span className={tabCountClass}>
                         {coverLetters.length}
@@ -253,20 +253,6 @@ export function JobModal({
                     value="job"
                     className="mx-auto mt-0 max-w-[94rem]"
                   >
-                    <div className="mb-6 flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                          Role context
-                        </p>
-                        <h2 className="mt-1 font-heading text-2xl font-semibold">
-                          Job Brief
-                        </h2>
-                      </div>
-                      <span className="hidden text-xs text-muted-foreground sm:inline">
-                        The source material used for tailoring
-                      </span>
-                    </div>
-
                     <div className="grid gap-6 rounded-xl border bg-background/70 p-4 sm:p-5 lg:grid-cols-[minmax(18rem,0.7fr)_minmax(28rem,1.3fr)]">
                       <div className="space-y-5 lg:border-r lg:pr-6">
                         <div className="flex justify-center">
@@ -327,23 +313,6 @@ export function JobModal({
                     value="resumes"
                     className="mx-auto mt-0 max-w-[94rem]"
                   >
-                    <div className="flex flex-wrap items-end justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                          Tailored application
-                        </p>
-                        <h2 className="mt-1 font-heading text-2xl font-semibold">
-                          Resume versions
-                        </h2>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                          Compare each version, understand its evidence choices,
-                          and pick what you will send.
-                        </p>
-                      </div>
-                      <Badge variant="outline" className="tabular-nums">
-                        {`${job.resumeVersions.length} version${job.resumeVersions.length === 1 ? "" : "s"}`}
-                      </Badge>
-                    </div>
                     {job.resumeVersions.length === 0 && (
                       <p className="mt-4 rounded-xl border border-dashed bg-background/60 p-5 text-sm text-muted-foreground">
                         No tailored resume yet. Use Redo to create the first
@@ -385,9 +354,6 @@ export function JobModal({
                     value="coverLetters"
                     className="mx-auto mt-0 max-w-6xl"
                   >
-                    <h2 className="mb-4 font-heading text-2xl font-semibold">
-                      Cover letters
-                    </h2>
                     <CoverLettersTab
                       jobId={jobId}
                       coverLetters={coverLetters}

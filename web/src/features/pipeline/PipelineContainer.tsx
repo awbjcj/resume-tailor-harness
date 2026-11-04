@@ -1,3 +1,4 @@
+import "@/i18n/interaction-copy-selection";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -6,12 +7,12 @@ import { BulkActionBar } from "@/components/BulkActionBar";
 import { BulkPreviewButton } from "@/components/BulkPreviewButton";
 import { EmptyState } from "@/components/EmptyState";
 import { FilterDesk } from "@/components/FilterDesk";
-import { JobModal } from "@/components/JobModal";
-import { MetricRow } from "@/components/MetricRow";
 import { PageHeader } from "@/components/PageHeader";
 import { BoardSkeleton } from "@/components/skeletons";
 import { StaleQuickFilters } from "@/components/StaleQuickFilters";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useDeferredComponent } from "@/lib/use-deferred-component";
 import {
   Select,
   SelectContent,
@@ -43,6 +44,8 @@ import {
   PIPELINE_STAGE_ORDER,
   pipelineStageLabel,
 } from "./pipeline-stages";
+
+const loadJobModal = () => import("@/components/JobModal").then((module) => ({ default: module.JobModal }));
 
 export function PipelineContainer() {
   const { t } = useTranslation();
@@ -113,6 +116,8 @@ export function PipelineContainer() {
   }, [loadedIds, total, reconcile]);
 
   const openId = params.get("job");
+  const { Component: JobModal, failed: jobLoadFailed, retry: retryJobLoad, reloadRequired: jobReloadRequired } =
+    useDeferredComponent(Boolean(openId), loadJobModal);
 
   const openJob = (id: number) =>
     setParams(
@@ -135,7 +140,6 @@ export function PipelineContainer() {
 
   if (isLoading) return <BoardSkeleton />;
 
-  const rendered = loadedByStage.rendered?.length ?? 0;
   const bulkSelection = { mode: selection.mode, ids: selection.ids };
   const bulkArgs = { selection: bulkSelection, filter };
   const setStageOpen = (stage: string, open: boolean) => {
@@ -150,25 +154,12 @@ export function PipelineContainer() {
   return (
     <>
       <PageHeader
-        kicker="Mission control"
-        title="Pipeline / Board"
-        sub="Every job by pipeline stage, with its tailored PDF, review critiques, and your application status."
-      />
-      <div className="mb-5 flex flex-wrap gap-2 rounded-lg border bg-card p-3 shadow-card">
-        <Button variant="outline" size="sm" onClick={() => setLaunchMode("tailor")}>
-          Tailor approved…
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setLaunchMode("coverLetter")}>
-          Cover letters…
-        </Button>
-      </div>
-      <MetricRow
-        items={[
-          ["Loaded", loadedRows.length.toLocaleString()],
-          ["Matching", total.toLocaleString()],
-          ["Rendered in view", String(rendered)],
-          ["Stages active", String(stages.length)],
-        ]}
+        title="Pipeline"
+        className="mb-6"
+        actions={<>
+          <Button variant="outline" size="sm" onClick={() => setLaunchMode("tailor")}>Tailor approved…</Button>
+          <Button variant="outline" size="sm" onClick={() => setLaunchMode("coverLetter")}>Cover letters…</Button>
+        </>}
       />
       <FilterDesk
         filter={filter}
@@ -226,7 +217,7 @@ export function PipelineContainer() {
             </Select>
             <BulkPreviewButton
               label="Set status"
-              title={`Set ${selection.count.toLocaleString()} selected job(s) to ${targetStatus}?`}
+              title={t("interactionCopy.selection.setStatus", { count: selection.count, formattedCount: selection.count.toLocaleString(), status: stageLabel(targetStatus) })}
               preview={() =>
                 bulk.preview({ ...bulkArgs, action: "setStatus", status: targetStatus })
               }
@@ -241,7 +232,7 @@ export function PipelineContainer() {
             />
             <BulkPreviewButton
               label="Archive"
-              title={`Archive ${selection.count.toLocaleString()} selected job(s)?`}
+              title={t("interactionCopy.selection.archiveJobs", { count: selection.count, formattedCount: selection.count.toLocaleString() })}
               preview={() => bulk.preview({ ...bulkArgs, action: "archive" })}
               run={() =>
                 bulk.run({ ...bulkArgs, action: "archive" }).then((result) => {
@@ -281,7 +272,7 @@ export function PipelineContainer() {
           ))}
         </>
       )}
-      {openId && (
+      {openId && JobModal && (
         <JobModal
           jobId={Number(openId)}
           onClose={closeJob}
@@ -291,6 +282,21 @@ export function PipelineContainer() {
           hasNext={nav.hasNext}
           isLoadingNext={nav.isLoadingNext}
         />
+      )}
+      {openId && !JobModal && (
+        <Dialog open onOpenChange={(open) => { if (!open) closeJob(); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Job details</DialogTitle>
+              <DialogDescription role={jobLoadFailed ? "alert" : "status"}>
+                {t(jobLoadFailed ? "deferred.failed" : "deferred.loading")}
+              </DialogDescription>
+            </DialogHeader>
+            {jobLoadFailed && <Button onClick={retryJobLoad}>
+              {t(jobReloadRequired ? "deferred.reload" : "deferred.retry")}
+            </Button>}
+          </DialogContent>
+        </Dialog>
       )}
       <LaunchDialog
         mode={launchMode ?? "tailor"}

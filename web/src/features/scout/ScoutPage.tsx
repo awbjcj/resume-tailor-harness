@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSessionSelection } from "@/lib/chat/use-session-selection";
-import { Bot, Building2, CheckCircle2, Clock3, Compass, MessageCircleQuestion, Search } from "lucide-react";
+import { Bot, Building2, Compass } from "lucide-react";
 
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatSessionHistory, type ChatSessionHistoryItem } from "@/components/chat/ChatSessionHistory";
@@ -13,7 +13,7 @@ import { WorkspaceEmptyState } from "@/components/chat/WorkspaceEmptyState";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -128,10 +128,8 @@ export function ScoutPage() {
     <GuidedWorkspaceHeader
       tone="scout"
       icon={<Compass />}
-      eyebrow="Guided discovery"
       title="Discovery Scout"
-      description="Describe the companies, roles, locations, and boundaries for your search. Nothing is added until you approve it."
-      meta={<><Badge variant={active?.status === "active" ? "secondary" : "outline"}>{active?.status === "active" ? "Scout researching" : active ? "Session complete" : "Ready to explore"}</Badge>{active ? <Badge variant="outline">{pendingProposals} pending</Badge> : null}{active ? <Badge variant="outline">{addedProposals} added</Badge> : null}</>}
+      meta={active ? <><Badge variant={active.status === "active" ? "secondary" : "outline"}>{active.status === "active" ? "Session live" : "Session complete"}</Badge><Badge variant="outline">{pendingProposals} pending</Badge><Badge variant="outline">{addedProposals} added</Badge></> : undefined}
       actions={active?.status === "active" ? <Button variant="outline" disabled={busy} onClick={endSession}>End session</Button> : active ? <Button variant="outline" onClick={() => setSelectedId(null)}>New session</Button> : undefined}
     />
     {runError || stream.error ? <Alert variant="destructive"><AlertTitle>The Scout could not finish that step</AlertTitle><AlertDescription className="flex flex-wrap items-center gap-3"><span className="flex-1">{runError || stream.error}</span><Button size="sm" variant="outline" onClick={() => launchMessage(lastMessage)}>Retry</Button></AlertDescription></Alert> : null}
@@ -148,14 +146,10 @@ export function ScoutPage() {
               </span>
               {active.sessionTitle || active.goal || "Untitled Scout session"}
             </CardTitle>
-            <CardDescription className="flex items-center gap-2 text-sm">
-              <Clock3 className="size-4" aria-hidden="true" />
-              {active.status === "active" ? "Conversation active" : "Session ended"}
-            </CardDescription>
           </CardHeader>
         ) : null}
-        <CardContent className={cn("flex flex-col gap-4", active || busy ? "p-4 sm:p-6" : "p-0", CHAT_SURFACE_HEIGHT)}>
-          {!active && !busy ? <WorkspaceEmptyState icon={Compass} title="Set your search direction" description="Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything." actionLabel="Create Scout session" onAction={() => setNewOpen(true)} steps={[{ icon: MessageCircleQuestion, title: "Describe the search", description: "Share roles, locations, industries, and boundaries in plain language." }, { icon: Search, title: "Review the research", description: "The Scout returns separate proposals with citations. It waits for your approval before changing settings." }, { icon: CheckCircle2, title: "Approve what fits", description: "Add or dismiss each company and search term yourself." }]} /> : <ChatThread messages={messages} streaming={streaming?.length ? streaming : null} streamingActive={stream.status === "streaming"} showReasoning renderAfter={(message) => active ? <ScoutResearchCards session={active} proposalIds={turnByMessageId.get(message.id)?.proposalIds ?? []} /> : null} assistantName="Discovery Scout" assistantIcon={<Compass className="size-4" aria-hidden="true" />} />}
+        <CardContent className={cn("flex flex-col gap-4", active || busy ? `p-4 sm:p-6 ${CHAT_SURFACE_HEIGHT}` : "min-h-96 p-0")}>
+          {!active && !busy ? <WorkspaceEmptyState icon={Compass} title="Set your search direction" description="Describe what you want to find. Scout researches companies and search terms, then waits for your approval before changing anything." actionLabel="Create Scout session" onAction={() => setNewOpen(true)} /> : <ChatThread messages={messages} streaming={streaming?.length ? streaming : null} streamingActive={stream.status === "streaming"} showReasoning renderAfter={(message) => active ? <ScoutResearchCards session={active} proposalIds={turnByMessageId.get(message.id)?.proposalIds ?? []} /> : null} assistantName="Discovery Scout" assistantIcon={<Compass className="size-4" aria-hidden="true" />} />}
           <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />
           {active?.recap ? <div className="rounded-xl border bg-muted/35 p-3 text-sm"><span className="font-medium">Recap: </span>{active.recap}</div> : null}
           <WorkspaceReview surface="scout" sessionId={active?.sessionId} turnCount={active?.turns?.length ?? 0} />
@@ -174,7 +168,7 @@ export function ScoutPage() {
       isLoading={sessions.isPending}
       isError={sessions.isError}
       onRetry={() => void sessions.refetch()}
-        emptyMessage="No Scout sessions yet. Start one to refine your search."
+      emptyMessage="No saved sessions."
       createLabel="New Scout session"
       onCreate={() => setNewOpen(true)}
       onRename={(sessionId, title) => rename.mutate({ sessionId, title })}

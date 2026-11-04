@@ -15,8 +15,8 @@ describe("InProgressCard", () => {
     expect(screen.getByRole("link", { name: /resume profile coaching/i })).toHaveAttribute("href", "/coach");
   });
 
-  it("renders a quiet empty line when nothing is in progress", () => {
-    render(<MemoryRouter><InProgressCard summary={SUMMARY} /></MemoryRouter>);
-    expect(screen.getByText(/Nothing is in progress/i)).toBeInTheDocument();
+  it("does not show an empty in-progress panel", () => {
+    const { container } = render(<MemoryRouter><InProgressCard summary={SUMMARY} /></MemoryRouter>);
+    expect(container).toBeEmptyDOMElement();
   });
 });

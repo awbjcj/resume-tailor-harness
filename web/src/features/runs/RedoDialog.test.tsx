@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { RedoDialog } from "./RedoDialog";
+import { changeLanguage } from "@/i18n";
 
 function wrapper({ children }: { children: ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -93,6 +94,19 @@ describe("RedoDialog", () => {
     await user.click(screen.getByRole("checkbox", { name: /re-tailor resume/i }));
 
     expect(screen.getByRole("switch", { name: /deep review/i })).toBeInTheDocument();
+  });
+
+  it("keeps selected stages and translates the complete launch label across languages", async () => {
+    await changeLanguage("zh-CN");
+    const user = userEvent.setup();
+    setup();
+    expect(screen.getByRole("button", { name: "重新定制（3 个职位）" })).toBeEnabled();
+    expect(screen.getByText("可对3 个职位重新运行任意阶段，职位状态不受限制。现有简历版本和 PDF 会保留。")).toBeInTheDocument();
+    await user.click(screen.getByRole("checkbox", { name: /重新提取/ }));
+    expect(screen.getByRole("button", { name: "重新提取 + 重新定制（3 个职位）" })).toBeEnabled();
+    await act(() => changeLanguage("en"));
+    expect(screen.getByRole("button", { name: "Re-extract + Re-tailor 3 jobs" })).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: /re-extract criteria/i })).toBeChecked();
   });
 
   it("does not strand a stray '0 jobs' popup when the caller clears open and jobIds together (AttentionCard retry pattern)", async () => {

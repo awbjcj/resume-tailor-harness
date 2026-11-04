@@ -51,7 +51,7 @@ describe("JourneyRail", () => {
     expect(results.violations).toEqual([]);
   });
 
-  it("recedes to a quiet single line once the loop is complete", () => {
+  it("leaves the workspace clear once the loop is complete", () => {
     mocks.journey.mockReturnValue({
       ...incomplete,
       stages: incomplete.stages.map((s) => ({ ...s, state: "done" as const })),
@@ -59,9 +59,7 @@ describe("JourneyRail", () => {
       completedCount: 5,
       complete: true,
     });
-    renderRail();
-    expect(screen.getByText(/completed the getting-started steps/i)).toBeInTheDocument();
-    // no call-to-action once complete
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    const { container } = renderRail();
+    expect(container).toBeEmptyDOMElement();
   });
 });

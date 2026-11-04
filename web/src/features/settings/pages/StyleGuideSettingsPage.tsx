@@ -1,4 +1,5 @@
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { PageHeader } from "@/components/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ResetSectionButton } from "../ResetSectionButton";
@@ -15,17 +16,9 @@ export function StyleGuideSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">Style guide</h1>
-          <p className="text-sm text-muted-foreground">
-            House style for tailored bullets. The tailor and reviewers use it.
-          </p>
-        </div>
-        <ResetSectionButton sectionId="style_guide" label="Style guide" onReset={() => setDraft(null)} />
-      </header>
+      <PageHeader title="Style guide" actions={<ResetSectionButton sectionId="style_guide" label="Style guide" onReset={() => setDraft(null)} />} />
       <Field>
-        <FieldLabel htmlFor="style-guide">Style guide</FieldLabel>
+        <FieldLabel htmlFor="style-guide" className="sr-only">Style guide</FieldLabel>
         <Textarea id="style-guide" value={draft} rows={20}
           className="font-mono text-sm"
           onChange={(e) => setDraft(e.target.value)} />

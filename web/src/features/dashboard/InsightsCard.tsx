@@ -1,7 +1,7 @@
 import { Activity, DatabaseZap, TrendingDown, TrendingUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 import type { DashboardSummary } from "./use-dashboard-summary";
 
@@ -16,19 +16,18 @@ export function InsightsCard({ summary }: { summary: DashboardSummary }) {
   const affectedSources = sources?.affectedSources ?? [];
   const change = practice?.changeFromFirst;
   const TrendIcon = change != null && change < 0 ? TrendingDown : TrendingUp;
+  const showPractice = (practice?.completedSessions ?? 0) > 0;
+  if (!showPractice && !sources) return null;
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">{t("dashboard.insights")}</CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <section aria-labelledby="practice-insight-title" className="rounded-lg border bg-muted/15 p-4">
+      <CardContent className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-6">
+        {showPractice ? <section aria-labelledby="practice-insight-title" className="min-w-0">
           <div className="flex items-center gap-2 text-primary">
             <Activity className="size-4" aria-hidden="true" />
-            <h3 id="practice-insight-title" className="text-sm font-semibold">
+            <h2 id="practice-insight-title" className="text-sm font-semibold">
               {t("dashboard.practice")}
-            </h3>
+            </h2>
           </div>
           <div className="mt-3 flex items-end justify-between gap-3">
             <div>
@@ -45,14 +44,14 @@ export function InsightsCard({ summary }: { summary: DashboardSummary }) {
               )}
             </div>
           </div>
-        </section>
+        </section> : null}
 
-        <section aria-labelledby="source-insight-title" className="rounded-lg border bg-muted/15 p-4">
+        {sources ? <section aria-labelledby="source-insight-title" className="min-w-0">
           <div className="flex items-center gap-2 text-primary">
             <DatabaseZap className="size-4" aria-hidden="true" />
-            <h3 id="source-insight-title" className="text-sm font-semibold">
+            <h2 id="source-insight-title" className="text-sm font-semibold">
               {t("dashboard.sourceHealth")}
-            </h3>
+            </h2>
           </div>
           {sources?.openFailures ? (
             <div className="mt-3">
@@ -72,7 +71,7 @@ export function InsightsCard({ summary }: { summary: DashboardSummary }) {
           ) : (
             <p className="mt-3 text-sm text-muted-foreground">{t("dashboard.sourcesHealthy")}</p>
           )}
-        </section>
+        </section> : null}
       </CardContent>
     </Card>
   );

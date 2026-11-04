@@ -35,7 +35,7 @@ export function ResumeVersionsTab({
     <>
       {deletableIds.length > 0 && (
         <ArtifactSelectionBar
-          noun="version"
+          kind="version"
           selectedCount={selection.selectedIds.length}
           allSelected={selection.allSelected}
           onToggleAll={selection.toggleAll}

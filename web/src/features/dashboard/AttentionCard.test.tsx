@@ -52,9 +52,9 @@ describe("AttentionCard", () => {
     expect(mocks.clear).toHaveBeenCalled();
   });
 
-  it("shows no open errors when empty", () => {
+  it("does not show an attention panel when there are no open errors", () => {
     renderAttentionCard([]);
-    expect(screen.getByText("No open errors.")).toBeInTheDocument();
+    expect(screen.queryByText("Attention needed")).not.toBeInTheDocument();
   });
 
   const jobRecord = {

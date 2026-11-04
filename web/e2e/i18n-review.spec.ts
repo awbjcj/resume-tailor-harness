@@ -173,3 +173,28 @@ test("localizes interview style values and keeps the answer when switching langu
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: testInfo.outputPath("chinese-interview.png"), fullPage: true });
 });
+
+test("localizes the interview banner and generated notifications across language changes", async ({ page }) => {
+  await page.route("**/api/interview/sessions*", (route) => route.fulfill({ json: { sessions: [{
+    sessionId: "banner-session", jobId: 7, company: "Acme", title: "Engineer", status: "active",
+    startedAt: "2026-10-23T12:00:00Z", endedAt: null, archivedAt: null, askedCount: 1, questionCount: 4,
+  }] } }));
+  await page.route("**/api/notifications", (route) => route.fulfill({ json: [
+    { id: 1, applicationId: 1, kind: "follow_up", proposedStatus: "", evidence: "No activity for 20 days: Acme · Engineer", messageId: "followup", state: "pending", createdAt: "2026-10-23T12:00:00Z", jobId: 7, company: "Acme", title: "Engineer" },
+    { id: 2, applicationId: 1, kind: "rejected", proposedStatus: "rejected", evidence: "Thank you for applying.", messageId: "email", state: "pending", createdAt: "2026-10-23T12:00:00Z", jobId: 7, company: "Acme", title: "Engineer" },
+  ] }));
+
+  await page.goto("/settings/review");
+  await expect(page.getByRole("link", { name: "继续面试" })).toBeVisible();
+  await page.getByRole("button", { name: "通知（2 条待处理）" }).click();
+  await expect(page.getByText("20 天没有新动态：Acme · Engineer")).toBeVisible();
+  await expect(page.getByText("更新状态为已拒绝")).toBeVisible();
+  await expect(page.getByText("Thank you for applying.")).toBeVisible();
+
+  await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
+  await expect(page.getByRole("link", { name: "Resume", exact: true })).toBeVisible();
+  const bell = page.getByRole("button", { name: "Notifications (2 pending)" });
+  if (await bell.getAttribute("aria-expanded") !== "true") await bell.click();
+  await expect(page.getByText("No activity for 20 days: Acme · Engineer")).toBeVisible();
+  await expect(page.getByText("Move to Rejected")).toBeVisible();
+});

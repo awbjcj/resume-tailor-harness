@@ -15,7 +15,7 @@ import {
   normalizePipelineStage,
   pipelineStageLabel,
 } from "@/features/pipeline/pipeline-stages";
-import { fieldLabel } from "@/lib/format";
+import { facetLabel } from "@/i18n/facet-labels";
 import { useTranslation } from "react-i18next";
 import { TARGET_STAGE_VALUES, type Filters as FilterValue } from "./aggregate";
 
@@ -39,14 +39,14 @@ export function Filters({
   seniorities: string[];
   statusCounts: Record<string, number>;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const companyItems = [
     { label: "All companies", value: ALL },
     ...companies.map((company) => ({ label: company, value: company })),
   ];
   const seniorityItems = [
     { label: "All levels", value: ALL },
-    ...seniorities.map((seniority) => ({ label: fieldLabel(seniority), value: seniority })),
+    ...seniorities.map((seniority) => ({ label: facetLabel("seniority", seniority, i18n.resolvedLanguage), value: seniority })),
   ];
   const normalizedStatusCounts: Record<string, number> = Object.fromEntries(
     TARGET_STAGE_VALUES.map((status) => [status, 0]),

@@ -131,10 +131,6 @@ export function SourceManager({ disabled = false, onRefresh, refreshDisabled = f
             <h2 className="text-lg font-semibold">Source documents</h2>
             <p className="text-sm text-muted-foreground">{t("profilePublication.sourceCount", { used: ready, total: sources.length })}</p>
           </div>
-          <p className="max-w-prose text-sm text-muted-foreground">
-            Your resume provides your career history. Project dossiers add
-            evidence from your work.
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <MaterialIntakeDialogs disabled={busy} onRefresh={onRefresh} refreshDisabled={refreshDisabled} />
@@ -186,15 +182,8 @@ export function SourceManager({ disabled = false, onRefresh, refreshDisabled = f
       >
         <div className="min-w-0 flex-[1_1_20rem] space-y-1">
           <p className="text-sm">
-            Drop files here or select Add source. You can upload PDFs, Word files,
-            Markdown, and other supporting documents.
+            Drop PDF, Word, Markdown, or text files here.
           </p>
-          {uploadMode !== "synthesis" ? (
-            <p className="text-sm text-muted-foreground">
-              Auto-detect chooses a type based on file format and repository
-              metadata. Change it if needed.
-            </p>
-          ) : null}
         </div>
         <div
           className={cn(

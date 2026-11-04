@@ -50,9 +50,7 @@ export function RolePreparationPanel({ jobId }: { jobId: number }) {
       <ResearchPanelHeader
         titleId="role-preparation-title"
         icon={<BookOpenCheck className="size-5" aria-hidden="true" />}
-        eyebrow="Job-specific planning"
         title="Role preparation"
-        description="Create an interview brief from the frozen company dossier, job description, selected documents, and earlier interview notes."
         context="Generate a brief when you are ready. Saved briefs stay unchanged until you regenerate them."
         action={
           <Button

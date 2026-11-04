@@ -81,7 +81,7 @@ describe("MatchGapContainer", () => {
     wrap(<MatchGapContainer />);
 
     expect(await screen.findByText("Skill constellation")).toBeInTheDocument();
-    expect(screen.getAllByText("2", { selector: "div.text-3xl" })).toHaveLength(2);
+    expect(screen.getAllByText("2", { selector: "dd" })).toHaveLength(2);
     await userEvent.click(screen.getByRole("button", { name: "Explore Cloud & Infrastructure" }));
     await userEvent.click(screen.getByRole("checkbox", { name: "Select Cloud / Infrastructure" }));
     expect(screen.getByRole("button", { name: "Open selection tray" })).toHaveTextContent("1");
