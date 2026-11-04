@@ -416,7 +416,11 @@ def test_verbatim_gates_compare_source_values_without_requiring_ranking_metadata
     assert len(report.invalid) == 3
 
 
-def test_conversation_cannot_set_scores_and_semantic_edits_retire_stale_assessments():
+@pytest.mark.parametrize("aspect", ["leadership", "impact"])
+@pytest.mark.parametrize("replacement_aspect", [None, "technical"])
+def test_conversation_cannot_set_scores_and_semantic_edits_retire_stale_assessments(
+    aspect, replacement_aspect
+):
     facts = score_profile(
         ProfileFacts(
             contact=Contact(name="Ada"),
@@ -429,6 +433,7 @@ def test_conversation_cannot_set_scores_and_semantic_edits_retire_stale_assessme
                         Bullet(
                             id="b",
                             text="Owned the service",
+                            aspect=aspect,
                             importance=FactImportanceSignals(
                                 significance=4,
                                 essentiality=4,
@@ -472,7 +477,10 @@ def test_conversation_cannot_set_scores_and_semantic_edits_retire_stale_assessme
                 section="bullets",
                 target_id="b",
                 parent_id="work",
-                values={"text": "Contributed documentation"},
+                values={
+                    "text": "Contributed documentation",
+                    **({"aspect": replacement_aspect} if replacement_aspect else {}),
+                },
                 quotes=["Contributed documentation"],
             ),
         ),
@@ -482,4 +490,7 @@ def test_conversation_cannot_set_scores_and_semantic_edits_retire_stale_assessme
     assert updated.importance is None
     assert updated.importance_score is not None
     assert updated.importance_score.method == "fallback"
+    assert updated.aspect == replacement_aspect
+    assert updated.importance_score.components["impact"] == 0
+    assert updated.importance_score.components["ownership"] == 0
     assert importance_value(updated) < importance_value(facts.experience[0].bullets[0])

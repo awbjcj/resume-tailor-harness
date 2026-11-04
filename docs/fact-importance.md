@@ -102,7 +102,9 @@ primary assessment remains authoritative.
 approved edits and skill mutations. Extractor- or file-supplied totals are never
 trusted. No additional model request is needed merely to load or save facts.
 Conversation tools cannot write assessments or computed scores. Semantic edits
-retire stale assessments and use fallback until reclassified; a renamed skill
+retire stale assessments and use fallback until reclassified. Replacing a bullet's
+text also retires its former aspect unless the approved edit supplies a new one;
+a renamed skill
 also retires its old assessment. Matrix bindings exclude ranking metadata, so
 backfilling scores preserves existing skill coverage while changed evidence
 still invalidates the binding.
