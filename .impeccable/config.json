@@ -11,6 +11,24 @@
         ],
         "createdAt": "2026-10-30T01:30:23.817Z",
         "reason": "Agent review: existing pipeline stage header cue matches semantic badge colors in PipelineStageSection.tsx; unchanged in base f714f38f."
+      },
+      {
+        "rule": "overused-font",
+        "value": "geist",
+        "files": [
+          "artifacts/teal-ink/styles/fonts.css"
+        ],
+        "createdAt": "2026-11-05T02:50:56.575Z",
+        "reason": "Agent review: this artifact extracts the existing Resume Tailor design; web/src/index.css and SOURCE-AUDIT.md establish Geist as the source identity to preserve."
+      },
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "artifacts/teal-ink/preview.html"
+        ],
+        "createdAt": "2026-11-05T02:50:56.676Z",
+        "reason": "Agent review: detector assumes 16px because styles are external. Chromium computed body 15px, section headings 24-30px, and title 43.2-72px at 320/390/1440px; evidence is artifacts/teal-ink/evidence/design-review.json."
       }
     ]
   }
