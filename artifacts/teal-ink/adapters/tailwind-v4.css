@@ -1,0 +1,40 @@
+/* Import after tailwindcss and styles/tokens.css. This file is build-time CSS. */
+@custom-variant dark (&:where(.dark, .dark *, [data-ti-theme="dark"], [data-ti-theme="dark"] *, [data-ti-theme="gateway"], [data-ti-theme="gateway"] *));
+
+/* Namespaced utilities avoid replacing a consuming application's theme. */
+@theme inline {
+  --color-ti-background: var(--ti-color-background);
+  --color-ti-foreground: var(--ti-color-foreground);
+  --color-ti-card: var(--ti-color-card);
+  --color-ti-card-foreground: var(--ti-color-card-foreground);
+  --color-ti-primary: var(--ti-color-primary);
+  --color-ti-primary-foreground: var(--ti-color-primary-foreground);
+  --color-ti-secondary: var(--ti-color-secondary);
+  --color-ti-secondary-foreground: var(--ti-color-secondary-foreground);
+  --color-ti-muted: var(--ti-color-muted);
+  --color-ti-muted-foreground: var(--ti-color-muted-foreground);
+  --color-ti-accent: var(--ti-color-accent);
+  --color-ti-accent-foreground: var(--ti-color-accent-foreground);
+  --color-ti-border: var(--ti-color-border);
+  --color-ti-input: var(--ti-color-field-border);
+  --color-ti-ring: var(--ti-color-ring);
+  --color-ti-danger: var(--ti-color-destructive);
+  --color-ti-success: var(--ti-color-success);
+  --color-ti-warning: var(--ti-color-warning);
+  --color-ti-info: var(--ti-color-info);
+  --color-ti-chart-1: var(--ti-color-chart-1);
+  --color-ti-chart-2: var(--ti-color-chart-2);
+  --color-ti-chart-3: var(--ti-color-chart-3);
+  --color-ti-chart-4: var(--ti-color-chart-4);
+  --color-ti-chart-5: var(--ti-color-chart-5);
+  --font-ti-ui: var(--ti-font-ui);
+  --font-ti-code: var(--ti-font-code);
+  --radius-ti-sm: var(--ti-radius-sm);
+  --radius-ti-md: var(--ti-radius-md);
+  --radius-ti-lg: var(--ti-radius-lg);
+  --radius-ti-xl: var(--ti-radius-xl);
+  --shadow-ti-card: var(--ti-shadow-card);
+  --shadow-ti-raised: var(--ti-shadow-raised);
+  --ease-ti-out: var(--ti-ease-out);
+  --ease-ti-drawer: var(--ti-ease-drawer);
+}

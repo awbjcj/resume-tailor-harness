@@ -1,0 +1,254 @@
+{
+  "$description": "Merge these semantic overrides over base.tokens.json for dark mode.",
+  "semantic": {
+    "color": {
+      "background": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.night}",
+        "$description": "Source --background in the dark theme."
+      },
+      "foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.fog}",
+        "$description": "Source --foreground in the dark theme."
+      },
+      "card": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.surface}",
+        "$description": "Source --card in the dark theme."
+      },
+      "card-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.fog}",
+        "$description": "Source --card-foreground in the dark theme."
+      },
+      "popover": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.surface}",
+        "$description": "Source --popover in the dark theme."
+      },
+      "popover-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.fog}",
+        "$description": "Source --popover-foreground in the dark theme."
+      },
+      "primary": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.300}",
+        "$description": "Source --primary in the dark theme."
+      },
+      "primary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.900}",
+        "$description": "Source --primary-foreground in the dark theme."
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.raised}",
+        "$description": "Source --secondary in the dark theme."
+      },
+      "secondary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.fog}",
+        "$description": "Source --secondary-foreground in the dark theme."
+      },
+      "muted": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.raised}",
+        "$description": "Source --muted in the dark theme."
+      },
+      "muted-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Source --muted-foreground in the dark theme."
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.800}",
+        "$description": "Source --accent in the dark theme."
+      },
+      "accent-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.200}",
+        "$description": "Source --accent-foreground in the dark theme."
+      },
+      "destructive": {
+        "$type": "color",
+        "$value": "{primitive.color.crimson.300}",
+        "$description": "Source --destructive in the dark theme."
+      },
+      "warning": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.300}",
+        "$description": "Source --warning in the dark theme."
+      },
+      "success": {
+        "$type": "color",
+        "$value": "{primitive.color.green.300}",
+        "$description": "Source --success in the dark theme."
+      },
+      "info": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.300}",
+        "$description": "Source --info in the dark theme."
+      },
+      "stage-neutral": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Source --stage-neutral in the dark theme."
+      },
+      "stage-approved": {
+        "$type": "color",
+        "$value": "{primitive.color.green.200}",
+        "$description": "Source --stage-approved in the dark theme."
+      },
+      "stage-tailored": {
+        "$type": "color",
+        "$value": "{primitive.color.indigo.300}",
+        "$description": "Source --stage-tailored in the dark theme."
+      },
+      "stage-rendered": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.200}",
+        "$description": "Source --stage-rendered in the dark theme."
+      },
+      "gap": {
+        "$type": "color",
+        "$value": "{primitive.color.crimson.300}",
+        "$description": "Source --gap in the dark theme."
+      },
+      "adjacent": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.300}",
+        "$description": "Source --adjacent in the dark theme."
+      },
+      "covered": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Source --covered in the dark theme."
+      },
+      "ready": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.100}",
+        "$description": "Source --ready in the dark theme."
+      },
+      "border": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.border-dark}",
+        "$description": "Source --border in the dark theme."
+      },
+      "input": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.input-dark}",
+        "$description": "Source --input in the dark theme."
+      },
+      "ring": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.300}",
+        "$description": "Source --ring in the dark theme."
+      },
+      "chart-1": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.300}",
+        "$description": "Source --chart-1 in the dark theme."
+      },
+      "chart-2": {
+        "$type": "color",
+        "$value": "{primitive.color.green.300}",
+        "$description": "Source --chart-2 in the dark theme."
+      },
+      "chart-3": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.300}",
+        "$description": "Source --chart-3 in the dark theme."
+      },
+      "chart-4": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.200}",
+        "$description": "Source --chart-4 in the dark theme."
+      },
+      "chart-5": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Source --chart-5 in the dark theme."
+      },
+      "sidebar": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.surface}",
+        "$description": "Source --sidebar in the dark theme."
+      },
+      "sidebar-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.fog}",
+        "$description": "Source --sidebar-foreground in the dark theme."
+      },
+      "sidebar-primary": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.300}",
+        "$description": "Source --sidebar-primary in the dark theme."
+      },
+      "sidebar-primary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.900}",
+        "$description": "Source --sidebar-primary-foreground in the dark theme."
+      },
+      "sidebar-accent": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.800}",
+        "$description": "Source --sidebar-accent in the dark theme."
+      },
+      "sidebar-accent-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.200}",
+        "$description": "Source --sidebar-accent-foreground in the dark theme."
+      },
+      "sidebar-border": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.border-dark}",
+        "$description": "Source --sidebar-border in the dark theme."
+      },
+      "sidebar-ring": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.300}",
+        "$description": "Source --sidebar-ring in the dark theme."
+      },
+      "overlay": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.overlay}",
+        "$description": "Backdrop for modal attention; use with a native modal or a complete dialog primitive."
+      },
+      "field-border": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Portable accessibility refinement: visible control boundaries meet 3:1; source decorative borders stay separate."
+      },
+      "on-muted": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Readable secondary copy placed directly on the muted surface; source muted ink is retained separately."
+      },
+      "primary-hover": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.200}",
+        "$description": "Explicit interactive shade for portable consumers."
+      },
+      "primary-active": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.300}",
+        "$description": "Pressed state remains within the source teal family."
+      }
+    },
+    "shadow": {
+      "card": {
+        "$type": "shadow",
+        "$value": "{primitive.shadow.card-dark}",
+        "$description": "Resting surface elevation."
+      },
+      "raised": {
+        "$type": "shadow",
+        "$value": "{primitive.shadow.raised-dark}",
+        "$description": "Hovered or floating surface elevation."
+      }
+    }
+  }
+}

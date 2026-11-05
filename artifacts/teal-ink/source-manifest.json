@@ -1,0 +1,177 @@
+{
+  "name": "Teal & Ink",
+  "version": "1.0.0",
+  "extractedAt": "2026-11-04",
+  "sourceCommit": "34d69affda2f489daf38a6d1ab12333a126c45f7",
+  "sources": [
+    {
+      "path": "web/src/index.css",
+      "sha256": "cff54b78720dcc2ebba5205961097fda267ad530fca722774bdeb35884bcd549"
+    },
+    {
+      "path": "web/src/features/auth/auth.css",
+      "sha256": "2881723b5e9add042e189dcec08e754585d2c428666cbeb65d00cc09203adbef"
+    },
+    {
+      "path": "web/src/components/ui/button.tsx",
+      "sha256": "0233aae23bbf911ee907f71b7f7570cf9d30018225c77cf686d4984f76fdfa4c"
+    },
+    {
+      "path": "web/src/components/ui/card.tsx",
+      "sha256": "8870307dfe436ceef476c046dc31ddf2fa7b6967dbbbef4c78c6c2a0d23b2927"
+    },
+    {
+      "path": "web/src/components/ui/input.tsx",
+      "sha256": "e8ea65f7ae1a76eea9f852f3d32384dcf6abc9191631e4e617445838e500b5ad"
+    },
+    {
+      "path": "web/src/components/ui/badge.tsx",
+      "sha256": "65785ff70f8956275d691a6b2dca3ef44e8ddee24faca7941280b304ef611daa"
+    },
+    {
+      "path": "web/src/components/ui/tabs.tsx",
+      "sha256": "4e20ca6bc340af562930feea8fa275cacfb18fa7f9fc2a38158de4492f87c513"
+    },
+    {
+      "path": "web/src/components/PageHeader.tsx",
+      "sha256": "1379c6c25bcb036478c1c7697ad6bd836699c0e22748cd56f501e64e7bfee509"
+    },
+    {
+      "path": "web/src/components/MetricRow.tsx",
+      "sha256": "c17772e9d1528d482762bca9dd23491c284b4abffe7573b926bae8343d72016d"
+    },
+    {
+      "path": "web/src/app/AppLayout.tsx",
+      "sha256": "f3e7241b6f28fc6ff7822fcc4bdc1bb0e130bd056fef16a4b910bea0a70e6f4d"
+    },
+    {
+      "path": "web/src/features/profile-skills/SkillCompactView.tsx",
+      "sha256": "d0da1ba9995d271a2bd8273b5a9105cd7c8088b28d286f69e128ce082494628e"
+    }
+  ],
+  "sourceThemes": {
+    "light": {
+      "radius": "0.5rem",
+      "background": "#f6f8fb",
+      "foreground": "#182026",
+      "card": "#ffffff",
+      "card-foreground": "#182026",
+      "popover": "#ffffff",
+      "popover-foreground": "#182026",
+      "primary": "#08708a",
+      "primary-foreground": "#ffffff",
+      "secondary": "#eef4f7",
+      "secondary-foreground": "#182026",
+      "muted": "#eef4f7",
+      "muted-foreground": "#65717c",
+      "accent": "#e6f7fa",
+      "accent-foreground": "#075f76",
+      "destructive": "#bd2d46",
+      "warning": "#8a6500",
+      "success": "#1f7a4d",
+      "info": "#3867d6",
+      "stage-neutral": "#556069",
+      "stage-approved": "#176b46",
+      "stage-tailored": "#5145b5",
+      "stage-rendered": "#855b0b",
+      "gap": "#bd2d46",
+      "adjacent": "#8a6500",
+      "covered": "#65717c",
+      "ready": "#b06a00",
+      "border": "rgba(24, 32, 38, 0.12)",
+      "input": "rgba(24, 32, 38, 0.14)",
+      "ring": "#0a94a8",
+      "card-shadow": "0 1px 2px rgba(24, 32, 38, 0.05), 0 2px 6px -2px rgba(24, 32, 38, 0.06)",
+      "card-shadow-raised": "0 1px 2px rgba(24, 32, 38, 0.06), 0 8px 20px -6px rgba(24, 32, 38, 0.12)",
+      "chart-1": "#08708a",
+      "chart-2": "#16a085",
+      "chart-3": "#3867d6",
+      "chart-4": "#78b7d0",
+      "chart-5": "#8b95a1",
+      "sidebar": "#ffffff",
+      "sidebar-foreground": "#1d252d",
+      "sidebar-primary": "#08708a",
+      "sidebar-primary-foreground": "#ffffff",
+      "sidebar-accent": "#e6f7fa",
+      "sidebar-accent-foreground": "#075f76",
+      "sidebar-border": "rgba(24, 32, 38, 0.12)",
+      "sidebar-ring": "#0a94a8"
+    },
+    "dark": {
+      "background": "#121416",
+      "foreground": "#eef4f7",
+      "card": "#181b1f",
+      "card-foreground": "#eef4f7",
+      "popover": "#181b1f",
+      "popover-foreground": "#eef4f7",
+      "primary": "#5bd8e7",
+      "primary-foreground": "#102023",
+      "secondary": "#20262b",
+      "secondary-foreground": "#eef4f7",
+      "muted": "#20262b",
+      "muted-foreground": "#a7b1bb",
+      "accent": "#17373c",
+      "accent-foreground": "#8eeaf2",
+      "destructive": "#ff6b82",
+      "warning": "#e6b94d",
+      "success": "#43d19e",
+      "info": "#86a9ff",
+      "stage-neutral": "#a7b1bb",
+      "stage-approved": "#70dfaa",
+      "stage-tailored": "#b5abff",
+      "stage-rendered": "#efc368",
+      "gap": "#ff6b82",
+      "adjacent": "#e6b94d",
+      "covered": "#a7b1bb",
+      "ready": "#ffc15a",
+      "border": "rgba(238, 244, 247, 0.12)",
+      "input": "rgba(238, 244, 247, 0.16)",
+      "ring": "#5bd8e7",
+      "card-shadow": "0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px -2px rgba(0, 0, 0, 0.35)",
+      "card-shadow-raised": "0 1px 2px rgba(0, 0, 0, 0.45), 0 8px 20px -6px rgba(0, 0, 0, 0.55)",
+      "chart-1": "#5bd8e7",
+      "chart-2": "#43d19e",
+      "chart-3": "#86a9ff",
+      "chart-4": "#76c4d9",
+      "chart-5": "#a7b1bb",
+      "sidebar": "#181b1f",
+      "sidebar-foreground": "#eef4f7",
+      "sidebar-primary": "#5bd8e7",
+      "sidebar-primary-foreground": "#102023",
+      "sidebar-accent": "#17373c",
+      "sidebar-accent-foreground": "#8eeaf2",
+      "sidebar-border": "rgba(238, 244, 247, 0.12)",
+      "sidebar-ring": "#5bd8e7"
+    },
+    "gateway": {
+      "background": "#080f15",
+      "foreground": "#ecf3f5",
+      "card": "#111d26",
+      "card-foreground": "var(--foreground)",
+      "primary": "#a4ecdc",
+      "primary-foreground": "#102b29",
+      "secondary": "#20313c",
+      "secondary-foreground": "var(--foreground)",
+      "muted": "#1b2b36",
+      "muted-foreground": "#a6b7c2",
+      "accent": "#1d363b",
+      "accent-foreground": "#b8f2e7",
+      "border": "#344853",
+      "input": "#536975",
+      "ring": "#a4ecdc",
+      "destructive": "#ffaaaa",
+      "auth-trace": "#41645e",
+      "auth-node": "#101e27"
+    }
+  },
+  "refinements": [
+    "Namespaced CSS variables and classes for portable adoption.",
+    "Visible field borders separated from decorative dividers.",
+    "Real monospace font stack for code; original aliases Geist for all families.",
+    "Latin Geist font bundled with its OFL license; CJK uses system fallbacks.",
+    "System-theme updates and explicit scoped theme overrides.",
+    "Touch controls grow to 44px, long labels wrap, and reduced motion removes spatial animation.",
+    "Gateway semantic colors completed for use beyond the original isolated auth shell.",
+    "Teal 100, 400, 950 and modal overlay are authored extensions; source colors otherwise retained."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-11-05T02:47:28.534Z",
+  "checks": [
+    "React adapter and Workspace example pass strict TypeScript with unused-symbol checks",
+    "Server-rendered fields have distinct linked IDs and errors; loading buttons expose busy/disabled state",
+    "Tailwind v4 compiles six utility variants with semantic CSS variable references"
+  ],
+  "versions": {
+    "typescript": "6.0.3",
+    "react": "19.3.1",
+    "tailwind": "4.3.3"
+  },
+  "status": "pass"
+}

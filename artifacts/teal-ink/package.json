@@ -1,0 +1,21 @@
+{
+  "name": "@portable/teal-ink",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A portable design system extracted from Resume Tailor's teal and ink interface.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "verify:browser": "node scripts/verify-browser.mjs",
+    "verify:integrations": "node scripts/check-integrations.mjs"
+  },
+  "exports": {
+    "./styles.css": "./styles/index.css",
+    "./tokens.css": "./styles/tokens.css",
+    "./components.css": "./styles/components.css",
+    "./tailwind-v4.css": "./adapters/tailwind-v4.css",
+    "./tokens": "./tokens/base.tokens.json"
+  }
+}

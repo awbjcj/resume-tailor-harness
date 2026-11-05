@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-ti-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Teal &amp; Ink — Portable Design System</title>
+  <script>
+    try {
+      const saved = localStorage.getItem("teal-ink-preview-theme");
+      if (["light", "dark", "system"].includes(saved)) document.documentElement.dataset.tiTheme = saved;
+    } catch { /* The preview also works when file storage is unavailable. */ }
+  </script>
+  <link rel="stylesheet" href="styles/index.css">
+  <link rel="stylesheet" href="styles/preview.css">
+</head>
+<body class="ti-root ti-canvas-grid">
+  <a class="ti-skip-link" href="#main" data-i18n="skip">Skip to content</a>
+  <div class="preview-shell">
+    <aside class="preview-sidebar ti-command-panel">
+      <a class="preview-brand" href="#overview" aria-label="Teal & Ink home">
+        <span class="preview-mark" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M7 6v10a6 6 0 0 0 6 6h8M7 12h8a6 6 0 0 1 6 6v4M7 6h14" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="6" r="2" fill="currentColor"/><circle cx="21" cy="22" r="2" fill="currentColor"/></svg></span>
+        <span>Teal &amp; Ink<small data-i18n="brandSub">A portable design language</small></span>
+      </a>
+      <div class="preview-nav-label ti-eyebrow" data-i18n="library">The library</div>
+      <nav class="ti-nav preview-nav" aria-label="Design system" data-i18n-aria="navLabel">
+        <a class="ti-nav-item" href="#overview" aria-current="location"><span class="preview-nav-number">00</span><span data-i18n="overview">Overview</span></a>
+        <a class="ti-nav-item" href="#foundations"><span class="preview-nav-number">01</span><span data-i18n="foundations">Foundations</span></a>
+        <a class="ti-nav-item" href="#components"><span class="preview-nav-number">02</span><span data-i18n="components">Components</span></a>
+        <a class="ti-nav-item" href="#patterns"><span class="preview-nav-number">03</span><span data-i18n="patterns">Patterns</span></a>
+        <a class="ti-nav-item" href="#tokens"><span class="preview-nav-number">04</span><span data-i18n="tokens">Token explorer</span></a>
+        <a class="ti-nav-item" href="#adopt"><span class="preview-nav-number">05</span><span data-i18n="adopt">Make it yours</span></a>
+      </nav>
+      <div class="preview-sidebar-note"><span class="preview-live-dot" aria-hidden="true"></span><span data-i18n="offline">Works entirely offline</span></div>
+      <div class="preview-sidebar-footer"><span>v1.0.0</span><span>MIT · 2026</span></div>
+    </aside>
+    <div class="preview-main-shell">
+      <header class="preview-topbar">
+        <p class="preview-breadcrumb"><span data-i18n="designSystem">Design system</span><span aria-hidden="true">/</span><strong data-i18n="preview">Interactive reference</strong></p>
+        <div class="ti-cluster preview-controls">
+          <label class="ti-sr-only" for="theme-choice" data-i18n="theme">Theme</label>
+          <select class="ti-select preview-theme" id="theme-choice">
+            <option value="light" data-i18n="light">Light</option><option value="dark" data-i18n="dark">Dark</option><option value="system" data-i18n="system">System</option>
+          </select>
+          <button class="ti-button" data-variant="outline" id="language-toggle" type="button" aria-label="Switch to Simplified Chinese">中文</button>
+        </div>
+      </header>
+      <main id="main" class="preview-main" tabindex="-1">
+        <section id="overview" class="preview-section preview-hero">
+          <div>
+            <p class="ti-eyebrow" data-i18n="heroEyebrow">From one workspace to the next</p>
+            <h1 class="ti-heading preview-title">Teal <span>&amp;</span> Ink<span class="preview-title-dot">.</span></h1>
+            <p class="preview-hero-lead" data-i18n="heroLead">Calm surfaces. Clear decisions.</p>
+            <p class="preview-hero-copy ti-muted" data-i18n="heroCopy">The visual language of Résumé Tailor, distilled into a system you can carry into your next project.</p>
+            <div class="ti-cluster preview-hero-actions"><a class="ti-button" href="#components"><span data-i18n="explore">Explore the components</span><span aria-hidden="true">↗</span></a><a class="ti-button" data-variant="ghost" href="README.md" data-i18n="readGuide">Read the guide</a></div>
+          </div>
+          <div class="preview-hero-specimen ti-enter">
+            <div class="preview-specimen-meta"><span class="ti-eyebrow" data-i18n="liveSpecimen">Live specimen</span><span class="preview-live-dot" aria-hidden="true"></span></div>
+            <article class="ti-card preview-sample-card">
+              <div class="ti-card-header"><div><p class="ti-muted preview-small" data-i18n="workspace">Your workspace</p><h2 class="ti-heading" data-i18n="sampleTitle">A little more clarity.</h2></div><span class="preview-sample-symbol" aria-hidden="true">↗</span></div>
+              <p class="ti-muted preview-small" data-i18n="sampleCopy">Everything you need to review the next step, in one place.</p>
+              <div class="preview-sample-progress"><div class="preview-split"><span data-i18n="readyReview">Ready for review</span><span class="preview-tabular">8 / 10</span></div><progress class="ti-progress" value="8" max="10" aria-label="Example review readiness" data-i18n-aria="progressLabel">80%</progress></div>
+              <div class="ti-cluster"><span class="ti-badge" data-tone="success"><span aria-hidden="true">✓</span><span data-i18n="verified">Verified</span></span><span class="ti-badge" data-tone="warning"><span aria-hidden="true">!</span><span data-i18n="needsReview">Needs review</span></span></div>
+              <div class="ti-card-footer preview-split"><span class="ti-muted preview-small" data-i18n="sampleData">Illustrative content</span><button class="ti-button" data-size="sm" type="button" data-open-review data-i18n="review">Review changes</button></div>
+            </article>
+            <p class="preview-specimen-caption ti-muted" data-i18n="specimenCaption">Same components. Every theme.</p>
+          </div>
+          <dl class="preview-facts"><div><dt data-i18n="themesLabel">Themes</dt><dd data-i18n="themesValue">Light / Dark / Gateway</dd></div><div><dt data-i18n="architectureLabel">Architecture</dt><dd data-i18n="architectureValue">3 token layers</dd></div><div><dt data-i18n="coreLabel">Core</dt><dd data-i18n="coreValue">Plain CSS · no runtime</dd></div></dl>
+        </section>
+
+        <section id="foundations" class="preview-section">
+          <div class="preview-section-heading"><div><p class="ti-eyebrow">01 / <span data-i18n="foundations">Foundations</span></p><h2 class="ti-heading" data-i18n="foundationsTitle">Quiet, with a point of view.</h2></div><p class="ti-muted" data-i18n="foundationsCopy">Teal for action. Ink for structure. Color earns its place.</p></div>
+          <div class="preview-palette" id="palette"></div>
+          <div class="preview-foundation-grid">
+            <article class="ti-card preview-type-card"><div class="ti-card-header"><h3 class="ti-card-title" data-i18n="typography">Typography</h3><span class="ti-muted preview-small">Geist Variable</span></div><p class="preview-type-display">Aa<span class="ti-muted"> / </span>字</p><p class="ti-heading preview-type-heading" data-i18n="typeSample">Make the next step clear.</p><p class="ti-muted preview-small" data-i18n="typeDescription">15px body · restrained headings · tabular metrics. System fallbacks keep Chinese text readable.</p><div class="preview-type-scale"><span>12</span><span>14</span><span>15</span><span>18</span><span>24</span><span>30</span></div></article>
+            <article class="ti-card"><div class="ti-card-header"><h3 class="ti-card-title" data-i18n="rhythm">Spacing &amp; shape</h3><span class="ti-muted preview-small" data-i18n="rhythmMeta">A 4px rhythm</span></div><div class="preview-space-scale" aria-hidden="true"><div style="--step:var(--ti-space-1)"><i></i><span>4</span></div><div style="--step:var(--ti-space-2)"><i></i><span>8</span></div><div style="--step:var(--ti-space-3)"><i></i><span>12</span></div><div style="--step:var(--ti-space-4)"><i></i><span>16</span></div><div style="--step:var(--ti-space-6)"><i></i><span>24</span></div><div style="--step:var(--ti-space-8)"><i></i><span>32</span></div><div style="--step:var(--ti-space-12)"><i></i><span>48</span></div></div><p class="ti-muted preview-small" data-i18n="shapeCopy">8px base corners, shallow two-part shadows, and content that wraps instead of disappearing.</p><div class="preview-radius-examples" aria-hidden="true"><span>4.8</span><span>8</span><span>11.2</span><span>∞</span></div></article>
+          </div>
+          <div class="preview-principles"><div><span>01</span><h3 data-i18n="principle1">Structure before decoration</h3><p data-i18n="principle1Copy">Rules, rows, and consistent spacing make dense work feel lighter.</p></div><div><span>02</span><h3 data-i18n="principle2">One clear next action</h3><p data-i18n="principle2Copy">Reserve a filled teal button for the step that moves the task forward.</p></div><div><span>03</span><h3 data-i18n="principle3">Evidence stays visible</h3><p data-i18n="principle3Copy">Separate suggestions, review, approval, and completed work.</p></div></div>
+        </section>
+
+        <section id="components" class="preview-section">
+          <div class="preview-section-heading"><div><p class="ti-eyebrow">02 / <span data-i18n="components">Components</span></p><h2 class="ti-heading" data-i18n="componentsTitle">Small parts. Useful together.</h2></div><p class="ti-muted" data-i18n="componentsCopy">Native behavior, visible focus, and room for real content.</p></div>
+          <article class="ti-card preview-button-card"><div class="ti-card-header"><h3 class="ti-card-title" data-i18n="actions">Actions</h3><code>.ti-button</code></div><div class="ti-cluster preview-button-row"><button class="ti-button" type="button" data-open-review data-i18n="primaryAction">Primary action</button><button class="ti-button" data-variant="outline" type="button" id="load-demo" data-i18n="loadingDemo">Try loading state</button><a class="ti-button" data-variant="secondary" href="#tokens" data-i18n="secondaryAction">Browse tokens</a><button class="ti-button" data-variant="ghost" type="button" data-open-review data-i18n="ghostAction">Preview</button><button class="ti-button" data-variant="danger" type="button" id="danger-demo" data-i18n="dangerAction">Reset example</button><button class="ti-button" type="button" disabled data-i18n="disabled">Disabled</button></div><p class="ti-hint" data-i18n="actionHint">Tab through the controls to inspect focus. Touch targets expand to 44px.</p></article>
+          <div class="preview-component-grid">
+            <form class="ti-card ti-stack" id="example-form" novalidate><div class="ti-card-header"><div><h3 class="ti-card-title" data-i18n="formTitle">A field that explains itself</h3><p class="ti-card-description" data-i18n="formCopy">Labels, hints, and errors travel together.</p></div><code>.ti-field</code></div><div class="ti-field"><label class="ti-label" for="project-name" data-i18n="projectName">Project name</label><input class="ti-input" id="project-name" name="project" value="My next project" required aria-describedby="project-hint project-error" autocomplete="off"><p class="ti-hint" id="project-hint" data-i18n="projectHint">Use a name your team will recognize.</p><p class="ti-error" id="project-error" hidden></p></div><div class="ti-field"><label class="ti-label" for="project-type" data-i18n="projectType">Workspace type</label><select class="ti-select" id="project-type" name="type"><option data-i18n="productWorkspace">Product workspace</option><option data-i18n="personalTool">Personal tool</option><option data-i18n="internalDashboard">Internal dashboard</option></select></div><label class="ti-check"><input type="checkbox" id="keep-review" checked><span data-i18n="keepReview">Keep an explicit review step</span></label><div class="ti-cluster"><button class="ti-button" type="submit" data-i18n="saveExample">Save example</button><span class="ti-hint" data-i18n="localDemo">Preview only · stored in this page</span></div></form>
+            <article class="ti-card ti-stack"><div class="ti-card-header"><h3 class="ti-card-title" data-i18n="feedback">Feedback with meaning</h3><code>.ti-badge / .ti-alert</code></div><div class="ti-cluster"><span class="ti-badge" data-tone="success"><span aria-hidden="true">✓</span><span data-i18n="verified">Verified</span></span><span class="ti-badge" data-tone="warning"><span aria-hidden="true">!</span><span data-i18n="needsReview">Needs review</span></span><span class="ti-badge" data-tone="danger"><span aria-hidden="true">×</span><span data-i18n="blocked">Blocked</span></span><span class="ti-badge" data-tone="info"><span aria-hidden="true">i</span><span data-i18n="suggestion">Suggestion</span></span></div><div class="ti-alert" data-tone="warning"><span aria-hidden="true">!</span><div><strong data-i18n="approvalTitle">Your approval comes first.</strong><p data-i18n="approvalCopy">Show what will change and where it will go before asking someone to confirm.</p></div></div><div class="ti-field"><label class="ti-label" for="error-example" data-i18n="errorFieldLabel">Example validation state</label><input class="ti-input" id="error-example" value="" aria-invalid="true" aria-describedby="error-example-help"><p class="ti-error" id="error-example-help" data-i18n="errorFieldCopy">Enter a project name to continue.</p></div><div class="preview-split"><span class="ti-muted preview-small" data-i18n="loadingPreview">Loading placeholder</span><span class="ti-spinner" aria-hidden="true"></span></div><div class="ti-skeleton" aria-hidden="true"></div><p class="ti-hint" data-i18n="feedbackHint">Always pair color with a label or symbol. Decorative borders do not carry state.</p></article>
+          </div>
+        </section>
+
+        <section id="patterns" class="preview-section">
+          <div class="preview-section-heading"><div><p class="ti-eyebrow">03 / <span data-i18n="patterns">Patterns</span></p><h2 class="ti-heading" data-i18n="patternsTitle">Built around the work.</h2></div><p class="ti-muted" data-i18n="patternsCopy">Compact rows keep uneven content balanced. Details stay readable at every width.</p></div>
+          <article class="ti-card preview-workspace"><header class="ti-page-header"><div><h3 class="ti-heading" data-i18n="workspaceTitle">Project workspace</h3><p class="ti-muted preview-small" data-i18n="workspaceCopy">A reusable shell for evidence, progress, and decisions.</p></div><button class="ti-button" type="button" data-open-review data-i18n="review">Review changes</button></header><dl class="ti-metrics"><div><dt data-i18n="sourcesLabel">Sources</dt><dd>12</dd></div><div><dt data-i18n="verifiedLabel">Verified items</dt><dd>48</dd></div><div><dt data-i18n="pendingLabel">Awaiting review</dt><dd>03</dd></div></dl><div class="ti-rows"><div class="ti-row"><h4 class="ti-row-label" data-i18n="frontend">Interface</h4><div class="ti-row-value"><span class="ti-badge" data-i18n="responsiveChip">Responsive layouts</span><span class="ti-badge" data-i18n="keyboardChip">Keyboard navigation</span><span class="ti-badge" data-i18n="localizationChip">Localization</span><span class="ti-badge" data-i18n="tokensChip">Design tokens</span><span class="ti-badge" data-i18n="themesChip">Theme support</span></div></div><div class="ti-row"><h4 class="ti-row-label" data-i18n="workflow">Workflow</h4><div class="ti-row-value"><span class="ti-badge" data-tone="stage-1" data-i18n="stage1">Intake</span><span class="ti-badge" data-tone="stage-2" data-i18n="stage2">Selected</span><span class="ti-badge" data-tone="stage-3" data-i18n="stage3">Approved</span><span class="ti-badge" data-tone="stage-4" data-i18n="stage4">In progress</span><span class="ti-badge" data-tone="stage-5" data-i18n="stage5">Ready</span></div></div><div class="ti-row"><h4 class="ti-row-label" data-i18n="longContent">Long content</h4><div class="ti-row-value"><span class="ti-badge" data-i18n="longExample">A project label with enough detail to wrap naturally on a narrow screen</span></div></div></div><p class="ti-hint preview-pattern-note" data-i18n="metricsNote">All counts and content in this preview are examples.</p></article>
+          <article class="ti-root preview-gateway" data-ti-theme="gateway"><div class="preview-gateway-copy"><p class="ti-eyebrow" data-i18n="gatewayLabel">The gateway preset</p><h3 class="ti-heading" data-i18n="gatewayTitle">An intentional arrival.</h3><p class="ti-muted" data-i18n="gatewayCopy">Mint on deep ink, a quiet workflow diagram, and one focused form. Carry the login mood without imposing it on the workspace.</p><button class="ti-button" type="button" data-open-review data-i18n="gatewayAction">Explore the review pattern</button></div><div class="preview-gateway-diagram" aria-hidden="true"><svg viewBox="0 0 400 220" fill="none"><path d="M35 55h95a35 35 0 0 1 35 35v40a35 35 0 0 0 35 35h145M35 165h70a30 30 0 0 0 30-30V85a30 30 0 0 1 30-30h180"/><path d="M200 165v22a20 20 0 0 0 20 20h110" stroke-dasharray="4 6"/><rect x="8" y="32" width="88" height="46" rx="8"/><rect x="8" y="142" width="88" height="46" rx="8"/><rect x="160" y="86" width="88" height="46" rx="8"/><rect x="302" y="32" width="88" height="46" rx="8"/><rect x="302" y="142" width="88" height="46" rx="8"/><circle cx="165" cy="110" r="5"/><circle cx="302" cy="55" r="4"/><circle cx="302" cy="165" r="4"/></svg><span class="preview-diagram-label" data-i18n="gatewayDiagram">Gather → Review → Continue</span></div></article>
+        </section>
+
+        <section id="tokens" class="preview-section">
+          <div class="preview-section-heading"><div><p class="ti-eyebrow">04 / <span data-i18n="tokens">Token explorer</span></p><h2 class="ti-heading" data-i18n="tokensTitle">Every decision has a name.</h2></div><p class="ti-muted" data-i18n="tokensCopy">Primitive → semantic → component. Search a token, inspect its alias, and copy its CSS variable.</p></div>
+          <div class="preview-token-controls"><div class="ti-field"><label class="ti-label" for="token-search" data-i18n="searchTokens">Search tokens</label><input class="ti-input" id="token-search" type="search" placeholder="Try primary, radius, button…" data-i18n-placeholder="searchPlaceholder"></div><div class="ti-field"><label class="ti-label" for="token-layer" data-i18n="layer">Layer</label><select class="ti-select" id="token-layer"><option value="all" data-i18n="allLayers">All layers</option><option value="semantic" data-i18n="semanticLayer">Semantic</option><option value="component" data-i18n="componentLayer">Component</option><option value="primitive" data-i18n="primitiveLayer">Primitive</option></select></div></div>
+          <p class="ti-hint preview-token-count" id="token-count" role="status"></p>
+          <div class="ti-table-wrap preview-token-table" tabindex="0" role="region" aria-label="Design tokens" data-i18n-aria="tokenTableLabel"><table class="ti-table"><thead><tr><th scope="col" data-i18n="tokenName">Token / CSS variable</th><th scope="col" data-i18n="resolvedValue">Resolved value</th><th scope="col" data-i18n="references">Reference</th><th scope="col"><span class="ti-sr-only" data-i18n="copy">Copy</span></th></tr></thead><tbody id="token-results"></tbody></table></div>
+          <div class="preview-empty-tokens ti-empty" id="token-empty" hidden><strong data-i18n="noTokens">No matching tokens</strong><p class="ti-muted" data-i18n="noTokensCopy">Try a shorter name or choose a different layer.</p></div>
+        </section>
+
+        <section id="adopt" class="preview-section">
+          <div class="preview-section-heading"><div><p class="ti-eyebrow">05 / <span data-i18n="adopt">Make it yours</span></p><h2 class="ti-heading" data-i18n="adoptTitle">Copy. Adapt. Keep the character.</h2></div><p class="ti-muted" data-i18n="adoptCopy">Use the whole kit or bring just the tokens into your existing components.</p></div>
+          <div class="preview-adopt-grid"><article class="ti-card ti-stack"><div class="preview-split"><h3 class="ti-card-title" data-i18n="quickStart">The small start</h3><button class="ti-button" data-variant="outline" data-size="sm" type="button" id="copy-quickstart" data-i18n="copyCode">Copy code</button></div><pre class="preview-code" tabindex="0" aria-label="Quick start code" data-i18n-aria="quickStartCode"><code id="quickstart-code">&lt;link rel="stylesheet"
+      href="teal-ink/styles/index.css"&gt;
+
+&lt;main class="ti-root"
+      data-ti-theme="light"&gt;
+  &lt;button class="ti-button"&gt;
+    Continue
+  &lt;/button&gt;
+&lt;/main&gt;</code></pre></article><article class="ti-card ti-stack"><h3 class="ti-card-title" data-i18n="takeAlong">What travels with you</h3><ul class="preview-deliverables"><li data-i18n="deliverable1">Editable, typed token JSON + generated CSS</li><li data-i18n="deliverable2">Plain CSS components and composition patterns</li><li data-i18n="deliverable3">React 19 source + Tailwind v4 adapter</li><li data-i18n="deliverable4">Accessibility, migration, and refactoring guides</li><li data-i18n="deliverable5">A design brief for your next coding agent</li></ul><div class="ti-cluster"><a href="README.md" data-i18n="readme">Start here</a><span class="ti-muted" aria-hidden="true">·</span><a href="docs/ADOPTION.md" data-i18n="migrationGuide">Adoption guide</a><span class="ti-muted" aria-hidden="true">·</span><a href="DESIGN-BRIEF.md" data-i18n="agentBrief">Agent brief</a></div></article></div>
+        </section>
+        <footer class="preview-footer"><span>Teal &amp; Ink / v1.0.0</span><span data-i18n="footer">Extracted from Résumé Tailor. Made to evolve.</span></footer>
+      </main>
+    </div>
+  </div>
+  <dialog class="ti-dialog" id="review-dialog" aria-labelledby="review-title" aria-describedby="review-description"><div class="ti-stack"><p class="ti-eyebrow" data-i18n="reviewEyebrow">Review pattern · example</p><h2 class="ti-heading" id="review-title" data-i18n="reviewTitle">See the change before you apply it.</h2><p class="ti-muted" id="review-description" data-i18n="reviewDescription">A review dialog should explain the proposed change, its destination, and the consequence of confirming.</p><div class="ti-alert" data-tone="info"><span aria-hidden="true">i</span><div><strong data-i18n="reviewChange">Proposed change</strong><p data-i18n="reviewChangeCopy">Apply the Teal &amp; Ink appearance to this preview. This example does not send or publish anything.</p></div></div><form method="dialog" class="ti-cluster"><button class="ti-button" data-variant="outline" value="cancel" data-i18n="cancel">Cancel</button><button class="ti-button" value="confirm" data-i18n="confirmExample">Confirm example</button></form></div></dialog>
+  <div class="preview-toast" id="preview-status" role="status" aria-live="polite" aria-atomic="true"></div>
+  <script src="tokens/catalog.js"></script>
+  <script src="preview.js"></script>
+</body>
+</html>

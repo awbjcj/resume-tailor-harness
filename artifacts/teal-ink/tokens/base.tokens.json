@@ -1,0 +1,2592 @@
+{
+  "$description": "Teal & Ink 1.0.0. Three-layer token snapshot of Resume Tailor. Default semantic theme: light. Values use DTCG 2025.10 token types; theme overlays are separate documents.",
+  "primitive": {
+    "color": {
+      "teal": {
+        "50": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9019607843137255,
+              0.9686274509803922,
+              0.9803921568627451
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "100": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.8274509803921568,
+              0.9529411764705882,
+              0.9647058823529412
+            ],
+            "alpha": 1
+          },
+          "$description": "Authored extension to complete the portable scale."
+        },
+        "200": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5568627450980392,
+              0.9176470588235294,
+              0.9490196078431372
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "300": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.3568627450980392,
+              0.8470588235294118,
+              0.9058823529411765
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "400": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.1450980392156863,
+              0.7411764705882353,
+              0.8117647058823529
+            ],
+            "alpha": 1
+          },
+          "$description": "Authored extension to complete the portable scale."
+        },
+        "500": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0392156862745098,
+              0.5803921568627451,
+              0.6588235294117647
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "600": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.03137254901960784,
+              0.4392156862745098,
+              0.5411764705882353
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "700": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.027450980392156862,
+              0.37254901960784315,
+              0.4627450980392157
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "800": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.09019607843137255,
+              0.21568627450980393,
+              0.23529411764705882
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "900": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.06274509803921569,
+              0.12549019607843137,
+              0.13725490196078433
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "950": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.043137254901960784,
+              0.09803921568627451,
+              0.11372549019607843
+            ],
+            "alpha": 1
+          },
+          "$description": "Authored extension to complete the portable scale."
+        }
+      },
+      "neutral": {
+        "white": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "canvas": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9647058823529412,
+              0.9725490196078431,
+              0.984313725490196
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "fog": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9333333333333333,
+              0.9568627450980393,
+              0.9686274509803922
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "muted": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.396078431372549,
+              0.44313725490196076,
+              0.48627450980392156
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "soft": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6549019607843137,
+              0.6941176470588235,
+              0.7333333333333333
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "ink": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.09411764705882353,
+              0.12549019607843137,
+              0.14901960784313725
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "nav-ink": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.11372549019607843,
+              0.1450980392156863,
+              0.17647058823529413
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "night": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.07058823529411765,
+              0.0784313725490196,
+              0.08627450980392157
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "surface": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.09411764705882353,
+              0.10588235294117647,
+              0.12156862745098039
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "raised": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.12549019607843137,
+              0.14901960784313725,
+              0.16862745098039217
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "stage": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.3333333333333333,
+              0.3764705882352941,
+              0.4117647058823529
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "chart": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5450980392156862,
+              0.5843137254901961,
+              0.6313725490196078
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        }
+      },
+      "crimson": {
+        "600": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.7411764705882353,
+              0.17647058823529413,
+              0.27450980392156865
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "300": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1.0,
+              0.4196078431372549,
+              0.5098039215686274
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        }
+      },
+      "ochre": {
+        "700": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5215686274509804,
+              0.3568627450980392,
+              0.043137254901960784
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "600": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5411764705882353,
+              0.396078431372549,
+              0.0
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "500": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6901960784313725,
+              0.41568627450980394,
+              0.0
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "300": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9019607843137255,
+              0.7254901960784313,
+              0.30196078431372547
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "200": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9372549019607843,
+              0.7647058823529411,
+              0.40784313725490196
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "100": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1.0,
+              0.7568627450980392,
+              0.35294117647058826
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        }
+      },
+      "green": {
+        "700": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.09019607843137255,
+              0.4196078431372549,
+              0.27450980392156865
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "600": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.12156862745098039,
+              0.47843137254901963,
+              0.30196078431372547
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "500": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.08627450980392157,
+              0.6274509803921569,
+              0.5215686274509804
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "300": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2627450980392157,
+              0.8196078431372549,
+              0.6196078431372549
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "200": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.4392156862745098,
+              0.8745098039215686,
+              0.6666666666666666
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        }
+      },
+      "blue": {
+        "600": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2196078431372549,
+              0.403921568627451,
+              0.8392156862745098
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "300": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.5254901960784314,
+              0.6627450980392157,
+              1.0
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "400": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.47058823529411764,
+              0.7176470588235294,
+              0.8156862745098039
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "200": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.4627450980392157,
+              0.7686274509803922,
+              0.8509803921568627
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        }
+      },
+      "indigo": {
+        "600": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.3176470588235294,
+              0.27058823529411763,
+              0.7098039215686275
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "300": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.7098039215686275,
+              0.6705882352941176,
+              1.0
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        }
+      },
+      "gateway": {
+        "background": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.03137254901960784,
+              0.058823529411764705,
+              0.08235294117647059
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "foreground": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9254901960784314,
+              0.9529411764705882,
+              0.9607843137254902
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "surface": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.06666666666666667,
+              0.11372549019607843,
+              0.14901960784313725
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "mint": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6431372549019608,
+              0.9254901960784314,
+              0.8627450980392157
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "on-mint": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.06274509803921569,
+              0.16862745098039217,
+              0.1607843137254902
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "secondary": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.12549019607843137,
+              0.19215686274509805,
+              0.23529411764705882
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "muted": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.10588235294117647,
+              0.16862745098039217,
+              0.21176470588235294
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "muted-foreground": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6509803921568628,
+              0.7176470588235294,
+              0.7607843137254902
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "accent": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.11372549019607843,
+              0.21176470588235294,
+              0.23137254901960785
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "on-accent": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.7215686274509804,
+              0.9490196078431372,
+              0.9058823529411765
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "border": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.20392156862745098,
+              0.2823529411764706,
+              0.3254901960784314
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "input": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.3254901960784314,
+              0.4117647058823529,
+              0.4588235294117647
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "danger": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1.0,
+              0.6666666666666666,
+              0.6666666666666666
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "trace": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2549019607843137,
+              0.39215686274509803,
+              0.3686274509803922
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "node": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.06274509803921569,
+              0.11764705882352941,
+              0.15294117647058825
+            ],
+            "alpha": 1
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        }
+      },
+      "alpha": {
+        "border-light": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.09411764705882353,
+              0.12549019607843137,
+              0.14901960784313725
+            ],
+            "alpha": 0.12
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "input-light": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.09411764705882353,
+              0.12549019607843137,
+              0.14901960784313725
+            ],
+            "alpha": 0.14
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "border-dark": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9333333333333333,
+              0.9568627450980393,
+              0.9686274509803922
+            ],
+            "alpha": 0.12
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "input-dark": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9333333333333333,
+              0.9568627450980393,
+              0.9686274509803922
+            ],
+            "alpha": 0.16
+          },
+          "$description": "Extracted from Resume Tailor's application or gateway theme."
+        },
+        "overlay": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "alpha": 0.65
+          },
+          "$description": "Authored extension to complete the portable scale."
+        }
+      }
+    },
+    "space": {
+      "0": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "0-5": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.125,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "1": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.25,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "1-5": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.375,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "2": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.5,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "3": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.75,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "3-5": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.875,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "4": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "5": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.25,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "6": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.5,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "8": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "10": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2.5,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "12": {
+        "$type": "dimension",
+        "$value": {
+          "value": 3,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "16": {
+        "$type": "dimension",
+        "$value": {
+          "value": 4,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "20": {
+        "$type": "dimension",
+        "$value": {
+          "value": 5,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "24": {
+        "$type": "dimension",
+        "$value": {
+          "value": 6,
+          "unit": "rem"
+        },
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      }
+    },
+    "radius": {
+      "sm": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.3,
+          "unit": "rem"
+        },
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.4,
+          "unit": "rem"
+        },
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.5,
+          "unit": "rem"
+        },
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.7,
+          "unit": "rem"
+        },
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "2xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.9,
+          "unit": "rem"
+        },
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "3xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.1,
+          "unit": "rem"
+        },
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "4xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.3,
+          "unit": "rem"
+        },
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "pill": {
+        "$type": "dimension",
+        "$value": {
+          "value": 9999,
+          "unit": "px"
+        },
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      }
+    },
+    "font": {
+      "ui": {
+        "$type": "fontFamily",
+        "$value": [
+          "Geist Variable",
+          "Geist",
+          "Noto Sans SC",
+          "PingFang SC",
+          "Microsoft YaHei",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif"
+        ],
+        "$description": "Source Geist family plus portable Latin/CJK fallbacks."
+      },
+      "code": {
+        "$type": "fontFamily",
+        "$value": [
+          "ui-monospace",
+          "SFMono-Regular",
+          "Consolas",
+          "Liberation Mono",
+          "monospace"
+        ],
+        "$description": "Portable extension: a true monospace stack for technical content."
+      }
+    },
+    "text": {
+      "xs": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.75,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "sm": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.875,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "body": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.9375,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "input": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.125,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.25,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "2xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.5,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "3xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.875,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "4xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2.25,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "display": {
+        "$type": "dimension",
+        "$value": {
+          "value": 4,
+          "unit": "rem"
+        },
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      }
+    },
+    "weight": {
+      "normal": {
+        "$type": "fontWeight",
+        "$value": 400,
+        "$description": "Variable-font weight from the project interface."
+      },
+      "medium": {
+        "$type": "fontWeight",
+        "$value": 500,
+        "$description": "Variable-font weight from the project interface."
+      },
+      "semibold": {
+        "$type": "fontWeight",
+        "$value": 600,
+        "$description": "Variable-font weight from the project interface."
+      },
+      "strong": {
+        "$type": "fontWeight",
+        "$value": 650,
+        "$description": "Variable-font weight from the project interface."
+      },
+      "bold": {
+        "$type": "fontWeight",
+        "$value": 700,
+        "$description": "Variable-font weight from the project interface."
+      }
+    },
+    "leading": {
+      "tight": {
+        "$type": "number",
+        "$value": 1.15,
+        "$description": "Unitless line height; allow multiline labels and localized copy."
+      },
+      "heading": {
+        "$type": "number",
+        "$value": 1.25,
+        "$description": "Unitless line height; allow multiline labels and localized copy."
+      },
+      "body": {
+        "$type": "number",
+        "$value": 1.6,
+        "$description": "Unitless line height; allow multiline labels and localized copy."
+      },
+      "relaxed": {
+        "$type": "number",
+        "$value": 1.8,
+        "$description": "Unitless line height; allow multiline labels and localized copy."
+      }
+    },
+    "tracking": {
+      "heading": {
+        "$type": "number",
+        "$value": -0.03,
+        "$description": "Letter spacing in em; CSS multiplies this number by 1em."
+      },
+      "metric": {
+        "$type": "number",
+        "$value": -0.02,
+        "$description": "Letter spacing in em; CSS multiplies this number by 1em."
+      },
+      "eyebrow": {
+        "$type": "number",
+        "$value": 0.16,
+        "$description": "Letter spacing in em; CSS multiplies this number by 1em."
+      }
+    },
+    "shadow": {
+      "card-light": {
+        "$type": "shadow",
+        "$value": [
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0.09411764705882353,
+                0.12549019607843137,
+                0.14901960784313725
+              ],
+              "alpha": 0.05
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 1,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 2,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0.09411764705882353,
+                0.12549019607843137,
+                0.14901960784313725
+              ],
+              "alpha": 0.06
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 2,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 6,
+              "unit": "px"
+            },
+            "spread": {
+              "value": -2,
+              "unit": "px"
+            }
+          }
+        ],
+        "$description": "Exact source two-part contact and ambient shadow."
+      },
+      "raised-light": {
+        "$type": "shadow",
+        "$value": [
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0.09411764705882353,
+                0.12549019607843137,
+                0.14901960784313725
+              ],
+              "alpha": 0.06
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 1,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 2,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0.09411764705882353,
+                0.12549019607843137,
+                0.14901960784313725
+              ],
+              "alpha": 0.12
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 8,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 20,
+              "unit": "px"
+            },
+            "spread": {
+              "value": -6,
+              "unit": "px"
+            }
+          }
+        ],
+        "$description": "Exact source two-part contact and ambient shadow."
+      },
+      "card-dark": {
+        "$type": "shadow",
+        "$value": [
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0.4
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 1,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 2,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0.35
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 2,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 6,
+              "unit": "px"
+            },
+            "spread": {
+              "value": -2,
+              "unit": "px"
+            }
+          }
+        ],
+        "$description": "Exact source two-part contact and ambient shadow."
+      },
+      "raised-dark": {
+        "$type": "shadow",
+        "$value": [
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0.45
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 1,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 2,
+              "unit": "px"
+            },
+            "spread": {
+              "value": 0,
+              "unit": "px"
+            }
+          },
+          {
+            "color": {
+              "colorSpace": "srgb",
+              "components": [
+                0,
+                0,
+                0
+              ],
+              "alpha": 0.55
+            },
+            "offsetX": {
+              "value": 0,
+              "unit": "px"
+            },
+            "offsetY": {
+              "value": 8,
+              "unit": "px"
+            },
+            "blur": {
+              "value": 20,
+              "unit": "px"
+            },
+            "spread": {
+              "value": -6,
+              "unit": "px"
+            }
+          }
+        ],
+        "$description": "Exact source two-part contact and ambient shadow."
+      }
+    },
+    "duration": {
+      "none": {
+        "$type": "duration",
+        "$value": {
+          "value": 0,
+          "unit": "ms"
+        },
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "fast": {
+        "$type": "duration",
+        "$value": {
+          "value": 150,
+          "unit": "ms"
+        },
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "disclosure": {
+        "$type": "duration",
+        "$value": {
+          "value": 160,
+          "unit": "ms"
+        },
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "content": {
+        "$type": "duration",
+        "$value": {
+          "value": 180,
+          "unit": "ms"
+        },
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "dialog": {
+        "$type": "duration",
+        "$value": {
+          "value": 200,
+          "unit": "ms"
+        },
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "drawer": {
+        "$type": "duration",
+        "$value": {
+          "value": 240,
+          "unit": "ms"
+        },
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "loading": {
+        "$type": "duration",
+        "$value": {
+          "value": 1000,
+          "unit": "ms"
+        },
+        "$description": "Source motion duration; loading is a portable extension."
+      }
+    },
+    "ease": {
+      "out": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.23,
+          1,
+          0.32,
+          1
+        ],
+        "$description": "Source house easing: immediate response without delayed starts."
+      },
+      "in-out": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.77,
+          0,
+          0.175,
+          1
+        ],
+        "$description": "Source house easing: immediate response without delayed starts."
+      },
+      "drawer": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.32,
+          0.72,
+          0,
+          1
+        ],
+        "$description": "Source house easing: immediate response without delayed starts."
+      }
+    },
+    "size": {
+      "xs": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.75,
+          "unit": "rem"
+        },
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "sm": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2.25,
+          "unit": "rem"
+        },
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "control": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2.5,
+          "unit": "rem"
+        },
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "touch": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2.75,
+          "unit": "rem"
+        },
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "icon": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        },
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "border": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.0625,
+          "unit": "rem"
+        },
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "focus": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.125,
+          "unit": "rem"
+        },
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "focus-offset": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.1875,
+          "unit": "rem"
+        },
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      }
+    },
+    "layout": {
+      "sidebar": {
+        "$type": "dimension",
+        "$value": {
+          "value": 16,
+          "unit": "rem"
+        },
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "content": {
+        "$type": "dimension",
+        "$value": {
+          "value": 90,
+          "unit": "rem"
+        },
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "reading": {
+        "$type": "dimension",
+        "$value": {
+          "value": 42,
+          "unit": "rem"
+        },
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "dialog": {
+        "$type": "dimension",
+        "$value": {
+          "value": 32,
+          "unit": "rem"
+        },
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "grid": {
+        "$type": "dimension",
+        "$value": {
+          "value": 72,
+          "unit": "px"
+        },
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "row-label": {
+        "$type": "dimension",
+        "$value": {
+          "value": 12,
+          "unit": "rem"
+        },
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      }
+    },
+    "opacity": {
+      "disabled": {
+        "$type": "number",
+        "$value": 0.5,
+        "$description": "Source disabled opacity or press scale."
+      },
+      "pressed": {
+        "$type": "number",
+        "$value": 0.98,
+        "$description": "Source disabled opacity or press scale."
+      }
+    },
+    "z": {
+      "base": {
+        "$type": "number",
+        "$value": 0,
+        "$description": "Portable stacking order; native dialogs use the browser top layer."
+      },
+      "sticky": {
+        "$type": "number",
+        "$value": 10,
+        "$description": "Portable stacking order; native dialogs use the browser top layer."
+      },
+      "overlay": {
+        "$type": "number",
+        "$value": 40,
+        "$description": "Portable stacking order; native dialogs use the browser top layer."
+      },
+      "toast": {
+        "$type": "number",
+        "$value": 50,
+        "$description": "Portable stacking order; native dialogs use the browser top layer."
+      }
+    }
+  },
+  "semantic": {
+    "color": {
+      "background": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.canvas}",
+        "$description": "Source --background in the light theme."
+      },
+      "foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.ink}",
+        "$description": "Source --foreground in the light theme."
+      },
+      "card": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.white}",
+        "$description": "Source --card in the light theme."
+      },
+      "card-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.ink}",
+        "$description": "Source --card-foreground in the light theme."
+      },
+      "popover": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.white}",
+        "$description": "Source --popover in the light theme."
+      },
+      "popover-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.ink}",
+        "$description": "Source --popover-foreground in the light theme."
+      },
+      "primary": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.600}",
+        "$description": "Source --primary in the light theme."
+      },
+      "primary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.white}",
+        "$description": "Source --primary-foreground in the light theme."
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.fog}",
+        "$description": "Source --secondary in the light theme."
+      },
+      "secondary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.ink}",
+        "$description": "Source --secondary-foreground in the light theme."
+      },
+      "muted": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.fog}",
+        "$description": "Source --muted in the light theme."
+      },
+      "muted-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.muted}",
+        "$description": "Source --muted-foreground in the light theme."
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.50}",
+        "$description": "Source --accent in the light theme."
+      },
+      "accent-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.700}",
+        "$description": "Source --accent-foreground in the light theme."
+      },
+      "destructive": {
+        "$type": "color",
+        "$value": "{primitive.color.crimson.600}",
+        "$description": "Source --destructive in the light theme."
+      },
+      "warning": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.600}",
+        "$description": "Source --warning in the light theme."
+      },
+      "success": {
+        "$type": "color",
+        "$value": "{primitive.color.green.600}",
+        "$description": "Source --success in the light theme."
+      },
+      "info": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.600}",
+        "$description": "Source --info in the light theme."
+      },
+      "stage-neutral": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.stage}",
+        "$description": "Source --stage-neutral in the light theme."
+      },
+      "stage-approved": {
+        "$type": "color",
+        "$value": "{primitive.color.green.700}",
+        "$description": "Source --stage-approved in the light theme."
+      },
+      "stage-tailored": {
+        "$type": "color",
+        "$value": "{primitive.color.indigo.600}",
+        "$description": "Source --stage-tailored in the light theme."
+      },
+      "stage-rendered": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.700}",
+        "$description": "Source --stage-rendered in the light theme."
+      },
+      "gap": {
+        "$type": "color",
+        "$value": "{primitive.color.crimson.600}",
+        "$description": "Source --gap in the light theme."
+      },
+      "adjacent": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.600}",
+        "$description": "Source --adjacent in the light theme."
+      },
+      "covered": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.muted}",
+        "$description": "Source --covered in the light theme."
+      },
+      "ready": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.500}",
+        "$description": "Source --ready in the light theme."
+      },
+      "border": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.border-light}",
+        "$description": "Source --border in the light theme."
+      },
+      "input": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.input-light}",
+        "$description": "Source --input in the light theme."
+      },
+      "ring": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.500}",
+        "$description": "Source --ring in the light theme."
+      },
+      "chart-1": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.600}",
+        "$description": "Source --chart-1 in the light theme."
+      },
+      "chart-2": {
+        "$type": "color",
+        "$value": "{primitive.color.green.500}",
+        "$description": "Source --chart-2 in the light theme."
+      },
+      "chart-3": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.600}",
+        "$description": "Source --chart-3 in the light theme."
+      },
+      "chart-4": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.400}",
+        "$description": "Source --chart-4 in the light theme."
+      },
+      "chart-5": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.chart}",
+        "$description": "Source --chart-5 in the light theme."
+      },
+      "sidebar": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.white}",
+        "$description": "Source --sidebar in the light theme."
+      },
+      "sidebar-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.nav-ink}",
+        "$description": "Source --sidebar-foreground in the light theme."
+      },
+      "sidebar-primary": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.600}",
+        "$description": "Source --sidebar-primary in the light theme."
+      },
+      "sidebar-primary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.white}",
+        "$description": "Source --sidebar-primary-foreground in the light theme."
+      },
+      "sidebar-accent": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.50}",
+        "$description": "Source --sidebar-accent in the light theme."
+      },
+      "sidebar-accent-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.700}",
+        "$description": "Source --sidebar-accent-foreground in the light theme."
+      },
+      "sidebar-border": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.border-light}",
+        "$description": "Source --sidebar-border in the light theme."
+      },
+      "sidebar-ring": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.500}",
+        "$description": "Source --sidebar-ring in the light theme."
+      },
+      "overlay": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.overlay}",
+        "$description": "Backdrop for modal attention; use with a native modal or a complete dialog primitive."
+      },
+      "field-border": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.muted}",
+        "$description": "Portable accessibility refinement: visible control boundaries meet 3:1; source decorative borders stay separate."
+      },
+      "on-muted": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.stage}",
+        "$description": "Readable secondary copy placed directly on the muted surface; source muted ink is retained separately."
+      },
+      "primary-hover": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.700}",
+        "$description": "Explicit interactive shade for portable consumers."
+      },
+      "primary-active": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.700}",
+        "$description": "Pressed state remains within the source teal family."
+      }
+    },
+    "shadow": {
+      "card": {
+        "$type": "shadow",
+        "$value": "{primitive.shadow.card-light}",
+        "$description": "Resting surface elevation."
+      },
+      "raised": {
+        "$type": "shadow",
+        "$value": "{primitive.shadow.raised-light}",
+        "$description": "Hovered or floating surface elevation."
+      }
+    },
+    "space": {
+      "0": {
+        "$type": "dimension",
+        "$value": "{primitive.space.0}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "0-5": {
+        "$type": "dimension",
+        "$value": "{primitive.space.0-5}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "1": {
+        "$type": "dimension",
+        "$value": "{primitive.space.1}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "1-5": {
+        "$type": "dimension",
+        "$value": "{primitive.space.1-5}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "2": {
+        "$type": "dimension",
+        "$value": "{primitive.space.2}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "3": {
+        "$type": "dimension",
+        "$value": "{primitive.space.3}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "3-5": {
+        "$type": "dimension",
+        "$value": "{primitive.space.3-5}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "4": {
+        "$type": "dimension",
+        "$value": "{primitive.space.4}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "5": {
+        "$type": "dimension",
+        "$value": "{primitive.space.5}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "6": {
+        "$type": "dimension",
+        "$value": "{primitive.space.6}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "8": {
+        "$type": "dimension",
+        "$value": "{primitive.space.8}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "10": {
+        "$type": "dimension",
+        "$value": "{primitive.space.10}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "12": {
+        "$type": "dimension",
+        "$value": "{primitive.space.12}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "16": {
+        "$type": "dimension",
+        "$value": "{primitive.space.16}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "20": {
+        "$type": "dimension",
+        "$value": "{primitive.space.20}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      },
+      "24": {
+        "$type": "dimension",
+        "$value": "{primitive.space.24}",
+        "$description": "Four-pixel rhythm with half steps for dense controls; rem units allow text scaling."
+      }
+    },
+    "radius": {
+      "sm": {
+        "$type": "dimension",
+        "$value": "{primitive.radius.sm}",
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": "{primitive.radius.md}",
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": "{primitive.radius.lg}",
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "xl": {
+        "$type": "dimension",
+        "$value": "{primitive.radius.xl}",
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "2xl": {
+        "$type": "dimension",
+        "$value": "{primitive.radius.2xl}",
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "3xl": {
+        "$type": "dimension",
+        "$value": "{primitive.radius.3xl}",
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "4xl": {
+        "$type": "dimension",
+        "$value": "{primitive.radius.4xl}",
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      },
+      "pill": {
+        "$type": "dimension",
+        "$value": "{primitive.radius.pill}",
+        "$description": "Derived from the source 0.5rem radius and its existing multipliers."
+      }
+    },
+    "font": {
+      "ui": {
+        "$type": "fontFamily",
+        "$value": "{primitive.font.ui}",
+        "$description": "Source Geist family plus portable Latin/CJK fallbacks."
+      },
+      "code": {
+        "$type": "fontFamily",
+        "$value": "{primitive.font.code}",
+        "$description": "Portable extension: a true monospace stack for technical content."
+      }
+    },
+    "text": {
+      "xs": {
+        "$type": "dimension",
+        "$value": "{primitive.text.xs}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "sm": {
+        "$type": "dimension",
+        "$value": "{primitive.text.sm}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "body": {
+        "$type": "dimension",
+        "$value": "{primitive.text.body}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "input": {
+        "$type": "dimension",
+        "$value": "{primitive.text.input}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": "{primitive.text.lg}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "xl": {
+        "$type": "dimension",
+        "$value": "{primitive.text.xl}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "2xl": {
+        "$type": "dimension",
+        "$value": "{primitive.text.2xl}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "3xl": {
+        "$type": "dimension",
+        "$value": "{primitive.text.3xl}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "4xl": {
+        "$type": "dimension",
+        "$value": "{primitive.text.4xl}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      },
+      "display": {
+        "$type": "dimension",
+        "$value": "{primitive.text.display}",
+        "$description": "Source dashboard typography scale; body is 15px at the default root."
+      }
+    },
+    "weight": {
+      "normal": {
+        "$type": "fontWeight",
+        "$value": "{primitive.weight.normal}",
+        "$description": "Variable-font weight from the project interface."
+      },
+      "medium": {
+        "$type": "fontWeight",
+        "$value": "{primitive.weight.medium}",
+        "$description": "Variable-font weight from the project interface."
+      },
+      "semibold": {
+        "$type": "fontWeight",
+        "$value": "{primitive.weight.semibold}",
+        "$description": "Variable-font weight from the project interface."
+      },
+      "strong": {
+        "$type": "fontWeight",
+        "$value": "{primitive.weight.strong}",
+        "$description": "Variable-font weight from the project interface."
+      },
+      "bold": {
+        "$type": "fontWeight",
+        "$value": "{primitive.weight.bold}",
+        "$description": "Variable-font weight from the project interface."
+      }
+    },
+    "leading": {
+      "tight": {
+        "$type": "number",
+        "$value": "{primitive.leading.tight}",
+        "$description": "Unitless line height; allow multiline labels and localized copy."
+      },
+      "heading": {
+        "$type": "number",
+        "$value": "{primitive.leading.heading}",
+        "$description": "Unitless line height; allow multiline labels and localized copy."
+      },
+      "body": {
+        "$type": "number",
+        "$value": "{primitive.leading.body}",
+        "$description": "Unitless line height; allow multiline labels and localized copy."
+      },
+      "relaxed": {
+        "$type": "number",
+        "$value": "{primitive.leading.relaxed}",
+        "$description": "Unitless line height; allow multiline labels and localized copy."
+      }
+    },
+    "tracking": {
+      "heading": {
+        "$type": "number",
+        "$value": "{primitive.tracking.heading}",
+        "$description": "Letter spacing in em; CSS multiplies this number by 1em."
+      },
+      "metric": {
+        "$type": "number",
+        "$value": "{primitive.tracking.metric}",
+        "$description": "Letter spacing in em; CSS multiplies this number by 1em."
+      },
+      "eyebrow": {
+        "$type": "number",
+        "$value": "{primitive.tracking.eyebrow}",
+        "$description": "Letter spacing in em; CSS multiplies this number by 1em."
+      }
+    },
+    "duration": {
+      "none": {
+        "$type": "duration",
+        "$value": "{primitive.duration.none}",
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "fast": {
+        "$type": "duration",
+        "$value": "{primitive.duration.fast}",
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "disclosure": {
+        "$type": "duration",
+        "$value": "{primitive.duration.disclosure}",
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "content": {
+        "$type": "duration",
+        "$value": "{primitive.duration.content}",
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "dialog": {
+        "$type": "duration",
+        "$value": "{primitive.duration.dialog}",
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "drawer": {
+        "$type": "duration",
+        "$value": "{primitive.duration.drawer}",
+        "$description": "Source motion duration; loading is a portable extension."
+      },
+      "loading": {
+        "$type": "duration",
+        "$value": "{primitive.duration.loading}",
+        "$description": "Source motion duration; loading is a portable extension."
+      }
+    },
+    "ease": {
+      "out": {
+        "$type": "cubicBezier",
+        "$value": "{primitive.ease.out}",
+        "$description": "Source house easing: immediate response without delayed starts."
+      },
+      "in-out": {
+        "$type": "cubicBezier",
+        "$value": "{primitive.ease.in-out}",
+        "$description": "Source house easing: immediate response without delayed starts."
+      },
+      "drawer": {
+        "$type": "cubicBezier",
+        "$value": "{primitive.ease.drawer}",
+        "$description": "Source house easing: immediate response without delayed starts."
+      }
+    },
+    "size": {
+      "xs": {
+        "$type": "dimension",
+        "$value": "{primitive.size.xs}",
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "sm": {
+        "$type": "dimension",
+        "$value": "{primitive.size.sm}",
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "control": {
+        "$type": "dimension",
+        "$value": "{primitive.size.control}",
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "touch": {
+        "$type": "dimension",
+        "$value": "{primitive.size.touch}",
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "icon": {
+        "$type": "dimension",
+        "$value": "{primitive.size.icon}",
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "border": {
+        "$type": "dimension",
+        "$value": "{primitive.size.border}",
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "focus": {
+        "$type": "dimension",
+        "$value": "{primitive.size.focus}",
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      },
+      "focus-offset": {
+        "$type": "dimension",
+        "$value": "{primitive.size.focus-offset}",
+        "$description": "Control geometry; touch targets expand to 44px on coarse pointers."
+      }
+    },
+    "layout": {
+      "sidebar": {
+        "$type": "dimension",
+        "$value": "{primitive.layout.sidebar}",
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "content": {
+        "$type": "dimension",
+        "$value": "{primitive.layout.content}",
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "reading": {
+        "$type": "dimension",
+        "$value": "{primitive.layout.reading}",
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "dialog": {
+        "$type": "dimension",
+        "$value": "{primitive.layout.dialog}",
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "grid": {
+        "$type": "dimension",
+        "$value": "{primitive.layout.grid}",
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      },
+      "row-label": {
+        "$type": "dimension",
+        "$value": "{primitive.layout.row-label}",
+        "$description": "Portable layout constraint extracted from source patterns or normalized for reuse."
+      }
+    },
+    "opacity": {
+      "disabled": {
+        "$type": "number",
+        "$value": "{primitive.opacity.disabled}",
+        "$description": "Source disabled opacity or press scale."
+      },
+      "pressed": {
+        "$type": "number",
+        "$value": "{primitive.opacity.pressed}",
+        "$description": "Source disabled opacity or press scale."
+      }
+    },
+    "z": {
+      "base": {
+        "$type": "number",
+        "$value": "{primitive.z.base}",
+        "$description": "Portable stacking order; native dialogs use the browser top layer."
+      },
+      "sticky": {
+        "$type": "number",
+        "$value": "{primitive.z.sticky}",
+        "$description": "Portable stacking order; native dialogs use the browser top layer."
+      },
+      "overlay": {
+        "$type": "number",
+        "$value": "{primitive.z.overlay}",
+        "$description": "Portable stacking order; native dialogs use the browser top layer."
+      },
+      "toast": {
+        "$type": "number",
+        "$value": "{primitive.z.toast}",
+        "$description": "Portable stacking order; native dialogs use the browser top layer."
+      }
+    }
+  },
+  "component": {
+    "button": {
+      "bg": {
+        "$type": "color",
+        "$value": "{semantic.color.primary}",
+        "$description": "Button bg; override at the theme boundary when customizing this component."
+      },
+      "fg": {
+        "$type": "color",
+        "$value": "{semantic.color.primary-foreground}",
+        "$description": "Button fg; override at the theme boundary when customizing this component."
+      },
+      "hover": {
+        "$type": "color",
+        "$value": "{semantic.color.primary-hover}",
+        "$description": "Button hover; override at the theme boundary when customizing this component."
+      },
+      "active": {
+        "$type": "color",
+        "$value": "{semantic.color.primary-active}",
+        "$description": "Button active; override at the theme boundary when customizing this component."
+      },
+      "radius": {
+        "$type": "dimension",
+        "$value": "{semantic.radius.lg}",
+        "$description": "Button radius; override at the theme boundary when customizing this component."
+      },
+      "height": {
+        "$type": "dimension",
+        "$value": "{semantic.size.control}",
+        "$description": "Button height; override at the theme boundary when customizing this component."
+      },
+      "padding-x": {
+        "$type": "dimension",
+        "$value": "{semantic.space.3-5}",
+        "$description": "Button padding x; override at the theme boundary when customizing this component."
+      },
+      "gap": {
+        "$type": "dimension",
+        "$value": "{semantic.space.2}",
+        "$description": "Button gap; override at the theme boundary when customizing this component."
+      },
+      "font-size": {
+        "$type": "dimension",
+        "$value": "{semantic.text.body}",
+        "$description": "Button font size; override at the theme boundary when customizing this component."
+      }
+    },
+    "field": {
+      "bg": {
+        "$type": "color",
+        "$value": "{semantic.color.card}",
+        "$description": "Field bg; override at the theme boundary when customizing this component."
+      },
+      "fg": {
+        "$type": "color",
+        "$value": "{semantic.color.card-foreground}",
+        "$description": "Field fg; override at the theme boundary when customizing this component."
+      },
+      "border": {
+        "$type": "color",
+        "$value": "{semantic.color.field-border}",
+        "$description": "Field border; override at the theme boundary when customizing this component."
+      },
+      "radius": {
+        "$type": "dimension",
+        "$value": "{semantic.radius.lg}",
+        "$description": "Field radius; override at the theme boundary when customizing this component."
+      },
+      "height": {
+        "$type": "dimension",
+        "$value": "{semantic.size.control}",
+        "$description": "Field height; override at the theme boundary when customizing this component."
+      },
+      "padding-x": {
+        "$type": "dimension",
+        "$value": "{semantic.space.3}",
+        "$description": "Field padding x; override at the theme boundary when customizing this component."
+      },
+      "font-size": {
+        "$type": "dimension",
+        "$value": "{semantic.text.input}",
+        "$description": "Field font size; override at the theme boundary when customizing this component."
+      },
+      "error": {
+        "$type": "color",
+        "$value": "{semantic.color.destructive}",
+        "$description": "Field error; override at the theme boundary when customizing this component."
+      }
+    },
+    "card": {
+      "bg": {
+        "$type": "color",
+        "$value": "{semantic.color.card}",
+        "$description": "Card bg; override at the theme boundary when customizing this component."
+      },
+      "fg": {
+        "$type": "color",
+        "$value": "{semantic.color.card-foreground}",
+        "$description": "Card fg; override at the theme boundary when customizing this component."
+      },
+      "border": {
+        "$type": "color",
+        "$value": "{semantic.color.border}",
+        "$description": "Card border; override at the theme boundary when customizing this component."
+      },
+      "radius": {
+        "$type": "dimension",
+        "$value": "{semantic.radius.lg}",
+        "$description": "Card radius; override at the theme boundary when customizing this component."
+      },
+      "padding": {
+        "$type": "dimension",
+        "$value": "{semantic.space.4}",
+        "$description": "Card padding; override at the theme boundary when customizing this component."
+      },
+      "gap": {
+        "$type": "dimension",
+        "$value": "{semantic.space.4}",
+        "$description": "Card gap; override at the theme boundary when customizing this component."
+      },
+      "shadow": {
+        "$type": "shadow",
+        "$value": "{semantic.shadow.card}",
+        "$description": "Card shadow; override at the theme boundary when customizing this component."
+      }
+    },
+    "badge": {
+      "radius": {
+        "$type": "dimension",
+        "$value": "{semantic.radius.pill}",
+        "$description": "Badge radius; override at the theme boundary when customizing this component."
+      },
+      "font-size": {
+        "$type": "dimension",
+        "$value": "{semantic.text.xs}",
+        "$description": "Badge font size; override at the theme boundary when customizing this component."
+      },
+      "padding-x": {
+        "$type": "dimension",
+        "$value": "{semantic.space.2}",
+        "$description": "Badge padding x; override at the theme boundary when customizing this component."
+      },
+      "padding-y": {
+        "$type": "dimension",
+        "$value": "{semantic.space.0-5}",
+        "$description": "Badge padding y; override at the theme boundary when customizing this component."
+      }
+    },
+    "nav": {
+      "bg": {
+        "$type": "color",
+        "$value": "{semantic.color.sidebar}",
+        "$description": "Nav bg; override at the theme boundary when customizing this component."
+      },
+      "fg": {
+        "$type": "color",
+        "$value": "{semantic.color.sidebar-foreground}",
+        "$description": "Nav fg; override at the theme boundary when customizing this component."
+      },
+      "active-bg": {
+        "$type": "color",
+        "$value": "{semantic.color.sidebar-accent}",
+        "$description": "Nav active bg; override at the theme boundary when customizing this component."
+      },
+      "active-fg": {
+        "$type": "color",
+        "$value": "{semantic.color.sidebar-accent-foreground}",
+        "$description": "Nav active fg; override at the theme boundary when customizing this component."
+      },
+      "indicator": {
+        "$type": "color",
+        "$value": "{semantic.color.sidebar-primary}",
+        "$description": "Nav indicator; override at the theme boundary when customizing this component."
+      },
+      "height": {
+        "$type": "dimension",
+        "$value": "{semantic.size.control}",
+        "$description": "Nav height; override at the theme boundary when customizing this component."
+      },
+      "radius": {
+        "$type": "dimension",
+        "$value": "{semantic.radius.lg}",
+        "$description": "Nav radius; override at the theme boundary when customizing this component."
+      }
+    },
+    "dialog": {
+      "width": {
+        "$type": "dimension",
+        "$value": "{semantic.layout.dialog}",
+        "$description": "Dialog width; override at the theme boundary when customizing this component."
+      },
+      "bg": {
+        "$type": "color",
+        "$value": "{semantic.color.popover}",
+        "$description": "Dialog bg; override at the theme boundary when customizing this component."
+      },
+      "fg": {
+        "$type": "color",
+        "$value": "{semantic.color.popover-foreground}",
+        "$description": "Dialog fg; override at the theme boundary when customizing this component."
+      },
+      "radius": {
+        "$type": "dimension",
+        "$value": "{semantic.radius.xl}",
+        "$description": "Dialog radius; override at the theme boundary when customizing this component."
+      },
+      "padding": {
+        "$type": "dimension",
+        "$value": "{semantic.space.6}",
+        "$description": "Dialog padding; override at the theme boundary when customizing this component."
+      },
+      "shadow": {
+        "$type": "shadow",
+        "$value": "{semantic.shadow.raised}",
+        "$description": "Dialog shadow; override at the theme boundary when customizing this component."
+      }
+    },
+    "progress": {
+      "track": {
+        "$type": "color",
+        "$value": "{semantic.color.muted}",
+        "$description": "Progress track; override at the theme boundary when customizing this component."
+      },
+      "fill": {
+        "$type": "color",
+        "$value": "{semantic.color.primary}",
+        "$description": "Progress fill; override at the theme boundary when customizing this component."
+      },
+      "height": {
+        "$type": "dimension",
+        "$value": "{semantic.space.1-5}",
+        "$description": "Progress height; override at the theme boundary when customizing this component."
+      },
+      "radius": {
+        "$type": "dimension",
+        "$value": "{semantic.radius.pill}",
+        "$description": "Progress radius; override at the theme boundary when customizing this component."
+      }
+    }
+  }
+}

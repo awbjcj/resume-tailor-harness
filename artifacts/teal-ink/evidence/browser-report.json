@@ -1,0 +1,450 @@
+{
+  "timestamp": "2026-11-05T02:45:49.705Z",
+  "browser": "Chromium",
+  "layouts": [
+    {
+      "label": "light/en/320",
+      "viewport": 320,
+      "width": 320,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/en/390",
+      "viewport": 390,
+      "width": 390,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/en/768",
+      "viewport": 768,
+      "width": 768,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/en/1024",
+      "viewport": 1024,
+      "width": 1024,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/en/1440",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/zh-CN/320",
+      "viewport": 320,
+      "width": 320,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/zh-CN/390",
+      "viewport": 390,
+      "width": 390,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/zh-CN/768",
+      "viewport": 768,
+      "width": 768,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/zh-CN/1024",
+      "viewport": 1024,
+      "width": 1024,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "light/zh-CN/1440",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "dark/en/320",
+      "viewport": 320,
+      "width": 320,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/en/390",
+      "viewport": 390,
+      "width": 390,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/en/768",
+      "viewport": 768,
+      "width": 768,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/en/1024",
+      "viewport": 1024,
+      "width": 1024,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/en/1440",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/zh-CN/320",
+      "viewport": 320,
+      "width": 320,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/zh-CN/390",
+      "viewport": 390,
+      "width": 390,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/zh-CN/768",
+      "viewport": 768,
+      "width": 768,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/zh-CN/1024",
+      "viewport": 1024,
+      "width": 1024,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "dark/zh-CN/1440",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "200%/light/en/320",
+      "viewport": 320,
+      "width": 320,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "200%/light/en/768",
+      "viewport": 768,
+      "width": 768,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "200%/light/en/1440",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "200%/light/zh-CN/320",
+      "viewport": 320,
+      "width": 320,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "200%/light/zh-CN/768",
+      "viewport": 768,
+      "width": 768,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "200%/light/zh-CN/1440",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(246, 248, 251)"
+    },
+    {
+      "label": "200%/dark/en/320",
+      "viewport": 320,
+      "width": 320,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "200%/dark/en/768",
+      "viewport": 768,
+      "width": 768,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "200%/dark/en/1440",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "200%/dark/zh-CN/320",
+      "viewport": 320,
+      "width": 320,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "200%/dark/zh-CN/768",
+      "viewport": 768,
+      "width": 768,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "200%/dark/zh-CN/1440",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(18, 20, 22)"
+    },
+    {
+      "label": "forced-colors",
+      "viewport": 1440,
+      "width": 1440,
+      "body": "rgb(0, 0, 0)"
+    }
+  ],
+  "accessibility": [
+    {
+      "theme": "light",
+      "language": "en",
+      "width": 320,
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ]
+    },
+    {
+      "theme": "light",
+      "language": "en",
+      "width": 1440,
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ]
+    },
+    {
+      "theme": "light",
+      "language": "zh-CN",
+      "width": 320,
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ]
+    },
+    {
+      "theme": "light",
+      "language": "zh-CN",
+      "width": 1440,
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ]
+    },
+    {
+      "theme": "dark",
+      "language": "en",
+      "width": 320,
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ]
+    },
+    {
+      "theme": "dark",
+      "language": "en",
+      "width": 1440,
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ]
+    },
+    {
+      "theme": "dark",
+      "language": "zh-CN",
+      "width": 320,
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ]
+    },
+    {
+      "theme": "dark",
+      "language": "zh-CN",
+      "width": 1440,
+      "violations": [],
+      "incomplete": [
+        "aria-prohibited-attr",
+        "color-contrast"
+      ]
+    }
+  ],
+  "toneContrast": [
+    {
+      "theme": "light",
+      "tones": [
+        {
+          "tone": "success",
+          "ratio": 4.769008831366267
+        },
+        {
+          "tone": "warning",
+          "ratio": 4.767622694409647
+        },
+        {
+          "tone": "success",
+          "ratio": 4.769008831366267
+        },
+        {
+          "tone": "warning",
+          "ratio": 4.767622694409647
+        },
+        {
+          "tone": "danger",
+          "ratio": 5.16383025002882
+        },
+        {
+          "tone": "info",
+          "ratio": 4.626830853912608
+        },
+        {
+          "tone": "neutral",
+          "ratio": 5.690194474998969
+        },
+        {
+          "tone": "neutral",
+          "ratio": 5.690194474998969
+        },
+        {
+          "tone": "neutral",
+          "ratio": 5.690194474998969
+        },
+        {
+          "tone": "neutral",
+          "ratio": 5.690194474998969
+        },
+        {
+          "tone": "neutral",
+          "ratio": 5.690194474998969
+        },
+        {
+          "tone": "stage-1",
+          "ratio": 5.690194474998969
+        },
+        {
+          "tone": "stage-2",
+          "ratio": 5.07164117610819
+        },
+        {
+          "tone": "stage-3",
+          "ratio": 5.783096595116134
+        },
+        {
+          "tone": "stage-4",
+          "ratio": 6.454783896711987
+        },
+        {
+          "tone": "stage-5",
+          "ratio": 5.338126658614237
+        },
+        {
+          "tone": "neutral",
+          "ratio": 5.690194474998969
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "tones": [
+        {
+          "tone": "success",
+          "ratio": 7.283086910345667
+        },
+        {
+          "tone": "warning",
+          "ratio": 7.601751495507197
+        },
+        {
+          "tone": "success",
+          "ratio": 7.283086910345667
+        },
+        {
+          "tone": "warning",
+          "ratio": 7.601751495507197
+        },
+        {
+          "tone": "danger",
+          "ratio": 5.3738821749717856
+        },
+        {
+          "tone": "info",
+          "ratio": 6.257660421245499
+        },
+        {
+          "tone": "neutral",
+          "ratio": 6.616061662529101
+        },
+        {
+          "tone": "neutral",
+          "ratio": 6.616061662529101
+        },
+        {
+          "tone": "neutral",
+          "ratio": 6.616061662529101
+        },
+        {
+          "tone": "neutral",
+          "ratio": 6.616061662529101
+        },
+        {
+          "tone": "neutral",
+          "ratio": 6.616061662529101
+        },
+        {
+          "tone": "stage-1",
+          "ratio": 6.616061662529101
+        },
+        {
+          "tone": "stage-2",
+          "ratio": 8.262718964278397
+        },
+        {
+          "tone": "stage-3",
+          "ratio": 8.450929831910567
+        },
+        {
+          "tone": "stage-4",
+          "ratio": 6.939765776767125
+        },
+        {
+          "tone": "stage-5",
+          "ratio": 8.403324838276152
+        },
+        {
+          "tone": "neutral",
+          "ratio": 6.616061662529101
+        }
+      ]
+    }
+  ],
+  "checks": [
+    "200% root text across 12 viewport/theme/locale combinations",
+    "Exact light/dark source backgrounds, gateway mint, and nested light component aliases",
+    "System preference changes and theme persistence",
+    "Form error association, first-error focus, and successful local example",
+    "Native dialog focus containment, Escape, focus return, confirmation, and stale-result reset",
+    "Loading admission, token search, clipboard contents, and empty search state",
+    "Reduced-motion animation/transition removal and forced-colors layout",
+    "Keyboard skip link",
+    "Coarse-pointer minimum height for 100 visible controls",
+    "Direct file:// offline preview, theme switching, and token search"
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "browserVersion": "151.0.7922.34",
+  "status": "pass"
+}

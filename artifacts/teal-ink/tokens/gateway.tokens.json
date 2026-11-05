@@ -1,0 +1,264 @@
+{
+  "$description": "Merge these semantic overrides over base.tokens.json for the mint-on-ink gateway preset; full color overlay, no dark overlay required.",
+  "semantic": {
+    "color": {
+      "background": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.background}",
+        "$description": "Source --background in the gateway theme."
+      },
+      "foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.foreground}",
+        "$description": "Source --foreground in the gateway theme."
+      },
+      "card": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.surface}",
+        "$description": "Source --card in the gateway theme."
+      },
+      "card-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.foreground}",
+        "$description": "Source --card-foreground in the gateway theme."
+      },
+      "popover": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.surface}",
+        "$description": "Source --popover in the gateway theme."
+      },
+      "popover-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.foreground}",
+        "$description": "Source --popover-foreground in the gateway theme."
+      },
+      "primary": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.mint}",
+        "$description": "Source --primary in the gateway theme."
+      },
+      "primary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.on-mint}",
+        "$description": "Source --primary-foreground in the gateway theme."
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.secondary}",
+        "$description": "Source --secondary in the gateway theme."
+      },
+      "secondary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.foreground}",
+        "$description": "Source --secondary-foreground in the gateway theme."
+      },
+      "muted": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.muted}",
+        "$description": "Source --muted in the gateway theme."
+      },
+      "muted-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.muted-foreground}",
+        "$description": "Source --muted-foreground in the gateway theme."
+      },
+      "accent": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.accent}",
+        "$description": "Source --accent in the gateway theme."
+      },
+      "accent-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.on-accent}",
+        "$description": "Source --accent-foreground in the gateway theme."
+      },
+      "destructive": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.danger}",
+        "$description": "Source --destructive in the gateway theme."
+      },
+      "warning": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.300}",
+        "$description": "Source --warning in the gateway theme."
+      },
+      "success": {
+        "$type": "color",
+        "$value": "{primitive.color.green.300}",
+        "$description": "Source --success in the gateway theme."
+      },
+      "info": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.300}",
+        "$description": "Source --info in the gateway theme."
+      },
+      "stage-neutral": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Source --stage-neutral in the gateway theme."
+      },
+      "stage-approved": {
+        "$type": "color",
+        "$value": "{primitive.color.green.200}",
+        "$description": "Source --stage-approved in the gateway theme."
+      },
+      "stage-tailored": {
+        "$type": "color",
+        "$value": "{primitive.color.indigo.300}",
+        "$description": "Source --stage-tailored in the gateway theme."
+      },
+      "stage-rendered": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.200}",
+        "$description": "Source --stage-rendered in the gateway theme."
+      },
+      "gap": {
+        "$type": "color",
+        "$value": "{primitive.color.crimson.300}",
+        "$description": "Source --gap in the gateway theme."
+      },
+      "adjacent": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.300}",
+        "$description": "Source --adjacent in the gateway theme."
+      },
+      "covered": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Source --covered in the gateway theme."
+      },
+      "ready": {
+        "$type": "color",
+        "$value": "{primitive.color.ochre.100}",
+        "$description": "Source --ready in the gateway theme."
+      },
+      "border": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.border}",
+        "$description": "Source --border in the gateway theme."
+      },
+      "input": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.input}",
+        "$description": "Source --input in the gateway theme."
+      },
+      "ring": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.mint}",
+        "$description": "Source --ring in the gateway theme."
+      },
+      "chart-1": {
+        "$type": "color",
+        "$value": "{primitive.color.teal.300}",
+        "$description": "Source --chart-1 in the gateway theme."
+      },
+      "chart-2": {
+        "$type": "color",
+        "$value": "{primitive.color.green.300}",
+        "$description": "Source --chart-2 in the gateway theme."
+      },
+      "chart-3": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.300}",
+        "$description": "Source --chart-3 in the gateway theme."
+      },
+      "chart-4": {
+        "$type": "color",
+        "$value": "{primitive.color.blue.200}",
+        "$description": "Source --chart-4 in the gateway theme."
+      },
+      "chart-5": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Source --chart-5 in the gateway theme."
+      },
+      "sidebar": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.surface}",
+        "$description": "Source --sidebar in the gateway theme."
+      },
+      "sidebar-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.foreground}",
+        "$description": "Source --sidebar-foreground in the gateway theme."
+      },
+      "sidebar-primary": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.mint}",
+        "$description": "Source --sidebar-primary in the gateway theme."
+      },
+      "sidebar-primary-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.on-mint}",
+        "$description": "Source --sidebar-primary-foreground in the gateway theme."
+      },
+      "sidebar-accent": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.accent}",
+        "$description": "Source --sidebar-accent in the gateway theme."
+      },
+      "sidebar-accent-foreground": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.on-accent}",
+        "$description": "Source --sidebar-accent-foreground in the gateway theme."
+      },
+      "sidebar-border": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.border}",
+        "$description": "Source --sidebar-border in the gateway theme."
+      },
+      "sidebar-ring": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.mint}",
+        "$description": "Source --sidebar-ring in the gateway theme."
+      },
+      "auth-trace": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.trace}",
+        "$description": "Source --auth-trace in the gateway theme."
+      },
+      "auth-node": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.node}",
+        "$description": "Source --auth-node in the gateway theme."
+      },
+      "overlay": {
+        "$type": "color",
+        "$value": "{primitive.color.alpha.overlay}",
+        "$description": "Backdrop for modal attention; use with a native modal or a complete dialog primitive."
+      },
+      "field-border": {
+        "$type": "color",
+        "$value": "{primitive.color.neutral.soft}",
+        "$description": "Portable accessibility refinement: visible control boundaries meet 3:1; source decorative borders stay separate."
+      },
+      "on-muted": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.muted-foreground}",
+        "$description": "Readable secondary copy placed directly on the muted surface; source muted ink is retained separately."
+      },
+      "primary-hover": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.on-accent}",
+        "$description": "A brighter mint hover shade within the gateway palette."
+      },
+      "primary-active": {
+        "$type": "color",
+        "$value": "{primitive.color.gateway.mint}",
+        "$description": "Gateway pressed mint."
+      }
+    },
+    "shadow": {
+      "card": {
+        "$type": "shadow",
+        "$value": "{primitive.shadow.card-dark}",
+        "$description": "Resting surface elevation."
+      },
+      "raised": {
+        "$type": "shadow",
+        "$value": "{primitive.shadow.raised-dark}",
+        "$description": "Hovered or floating surface elevation."
+      }
+    }
+  }
+}
