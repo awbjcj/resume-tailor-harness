@@ -1,0 +1,45 @@
+{
+  "reviewedAt": "2026-11-05T02:50:18.229Z",
+  "findings": [
+    {
+      "rule": "overused-font",
+      "decision": "intentional source identity",
+      "file": "styles/fonts.css",
+      "value": "Geist"
+    },
+    {
+      "rule": "flat-type-hierarchy",
+      "decision": "false positive; measured external CSS and token-driven hierarchy",
+      "file": "preview.html"
+    }
+  ],
+  "measurements": [
+    {
+      "width": 320,
+      "body": 15,
+      "title": 43.2,
+      "sectionHeading": 24,
+      "titleBodyRatio": 2.8800000000000003,
+      "sectionBodyRatio": 1.6,
+      "fontFamily": "\"Geist Variable\", Geist, \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", ui-sans-serif, system-ui, sans-serif"
+    },
+    {
+      "width": 390,
+      "body": 15,
+      "title": 43.2,
+      "sectionHeading": 24,
+      "titleBodyRatio": 2.8800000000000003,
+      "sectionBodyRatio": 1.6,
+      "fontFamily": "\"Geist Variable\", Geist, \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", ui-sans-serif, system-ui, sans-serif"
+    },
+    {
+      "width": 1440,
+      "body": 15,
+      "title": 72,
+      "sectionHeading": 30,
+      "titleBodyRatio": 4.8,
+      "sectionBodyRatio": 2,
+      "fontFamily": "\"Geist Variable\", Geist, \"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", ui-sans-serif, system-ui, sans-serif"
+    }
+  ]
+}
