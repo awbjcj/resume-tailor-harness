@@ -1874,6 +1874,11 @@
     "en": "Change password",
     "zh-CN": "修改密码"
   },
+  "Change style": {
+    "key": "ui_130af3a823e6",
+    "en": "Change style",
+    "zh-CN": "更换样式"
+  },
   "characters · Markdown": {
     "key": "ui_37a236a77354",
     "en": "characters · Markdown",
@@ -2009,6 +2014,11 @@
     "en": "Choose a stage",
     "zh-CN": "选择阶段"
   },
+  "Choose a style for the PDF.": {
+    "key": "ui_8ba218372ae7",
+    "en": "Choose a style for the PDF.",
+    "zh-CN": "为此 PDF 选择一种样式。"
+  },
   "Choose a tailored job. Jobs with an interview in progress are hidden so you can resume them from the sessions list.": {
     "key": "ui_8542b6ed56ae",
     "en": "Choose a tailored job. Jobs with an interview in progress are hidden so you can resume them from the sessions list.",
@@ -2103,6 +2113,11 @@
     "key": "ui_cea4d2e010b8",
     "en": "Clear selection",
     "zh-CN": "清除选择"
+  },
+  "Clear the application selection before deleting this item.": {
+    "key": "ui_bb51bb9679eb",
+    "en": "Clear the application selection before deleting this item.",
+    "zh-CN": "请先取消选用此申请材料，再删除。"
   },
   "Clear the override and inherit the selected tier’s allowance.": {
     "key": "ui_e5630b9e1ab4",
@@ -2594,6 +2609,11 @@
     "en": "Could not check Gmail. Try again; your connection may still be active.",
     "zh-CN": "暂时无法确认 Gmail 的连接状态，请重试。现有连接可能仍然有效。"
   },
+  "Could not delete the selected items.": {
+    "key": "ui_e59e18662b7b",
+    "en": "Could not delete the selected items.",
+    "zh-CN": "无法删除所选项目。"
+  },
   "Could not end interview": {
     "key": "ui_0e6d99f8921d",
     "en": "Could not end interview",
@@ -2644,10 +2664,25 @@
     "en": "Could not load resume versions",
     "zh-CN": "无法加载简历版本"
   },
+  "Could not load styles.": {
+    "key": "ui_14bb7ff97336",
+    "en": "Could not load styles.",
+    "zh-CN": "无法加载样式。"
+  },
   "Could not load the evidence explanation.": {
     "key": "ui_6b31b529dd74",
     "en": "Could not load the evidence explanation.",
     "zh-CN": "无法加载证据说明。"
+  },
+  "Could not render the PDF. Try again or choose another style.": {
+    "key": "ui_6ae844248905",
+    "en": "Could not render the PDF. Try again or choose another style.",
+    "zh-CN": "无法生成 PDF。请重试或选择其他样式。"
+  },
+  "Could not select this resume.": {
+    "key": "ui_8be52e60aeb3",
+    "en": "Could not select this resume.",
+    "zh-CN": "无法选择此简历。"
   },
   "Could not start every run": {
     "key": "ui_91c2a8312f4a",
@@ -3042,7 +3077,7 @@
   "Delete {{v0}}": {
     "key": "ui_cd822e072981",
     "en": "Delete {{v0}}",
-    "zh-CN": "删除 {{v0}}"
+    "zh-CN": "删除{{v0}}"
   },
   "Delete {{v0}} template": {
     "key": "ui_62581a45a0b8",
@@ -3052,7 +3087,7 @@
   "Delete {{v0}}?": {
     "key": "ui_a19801bb38d7",
     "en": "Delete {{v0}}?",
-    "zh-CN": "删除 {{v0}}？"
+    "zh-CN": "删除{{v0}}？"
   },
   "Delete archived after (days)": {
     "key": "ui_487d265f1157",
@@ -4009,6 +4044,11 @@
     "en": "Exports are compressed tar.gz files. Keep archives private because they may contain workspace credentials and source data.",
     "zh-CN": "导出文件为压缩的 tar.gz 格式。请妥善保管，因为其中可能包含工作区凭证和来源数据。"
   },
+  "External draft": {
+    "key": "ui_33502e263dcd",
+    "en": "External draft",
+    "zh-CN": "外部草稿"
+  },
   "Extracted facts, skill matrix, and fragments. Source documents and hand-written overrides stay.": {
     "key": "ui_2be6963b17d0",
     "en": "Extracted facts, skill matrix, and fragments. Source documents and hand-written overrides stay.",
@@ -4289,11 +4329,6 @@
     "en": "from cover letter #",
     "zh-CN": "来自求职信 #"
   },
-  "from version #": {
-    "key": "ui_947b6f1f6b95",
-    "en": "from version #",
-    "zh-CN": "来自版本 #"
-  },
   "fulfilled": {
     "key": "ui_6030ced8c6f5",
     "en": "fulfilled",
@@ -4389,6 +4424,11 @@
     "en": "Generate a brief when you are ready. Saved briefs stay unchanged until you regenerate them.",
     "zh-CN": "准备好后即可生成提纲。已保存的提纲会保持不变，直到你重新生成。"
   },
+  "Generate again": {
+    "key": "ui_b93b72246a76",
+    "en": "Generate again",
+    "zh-CN": "重新生成"
+  },
   "Generate all": {
     "key": "ui_c8c06ff72dd3",
     "en": "Generate all",
@@ -4418,6 +4458,11 @@
     "key": "ui_12696858926c",
     "en": "Generate draft",
     "zh-CN": "生成草稿"
+  },
+  "Generate resume": {
+    "key": "ui_c15c00af65d0",
+    "en": "Generate resume",
+    "zh-CN": "生成简历"
   },
   "Generate verified guidance for selected domains and skills.": {
     "key": "ui_0a7ce6006f12",
@@ -5529,6 +5574,11 @@
     "en": "Loading sources...",
     "zh-CN": "正在加载来源…"
   },
+  "Loading styles…": {
+    "key": "ui_baa82e38708d",
+    "en": "Loading styles…",
+    "zh-CN": "正在加载样式…"
+  },
   "Loading the tailoring explanation…": {
     "key": "ui_6fa00198e0be",
     "en": "Loading the tailoring explanation…",
@@ -6434,6 +6484,11 @@
     "en": "No saved research",
     "zh-CN": "暂无已保存的调研结果"
   },
+  "No saved resumes for this job.": {
+    "key": "ui_851a164ffa1a",
+    "en": "No saved resumes for this job.",
+    "zh-CN": "此职位暂无已保存的简历。"
+  },
   "No saved sessions.": {
     "key": "ui_c2f8eeef9739",
     "en": "No saved sessions.",
@@ -6468,11 +6523,6 @@
     "key": "ui_37ca536f424b",
     "en": "No tailored resume yet",
     "zh-CN": "还没有定制简历"
-  },
-  "No tailored resume yet. Use Redo to create the first version.": {
-    "key": "ui_75a307c0ced7",
-    "en": "No tailored resume yet. Use Redo to create the first version.",
-    "zh-CN": "还没有定制简历。点击“重做”生成第一个版本。"
   },
   "No target jobs yet": {
     "key": "ui_dbc19e4a132a",
@@ -6923,6 +6973,16 @@
     "key": "ui_31e4b79f2ead",
     "en": "Pay period",
     "zh-CN": "计薪周期"
+  },
+  "PDF ready": {
+    "key": "ui_4faf57abacc3",
+    "en": "PDF ready",
+    "zh-CN": "PDF 已就绪"
+  },
+  "PDF rendered": {
+    "key": "ui_84c5b733145b",
+    "en": "PDF rendered",
+    "zh-CN": "PDF 已生成"
   },
   "PDFs to create": {
     "key": "ui_b11233551925",
@@ -7659,11 +7719,6 @@
     "en": "Re-render PDF",
     "zh-CN": "重新生成 PDF"
   },
-  "Re-render the selected version.": {
-    "key": "ui_a26f8b2fd096",
-    "en": "Re-render the selected version.",
-    "zh-CN": "重新生成所选版本。"
-  },
   "Re-review": {
     "key": "ui_ab7a727ae768",
     "en": "Re-review",
@@ -8129,10 +8184,15 @@
     "en": "Rename session",
     "zh-CN": "重命名会话"
   },
-  "Render": {
-    "key": "ui_6d89eb7d0938",
-    "en": "Render",
-    "zh-CN": "生成"
+  "Render PDF": {
+    "key": "ui_84bf2494960c",
+    "en": "Render PDF",
+    "zh-CN": "生成 PDF"
+  },
+  "Render the selected resume, or the latest version.": {
+    "key": "ui_d28170e89c94",
+    "en": "Render the selected resume, or the latest version.",
+    "zh-CN": "为所选简历生成 PDF。未选择时使用最新版本。"
   },
   "Rendered": {
     "key": "ui_331e25aab7ff",
@@ -8158,6 +8218,11 @@
     "key": "ui_866428237528",
     "en": "Rendering options",
     "zh-CN": "简历输出选项"
+  },
+  "Rendering PDF…": {
+    "key": "ui_418282cccceb",
+    "en": "Rendering PDF…",
+    "zh-CN": "正在生成 PDF…"
   },
   "Reopen a named filter set for this board.": {
     "key": "ui_ed1bc8612148",
@@ -8188,6 +8253,11 @@
     "key": "ui_ce1773ec5b12",
     "en": "Replace data",
     "zh-CN": "替换数据"
+  },
+  "Replace PDF": {
+    "key": "ui_7e239f794b1a",
+    "en": "Replace PDF",
+    "zh-CN": "替换 PDF"
   },
   "Replace this file to restore its evidence, or remove the source.": {
     "key": "ui_87f14d2078f3",
@@ -8524,15 +8594,15 @@
     "en": "Resume revision instruction",
     "zh-CN": "简历修订说明"
   },
-  "Resume revision preview": {
-    "key": "ui_3a59479c8908",
-    "en": "Resume revision preview",
-    "zh-CN": "简历修订预览"
-  },
   "Resume shape": {
     "key": "ui_fd350dbf812a",
     "en": "Resume shape",
     "zh-CN": "简历结构"
+  },
+  "Resume style": {
+    "key": "ui_55d2eeefced0",
+    "en": "Resume style",
+    "zh-CN": "简历样式"
   },
   "Résumé Tailor Harness": {
     "key": "ui_a9535a6d3f05",
@@ -8699,6 +8769,11 @@
     "en": "Revise",
     "zh-CN": "修改"
   },
+  "Revise content": {
+    "key": "ui_ad45a58f88df",
+    "en": "Revise content",
+    "zh-CN": "修改内容"
+  },
   "Revise this cover letter": {
     "key": "ui_718718bd434e",
     "en": "Revise this cover letter",
@@ -8798,26 +8873,6 @@
     "key": "ui_695a4a32c412",
     "en": "roster haven't been saved. Switching rosters will discard them.",
     "zh-CN": "评审配置的修改尚未保存，切换配置会丢失这些修改。"
-  },
-  "Round": {
-    "key": "ui_cd9558acfc38",
-    "en": "Round",
-    "zh-CN": "轮次"
-  },
-  "round {{v0}}": {
-    "key": "ui_070c38b8448a",
-    "en": "round {{v0}}",
-    "zh-CN": "第 {{v0}} 轮"
-  },
-  "Round {{v0}}": {
-    "key": "ui_c3e6337a8049",
-    "en": "Round {{v0}}",
-    "zh-CN": "第 {{v0}} 轮"
-  },
-  "Round {{v0}} preview": {
-    "key": "ui_47b21c3536b7",
-    "en": "Round {{v0}} preview",
-    "zh-CN": "第 {{v0}} 轮预览"
   },
   "Round number": {
     "key": "ui_aeb35e33c3d7",
@@ -9014,10 +9069,20 @@
     "en": "Saved public boards",
     "zh-CN": "已保存的公开招聘列表"
   },
+  "Saved resume versions": {
+    "key": "ui_afd1a2352213",
+    "en": "Saved resume versions",
+    "zh-CN": "已保存的简历版本"
+  },
   "Saved revision": {
     "key": "ui_6694ccd98f12",
     "en": "Saved revision",
     "zh-CN": "已保存的版本"
+  },
+  "Saved style": {
+    "key": "ui_c9dcbfcceded",
+    "en": "Saved style",
+    "zh-CN": "已保存的样式"
   },
   "Saved to Gmail": {
     "key": "ui_bd25bb7a6cbc",
@@ -9243,11 +9308,6 @@
     "key": "ui_4c84315133f7",
     "en": "Select revision",
     "zh-CN": "选择版本"
-  },
-  "Select round {{v0}} for deletion": {
-    "key": "ui_535a4df62c9c",
-    "en": "Select round {{v0}} for deletion",
-    "zh-CN": "选中第 {{v0}} 轮，准备删除"
   },
   "Select stale": {
     "key": "ui_393eefadc215",
@@ -9763,6 +9823,11 @@
     "key": "ui_21212bcfe9f2",
     "en": "Some files could not be added. Check the files and upload them again.",
     "zh-CN": "部分文件添加失败。请检查文件后重新上传。"
+  },
+  "Some selected items are no longer available.": {
+    "key": "ui_b084b4bebecd",
+    "en": "Some selected items are no longer available.",
+    "zh-CN": "部分所选项目已不可用。"
   },
   "Source": {
     "key": "ui_0e570ca6fabe",
@@ -10739,6 +10804,16 @@
     "en": "This replaces the current data. Export a backup first. Select a tar.gz archive and type REPLACE to continue.",
     "zh-CN": "这将替换当前数据，请先导出备份。选择一个 tar.gz 压缩包，并输入 REPLACE 以继续。"
   },
+  "This replaces the PDF for this version.": {
+    "key": "ui_546694f3248e",
+    "en": "This replaces the PDF for this version.",
+    "zh-CN": "此操作会替换此版本的 PDF。"
+  },
+  "This replaces the PDF selected for your application.": {
+    "key": "ui_e4a2633cfef0",
+    "en": "This replaces the PDF selected for your application.",
+    "zh-CN": "此操作会替换当前选用于申请的 PDF。"
+  },
   "This replaces your": {
     "key": "ui_e0046b13926b",
     "en": "This replaces your",
@@ -10783,6 +10858,21 @@
     "key": "ui_a06ce9882180",
     "en": "This source could not be verified.",
     "zh-CN": "无法验证此来源。"
+  },
+  "This style could not fit the current page limit. Try another style, revise the content, or adjust the page limit in Rendering settings.": {
+    "key": "ui_0a6654c5e6d9",
+    "en": "This style could not fit the current page limit. Try another style, revise the content, or adjust the page limit in Rendering settings.",
+    "zh-CN": "使用此样式时，内容超出了当前页数限制。请尝试其他样式、修改内容，或在渲染设置中调整页数限制。"
+  },
+  "This style is no longer available. Choose another style.": {
+    "key": "ui_5472eba4a6d4",
+    "en": "This style is no longer available. Choose another style.",
+    "zh-CN": "此样式已不可用。请选择其他样式。"
+  },
+  "This version is no longer available.": {
+    "key": "ui_4107a7eaf027",
+    "en": "This version is no longer available.",
+    "zh-CN": "此版本已不可用。"
   },
   "Three-year filing volume": {
     "key": "ui_e8651fb105d9",
@@ -11644,6 +11734,11 @@
     "en": "Workspace data",
     "zh-CN": "工作区数据"
   },
+  "Workspace default": {
+    "key": "ui_da3706ee462a",
+    "en": "Workspace default",
+    "zh-CN": "工作区默认样式"
+  },
   "Workspace imported": {
     "key": "ui_27e010ae965a",
     "en": "Workspace imported",
@@ -11659,10 +11754,10 @@
     "en": "Write {{v0}} cover letter{{v1}}",
     "zh-CN": "撰写 {{v0}} 封求职信"
   },
-  "Write a new resume version. Existing versions are kept.": {
-    "key": "ui_5720b78dca60",
-    "en": "Write a new resume version. Existing versions are kept.",
-    "zh-CN": "撰写新的简历版本，现有版本将保留。"
+  "Write a new resume version.": {
+    "key": "ui_72663ead1954",
+    "en": "Write a new resume version.",
+    "zh-CN": "生成一个新的简历版本。"
   },
   "Write cover letters": {
     "key": "ui_9b09d39d21fd",

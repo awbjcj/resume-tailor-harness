@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { MessagesSquare, ShieldCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ export function InterviewSetupDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const start = useStartInterview();
   const audioAvailability = useInterviewAudioAvailability();
@@ -78,6 +80,11 @@ export function InterviewSetupDialog({
   const [responseMode, setResponseMode] = useState<"text" | "audio_preferred">("text");
   const [resumeVersionId, setResumeVersionId] = useState(newestVersionId);
   const [extra, setExtra] = useState("");
+  const versionOptions = versions.map((version) => ({
+    value: String(version.id),
+    label: `${t("resumeVersions.version", { id: version.id })} · ${formatUserDate(version.createdAt, i18n.resolvedLanguage)}`,
+    score: version.reviewScore,
+  }));
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -208,19 +215,16 @@ export function InterviewSetupDialog({
           <Field className="sm:col-span-2">
             <FieldLabel htmlFor="interview-version">Resume version</FieldLabel>
             <Select
-              items={versions.map((version) => ({
-                value: String(version.id),
-                label: `${formatUserDate(version.createdAt)} · ${version.origin}`,
-              }))}
+              items={versionOptions}
               value={String(resumeVersionId || newestVersionId)}
               onValueChange={(v) => setResumeVersionId(Number(v))}
             >
               <SelectTrigger id="interview-version" size="compact" className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {versions.map((version) => (
-                  <SelectItem key={version.id} value={String(version.id)}>
-                    {formatUserDate(version.createdAt)} · {version.origin}
-                    {version.reviewScore != null ? ` · ${version.reviewScore}/100` : ""}
+                {versionOptions.map(({ value, label, score }) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                    {score != null ? ` · ${score}/100` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>

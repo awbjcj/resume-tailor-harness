@@ -1,15 +1,17 @@
 import { api, unwrap } from "@/lib/api/client";
+import type { components } from "@/lib/api/schema";
 
 import { useLaunchRun } from "./use-launch-run";
 
-export type RedoStage = "pull" | "extract" | "tailor" | "render";
+export type RedoRequest = components["schemas"]["RedoParams"];
+export type RedoStage = RedoRequest["stages"][number];
 
 export function useRedoRun() {
   const { launch } = useLaunchRun();
   return {
-    redo: (jobIds: number[], stages: RedoStage[], deep: boolean) =>
+    redo: (body: RedoRequest) =>
       launch("redo", () =>
-        unwrap(api.POST("/api/redo", { body: { jobIds, stages, deep } })),
+        unwrap(api.POST("/api/redo", { body })),
       ),
   };
 }

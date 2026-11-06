@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import { BriefcaseBusiness, SlidersHorizontal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,13 +87,14 @@ export function CareerLabResumeVersionPicker({
   hint,
 }: {
   id: string;
-  versions: Pick<ResumeVersion, "id" | "round" | "origin">[];
+  versions: Pick<ResumeVersion, "id">[];
   value: number | undefined;
   onChange: (value: number | undefined) => void;
   emptyLabel: string;
   disabled?: boolean;
   hint?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>Resume version</Label>
@@ -108,7 +110,7 @@ export function CareerLabResumeVersionPicker({
         <option value="">{emptyLabel}</option>
         {versions.map((version) => (
           <option key={version.id} value={version.id}>
-            Round {version.round} · {version.origin}
+            {t("resumeVersions.version", { id: version.id })}
           </option>
         ))}
       </select>

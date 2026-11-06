@@ -91,7 +91,7 @@ export function JobModal({
   // Arrow keys step through the list, but never while the user is typing in a
   // field (Tracking tab, cover-letter editors, etc.).
   useEffect(() => {
-    if (!navEnabled) return;
+    if (!navEnabled || redoOpen) return;
     const handler = (event: KeyboardEvent) => {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       const target = event.target as HTMLElement | null;
@@ -114,7 +114,7 @@ export function JobModal({
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [navEnabled, hasPrev, hasNext, isLoadingNext, onPrev, onNext]);
+  }, [navEnabled, redoOpen, hasPrev, hasNext, isLoadingNext, onPrev, onNext]);
 
   return (
     <>
@@ -313,15 +313,11 @@ export function JobModal({
                     value="resumes"
                     className="mx-auto mt-0 max-w-[94rem]"
                   >
-                    {job.resumeVersions.length === 0 && (
-                      <p className="mt-4 rounded-xl border border-dashed bg-background/60 p-5 text-sm text-muted-foreground">
-                        No tailored resume yet. Use Redo to create the first
-                        version.
-                      </p>
-                    )}
                     <ResumeVersionsTab
+                      key={jobId}
                       jobId={jobId}
                       versions={job.resumeVersions}
+                      onGenerate={() => setRedoOpen(true)}
                       appliedVersionId={
                         closedLoopJob?.application?.resumeVersionId ?? null
                       }
@@ -399,18 +395,18 @@ export function JobModal({
             </div>
           )}
         </DialogContent>
+        <RedoDialog
+          open={redoOpen}
+          jobIds={[jobId]}
+          initialStages={["tailor"]}
+          onOpenChange={setRedoOpen}
+          onLaunch={redoRun.redo}
+        />
       </Dialog>
       <EmailDraftDialog
         jobId={jobId}
         open={emailDraftOpen}
         onOpenChange={setEmailDraftOpen}
-      />
-      <RedoDialog
-        open={redoOpen}
-        jobIds={[jobId]}
-        initialStages={["tailor"]}
-        onOpenChange={setRedoOpen}
-        onLaunch={(jobIds, stages, deep) => redoRun.redo(jobIds, stages, deep)}
       />
     </>
   );

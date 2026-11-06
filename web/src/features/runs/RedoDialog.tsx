@@ -23,11 +23,11 @@ import {
 } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
-import type { RedoStage } from "./use-redo-run";
+import type { RedoRequest, RedoStage } from "./use-redo-run";
 
-// Pipeline order. The backend re-sorts too, but sending them ordered keeps the
-// request readable and the button label honest.
+// Keep requests in pipeline order for readability.
 const STAGES: { id: RedoStage; label: string; hint: string }[] = [
   {
     id: "pull",
@@ -42,9 +42,9 @@ const STAGES: { id: RedoStage; label: string; hint: string }[] = [
   {
     id: "tailor",
     label: "Re-tailor resume",
-    hint: "Write a new resume version. Existing versions are kept.",
+    hint: "Write a new resume version.",
   },
-  { id: "render", label: "Re-render PDF", hint: "Re-render the selected version." },
+  { id: "render", label: "Re-render PDF", hint: "Render the selected resume, or the latest version." },
 ];
 
 export interface RedoDialogProps {
@@ -52,11 +52,7 @@ export interface RedoDialogProps {
   jobIds: number[];
   initialStages: RedoStage[];
   onOpenChange: (open: boolean) => void;
-  onLaunch: (
-    jobIds: number[],
-    stages: RedoStage[],
-    deep: boolean,
-  ) => Promise<boolean>;
+  onLaunch: (request: RedoRequest) => Promise<boolean>;
 }
 
 export function RedoDialog(props: RedoDialogProps) {
@@ -73,6 +69,7 @@ export function RedoDialog(props: RedoDialogProps) {
     isOpen: props.open,
     sequence: 0,
   }));
+  const [isLaunching, setIsLaunching] = useState(false);
   if (props.open !== openState.isOpen) {
     setOpenState({
       isOpen: props.open,
@@ -80,9 +77,20 @@ export function RedoDialog(props: RedoDialogProps) {
     });
   }
   const resetKey = String(openState.sequence);
+  const launch = async (request: RedoRequest) => {
+    setIsLaunching(true);
+    try {
+      return await props.onLaunch(request);
+    } finally {
+      setIsLaunching(false);
+    }
+  };
   return (
-    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <RedoDialogBody key={resetKey} {...props} />
+    <Dialog open={props.open} onOpenChange={(open, details) => {
+      if (isLaunching) details.cancel();
+      else props.onOpenChange(open);
+    }}>
+      <RedoDialogBody key={resetKey} {...props} onLaunch={launch} isLaunching={isLaunching} />
     </Dialog>
   );
 }
@@ -92,25 +100,28 @@ function RedoDialogBody({
   initialStages,
   onOpenChange,
   onLaunch,
-}: RedoDialogProps) {
+  isLaunching,
+}: RedoDialogProps & { isLaunching: boolean }) {
   const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<RedoStage>>(
     () => new Set(initialStages),
   );
   const [deep, setDeep] = useState(false);
-  const [isLaunching, setIsLaunching] = useState(false);
+  const [cleanupTargets, setCleanupTargets] = useState<string | null>(null);
 
   const ordered = STAGES.filter((stage) => selected.has(stage.id)).map((s) => s.id);
+  const tailoring = selected.has("tailor");
   const count = jobIds.length;
+  const targetKey = jobIds.join(",");
+  if (cleanupTargets !== null && cleanupTargets !== targetKey) setCleanupTargets(null);
+  const removePrevious = tailoring && cleanupTargets === targetKey;
   const jobCountText = t("interactionCopy.redo.jobCount", { count });
-  const label = ordered.length
-    ? t("interactionCopy.redo.button", {
-        stages: ordered.map((stage) => t(`interactionCopy.redo.${stage}`)).join(" + "),
-        jobs: jobCountText,
-      })
-    : "Choose a stage";
+  const label = !ordered.length ? "Choose a stage" : removePrevious
+    ? t("interactionCopy.redo.cleanupButton")
+    : t("interactionCopy.redo.button", { jobs: jobCountText });
 
-  const toggle = (stage: RedoStage, checked: boolean) =>
+  const toggle = (stage: RedoStage, checked: boolean) => {
+    if (stage === "tailor" && !checked) setCleanupTargets(null);
     setSelected((current) => {
       const next = new Set(current);
       if (checked) {
@@ -123,19 +134,19 @@ function RedoDialogBody({
       }
       return next;
     });
+  };
 
   const submit = async () => {
-    setIsLaunching(true);
-    try {
-      if (await onLaunch(jobIds, ordered, deep)) onOpenChange(false);
-    } finally {
-      setIsLaunching(false);
-    }
+    const request: RedoRequest = {
+      jobIds, stages: ordered, deep: tailoring && deep,
+      removePreviousVersions: removePrevious,
+    };
+    if (await onLaunch(request)) onOpenChange(false);
   };
 
   return (
-    <DialogContent className="sm:max-w-lg">
-      <DialogHeader>
+    <DialogContent className="grid-cols-1 sm:max-w-lg" showCloseButton={!isLaunching}>
+      <DialogHeader className="pr-9">
         <DialogTitle>Redo pipeline stages</DialogTitle>
         <DialogDescription>
           {t("interactionCopy.redo.description", { jobs: jobCountText })}
@@ -157,7 +168,11 @@ function RedoDialogBody({
                 />
                 <FieldContent>
                   <FieldLabel htmlFor={inputId}>{stage.label}</FieldLabel>
-                  <FieldDescription>{stage.hint}</FieldDescription>
+                  <FieldDescription>
+                    {stage.id === "render" && tailoring
+                      ? t("interactionCopy.redo.renderNew")
+                      : stage.hint}
+                  </FieldDescription>
                 </FieldContent>
               </Field>
             );
@@ -165,31 +180,60 @@ function RedoDialogBody({
         </FieldGroup>
       </FieldSet>
 
-      {selected.has("tailor") && (
-        <Field orientation="horizontal">
-          <Switch
-            id="redo-deep-review"
-            checked={deep}
-            disabled={isLaunching}
-            onCheckedChange={setDeep}
-          />
-          <FieldContent>
-            <FieldLabel htmlFor="redo-deep-review">Deep review</FieldLabel>
-            <FieldDescription>Full review panel; roughly 3–6× slower.</FieldDescription>
-          </FieldContent>
-        </Field>
+      {tailoring && (
+        <FieldGroup>
+          <Field orientation="horizontal">
+            <Switch
+              id="redo-deep-review"
+              checked={deep}
+              disabled={isLaunching}
+              onCheckedChange={setDeep}
+            />
+            <FieldContent>
+              <FieldLabel htmlFor="redo-deep-review">Deep review</FieldLabel>
+              <FieldDescription>Full review panel; roughly 3–6× slower.</FieldDescription>
+            </FieldContent>
+          </Field>
+          <Field orientation="horizontal" className="rounded-lg border bg-muted/30 p-3 data-[cleanup]:border-destructive/40" data-cleanup={removePrevious || undefined}>
+            <Checkbox
+              id="redo-remove-previous"
+              aria-describedby="redo-remove-previous-hint"
+              checked={removePrevious}
+              disabled={isLaunching || count === 0}
+              onCheckedChange={(checked) => setCleanupTargets(checked ? targetKey : null)}
+            />
+            <FieldContent>
+              <FieldLabel htmlFor="redo-remove-previous">
+                {t("interactionCopy.redo.removePrevious")}
+              </FieldLabel>
+              <FieldDescription id="redo-remove-previous-hint">
+                {t("interactionCopy.redo.removePreviousHint")}
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        </FieldGroup>
       )}
 
       <DialogFooter>
         <Button
           variant="outline"
+          className="min-h-11"
           disabled={isLaunching}
           onClick={() => onOpenChange(false)}
         >
           Cancel
         </Button>
-        <Button disabled={!ordered.length || isLaunching} onClick={submit}>
-          {isLaunching && <Spinner data-icon="inline-start" />}
+        <Button
+          variant={removePrevious ? "destructive" : "default"}
+          className={cn(
+            "h-auto min-h-11 max-w-full whitespace-normal py-2 transition-none",
+            removePrevious && "border-destructive/30 bg-destructive/5 hover:bg-destructive/10 dark:bg-destructive/5 dark:hover:bg-destructive/10",
+          )}
+          aria-describedby={removePrevious ? "redo-remove-previous-hint" : undefined}
+          disabled={!count || !ordered.length || isLaunching}
+          onClick={submit}
+        >
+          {isLaunching && <Spinner data-icon="inline-start" aria-hidden="true" />}
           {isLaunching ? "Starting…" : label}
         </Button>
       </DialogFooter>

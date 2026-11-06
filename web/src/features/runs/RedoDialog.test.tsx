@@ -32,7 +32,7 @@ describe("RedoDialog", () => {
   it("states the exact job count in the confirm button", () => {
     setup();
     expect(
-      screen.getByRole("button", { name: /re-tailor 3 jobs/i }),
+      screen.getByRole("button", { name: "Redo 3 jobs" }),
     ).toBeInTheDocument();
   });
 
@@ -72,9 +72,55 @@ describe("RedoDialog", () => {
     const { onLaunch } = setup({ initialStages: ["tailor"] });
 
     await user.click(screen.getByRole("checkbox", { name: /re-render pdf/i }));
-    await user.click(screen.getByRole("button", { name: /re-tailor/i }));
+    await user.click(screen.getByRole("button", { name: "Redo 3 jobs" }));
 
-    expect(onLaunch).toHaveBeenCalledWith([1, 2, 3], ["tailor", "render"], false);
+    expect(onLaunch).toHaveBeenCalledWith({
+      jobIds: [1, 2, 3], stages: ["tailor", "render"], deep: false, removePreviousVersions: false,
+    });
+  });
+
+  it("clears cleanup from the request when the user switches to Render alone", async () => {
+    const user = userEvent.setup();
+    const { onLaunch } = setup({ initialStages: ["tailor", "render"] });
+    await user.click(screen.getByRole("checkbox", { name: "Remove superseded generated versions" }));
+    await user.click(screen.getByRole("checkbox", { name: "Re-tailor resume" }));
+    expect(screen.queryByRole("checkbox", { name: "Remove superseded generated versions" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Redo 3 jobs" }));
+
+    expect(onLaunch).toHaveBeenCalledWith({
+      jobIds: [1, 2, 3], stages: ["render"], deep: false, removePreviousVersions: false,
+    });
+  });
+
+  it("clears the removal opt-in when the tailor stage is turned off and back on", async () => {
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole("checkbox", { name: "Remove superseded generated versions" }));
+    expect(screen.getByRole("button", { name: "Redo and remove versions" })).toBeEnabled();
+
+    const tailor = screen.getByRole("checkbox", { name: "Re-tailor resume" });
+    await user.click(tailor);
+    await user.click(tailor);
+
+    expect(screen.getByRole("checkbox", { name: "Remove superseded generated versions" })).not.toBeChecked();
+  });
+
+  it("keeps the pending launch dialog open when Escape is pressed", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    let finish!: (started: boolean) => void;
+    const onLaunch = vi.fn(() => new Promise<boolean>((resolve) => { finish = resolve; }));
+    setup({ onLaunch, onOpenChange });
+
+    await user.click(screen.getByRole("button", { name: "Redo 3 jobs" }));
+    expect(screen.getByRole("button", { name: "Starting…" })).toBeDisabled();
+    await user.keyboard("{Escape}");
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    await act(() => finish(false));
+    await user.keyboard("{Escape}");
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("disables launch when nothing is ticked", async () => {
@@ -100,12 +146,13 @@ describe("RedoDialog", () => {
     await changeLanguage("zh-CN");
     const user = userEvent.setup();
     setup();
-    expect(screen.getByRole("button", { name: "重新定制（3 个职位）" })).toBeEnabled();
-    expect(screen.getByText("可对3 个职位重新运行任意阶段，职位状态不受限制。现有简历版本和 PDF 会保留。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重做（3 个职位）" })).toBeEnabled();
+    expect(screen.getByText("为3 个职位重新运行所选阶段。默认保留现有简历版本。")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "移除已被替换的自动生成版本" })).not.toBeChecked();
     await user.click(screen.getByRole("checkbox", { name: /重新提取/ }));
-    expect(screen.getByRole("button", { name: "重新提取 + 重新定制（3 个职位）" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "重做（3 个职位）" })).toBeEnabled();
     await act(() => changeLanguage("en"));
-    expect(screen.getByRole("button", { name: "Re-extract + Re-tailor 3 jobs" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Redo 3 jobs" })).toBeEnabled();
     expect(screen.getByRole("checkbox", { name: /re-extract criteria/i })).toBeChecked();
   });
 

@@ -129,7 +129,7 @@ describe("AttentionCard", () => {
     expect(
       screen.getByRole("checkbox", { name: /re-pull job description/i }),
     ).not.toBeChecked();
-    expect(screen.getByRole("button", { name: /re-tailor 1 job/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Redo 1 job" })).toBeEnabled();
   });
 
   it("shows only the first 8 rows until expanded", async () => {

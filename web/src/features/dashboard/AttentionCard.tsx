@@ -171,7 +171,7 @@ export function AttentionCard() {
         onOpenChange={(open) => {
           if (!open) setRetry(null);
         }}
-        onLaunch={(jobIds, stages, deep) => redoRun.redo(jobIds, stages, deep)}
+        onLaunch={redoRun.redo}
       />
     </Card>
   );
