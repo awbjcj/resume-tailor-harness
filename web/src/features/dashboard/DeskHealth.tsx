@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  setupModelsReady,
   useSetupStatus,
   type SetupStatus,
 } from "@/features/settings/use-setup-status";
@@ -19,13 +20,10 @@ type HealthItem = {
 export const HEALTH_ITEMS: HealthItem[] = [
   {
     key: "key",
-    label: "LLM API key",
+    label: "AI provider",
     labelKey: "dashboard.health.apiKey",
-    to: "/settings/keys",
-    // Readiness is provider-agnostic (anyLlmKey), matching the backend's
-    // any_llm_key gate — a working OpenAI/Gemini/DeepSeek setup must not be
-    // perpetually flagged as missing an Anthropic key.
-    ok: (s) => s.secrets.anyLlmKey,
+    to: "/setup/keys",
+    ok: setupModelsReady,
   },
   {
     key: "resume",

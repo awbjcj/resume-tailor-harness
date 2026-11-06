@@ -14,6 +14,11 @@ describe("firstIncompleteStep", () => {
   it("starts at keys on a fresh install", () => {
     expect(firstIncompleteStep(status({}))).toBe("keys");
   });
+  it("opens provider setup when a key is saved but the initial model tiers are unavailable", () => {
+    expect(firstIncompleteStep(status({
+      secrets: { anthropicKey: false, anyLlmKey: true, modelTiersReady: false },
+    }))).toBe("keys");
+  });
   it("resumes at search when keys and documents are done", () => {
     expect(
       firstIncompleteStep(status({
