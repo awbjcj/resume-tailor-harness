@@ -16,6 +16,7 @@ from resume_tailor_harness.render.export import export_job_artifacts
 from resume_tailor_harness.services import board
 from resume_tailor_harness.tenancy.context import UserContext, use_context
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
+from resume_tailor_harness.tracking import repository
 from resume_tailor_harness.tracking.repository import (
     get_cover_letter,
     get_resume_version,
@@ -87,7 +88,7 @@ def test_deleting_a_version_orphans_its_dependents_instead_of_cascading():
         assert surviving_letter.resume_version_id is None
 
 
-def test_workspace_delete_removes_the_versions_exported_content(tmp_path):
+def test_workspace_delete_removes_the_versions_exported_content_after_job_rename(tmp_path):
     context = UserContext(
         user_id="owner",
         username="owner",
@@ -104,15 +105,69 @@ def test_workspace_delete_removes_the_versions_exported_content(tmp_path):
         keep = _version(session, job_id, round=1)
         out = export_job_artifacts(session, job_id)
         assert out is not None
-        removed_sidecar = out / f"resume-v{remove}-tailor.content.json"
-        assert removed_sidecar.is_file()
+        job = session.get(Job, job_id)
+        assert job is not None
+        job.company, job.title = "New company", "New title"
+        save_job(session, job)
 
         assert board.delete_resume_versions(session, [remove]).deleted == 1
 
-        assert not removed_sidecar.exists()
+        assert not (out / f"resume-v{remove}-tailor.content.json").exists()
         assert (out / f"resume-v{keep}-tailor.content.json").is_file()
         manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
         assert [version["id"] for version in manifest["resumeVersions"]] == [keep]
+
+
+@pytest.mark.parametrize("symlink_alias", [False, True])
+def test_delete_resolves_only_candidate_paths(tmp_path, monkeypatch, symlink_alias):
+    monkeypatch.chdir(tmp_path)
+    workspace = WorkspacePaths(tmp_path / "workspace")
+    context = UserContext(
+        user_id="owner",
+        username="owner",
+        role="user",
+        paths=workspace,
+        settings=Settings(_env_file=None),  # type: ignore[call-arg]
+        engine=None,
+        system_engine=None,
+        own_key_providers=frozenset(),
+    )
+    pdf = workspace.output_dir / "shared.pdf"
+    pdf.parent.mkdir(parents=True)
+    pdf.write_bytes(b"%PDF-shared")
+    other = workspace.output_dir / "different-directory" / pdf.name
+    other.parent.mkdir()
+    other.write_bytes(b"%PDF-other")
+    alias = "output/shared.pdf"
+    if symlink_alias:
+        alias = "output/legacy-name.pdf"
+        (workspace.root / alias).symlink_to(pdf)
+    with use_context(context), _session() as session:
+        job_id = _job(session)
+        version_id = _version(session, job_id, pdf_path=str(pdf))
+        letter_id = _letter(session, job_id, pdf_path=alias)
+        _version(session, job_id, pdf_path=str(other.relative_to(tmp_path)))
+        session.add_all(
+            ResumeVersion(job_id=job_id, pdf_path=f"output/unrelated-{index}.pdf")
+            for index in range(80)
+        )
+        session.commit()
+
+        resolved = []
+        identity = repository.artifact_pdf_identity
+
+        def record_identity(value):
+            resolved.append(value)
+            return identity(value)
+
+        monkeypatch.setattr(repository, "artifact_pdf_identity", record_identity)
+        assert board.delete_resume_versions(session, [version_id]).deleted == 1
+        assert set(resolved) == {str(pdf), str(other.relative_to(tmp_path)), alias}
+        assert pdf.read_bytes() == b"%PDF-shared"
+
+        assert board.delete_cover_letters(session, [letter_id]).deleted == 1
+        assert not pdf.exists()
+        assert other.read_bytes() == b"%PDF-other"
 
 
 def test_deleting_a_cover_letter_orphans_its_revisions():

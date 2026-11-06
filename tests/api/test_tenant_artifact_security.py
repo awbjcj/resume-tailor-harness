@@ -33,15 +33,15 @@ def _provision_user(app, *, username: str = "alice") -> tuple[str, Engine]:
     return user_id, engine
 
 
-def _seed_external_artifacts(engine, external_pdf: Path) -> tuple[int, int]:
+def _seed_pdf_references(engine, pdf: Path) -> tuple[int, int]:
     with Session(engine) as session:
         job = Job(source="manual", jd_text="security boundary")
         session.add(job)
         session.commit()
         session.refresh(job)
         assert job.id is not None
-        version = ResumeVersion(job_id=job.id, pdf_path=str(external_pdf))
-        cover = CoverLetter(job_id=job.id, pdf_path=str(external_pdf))
+        version = ResumeVersion(job_id=job.id, pdf_path=str(pdf))
+        cover = CoverLetter(job_id=job.id, pdf_path=str(pdf))
         session.add(version)
         session.add(cover)
         session.commit()
@@ -58,7 +58,7 @@ def test_multi_user_downloads_reject_artifacts_outside_workspace(
     _user_id, engine = _provision_user(mu_app)
     external_pdf = tmp_path / "outside.pdf"
     external_pdf.write_bytes(b"sensitive host data")
-    version_id, cover_id = _seed_external_artifacts(engine, external_pdf)
+    version_id, cover_id = _seed_pdf_references(engine, external_pdf)
     engine.dispose()
     assert (
         mu_client.post(
@@ -84,7 +84,7 @@ def test_workspace_import_rejects_external_artifact_paths(mu_app, mu_client, tmp
     _user_id, engine = _provision_user(mu_app)
     external_pdf = tmp_path / "outside.pdf"
     external_pdf.write_bytes(b"sensitive host data")
-    _seed_external_artifacts(engine, external_pdf)
+    _seed_pdf_references(engine, external_pdf)
     engine.dispose()
     assert (
         mu_client.post(
@@ -109,3 +109,30 @@ def test_workspace_import_rejects_external_artifact_paths(mu_app, mu_client, tmp
 
     assert imported.status_code == 400
     assert imported.json()["error"]["code"] == "INVALID_ARCHIVE"
+
+
+def test_imported_shared_pdf_survives_deleting_one_reference(mu_app, mu_client):
+    user_id, engine = _provision_user(mu_app)
+    pdf = mu_app.state.data_dir / "users" / user_id / "output" / "shared.pdf"
+    pdf.write_bytes(b"%PDF-shared")
+    version_id, cover_id = _seed_pdf_references(engine, pdf)
+    with engine.begin() as connection:
+        # Imported keys may have been derived on a different filesystem.
+        connection.exec_driver_sql("UPDATE cover_letters SET pdf_file_key = 'old-key'")
+    engine.dispose()
+    assert mu_client.post(
+        "/api/auth/login", json={"identifier": "alice", "password": "alice-password"}
+    ).status_code == 200
+    exported = mu_client.get("/api/account/export")
+    assert exported.status_code == 200
+
+    imported = mu_client.post(
+        "/api/account/import?confirm=REPLACE",
+        files={"file": ("workspace.tar.gz", exported.content, "application/gzip")},
+    )
+
+    assert imported.status_code == 200
+    assert mu_client.delete(f"/api/resume-versions/{version_id}").status_code == 204
+    response = mu_client.get(f"/api/cover-letters/{cover_id}/pdf")
+    assert response.status_code == 200
+    assert response.content == b"%PDF-shared"
