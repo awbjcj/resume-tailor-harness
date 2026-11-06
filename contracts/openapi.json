@@ -15757,6 +15757,24 @@
         "title": "ResumeContent",
         "type": "object"
       },
+      "ResumeRenderRequest": {
+        "properties": {
+          "templateId": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templateid"
+          }
+        },
+        "title": "ResumeRenderRequest",
+        "type": "object"
+      },
       "ResumeVersionOut": {
         "properties": {
           "applicationEligible": {
@@ -15873,6 +15891,17 @@
               }
             ],
             "title": "Pdfpath"
+          },
+          "pdfTemplateId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdftemplateid"
           },
           "reviewScore": {
             "anyOf": [
@@ -38013,6 +38042,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ResumeRenderRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {

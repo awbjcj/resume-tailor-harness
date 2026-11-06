@@ -8,20 +8,25 @@ existing job/application semantics.
 
 from __future__ import annotations
 
-from collections import Counter
+import logging
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal, Sequence, cast
 
 from sqlmodel import Session, select
 
+from resume_tailor_harness.db import workspace_write
 from resume_tailor_harness.profile.store import load_facts
+from resume_tailor_harness.render.export import export_job_artifacts, resume_json_name
 from resume_tailor_harness.services.pagination import Page, page_from_slice
 from resume_tailor_harness.services.application_materials import (
     MaterialSelectionError,
     resume_application_eligible,
 )
+from resume_tailor_harness.tenancy.context import current_context
 from resume_tailor_harness.tenancy.paths import FACTS_PATH as DEFAULT_FACTS, resolve_tenant_path
+from resume_tailor_harness.tenancy.storage import TenantPathError
 from resume_tailor_harness.tracking import board_query
 from resume_tailor_harness.tracking.board_query import (
     BoardFilter,
@@ -48,7 +53,6 @@ from resume_tailor_harness.tracking.repository import (
     delete_job_row,
     get_cover_letter,
     get_job,
-    get_resume_version,
     job_has_progress,
     progressed_job_ids,
     restore_job,
@@ -64,6 +68,8 @@ from resume_tailor_harness.tracking.tables import (
     ResumeVersion,
     utcnow,
 )
+
+logger = logging.getLogger(__name__)
 
 _DISCOVERY_STAGE_STATUSES = {
     JobStatus.filtered.value,
@@ -378,18 +384,19 @@ def upsert_application(
 def select_resume_version(
     session: Session, job_id: int, version_id: int
 ) -> Application | None:
-    if get_job(session, job_id) is None:
-        return None
-    version = get_resume_version(session, version_id)
-    if version is None or version.job_id != job_id:
-        return None
-    if not resume_application_eligible(
-        version.fact_check_passed, version.critique_json, version.gate_reviewers_json
-    ):
-        raise MaterialSelectionError("This resume failed fact-lock and cannot be selected for an application")
-    application = application_for_job(session, job_id) or Application(job_id=job_id)
-    application.resume_version_id = version_id
-    return save_application(session, application)
+    with workspace_write(session):
+        if get_job(session, job_id) is None:
+            return None
+        version = session.get(ResumeVersion, version_id, populate_existing=True)
+        if version is None or version.job_id != job_id:
+            return None
+        if not resume_application_eligible(
+            version.fact_check_passed, version.critique_json, version.gate_reviewers_json
+        ):
+            raise MaterialSelectionError("This resume failed fact-lock and cannot be selected for an application")
+        application = application_for_job(session, job_id) or Application(job_id=job_id)
+        application.resume_version_id = version_id
+        return save_application(session, application)
 
 
 def select_cover_letter(
@@ -424,7 +431,8 @@ def _deselect(session: Session, job_id: int, field: str) -> Application | None:
 
 
 def deselect_resume_version(session: Session, job_id: int) -> Application | None:
-    return _deselect(session, job_id, "resume_version_id")
+    with workspace_write(session):
+        return _deselect(session, job_id, "resume_version_id")
 
 
 def deselect_cover_letter(session: Session, job_id: int) -> Application | None:
@@ -467,7 +475,9 @@ def _delete_artifacts(
     id_column = cast(Any, model.id)
     found = {
         cast(int, row.id): row
-        for row in session.exec(select(model).where(id_column.in_(requested))).all()
+        for row in session.exec(
+            select(model).where(id_column.in_(requested)).execution_options(populate_existing=True)
+        ).all()
     }
     missing = tuple(
         artifact_id for artifact_id in requested if artifact_id not in found
@@ -485,19 +495,36 @@ def _delete_artifacts(
 
     rows = list(found.values())
     if model is ResumeVersion:
-        delete_artifact_rows(session, versions=cast(Any, rows))
+        _delete_resume_rows(session, cast(list[ResumeVersion], rows))
     else:
         delete_artifact_rows(session, cover_letters=cast(Any, rows))
     return ArtifactDeleteResult(len(rows))
+
+
+def _delete_resume_rows(session: Session, rows: list[ResumeVersion]) -> None:
+    sidecars: dict[int, list[str]] = defaultdict(list)
+    if current_context() is not None:
+        for row in rows:
+            sidecars[row.job_id].append(resume_json_name(row))
+
+    delete_artifact_rows(session, versions=rows)
+    for job_id, names in sidecars.items():
+        try:
+            export_job_artifacts(
+                session, job_id, removed_resume_sidecars=names, existing_only=True
+            )
+        except (OSError, TenantPathError):
+            logger.warning("could not refresh exports for job %s", job_id, exc_info=True)
 
 
 def delete_resume_versions(
     session: Session, ids: Sequence[int]
 ) -> ArtifactDeleteResult:
     """Delete resume versions not selected for their job's application."""
-    return _delete_artifacts(
-        session, ResumeVersion, cast(Any, Application.resume_version_id), ids
-    )
+    with workspace_write(session):
+        return _delete_artifacts(
+            session, ResumeVersion, cast(Any, Application.resume_version_id), ids
+        )
 
 
 def delete_cover_letters(session: Session, ids: Sequence[int]) -> ArtifactDeleteResult:

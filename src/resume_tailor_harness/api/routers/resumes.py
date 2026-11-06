@@ -7,6 +7,7 @@ from typing import cast
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import FileResponse
 from sqlmodel import Session
+from typst import TypstError
 
 from resume_tailor_harness.api.artifacts import raise_for_delete_result
 from resume_tailor_harness.api.deps import get_config_store, get_session
@@ -17,10 +18,12 @@ from resume_tailor_harness.api.schemas.jobs import (
     ApplicationOut,
     ArtifactDeleteOut,
     ArtifactDeleteRequest,
+    ResumeRenderRequest,
     ResumeVersionOut,
 )
 from resume_tailor_harness.render.export import resume_download_name
 from resume_tailor_harness.render.renderer import PageFitError
+from resume_tailor_harness.render.templates import TemplateNotFoundError
 from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.services.board import (
@@ -29,7 +32,10 @@ from resume_tailor_harness.services.board import (
     select_resume_version,
 )
 from resume_tailor_harness.services.rendering import render_resume_version
-from resume_tailor_harness.services.application_materials import MaterialSelectionError
+from resume_tailor_harness.services.application_materials import (
+    MaterialSelectionError,
+    material_for_application,
+)
 from resume_tailor_harness.tenancy.storage import resolve_artifact_pdf
 from resume_tailor_harness.tracking.repository import get_job, get_resume_version
 
@@ -83,6 +89,7 @@ def download_pdf(
         path,
         media_type="application/pdf",
         filename=filename,
+        headers={"Cache-Control": "private, no-store"},
     )
 
 
@@ -107,6 +114,7 @@ def preview_pdf(
         filename=filename,
         content_disposition_type="inline",
         headers={
+            "Cache-Control": "private, no-store",
             "X-Content-Type-Options": "nosniff",
             "Referrer-Policy": "no-referrer",
             "Content-Security-Policy": "default-src 'none'; object-src 'self'",
@@ -116,12 +124,19 @@ def preview_pdf(
 
 @router.post("/resume-versions/{version_id}/render", response_model=ResumeVersionOut)
 def render_endpoint(
-    version_id: int, request: Request, session: Session = Depends(get_session)
+    version_id: int,
+    request: Request,
+    body: ResumeRenderRequest | None = None,
+    session: Session = Depends(get_session),
 ):
     try:
-        path = render_resume_version(session, version_id)
+        path = render_resume_version(session, version_id, template_id=body.template_id if body else None)
     except PageFitError as exc:
         raise ApiException(422, "resume_page_overflow", str(exc)) from exc
+    except TemplateNotFoundError as exc:
+        raise ApiException(422, "template_not_found", str(exc)) from exc
+    except TypstError as exc:
+        raise ApiException(422, "resume_render_failed", "This template could not render the resume.") from exc
     if path is None:
         raise ApiException(404, "NOT_FOUND", f"Resume version #{version_id} not found")
     version = get_resume_version(session, version_id)
@@ -130,6 +145,9 @@ def render_endpoint(
     version_out = ResumeVersionOut.model_validate(version)
     review_doc = cast(ReviewConfigDoc, get_config_store(request).get("review"))
     version_out.apply_gate_names({r.name for r in review_doc.reviewers if r.gate})
+    material = material_for_application(version)
+    version_out.application_eligible = material.application_eligible
+    version_out.pdf_available = material.pdf_available
     return version_out
 
 

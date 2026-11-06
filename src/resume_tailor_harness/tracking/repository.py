@@ -1,6 +1,7 @@
 from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, TypeVar, cast
 
 from sqlalchemy import and_, func, or_
@@ -20,6 +21,7 @@ from resume_tailor_harness.tracking.prune import (
     prune_skipped,
 )
 from resume_tailor_harness.tenancy.storage import (
+    artifact_pdf_identity,
     delete_staged_artifact_pdf,
     restore_staged_artifact_pdf,
     stage_artifact_pdf,
@@ -559,6 +561,35 @@ def delete_job_row(session: Session, job: Job, *, commit: bool = True) -> None:
         session.commit()
 
 
+def referenced_pdf_paths(
+    session: Session,
+    paths: Collection[Path],
+    *,
+    exclude_resume_ids: Collection[int] = (),
+    exclude_cover_letter_ids: Collection[int] = (),
+) -> set[Path]:
+    """Resolve references only for the candidate PDFs, across both tables."""
+    if not paths:
+        return set()
+
+    candidates = set(paths)
+    keys = {path.name.casefold() for path in candidates}
+    referenced: set[Path] = set()
+    for model, excluded_ids in (
+        (ResumeVersion, exclude_resume_ids),
+        (CoverLetter, exclude_cover_letter_ids),
+    ):
+        for value in session.exec(
+            select(col(model.pdf_path))
+            .where(col(model.pdf_file_key).in_(keys), col(model.id).not_in(excluded_ids))
+            .distinct()
+        ):
+            path = artifact_pdf_identity(value)
+            if path is not None and path in candidates:
+                referenced.add(path)
+    return referenced
+
+
 def delete_artifact_rows(
     session: Session,
     *,
@@ -597,12 +628,27 @@ def delete_artifact_rows(
     _orphan(CoverLetter, cast(Any, CoverLetter.parent_id), letter_ids)
 
     rows = (*versions, *cover_letters)
-    staged_pdfs = [
-        staged
-        for row in rows
-        if (staged := stage_artifact_pdf(row.pdf_path)) is not None
-    ]
+    staged_pdfs = []
     try:
+        # Legacy and imported rows may share a PDF. Its surviving references
+        # keep the file even when some of the owning rows are removed.
+        pdfs = {
+            row.pdf_path: identity
+            for row in rows
+            if (identity := artifact_pdf_identity(row.pdf_path)) is not None
+        }
+        retained = referenced_pdf_paths(
+            session,
+            pdfs.values(),
+            exclude_resume_ids=version_ids,
+            exclude_cover_letter_ids=letter_ids,
+        )
+        for path, identity in pdfs.items():
+            if identity in retained:
+                continue
+            staged = stage_artifact_pdf(path)
+            if staged is not None:
+                staged_pdfs.append(staged)
         for row in rows:
             session.delete(row)
         session.commit()

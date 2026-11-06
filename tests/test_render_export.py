@@ -1,10 +1,15 @@
 import json
+import sqlite3
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Event
 
+import pytest
 from sqlmodel import Session
 
 from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.config import Settings
+from resume_tailor_harness.render import export
 from resume_tailor_harness.render.export import (
     build_manifest,
     cover_letter_download_name,
@@ -22,8 +27,14 @@ from resume_tailor_harness.tracking.repository import (
     save_job,
     save_resume_version,
 )
-from resume_tailor_harness.tracking.tables import Application, CoverLetter, Job, ResumeVersion
+from resume_tailor_harness.tracking.tables import (
+    Application,
+    CoverLetter,
+    Job,
+    ResumeVersion,
+)
 from resume_tailor_harness.tenancy.context import UserContext, use_context
+from resume_tailor_harness.tenancy.storage import TenantPathError
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 
 
@@ -164,3 +175,68 @@ def test_export_writes_manifest_and_content_idempotently(tmp_path):
 
         export_job_artifacts(session, job.id, base=tmp_path)
         assert (out / "manifest.json").read_text(encoding="utf-8") == first_manifest
+
+
+def test_export_reserves_the_writer_until_sidecars_are_published(tmp_path, monkeypatch):
+    database = tmp_path / "workspace.db"
+    engine = make_engine(f"sqlite:///{database.as_posix()}")
+    init_db(engine)
+    with Session(engine) as session:
+        job_id = save_job(session, Job(source="manual")).id
+        assert job_id is not None
+        save_resume_version(session, ResumeVersion(job_id=job_id))
+
+    writing, release = Event(), Event()
+    write_json = export._write_json
+
+    def paused_write(path, value):
+        if path.name.endswith(".content.json"):
+            writing.set()
+            assert release.wait(5)
+        write_json(path, value)
+
+    def publish():
+        with Session(engine) as session:
+            return export_job_artifacts(session, job_id, base=tmp_path / "output")
+
+    monkeypatch.setattr(export, "_write_json", paused_write)
+    with ThreadPoolExecutor(max_workers=1) as worker:
+        pending = worker.submit(publish)
+        try:
+            assert writing.wait(5)
+            with sqlite3.connect(database, timeout=0.1) as writer:
+                with pytest.raises(sqlite3.OperationalError, match="locked"):
+                    writer.execute("BEGIN IMMEDIATE")
+        finally:
+            release.set()
+        assert pending.result(5) is not None
+    engine.dispose()
+
+
+def test_export_refuses_a_job_directory_link_outside_the_workspace(tmp_path):
+    paths = WorkspacePaths(tmp_path / "alice")
+    paths.output_dir.mkdir(parents=True)
+    context = UserContext(
+        user_id="alice0000000",
+        username="alice",
+        role="user",
+        paths=paths,
+        settings=Settings(_env_file=None),  # type: ignore[call-arg]
+        engine=None,
+        system_engine=None,
+        own_key_providers=frozenset(),
+    )
+    outside = tmp_path / "other-workspace"
+    outside.mkdir()
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session, use_context(context):
+        job = save_job(session, Job(source="manual"))
+        assert job.id is not None
+        job_dir("output", job).symlink_to(outside, target_is_directory=True)
+
+        with pytest.raises(TenantPathError):
+            export_job_artifacts(session, job.id)
+
+    assert list(outside.iterdir()) == []
+    engine.dispose()

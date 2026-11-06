@@ -10575,6 +10575,11 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** ResumeRenderRequest */
+        ResumeRenderRequest: {
+            /** Templateid */
+            templateId?: string | null;
+        };
         /** ResumeVersionOut */
         ResumeVersionOut: {
             /** Applicationeligible */
@@ -10616,6 +10621,8 @@ export interface components {
             pdfAvailable?: boolean | null;
             /** Pdfpath */
             pdfPath: string | null;
+            /** Pdftemplateid */
+            pdfTemplateId?: string | null;
             /** Reviewscore */
             reviewScore: number | null;
             /**
@@ -22437,7 +22444,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ResumeRenderRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

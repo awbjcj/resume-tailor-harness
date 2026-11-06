@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlmodel import Session
 
+from resume_tailor_harness.db import workspace_write
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import ReviewCritique
@@ -178,30 +179,28 @@ def submit_draft(
     if reporter is not None:
         reporter.checkpoint()
     # Review can take minutes. Reject a draft reviewed against superseded evidence.
-    session.expire_all()
-    job, _, current_revision = load_context(session, job_id, facts_path)
-    if current_revision != revision:
-        raise ExternalTailoringError(
-            "CONTEXT_STALE", "Evidence changed during review; fetch fresh context"
+    with workspace_write(session):
+        session.expire_all()
+        job, _, current_revision = load_context(session, job_id, facts_path)
+        if current_revision != revision:
+            raise ExternalTailoringError(
+                "CONTEXT_STALE", "Evidence changed during review; fetch fresh context"
+            )
+        version = ResumeVersion(
+            job_id=job_id,
+            round=1,
+            attempt=next_resume_attempt(session, job_id),
+            origin="external",
+            tailor_model=agent,
+            content_json=content.model_dump(mode="json"),
+            review_score=verdict.aggregate_score,
+            fact_check_passed=verdict.gate_passed,
+            critique_json=[c.model_dump(mode="json") for c in critiques],
+            gate_reviewers_json=sorted(r.name for r in config.reviewers if r.gate),
         )
-    attempt = next_resume_attempt(session, job_id)
-    version = ResumeVersion(
-        job_id=job_id,
-        round=1,
-        attempt=attempt,
-        origin="external",
-        tailor_model=agent,
-        content_json=content.model_dump(mode="json"),
-        review_score=verdict.aggregate_score,
-        fact_check_passed=verdict.gate_passed,
-        critique_json=[c.model_dump(mode="json") for c in critiques],
-        gate_reviewers_json=sorted(r.name for r in config.reviewers if r.gate),
-    )
-    advance(job, JobStatus.tailored.value, never_regress=True)
-    session.add(job)
-    session.add(version)
-    session.commit()
-    session.refresh(version)
+        advance(job, JobStatus.tailored.value, never_regress=True)
+        session.add(version)
+        session.commit()
     export_job_artifacts(session, job_id)
     result["versionId"] = version.id
     return result
