@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from inspect import isawaitable
 from types import SimpleNamespace
-from typing import Any, Literal, Protocol, TypeVar, cast, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar, cast, runtime_checkable
 
 import httpx
 from pydantic import BaseModel
@@ -19,6 +19,7 @@ from resume_tailor_harness.agent_trace import record_agent_run
 from resume_tailor_harness.career_skills.models import AgentRunMeta
 from resume_tailor_harness.config import Settings, get_settings
 from resume_tailor_harness.llm_limits import llm_call, retry_after_seconds
+from resume_tailor_harness.llm_routing import provider_sdk_base_url
 from resume_tailor_harness.structured_output import (
     StructuredOutputError,
     parse_structured_content,
@@ -48,6 +49,9 @@ from resume_tailor_harness.sessions.stream import (
     ToolCompleted,
     ToolStarted,
 )
+
+if TYPE_CHECKING:
+    from resume_tailor_harness.tenancy.spend import SpendDecision
 
 logger = logging.getLogger(__name__)
 
@@ -238,9 +242,8 @@ def is_transient(exc: BaseException) -> bool:
 def _agent_model_id(agent: Any) -> str:
     """The provider-prefixed model id an agent's model represents.
 
-    The prefix is what ``split_provider`` reads, and a bare id means Anthropic,
-    so an Anthropic model is deliberately left unprefixed rather than being
-    written ``anthropic:...``.
+    Legacy Claude IDs stay bare. A namespaced Claude ID that would be split
+    incorrectly gets an explicit Anthropic prefix.
     """
     model = getattr(agent, "model", None)
     if model is None:
@@ -255,9 +258,7 @@ def _agent_model_id(agent: Any) -> str:
     from resume_tailor_harness.tenancy.costs import normalize_provider
 
     provider = normalize_provider(str(provider_value or ""))
-    if not provider or provider == "anthropic":
-        return name
-    return f"{provider}:{name}"
+    return _provider_model_id(provider, name) if provider else name
 
 
 def record_call(agent: Any, response: Any) -> None:
@@ -350,7 +351,7 @@ class AgentRunner:
         with self._key_lock:
             while self._inflight and (
                 (decision.api_key or None) != self._applied_key
-                or _endpoint_target(model, decision.provider, decision.base_url)
+                or _endpoint_target(model, decision.provider, decision.sdk_base_url)
                 != self._applied_base_url
                 or decision.own_key != self._applied_own_key
             ):
@@ -372,7 +373,7 @@ class AgentRunner:
 
         context = current_context()
         key = decision.api_key or None
-        target_base_url = _endpoint_target(model, decision.provider, decision.base_url)
+        target_base_url = _endpoint_target(model, decision.provider, decision.sdk_base_url)
         if (
             key == self._applied_key
             and target_base_url == self._applied_base_url
@@ -390,7 +391,7 @@ class AgentRunner:
         if context is not None:
             context.selected_model_own_keys[id(model)] = decision.own_key
         model.api_key = key
-        _apply_endpoint(model, decision.provider, decision.base_url)
+        _apply_endpoint(model, decision.provider, target_base_url)
         # Agno caches clients after first use. Clearing them makes the next
         # request honor the newly selected credential.
         if hasattr(model, "client"):
@@ -1311,6 +1312,12 @@ def split_provider(model_id: str) -> tuple[str, str]:
     return "anthropic", model_id
 
 
+def _provider_model_id(provider: str, name: str) -> str:
+    if provider == "anthropic" and split_provider(name) == (provider, name):
+        return name
+    return f"{provider}:{name}"
+
+
 def plan_search(model_id: str, mode: SearchMode) -> SearchPlan:
     """Choose a provider-native or tool-backed search strategy without I/O."""
     provider, _model = split_provider(model_id)
@@ -1420,7 +1427,7 @@ def resolve_api_key(model_id: str, *, settings: Settings | None = None) -> str:
     return SpendGate(settings=settings).select(model_id).api_key
 
 
-def resolve_route(model_id: str, *, settings: Settings | None = None) -> Any:
+def resolve_route(model_id: str, *, settings: Settings | None = None) -> "SpendDecision":
     """The full ``SpendDecision`` for ``model_id``: key *and* endpoint.
 
     ``resolve_api_key`` answers half the question. Once a provider can be
@@ -1473,8 +1480,8 @@ def _current_endpoint(model: Any, provider: str) -> str | None:
     return None
 
 
-def _endpoint_target(model: Any, provider: str, base_url: str | None) -> str | None:
-    """What ``model``'s base URL should become for ``base_url``.
+def _endpoint_target(model: Any, provider: str, sdk_base_url: str | None) -> str | None:
+    """Resolve an SDK endpoint, restoring the adapter default when unset.
 
     ``base_url=None`` means "use the provider default", which is not the same
     as "no base URL": the DeepSeek class carries ``api.deepseek.com`` as a field
@@ -1483,7 +1490,6 @@ def _endpoint_target(model: Any, provider: str, base_url: str | None) -> str | N
     alone -- is what lets the caller compare current against target without
     the unrouted DeepSeek case reporting a change on every single refresh.
     """
-    sdk_base_url = provider_sdk_base_url(provider, base_url)
     if provider in {"openai", "deepseek"}:
         return sdk_base_url or type(model).__dataclass_fields__["base_url"].default
     return sdk_base_url
@@ -1491,9 +1497,8 @@ def _endpoint_target(model: Any, provider: str, base_url: str | None) -> str | N
 
 def _apply_endpoint(model: Any, provider: str, base_url: str | None) -> None:
     """Repoint an already-built model, including back to its own default."""
-    sdk_base_url = provider_sdk_base_url(provider, base_url)
     if provider in {"openai", "deepseek"}:
-        model.base_url = _endpoint_target(model, provider, base_url)
+        model.base_url = base_url
         return
     params = dict(getattr(model, "client_params", None) or {})
     if provider == "anthropic":
@@ -1502,8 +1507,8 @@ def _apply_endpoint(model: Any, provider: str, base_url: str | None) -> None:
     elif provider == "gemini":
         http_options = dict(params.get("http_options") or {})
         http_options.pop("base_url", None)
-        if sdk_base_url:
-            http_options["base_url"] = sdk_base_url
+        if base_url:
+            http_options["base_url"] = base_url
         if http_options:
             params["http_options"] = http_options
         else:
@@ -1534,18 +1539,17 @@ def refresh_agent_api_key(agent: object, *, settings: Settings | None = None) ->
     model_name = str(getattr(model, "id", "") or "")
     if not provider or not model_name:
         return
-    model_id = model_name if provider == "anthropic" else f"{provider}:{model_name}"
+    model_id = _provider_model_id(provider, model_name)
     route = resolve_route(model_id, settings=settings)
     selected = route.api_key or None
-    context.selected_model_own_keys[id(model)] = context.selected_own_key_providers[
-        provider
-    ]
+    target_base_url = _endpoint_target(model, provider, route.sdk_base_url)
+    context.selected_model_own_keys[id(model)] = route.own_key
     if getattr(model, "api_key", None) == selected and _current_endpoint(
         model, provider
-    ) == _endpoint_target(model, provider, route.base_url):
+    ) == target_base_url:
         return
     model.api_key = selected
-    _apply_endpoint(model, provider, route.base_url)
+    _apply_endpoint(model, provider, target_base_url)
     # Agno caches clients after first use. Clearing them makes the next request
     # honor the newly selected credential and endpoint instead of retaining the
     # old client.
@@ -2237,26 +2241,15 @@ def _endpoint_kwargs(provider: str, base_url: str | None) -> dict[str, Any]:
     Agno's generated HTTP options. Callers needing a timeout must merge it into
     that dict alongside the route, as the Argon builder does.
     """
-    sdk_base_url = provider_sdk_base_url(provider, base_url)
-    if not sdk_base_url:
+    if not base_url:
         return {}
     if provider in {"openai", "deepseek"}:
-        return {"base_url": sdk_base_url}
+        return {"base_url": base_url}
     if provider == "anthropic":
-        return {"client_params": {"base_url": sdk_base_url}}
+        return {"client_params": {"base_url": base_url}}
     if provider == "gemini":
-        return {"client_params": {"http_options": {"base_url": sdk_base_url}}}
+        return {"client_params": {"http_options": {"base_url": base_url}}}
     return {}
-
-
-def provider_sdk_base_url(provider: str, origin: str | None) -> str | None:
-    """Adapt one selected route URL to the provider SDK's spelling."""
-    if not origin:
-        return None
-    normalized = origin.rstrip("/")
-    if provider in {"openai", "deepseek"} and not normalized.endswith("/v1"):
-        return f"{normalized}/v1"
-    return normalized
 
 
 def _build_openai_responses(
@@ -2383,7 +2376,7 @@ def build_model(
 
 def _build_model_from_route(
     model_id: str,
-    route: Any,
+    route: "SpendDecision",
     *,
     api_key: str | None = None,
     cache_system_prompt: bool = False,
@@ -2394,7 +2387,7 @@ def _build_model_from_route(
     reasoning = reasoning and provider_capabilities(model_id).supports_reasoning
     reasoning_effort = _reasoning_effort_for(model_id, provider) if reasoning else None
     key = api_key or route.api_key or None
-    base_url = route.base_url
+    base_url = route.sdk_base_url
     if provider == "openai":
         return _build_openai_responses(
             model_id, api_key=key, reasoning=reasoning, base_url=base_url
@@ -2488,7 +2481,7 @@ def build_search_equipped(
         raise ValueError("advisor web search is disabled by search_mode=off")
     route = resolve_route(model_id, settings=resolved_settings)
     api_key = route.api_key or None
-    base_url = route.base_url
+    base_url = route.sdk_base_url
     reasoning = reasoning and provider_capabilities(model_id).supports_reasoning
 
     if plan.strategy == "native_openai":

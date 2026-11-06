@@ -178,6 +178,7 @@ def create_app(
                     registry,
                     system_engine=system_engine,
                     template_dir=app.state.template_config_dir,
+                    allow_local_endpoint=app_mode == "local",
                 )
             except BaseException:
                 system_engine.dispose()

@@ -123,9 +123,12 @@ def build_context(
     system_engine: Engine | None = None,
     *,
     template_dir: Path | str = Path("config"),
+    allow_local_endpoint: bool = False,
 ) -> UserContext:
     paths = provision_workspace(data_root, user.id, template_dir=template_dir)
-    overlay = effective_settings(base_settings, paths)
+    overlay = effective_settings(
+        base_settings, paths, allow_local_endpoint=allow_local_endpoint
+    )
     platform_provider_keys = {
         provider: key
         for provider, key in {
@@ -147,4 +150,5 @@ def build_context(
         own_key_providers=overlay.own_key_providers,
         platform_provider_keys=platform_provider_keys,
         user_provider_keys=overlay.user_provider_keys,
+        local_provider_endpoint=overlay.local_provider_endpoint,
     )

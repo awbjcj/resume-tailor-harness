@@ -58,6 +58,42 @@ def test_areas_flip_as_setup_progresses(make_client, tmp_path):
         assert body["complete"] is False
 
 
+def test_setup_is_incomplete_until_the_selected_tiers_can_run(make_client, tmp_path):
+    with make_client("ANTHROPIC_API_KEY=anthropic-test-key\n") as client:
+        assert (
+            client.post(
+                "/api/profile/documents",
+                files={"file": ("resume.txt", io.BytesIO(b"exp"), "text/plain")},
+                data={"docType": "resume"},
+            ).status_code
+            < 300
+        )
+        assert (
+            client.put("/api/config/search", json={"keywords": ["python"]}).status_code
+            == 200
+        )
+        (tmp_path / "config" / "connectors.yaml").write_text(
+            "remoteok:\n  enabled: true\n", encoding="utf-8"
+        )
+        (tmp_path / "data" / "profile" / "facts.json").write_text(
+            "{}", encoding="utf-8"
+        )
+
+        body = client.get("/api/setup/status").json()
+        assert body["sources"]["enabledCount"] > 0
+        assert body["secrets"]["anyLlmKey"] is True
+        assert body["secrets"]["modelTiersReady"] is False
+        assert body["complete"] is False
+
+        assert (
+            client.put(
+                "/api/setup/provider", json={"provider": "anthropic"}
+            ).status_code
+            == 204
+        )
+        assert client.get("/api/setup/status").json()["complete"] is True
+
+
 def test_broken_skill_manifest_is_reported_additively(make_client, tmp_path):
     root = tmp_path / "skills"
     manifest = tmp_path / "skills-lock.json"

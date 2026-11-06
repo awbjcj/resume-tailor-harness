@@ -268,6 +268,7 @@ def test_openai_embedding_provider_records_usage_through_direct_usage_seam(
     import resume_tailor_harness.llm_runner as llm_runner
     import resume_tailor_harness.tenancy.limits as limits
     import resume_tailor_harness.tenancy.usage as usage
+    from resume_tailor_harness.tenancy.spend import SpendDecision
 
     class _Embeddings:
         def create(self, **_kwargs):
@@ -287,12 +288,13 @@ def test_openai_embedding_provider_records_usage_through_direct_usage_seam(
     monkeypatch.setattr(
         llm_runner,
         "resolve_route",
-        lambda _model: SimpleNamespace(
+        lambda _model: SpendDecision(
             api_key="key",
             base_url="https://gateway.example",
             provider="openai",
             model="text-embedding-3-small",
             own_key=False,
+            reason="subscription",
         ),
     )
     monkeypatch.setattr(
