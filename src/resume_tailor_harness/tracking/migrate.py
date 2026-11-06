@@ -1,7 +1,9 @@
 import json
+from pathlib import Path
 
-from sqlalchemy import text
+from sqlalchemy import MetaData, Table, select, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.schema import CreateTable
 
 from resume_tailor_harness.tracking.dedup import (
     compute_content_fingerprint,
@@ -337,6 +339,84 @@ def ensure_resume_version_attempt_columns(engine: Engine) -> None:
         if "tailor_model" not in cols:
             conn.execute(
                 text("ALTER TABLE resume_versions ADD COLUMN tailor_model VARCHAR")
+            )
+
+
+def ensure_resume_version_storage(engine: Engine) -> None:
+    """Retain version IDs and record the style of future renders."""
+    table_sql = text(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'resume_versions'"
+    )
+    with engine.begin() as conn:
+        definition = conn.execute(table_sql).scalar()
+        if not definition or (
+            "AUTOINCREMENT" in definition.upper() and "pdf_template_id" in definition
+        ):
+            return
+        conn.exec_driver_sql("BEGIN IMMEDIATE")
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(resume_versions)")}
+        if "pdf_template_id" not in columns:
+            conn.exec_driver_sql("ALTER TABLE resume_versions ADD COLUMN pdf_template_id VARCHAR")
+        if "AUTOINCREMENT" in str(conn.execute(table_sql).scalar()).upper():
+            return
+
+        # SQLite cannot ALTER a primary key. Rebuild inside one transaction so
+        # a failed migration leaves the original table and indexes intact.
+        metadata = MetaData()
+        old = Table("resume_versions", metadata, autoload_with=conn)
+        replacement = old.to_metadata(metadata, name="resume_versions_new")
+        replacement.dialect_options["sqlite"]["autoincrement"] = True
+        dependent_sql = conn.execute(
+            text(
+                "SELECT sql FROM sqlite_master WHERE tbl_name = 'resume_versions' "
+                "AND type IN ('index', 'trigger') AND sql IS NOT NULL"
+            )
+        ).scalars().all()
+        conn.execute(CreateTable(replacement))
+        conn.execute(replacement.insert().from_select(list(old.c.keys()), select(*old.c)))
+        conn.exec_driver_sql("DROP TABLE resume_versions")
+        conn.exec_driver_sql("ALTER TABLE resume_versions_new RENAME TO resume_versions")
+        for statement in dependent_sql:
+            conn.exec_driver_sql(statement)
+
+
+def ensure_pdf_file_keys(engine: Engine, *, output_root: Path | None = None) -> None:
+    """Index the canonical filename once for existing PDF references."""
+    from resume_tailor_harness.tenancy.storage import artifact_pdf_identity
+
+    tables = ("resume_versions", "cover_letters")
+    with engine.begin() as conn:
+        missing = [
+            table
+            for table in tables
+            if "pdf_file_key" not in {
+                row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")
+            }
+        ]
+        if not missing:
+            return
+        conn.exec_driver_sql("BEGIN IMMEDIATE")
+        for table in missing:
+            columns = {
+                row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")
+            }
+            if "pdf_file_key" in columns or "pdf_path" not in columns:
+                continue
+            conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN pdf_file_key VARCHAR")
+            rows = conn.exec_driver_sql(
+                f"SELECT id, pdf_path FROM {table} WHERE pdf_path IS NOT NULL"
+            ).all()
+            keys = [
+                (path.name.casefold(), row_id)
+                for row_id, value in rows
+                if (path := artifact_pdf_identity(value, output_root=output_root)) is not None
+            ]
+            if keys:
+                conn.exec_driver_sql(
+                    f"UPDATE {table} SET pdf_file_key = ? WHERE id = ?", keys
+                )
+            conn.exec_driver_sql(
+                f"CREATE INDEX ix_{table}_pdf_file_key ON {table} (pdf_file_key)"
             )
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 
 from sqlalchemy.engine import Engine
 
@@ -24,7 +25,8 @@ class EngineRegistry:
                 return engine
             engine = make_engine(db_url)
             try:
-                init_db(engine)
+                assert engine.url.database is not None
+                init_db(engine, artifact_root=Path(engine.url.database).parent / "output")
             except BaseException:
                 engine.dispose()
                 raise

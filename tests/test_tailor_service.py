@@ -1,18 +1,26 @@
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
+from threading import Barrier
+from time import sleep
 
 import pytest
+from sqlalchemy import event
 from sqlmodel import Session, SQLModel, create_engine
 
+from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.models.job import JobCriteria
 from resume_tailor_harness.models.profile import Contact, ProfileFacts
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.review import ReviewCritique
+from resume_tailor_harness.tailor import service
 from resume_tailor_harness.tailor.review_config import ReviewConfig, ReviewerSpec
 from resume_tailor_harness.tailor.service import tailor_job, tailor_jobs
+from resume_tailor_harness.tailor.verdict import aggregate
+from resume_tailor_harness.tailor.workflow import TailorRound
 from resume_tailor_harness.taxonomy.clusters import ClusterMap
 from resume_tailor_harness.taxonomy.snapshot import EffectiveTaxonomy
 from resume_tailor_harness.tracking.repository import resume_versions_for_job, save_job
-from resume_tailor_harness.tracking.tables import Job, JobStatus
+from resume_tailor_harness.tracking.tables import Job, JobStatus, ResumeVersion
 
 
 class _Result:
@@ -61,6 +69,66 @@ def _session() -> Session:
 def _require_id(value: int | None) -> int:
     assert value is not None
     return value
+
+
+def _round(config: ReviewConfig, number: int = 1) -> TailorRound:
+    return TailorRound(
+        round_num=number,
+        content=ResumeContent(contact=Contact(name="Ada")),
+        verdict=aggregate([], config),
+    )
+
+
+def test_concurrent_writers_get_distinct_attempts(tmp_path, monkeypatch):
+    engine = make_engine(f"sqlite:///{(tmp_path / 'workspace.db').as_posix()}")
+    init_db(engine)
+    with Session(engine) as session:
+        job_id = _require_id(save_job(session, Job(source="manual")).id)
+    config = ReviewConfig()
+    starting = Barrier(2)
+    next_attempt = service.next_resume_attempt
+
+    def slow_next_attempt(session, job_id):
+        number = next_attempt(session, job_id)
+        sleep(0.1)  # Let the second writer reach attempt allocation.
+        return number
+
+    def persist():
+        with Session(engine) as session:
+            job = session.get(Job, job_id)
+            assert job is not None
+            starting.wait(5)
+            return service._persist_rounds(session, job, [_round(config)], config)[
+                0
+            ].attempt
+
+    monkeypatch.setattr(service, "next_resume_attempt", slow_next_attempt)
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        first, second = workers.submit(persist), workers.submit(persist)
+        assert sorted([first.result(5), second.result(5)]) == [1, 2]
+    engine.dispose()
+
+
+def test_failure_persisting_a_later_round_rolls_back_the_attempt():
+    config = ReviewConfig()
+    with _session() as session:
+        job = save_job(session, Job(source="manual", status="approved"))
+        job_id = _require_id(job.id)
+
+        @event.listens_for(session, "before_flush")
+        def fail_round_two(session, _context, _instances):
+            if any(
+                isinstance(row, ResumeVersion) and row.round == 2 for row in session.new
+            ):
+                raise RuntimeError("round 2 failed to persist")
+
+        with pytest.raises(RuntimeError, match="round 2 failed to persist"):
+            service._persist_rounds(
+                session, job, [_round(config), _round(config, 2)], config
+            )
+
+        assert resume_versions_for_job(session, job_id) == []
+        assert job.status == "approved"
 
 
 @pytest.mark.parametrize("fact_gate", [False, True])

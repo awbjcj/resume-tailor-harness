@@ -5,12 +5,17 @@ orphan (never cascade), refuse the applied artifact, unlink the PDF, and leave
 the job's own progress gate exactly as strict as it was.
 """
 
+import json
 from pathlib import Path
 
 import pytest
 from sqlmodel import Session, SQLModel, create_engine, select
 
+from resume_tailor_harness.config import Settings
+from resume_tailor_harness.render.export import export_job_artifacts
 from resume_tailor_harness.services import board
+from resume_tailor_harness.tenancy.context import UserContext, use_context
+from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 from resume_tailor_harness.tracking.repository import (
     get_cover_letter,
     get_resume_version,
@@ -80,6 +85,34 @@ def test_deleting_a_version_orphans_its_dependents_instead_of_cascading():
         surviving_letter = get_cover_letter(s, letter)
         assert surviving_letter is not None
         assert surviving_letter.resume_version_id is None
+
+
+def test_workspace_delete_removes_the_versions_exported_content(tmp_path):
+    context = UserContext(
+        user_id="owner",
+        username="owner",
+        role="user",
+        paths=WorkspacePaths(tmp_path),
+        settings=Settings(_env_file=None),  # type: ignore[call-arg]
+        engine=None,
+        system_engine=None,
+        own_key_providers=frozenset(),
+    )
+    with use_context(context), _session() as session:
+        job_id = _job(session)
+        remove = _version(session, job_id, round=1)
+        keep = _version(session, job_id, round=1)
+        out = export_job_artifacts(session, job_id)
+        assert out is not None
+        removed_sidecar = out / f"resume-v{remove}-tailor.content.json"
+        assert removed_sidecar.is_file()
+
+        assert board.delete_resume_versions(session, [remove]).deleted == 1
+
+        assert not removed_sidecar.exists()
+        assert (out / f"resume-v{keep}-tailor.content.json").is_file()
+        manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+        assert [version["id"] for version in manifest["resumeVersions"]] == [keep]
 
 
 def test_deleting_a_cover_letter_orphans_its_revisions():

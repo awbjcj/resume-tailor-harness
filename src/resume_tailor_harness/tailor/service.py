@@ -8,6 +8,7 @@ from sqlmodel import Session
 from resume_tailor_harness.concurrency import gather_isolated
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.career_skills.provenance import append_skill_use
+from resume_tailor_harness.db import workspace_write
 from resume_tailor_harness.llm_runner import Runner, run_with_cleanup
 from resume_tailor_harness.models.job import JobCriteria
 from resume_tailor_harness.models.profile import ProfileFacts
@@ -28,11 +29,7 @@ from resume_tailor_harness.tailor.workflow import (
 )
 from resume_tailor_harness.taxonomy.clusters import ClusterMap
 from resume_tailor_harness.taxonomy.snapshot import EffectiveTaxonomy
-from resume_tailor_harness.tracking.repository import (
-    next_resume_attempt,
-    save_job,
-    save_resume_version,
-)
+from resume_tailor_harness.tracking.repository import next_resume_attempt
 from resume_tailor_harness.tracking.stages import advance
 from resume_tailor_harness.tracking.tables import Job, JobStatus, ResumeVersion
 
@@ -65,9 +62,10 @@ def _persist_rounds(
     Status moves forward only: re-tailoring a rendered job leaves it rendered.
     Versions are appended under a fresh attempt number; nothing is replaced.
     """
-    if job.id is None:
+    job_id = job.id
+    if job_id is None:
         raise ValueError("Cannot tailor a job that has not been persisted")
-    attempt = next_resume_attempt(session, job.id)
+    job_created_at = job.created_at
     # Recorded once per call, not per round: every round in a single tailor run
     # shares the same ReviewConfig, and this is what read-side callers (job
     # detail, resume render) use instead of the CURRENT review config so a
@@ -76,9 +74,8 @@ def _persist_rounds(
     versions: list[ResumeVersion] = []
     for r in rounds:
         version = ResumeVersion(
-            job_id=job.id,
+            job_id=job_id,
             round=r.round_num,
-            attempt=attempt,
             tailor_model=model,
             content_json=r.content.model_dump(mode="json"),
             review_score=r.verdict.aggregate_score,
@@ -120,12 +117,23 @@ def _persist_rounds(
                 raw_uses = append_skill_use(raw_uses, reviewer, "reviewed")
         if raw_uses:
             version.skill_uses_json = raw_uses
-        versions.append(save_resume_version(session, version))
-    advance(job, JobStatus.tailored.value, never_regress=True)
-    save_job(session, job)
+        versions.append(version)
+
+    with workspace_write(session):
+        current = session.get(Job, job_id, populate_existing=True)
+        if current is None or current.created_at != job_created_at:
+            raise ValueError(
+                "The job is no longer available for this tailoring attempt"
+            )
+        attempt = next_resume_attempt(session, job_id)
+        for version in versions:
+            version.attempt = attempt
+        session.add_all(versions)
+        advance(current, JobStatus.tailored.value, never_regress=True)
+        session.commit()
     logger.info(
         "tailor job=%s attempt=%s rounds=%s total_llm_seconds=%.1f stages=%s",
-        job.id,
+        job_id,
         attempt,
         len(rounds),
         sum(sum(round_.stage_seconds.values()) for round_ in rounds),
@@ -265,17 +273,24 @@ def tailor_jobs(
                 logger.warning("tailor job=%s failed", job_id, exc_info=error)
                 failures[job_id] = StageFailure.from_exception(error)
                 continue
-            results[job_id] = _persist_rounds(
-                session,
-                job,
-                res.value,
-                config,
-                model=model,
-                tailor_agent=tailor_agent,
-                reviser_agent=reviser_agent,
-                reviewer_agents=reviewer_agents,
-                taxonomy=taxonomy,
-            )
+            try:
+                results[job_id] = _persist_rounds(
+                    session,
+                    job,
+                    res.value,
+                    config,
+                    model=model,
+                    tailor_agent=tailor_agent,
+                    reviser_agent=reviser_agent,
+                    reviewer_agents=reviewer_agents,
+                    taxonomy=taxonomy,
+                )
+            except Exception as error:
+                session.rollback()
+                logger.warning(
+                    "could not save tailor attempt for job=%s", job_id, exc_info=error
+                )
+                failures[job_id] = StageFailure.from_exception(error)
     if reporter:
         reporter.done()
     return TailorOutcome(versions=results, failures=failures, model=model)

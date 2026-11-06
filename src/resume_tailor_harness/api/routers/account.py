@@ -129,6 +129,10 @@ def _validate_workspace_stage(stage: Path, *, workspace_root: Path) -> None:
             for table in ("resume_versions", "cover_letters"):
                 if table not in tables:
                     continue
+                has_file_key = any(
+                    column[1] == "pdf_file_key"
+                    for column in connection.execute(f"PRAGMA table_info({table})")
+                )
                 rows = connection.execute(
                     f"SELECT id, pdf_path FROM {table} WHERE pdf_path IS NOT NULL"
                 ).fetchall()
@@ -137,10 +141,16 @@ def _validate_workspace_stage(stage: Path, *, workspace_root: Path) -> None:
                         value,
                         workspace_root=workspace_root,
                     )
-                    connection.execute(
-                        f"UPDATE {table} SET pdf_path = ? WHERE id = ?",
-                        (normalized, row_id),
-                    )
+                    if has_file_key:
+                        connection.execute(
+                            f"UPDATE {table} SET pdf_path = ?, pdf_file_key = ? WHERE id = ?",
+                            (normalized, PurePosixPath(normalized).name.casefold(), row_id),
+                        )
+                    else:
+                        connection.execute(
+                            f"UPDATE {table} SET pdf_path = ? WHERE id = ?",
+                            (normalized, row_id),
+                        )
             connection.commit()
     except sqlite3.Error as exc:
         raise InvalidArchiveError("workspace database is not valid SQLite") from exc

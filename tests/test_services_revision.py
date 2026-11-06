@@ -18,6 +18,7 @@ from resume_tailor_harness.models.evidence_portfolio import (
     PortfolioSelection,
 )
 from resume_tailor_harness.services.agents import TailorBundle
+from resume_tailor_harness.services.board import delete_resume_versions
 from resume_tailor_harness.services.revision import revise_resume_version
 from resume_tailor_harness.tracking.repository import save_job, save_resume_version
 from resume_tailor_harness.tracking.tables import Job, ResumeVersion
@@ -121,6 +122,52 @@ def test_revise_resume_version_persists_lineage_and_fact_flag(monkeypatch):
         assert child.evidence_portfolio_status == "inherited"
         assert child.evidence_portfolio_json is not None
         assert child.evidence_portfolio_json["status"] == "inherited"
+
+
+def test_revision_finishing_after_parent_deletion_saves_independent_work(
+    monkeypatch, tmp_path
+):
+    engine = make_engine(f"sqlite:///{(tmp_path / 'workspace.db').as_posix()}")
+    init_db(engine)
+    monkeypatch.setattr(
+        "resume_tailor_harness.services.revision.load_facts", lambda _path: _facts()
+    )
+    monkeypatch.setattr(
+        "resume_tailor_harness.services.revision.export_job_artifacts",
+        lambda *_args: None,
+    )
+    with Session(engine) as session:
+        job_id = save_job(session, Job(source="manual", status="tailored")).id
+        assert job_id is not None
+        parent_id = save_resume_version(
+            session,
+            ResumeVersion(
+                job_id=job_id,
+                content_json=_content().model_dump(mode="json"),
+            ),
+        ).id
+        assert parent_id is not None
+
+        class DeletingAgent(_Agent):
+            def run(self, prompt: str):
+                with Session(engine) as deleting:
+                    assert delete_resume_versions(deleting, [parent_id]).deleted == 1
+                return super().run(prompt)
+
+        bundle = TailorBundle(
+            tailor=_Agent(_content()),
+            reviser=_Agent(_content()),
+            reviewers={},
+            revision=DeletingAgent(_content()),
+        )
+        child = revise_resume_version(
+            session, parent_id, "make it sharper", bundle=bundle
+        )
+
+        assert child is not None and child.job_id == job_id
+        assert child.parent_version_id is None
+        assert session.get(ResumeVersion, parent_id) is None
+    engine.dispose()
 
 
 def test_revise_resume_version_records_gate_roster_on_re_review(monkeypatch, tmp_path):

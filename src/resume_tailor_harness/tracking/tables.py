@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, cast
 
-from sqlalchemy import JSON, Column, UniqueConstraint
+from sqlalchemy import JSON, Column, UniqueConstraint, event, inspect
 from sqlmodel import Field, SQLModel
 
 from resume_tailor_harness.models.review import has_failed_fact_check
@@ -72,12 +72,15 @@ class Job(SQLModel, table=True):
 
 class ResumeVersion(SQLModel, table=True):
     __tablename__ = cast(Any, "resume_versions")
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id: int | None = Field(default=None, primary_key=True)
     job_id: int = Field(foreign_key="jobs.id", index=True)
     round: int = 0
     content_json: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON))
     pdf_path: str | None = None
+    pdf_file_key: str | None = Field(default=None, index=True)
+    pdf_template_id: str | None = None
     review_score: int | None = None
     fact_check_passed: bool = False
     critique_json: list[dict[str, Any]] | None = Field(
@@ -219,12 +222,26 @@ class CoverLetter(SQLModel, table=True):
         default=None, sa_column=Column(JSON)
     )
     pdf_path: str | None = None
+    pdf_file_key: str | None = Field(default=None, index=True)
     fact_check_passed: bool = False
     origin: str = Field(default="draft", index=True)
     instruction: str | None = None
     parent_id: int | None = Field(default=None, foreign_key="cover_letters.id")
     schema_version: int = 1
     created_at: datetime = Field(default_factory=utcnow)
+
+
+@event.listens_for(ResumeVersion, "before_insert")
+@event.listens_for(ResumeVersion, "before_update")
+@event.listens_for(CoverLetter, "before_insert")
+@event.listens_for(CoverLetter, "before_update")
+def _update_pdf_file_key(_mapper, _connection, row: ResumeVersion | CoverLetter) -> None:
+    if not inspect(row).attrs.pdf_path.history.has_changes():
+        return
+    from resume_tailor_harness.tenancy.storage import artifact_pdf_identity
+
+    path = artifact_pdf_identity(row.pdf_path)
+    row.pdf_file_key = path.name.casefold() if path is not None else None
 
 
 class Notification(SQLModel, table=True):

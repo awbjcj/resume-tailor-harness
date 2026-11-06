@@ -62,16 +62,16 @@ versions and cover letters; `services/board.py`'s `delete_resume_versions` /
 - **Unlinks the PDF** through `tenancy/storage.py::delete_artifact_pdf`, the
   ADR-0008 chokepoint. Every unresolvable-path branch returns `False` instead of
   raising — aborting the row delete because a stored path is unusable (e.g.
-  restored from an imported archive) would strand the row permanently. The
-  `.content.json` sidecars and `manifest.json` under `output/` are **not**
-  touched: they are owned by `export_job_artifacts`, which rewrites the whole
-  directory on the next render.
+  restored from an imported archive) would strand the row permanently.
+  A PDF shared with a retained row stays on disk. `export_job_artifacts` owns
+  `.content.json` sidecars and `manifest.json`. Manual workspace deletion and
+  Redo cleanup refresh the job export and remove the deleted versions' sidecars.
 
 Deleting every artifact does **not** make a job deletable — `has_progress` also
 reads status, which is a high-water mark. Pinned by
 `test_deleting_every_version_does_not_make_a_progressed_job_deletable`.
 
-### Redo — forward-only, never destructive
+### Redo and resume retention
 
 `services/redo.py` re-runs any stage (`pull`/`extract`/`tailor`/`render`) over
 explicitly chosen jobs at any status. The automatic paths are deliberately
@@ -80,19 +80,30 @@ one-way for user-invested rows: `save_or_upgrade()` freezes a materially richer
 same rows. For an unprogressed extracted/shortlisted row, accepting richer
 source text clears its stale criteria and scoring and returns it to `raw`, so
 the next discovery pass does not show metadata derived from the truncated copy.
-Redo is the explicit escape hatch for progressed rows, never a mode.
+Redo lets users explicitly rerun stages for progressed rows.
 
-Three invariants, all enforced by `tracking/stages.py::advance`:
+`tracking/stages.py::advance` keeps `JobStatus` at its high-water mark. A
+rendered job stays rendered through a re-pull, extraction and tailoring. The
+rejection gates rank below `raw`, so Redo can update fit scores while preserving
+progress.
 
-- **Never regresses.** `JobStatus` is a high-water mark. A rendered job stays
-  rendered through a re-pull + re-extract + re-tailor.
-- **Never rejects.** `rejected` ranks below `raw`, so the filter and relevance
-  gates cannot fire under `never_regress`. Fresh fit scores are still written.
-- **Never deletes.** New `ResumeVersion` rows are appended under an incremented
-  `attempt`; `tailor_model` records which model produced them.
+Tailor appends a new `attempt` and records `tailor_model`. When Redo also
+includes Render, it renders the final round from this attempt. Render alone
+uses the application's selection or falls back to the latest version.
+A failed stage skips the remaining requested stages for that job. Other jobs
+in the batch can continue.
 
-**These three describe `JobStatus` only.** `ApplicationStatus` follows a
-different rule — a progression (`ready < submitted < interview < offer`) that
+Keeping prior versions is the default. `removePreviousVersions` requires Tailor
+and captures eligible versions at launch. Cleanup rechecks that they are
+generated versions with no application selection or links from revisions or
+cover letters. It runs per job after the last requested stage succeeds and the
+replacement passes fact-lock. Earlier PDFs require a replacement PDF before
+removal. The run records the new version ID and IDs removed, and the application
+keeps its exact selection. Cleanup holds the same workspace write lock as
+selection and deletion. Run admission prevents overlapping Redo runs for the
+same job and reserves cleanup candidates against in-flight revisions.
+
+`ApplicationStatus` follows a progression (`ready < submitted < interview < offer`) that
 advances forward only, plus a terminal set (`{rejected, closed}`) reachable
 from *any* progression state including `offer`. A flat high-water mark would
 block `interview -> rejected`, the most common transition in a job hunt, and
@@ -105,7 +116,8 @@ nowhere else.
 authors; `latest_resume_version_id` selects the re-render fallback when there is
 no Application selection. Both query scalar maxima rather than loading historical
 resume/critique JSON. They respect the caller's session and transaction; selecting
-an attempt number does not reserve it against concurrent writers.
+an attempt number alone does not reserve it. Internal and external authors
+allocate the number and commit the attempt under the workspace write lock.
 
 `StageScope(job_ids, any_status, never_regress)` is how the funnel stages in
 `discovery/pipeline.py` run over explicit ids. `StageScope()` reproduces the

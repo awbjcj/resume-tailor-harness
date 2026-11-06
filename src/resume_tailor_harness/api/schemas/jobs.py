@@ -124,6 +124,10 @@ class TriageItem(CamelModel):
     h1b_sponsorship_status: H1BSponsorshipStatus | None = None
 
 
+class ResumeRenderRequest(CamelModel):
+    template_id: str | None = Field(default=None, min_length=1)
+
+
 class ResumeVersionOut(CamelModel):
     id: int
     job_id: int
@@ -136,6 +140,7 @@ class ResumeVersionOut(CamelModel):
     application_eligible: bool | None = None
     pdf_available: bool | None = None
     pdf_path: str | None
+    pdf_template_id: str | None = None
     critique_json: list[dict] | None
     created_at: datetime
     failed_gates: list[str] = Field(default_factory=list)
