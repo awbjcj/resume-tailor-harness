@@ -5,7 +5,6 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, col, select
 
 from resume_tailor_harness.db import workspace_write
@@ -13,7 +12,7 @@ from resume_tailor_harness.render.export import export_job_artifacts, resume_jso
 from resume_tailor_harness.services.application_materials import (
     resume_application_eligible,
 )
-from resume_tailor_harness.tenancy.storage import TenantPathError, resolve_artifact_pdf
+from resume_tailor_harness.tenancy.storage import resolve_artifact_pdf
 from resume_tailor_harness.tracking.repository import delete_artifact_rows
 from resume_tailor_harness.tracking.tables import (
     Application,
@@ -124,7 +123,7 @@ def remove_superseded_versions(
         delete_artifact_rows(session, versions=rows)
     try:
         export_job_artifacts(session, job_id, removed_resume_sidecars=sidecars)
-    except (OSError, SQLAlchemyError, TenantPathError):
+    except Exception:
         # The database deletion has committed. Report the deleted IDs even if
         # a derived export could not be refreshed.
         logger.warning("could not refresh exports for job=%s", job_id, exc_info=True)

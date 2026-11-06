@@ -40,6 +40,13 @@ function completedCount(count: number, kind: "job" | "resumeVersion" | "coverLet
   return i18n.t(`runHistory.counts.${kind}`, { count });
 }
 
+function removedVersionCount(outcomes: { removedVersionIds?: unknown }[]): number {
+  return outcomes.reduce(
+    (total, outcome) => total + (Array.isArray(outcome?.removedVersionIds) ? outcome.removedVersionIds.length : 0),
+    0,
+  );
+}
+
 function announceOne(run: RunRecord, openResult?: (runId: string) => void): void {
   const notify = (method: "success" | "error" | "info", message: string) => {
     if (openResult) toast[method](message, { action: {
@@ -62,7 +69,10 @@ function announceOneMessage(run: RunRecord, toast: { success: (message: string) 
     return;
   }
   if (run.status === "cancelled") {
-    toast.info(`${localizedRunLabel(run.kind)} ${i18n.t("runHistory.outcomes.cancelled")}`);
+    const status = `${localizedRunLabel(run.kind)} ${i18n.t("runHistory.outcomes.cancelled")}`;
+    const outcomes = run.kind === "redo" ? resultRecord(run)?.outcomes : null;
+    const removed = Array.isArray(outcomes) ? removedVersionCount(outcomes) : 0;
+    toast.info(removed ? `${status} · ${i18n.t("runHistory.redo.removed", { count: removed })}` : status);
     return;
   }
   if (run.kind === "tailor") {
@@ -105,8 +115,7 @@ function announceOneMessage(run: RunRecord, toast: { success: (message: string) 
     }
     const messages = [`Pipeline redo complete: ${completedCount(outcomes.length, "stage")} processed.`];
     const issues = outcomes.filter((outcome) => outcome?.status === "failed" || outcome?.cleanupError).length;
-    const removed = outcomes.reduce<number>((total, outcome) =>
-      total + (Array.isArray(outcome?.removedVersionIds) ? outcome.removedVersionIds.length : 0), 0);
+    const removed = removedVersionCount(outcomes);
     if (removed) messages.push(i18n.t("runHistory.redo.removed", { count: removed }));
     if (issues) messages.push(i18n.t("runHistory.redo.issues", { count: issues }));
     const summary = messages.join(" ");
