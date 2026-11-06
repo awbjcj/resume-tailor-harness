@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useGithubRepositories } from "./use-sources";
 
 type Repository = components["schemas"]["GithubRepositoryOut"];
 const DEFAULT_BRANCH = ":default";
@@ -169,13 +170,7 @@ export function GithubRepositoryPicker({
   onChange: (branches: Record<string, string>) => void;
 }) {
   const [load, setLoad] = useState(false);
-  const repositories = useQuery({
-    queryKey: ["github-repositories", username, settingsKey],
-    enabled: load && !!username,
-    retry: false,
-    staleTime: 60_000,
-    queryFn: () => unwrap(api.GET("/api/profile/github/repositories")),
-  });
+  const repositories = useGithubRepositories(username, settingsKey, load);
   return (
     <div className="@container/repositories min-w-0 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -185,13 +180,13 @@ export function GithubRepositoryPicker({
         <Button
           variant="outline"
           className="h-auto min-h-11 max-w-full whitespace-normal text-left"
-          disabled={!username || disabled || repositories.isFetching}
+          disabled={!username || disabled || (load && repositories.isFetching)}
           onClick={() => {
             setLoad(true);
             if (load) void repositories.refetch();
           }}
         >
-          {repositories.isFetching ? (
+          {load && repositories.isFetching ? (
             <Spinner data-icon="inline-start" />
           ) : load ? (
             <RefreshCw data-icon="inline-start" aria-hidden="true" />
@@ -206,19 +201,19 @@ export function GithubRepositoryPicker({
           Save your GitHub username to load repositories and their branches.
         </p>
       ) : null}
-      {repositories.isLoading ? <Skeleton className="h-24 w-full" /> : null}
-      {repositories.isError ? (
+      {load && repositories.isLoading ? <Skeleton className="h-24 w-full" /> : null}
+      {load && repositories.isError ? (
         <p role="alert" className="text-sm text-destructive">
           Could not load repositories. Check your saved username and GitHub
           access, then refresh.
         </p>
       ) : null}
-      {repositories.data?.length === 0 ? (
+      {load && repositories.data?.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No repositories found for this username.
         </p>
       ) : null}
-      {repositories.data?.length ? (
+      {load && repositories.data?.length ? (
         <ul>
           {repositories.data.map((repo) => (
             <RepositoryBranch

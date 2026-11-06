@@ -69,7 +69,7 @@ const en = {
   noAliasTargets: "No personal skills yet. Add this as a new skill.",
   tryAgain: "Try again",
   aliasHelp:
-    "One per line or separated by commas. Previous names stay as aliases after a rename.",
+    "Previous names stay as aliases after a rename.",
   cleanupDescription:
     "Merge duplicate names and saved synonyms, and remove entries that aren't skills, such as degree or travel requirements. Distinct skills are kept.",
   cleanupRestore:
@@ -206,7 +206,7 @@ const zh: typeof en = {
   couldNotLoadSkills: "无法加载个人技能。",
   noAliasTargets: "个人技能库暂无技能，请将此项添加为新技能。",
   tryAgain: "重试",
-  aliasHelp: "每行填写一个，或用逗号分隔。重命名后，原名称会保留为别名。",
+  aliasHelp: "重命名后，原名称会保留为别名。",
   cleanupDescription:
     "合并重复名称和已确认的同义词，移除学位、出差要求等明确不属于技能的条目。不同技能会分别保留。",
   cleanupRestore: "移除的技能可在下方恢复。原始文档和工作经历会保留。",

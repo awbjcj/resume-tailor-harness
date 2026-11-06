@@ -11,6 +11,7 @@ import type { profileChangesEn } from "./profile-changes";
 import type { profilePublicationEn } from "./profile-publication";
 import type { decisionsEn } from "./decisions";
 import type { InteractionCopy } from "./interaction-copy";
+import type { tagListEn } from "./tag-list-input";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -28,6 +29,7 @@ export async function loadChineseInteractionTranslations(): Promise<InteractionC
 }
 
 const en = {
+  tagList: {} as typeof tagListEn,
   interactionCopy: {} as InteractionCopy,
   decisions: {} as typeof decisionsEn,
   workflow: {} as typeof workflowEn,
@@ -902,6 +904,7 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  tagList: {} as typeof tagListEn,
   interactionCopy: {} as InteractionCopy,
   decisions: {} as typeof decisionsEn,
   workflow: {} as typeof workflowEn,

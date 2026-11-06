@@ -9715,6 +9715,8 @@ export interface components {
         };
         /** PivotRowOut */
         PivotRowOut: {
+            /** Applicationid */
+            applicationId?: number | null;
             /** Cells */
             cells: {
                 [key: string]: components["schemas"]["PivotCellOut"];

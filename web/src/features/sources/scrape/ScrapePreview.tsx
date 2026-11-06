@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { api, unwrap } from "@/lib/api/client";
+import { validateTagDrafts } from "@/lib/tag-list-drafts";
 import { ScrapeJobEditor } from "./ScrapeJobEditor";
 import { ScrapeLimits } from "./ScrapeLimits";
 import { ScrapeRuleEditor } from "./ScrapeRuleEditor";
@@ -40,6 +41,7 @@ function DraftEditor({
   const [selected, setSelected] = useState(() => new Set(Object.keys(samples)));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const fields = useRef<HTMLDivElement>(null);
   const save = () =>
     unwrap(
       api.PATCH("/api/scrape/drafts/{draft_id}", {
@@ -53,6 +55,7 @@ function DraftEditor({
       }),
     );
   async function act(approve: boolean) {
+    if (!validateTagDrafts(fields.current)) return;
     setBusy(true);
     setError("");
     try {
@@ -81,7 +84,7 @@ function DraftEditor({
     }
   }
   return (
-    <div className="space-y-5">
+    <div ref={fields} className="space-y-5">
       <p className="break-all text-sm text-muted-foreground">{draft.url}</p>
       <p className="text-sm">
         Review these sample jobs and their evidence. Corrections stay with each

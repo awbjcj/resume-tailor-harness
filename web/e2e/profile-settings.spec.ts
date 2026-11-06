@@ -195,6 +195,11 @@ test.beforeEach(async ({ page }) => {
       },
     });
   });
+  await page.route("**/api/profile/github/repositories", (route) => route.fulfill({
+    json: ["portfolio", "archive", "flagship"].map((name) => ({
+      owner: "octocat", name, fullName: `octocat/${name}`, included: true, uploadedOverride: false,
+    })),
+  }));
   await page.route("**/api/profile/sources/note", (route) =>
     route.fulfill({
       status: 201,
@@ -246,10 +251,19 @@ test("profile depth controls and grouped skills form one working story", async (
   await expect(page.getByRole("dialog", { name: "Add a note" })).toHaveCount(0);
 
   await page.getByText("Import preferences", { exact: true }).click();
-  await page
-    .getByLabel("Always include repositories")
-    .fill("portfolio, flagship");
-  await page.getByLabel("Exclude repositories").fill("archive");
+  const include = page.getByLabel("Always include repositories", { exact: true });
+  await include.click();
+  await include.fill("port");
+  await expect(page.getByRole("option", { name: "octocat/portfolio" })).toBeVisible();
+  await include.press("ArrowDown");
+  await include.press("Enter");
+  await expect(page.getByRole("button", { name: "Remove octocat/portfolio" })).toBeVisible();
+  await include.fill("flagship");
+  await page.getByRole("button", { name: "Add to Always include repositories" }).click();
+  const exclude = page.getByLabel("Exclude repositories", { exact: true });
+  await exclude.click();
+  await exclude.fill("archive");
+  await page.getByRole("option", { name: "octocat/archive" }).click();
   await page.getByLabel("Repository limit").fill("5");
   const saveRequest = page.waitForRequest(
     (request) =>
@@ -258,8 +272,8 @@ test("profile depth controls and grouped skills form one working story", async (
   );
   await page.getByRole("button", { name: "Save changes" }).click();
   expect((await saveRequest).postDataJSON()).toMatchObject({
-    githubRepoAllow: ["portfolio", "flagship"],
-    githubRepoDeny: ["archive"],
+    githubRepoAllow: ["octocat/portfolio", "flagship"],
+    githubRepoDeny: ["octocat/archive"],
     githubRepoLimit: 5,
   });
   await expect(page.getByRole("button", { name: "Save changes" })).toHaveCount(
@@ -875,6 +889,7 @@ test("skill editor and organization controls support keyboard and narrow screens
   );
   await page.getByLabel("Skill name").fill("TypeScript");
   await page.getByLabel("Aliases", { exact: true }).fill("TS");
+  await page.getByRole("button", { name: "Add to Aliases" }).click();
   await expect(dialog).toHaveJSProperty(
     "scrollWidth",
     await dialog.evaluate((node) => node.clientWidth),

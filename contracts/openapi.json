@@ -13434,6 +13434,17 @@
       },
       "PivotRowOut": {
         "properties": {
+          "applicationId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicationid"
+          },
           "cells": {
             "additionalProperties": {
               "$ref": "#/components/schemas/PivotCellOut"

@@ -21,17 +21,25 @@ def _event(client: TestClient, job_id: int, kind: str, day: int, **over):
     body.update(over)
     response = client.post(f"/api/jobs/{job_id}/events", json=body)
     assert response.status_code == 201, response.text
+    return response.json()
 
 
 def test_grid_returns_keyed_cells_and_display_overflow():
     client = _client()
     with client:
+        earlier_job = client.post(
+            "/api/jobs",
+            json={"jdText": "Another opening.", "company": "Other", "title": "Analyst"},
+        )
+        assert earlier_job.status_code == 201, earlier_job.text
         job_id = _job(client)
-        _event(client, job_id, "application_submitted", 1)
+        event = _event(client, job_id, "application_submitted", 1)
         for sequence in range(1, 10):
             _event(client, job_id, "technical_round", sequence + 1, sequence=sequence)
         body = client.get("/api/applications").json()
     assert body["technicalRoundColumns"] == 6
+    assert body["rows"][0]["jobId"] != event["applicationId"]
+    assert body["rows"][0]["applicationId"] == event["applicationId"]
     assert body["rows"][0]["overflowRounds"] == 3
     assert "application_submitted" in body["rows"][0]["cells"]
 
