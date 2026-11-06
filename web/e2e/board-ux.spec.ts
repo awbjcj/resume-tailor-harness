@@ -73,6 +73,49 @@ test("switches board view, exposes quick actions, and opens import", async ({ pa
   );
 });
 
+test("resume versions keep generation and rendering in compact rows", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const version = {
+    jobId: 7, round: 1, origin: "tailor", reviewScore: 88, factCheckPassed: true,
+    createdAt: "2026-09-09T12:00:00Z", hasEvidencePortfolio: false, failedGates: [],
+  };
+  await page.route("**/api/jobs/7", (route) => route.fulfill({ json: {
+    id: 7, source: "manual", company: "Acme", title: "Staff Engineer", location: "Remote",
+    jdText: "Build platform services.", status: "tailored", fitScore: 88, skills: [],
+    resumeVersions: [{ ...version, id: 2, pdfAvailable: true }, { ...version, id: 3, pdfAvailable: false }],
+    coverLetters: [], application: null,
+  } }));
+  await page.route("**/api/config/render/templates", (route) => route.fulfill({ json: [] }));
+  await page.goto("/shortlist?job=7&tab=resumes");
+  const versions = page.getByRole("list", { name: "Resume versions" });
+  const latest = versions.getByRole("listitem", { name: "Version 3" });
+  const renderPdf = latest.getByRole("button", { name: "Render PDF" });
+  const generate = page.getByRole("button", { name: "Generate a new version" });
+  const selectAll = page.getByRole("checkbox", { name: "Select all deletable versions" });
+  await expect(versions.getByRole("heading")).toHaveText(["Version 3", "Version 2"]);
+  await expect(versions.getByRole("button", { name: "Preview" })).toBeVisible();
+
+  const [generateBox, selectAllBox, titleBox, renderBox] = await Promise.all([
+    generate.boundingBox(), selectAll.boundingBox(), latest.getByRole("heading").boundingBox(), renderPdf.boundingBox(),
+  ]);
+  expect(selectAllBox!.y).toBeGreaterThanOrEqual(generateBox!.y);
+  expect(selectAllBox!.y + selectAllBox!.height).toBeLessThanOrEqual(generateBox!.y + generateBox!.height);
+  expect(renderBox!.y).toBeLessThan(titleBox!.y + titleBox!.height);
+
+  for (const width of [1024, 768, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await versions.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
+  }
+  await renderPdf.press("Enter");
+  const dialog = page.getByRole("dialog", { name: "PDF for version 3" });
+  await expect(dialog.getByRole("combobox", { name: "Resume style" })).toBeVisible();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(renderPdf).toBeFocused();
+  await generate.press("Enter");
+  await expect(page.getByRole("dialog", { name: "Redo job stages" })).toBeVisible();
+});
+
 test("job assistant sends explicit context and displays an AG-UI response", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.route("**/api/jobs/7", (route) => route.fulfill({ json: {

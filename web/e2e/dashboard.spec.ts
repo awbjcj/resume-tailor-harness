@@ -28,6 +28,8 @@ test.beforeEach(async ({ page }) => {
         },
         queues: { triage: 2, approve: 4, tailor: 1, apply: 1 },
         applied: 5,
+        activeCoachSession: { sessionId: "c1", savedNoteCount: 0, startedAt: "2026-09-09T12:00:00Z" },
+        sourceHealth: { openFailures: 0, affectedSources: [], latestFailureAt: null },
       },
     }));
   await page.route("**/api/shortlist*", (route) =>
@@ -98,6 +100,32 @@ test("mobile chrome keeps launch actions compact and horizontally contained", as
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
   ).toBe(true);
+});
+
+test("several recent runs use the full dashboard width beneath status", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("**/api/run-completions?*surface=operations*", (route) => route.fulfill({
+    json: Array.from({ length: 4 }, (_, index) => ({
+      id: index + 1, runId: `run-${index}`, kind: "mailboxSync", label: "Analyzed 0 emails",
+      status: "succeeded", completedAt: "2026-09-09T12:00:00Z", readAt: null,
+      resultHref: "/applications", resultAvailable: false,
+    })),
+  }));
+  await page.goto("/");
+  const status = page.getByRole("complementary", { name: "System status" });
+  const recentRuns = page.getByRole("region", { name: "Recent runs" });
+  await expect(status.getByText("All sources are healthy.")).toBeVisible();
+  await expect(recentRuns.getByRole("button", { name: "View logs" })).toHaveCount(4);
+
+  for (const width of [320, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const [pipelineBox, statusBox, runsBox] = await Promise.all([
+      page.getByLabel("Pipeline stages").boundingBox(), status.boundingBox(), recentRuns.boundingBox(),
+    ]);
+    expect(runsBox!.width).toBeCloseTo(pipelineBox!.width, 0);
+    expect(runsBox!.y).toBeGreaterThanOrEqual(statusBox!.y + statusBox!.height);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  }
 });
 
 for (const language of ["en", "zh-CN"] as const) {

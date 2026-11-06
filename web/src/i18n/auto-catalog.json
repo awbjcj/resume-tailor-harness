@@ -9204,11 +9204,6 @@
     "en": "Security and access",
     "zh-CN": "安全与访问"
   },
-  "See which job requirements this version emphasizes and which evidence it uses.": {
-    "key": "ui_0d6a2493b9a7",
-    "en": "See which job requirements this version emphasizes and which evidence it uses.",
-    "zh-CN": "查看此版本强调的职位需求及所用证据。"
-  },
   "Select {{v0}}": {
     "key": "ui_58661820dfdc",
     "en": "Select {{v0}}",

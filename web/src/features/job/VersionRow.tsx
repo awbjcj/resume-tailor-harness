@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { openDownload } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
 import { formatUserDateTime } from "@/lib/date-time";
+import { cn } from "@/lib/utils";
 import { ArtifactDeleteButton } from "./ArtifactDeleteButton";
 import { EvidencePortfolioDisclosure } from "./EvidencePortfolioDisclosure";
 import { PdfPreviewDialog } from "./PdfPreviewDialog";
@@ -56,87 +57,82 @@ export function VersionRow({
   const pdfPath = `/api/resume-versions/${version.id}/pdf`;
 
   return (
-    <li aria-labelledby={headingId} className={`min-w-0 rounded-xl border bg-background/70 p-3 sm:p-4 ${revision.justCreated ? "ring-2 ring-primary/40" : ""}`}>
-      <div className="flex min-w-0 items-start gap-3">
-        {onToggleSelected && (
-          <Checkbox
-            className="mt-1"
-            checked={selected}
-            disabled={applied || revision.active || selectBusy}
-            onCheckedChange={() => onToggleSelected(version.id)}
-            aria-label={t("resumeVersions.selectForDeletion", { id: version.id })}
-          />
-        )}
-        <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <h3 id={headingId} className="font-heading text-base font-semibold tabular-nums">{t("resumeVersions.version", { id: version.id })}</h3>
-            {applied && <Badge>Selected for application</Badge>}
-            {revision.justCreated && <Badge variant="secondary">Just created</Badge>}
-          </div>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span>{version.origin === "revision" ? "Revision" : version.origin === "external" ? "External draft" : t("resumeVersions.round", { round: version.round })}</span>
-            {version.parentVersionId != null && <span>{t("resumeVersions.parent", { id: version.parentVersionId })}</span>}
-            <time dateTime={version.createdAt}>{formatUserDateTime(version.createdAt, i18n.resolvedLanguage, { dateStyle: "medium", timeStyle: "short" })}</time>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Badge variant={eligible ? "outline" : "destructive"}>{eligible ? "Fact-lock passed" : failedGateLabel(version.failedGates)}</Badge>
-            <span>Score {version.reviewScore ?? "not scored"}</span>
-            {pdfAvailable && <Badge variant="secondary">PDF ready</Badge>}
-            {pdfAvailable && templateTitle && <span className="min-w-0 [overflow-wrap:anywhere]">{templateTitle}</span>}
-          </div>
-          {version.instruction && <p className="[overflow-wrap:anywhere] text-sm text-muted-foreground">{version.instruction}</p>}
-          {!eligible && (
-            <p className="text-sm text-destructive">
-              {applied
-                ? "This resume failed fact-lock. Choose another resume or clear your selection before applying."
-                : "This resume must pass fact-lock before you can select it for an application."}
-            </p>
+    <li aria-labelledby={headingId} className={cn(
+      "min-w-0 px-3 py-2.5 sm:px-4",
+      revision.justCreated && "bg-primary/5 first:rounded-t-lg last:rounded-b-lg",
+    )}>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex min-w-0 flex-1 basis-64 items-start gap-2.5">
+          {onToggleSelected && (
+            <Checkbox
+              className="mt-0.5"
+              checked={selected}
+              disabled={applied || revision.active || selectBusy}
+              onCheckedChange={() => onToggleSelected(version.id)}
+              aria-label={t("resumeVersions.selectForDeletion", { id: version.id })}
+            />
           )}
-          {applied && eligible && <p className="text-sm text-muted-foreground">Selecting a document does not submit an application.</p>}
-          {eligible && !pdfAvailable && <p className="text-sm text-muted-foreground">No PDF is available. Generate one for this version before uploading.</p>}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <h3 id={headingId} className="font-heading text-sm font-semibold tabular-nums">{t("resumeVersions.version", { id: version.id })}</h3>
+              {applied && <Badge>Selected for application</Badge>}
+              {revision.justCreated && <Badge variant="secondary">Just created</Badge>}
+              <Badge variant={eligible ? "outline" : "destructive"} className="h-auto min-h-5 max-w-full wrap-anywhere whitespace-normal">
+                {eligible ? "Fact-lock passed" : failedGateLabel(version.failedGates)}
+              </Badge>
+              {pdfAvailable && <Badge variant="secondary">PDF ready</Badge>}
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>{version.origin === "revision" ? "Revision" : version.origin === "external" ? "External draft" : t("resumeVersions.round", { round: version.round })}</span>
+              {version.parentVersionId != null && <span>{t("resumeVersions.parent", { id: version.parentVersionId })}</span>}
+              <time dateTime={version.createdAt}>{formatUserDateTime(version.createdAt, i18n.resolvedLanguage, { dateStyle: "medium", timeStyle: "short" })}</time>
+              <span>Score {version.reviewScore ?? "not scored"}</span>
+              {pdfAvailable && templateTitle && <span className="min-w-0 wrap-anywhere">{templateTitle}</span>}
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
-        {pdfAvailable && (
-          <>
-            <Button size="sm" variant="outline" disabled={deleting} onClick={() => setPreviewOpen(true)}>
-              <Eye data-icon="inline-start" aria-hidden="true" />
-              Preview
-            </Button>
-            <a
-              className={buttonVariants({ size: "sm", variant: "outline", className: "aria-disabled:opacity-50" })}
-              href={pdfPath}
-              aria-disabled={deleting || undefined}
-              onClick={(event) => {
-                event.preventDefault();
-                if (!deleting) void openDownload(event.currentTarget.href);
-              }}
-            >
-              <Download data-icon="inline-start" aria-hidden="true" />
-              Download
-            </a>
-          </>
-        )}
-        <ResumeRenderDialog jobId={jobId} versionId={version.id} templateId={version.pdfTemplateId} pdfAvailable={pdfAvailable} applied={applied} disabled={deleting} />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={selectBusy || (!applied && !eligible)}
-          onClick={() => applied ? deselect.mutate() : select.mutate(version.id)}
-        >
-          {!applied && <CheckCircle2 data-icon="inline-start" aria-hidden="true" />}
-          {applied ? "Clear selection" : "Use for application"}
-        </Button>
-        {onDelete && (
-          <ArtifactDeleteButton
-            noun="version"
-            label={t("resumeVersions.deleteTarget", { id: version.id })}
-            showLabel
-            applied={applied}
-            disabled={revision.active || selectBusy}
-            onConfirm={() => onDelete(version.id)}
-          />
-        )}
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
+          {pdfAvailable && (
+            <>
+              <Button size="sm" variant="outline" disabled={deleting} onClick={() => setPreviewOpen(true)}>
+                <Eye data-icon="inline-start" aria-hidden="true" />
+                Preview
+              </Button>
+              <a
+                className={buttonVariants({ size: "sm", variant: "outline", className: "aria-disabled:opacity-50" })}
+                href={pdfPath}
+                aria-disabled={deleting || undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (!deleting) void openDownload(event.currentTarget.href);
+                }}
+              >
+                <Download data-icon="inline-start" aria-hidden="true" />
+                Download
+              </a>
+            </>
+          )}
+          <ResumeRenderDialog jobId={jobId} versionId={version.id} templateId={version.pdfTemplateId} pdfAvailable={pdfAvailable} applied={applied} disabled={deleting} />
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={selectBusy || (!applied && !eligible)}
+            onClick={() => applied ? deselect.mutate() : select.mutate(version.id)}
+          >
+            {!applied && <CheckCircle2 data-icon="inline-start" aria-hidden="true" />}
+            {applied ? "Clear selection" : "Use for application"}
+          </Button>
+          {onDelete && (
+            <ArtifactDeleteButton
+              noun="version"
+              label={t("resumeVersions.deleteTarget", { id: version.id })}
+              showLabel
+              applied={applied}
+              disabled={revision.active || selectBusy}
+              onConfirm={() => onDelete(version.id)}
+            />
+          )}
+        </div>
       </div>
       <PdfPreviewDialog
         open={previewOpen}
@@ -145,9 +141,21 @@ export function VersionRow({
         previewPath={`/api/resume-versions/${version.id}/preview`}
         downloadPath={pdfPath}
       />
-      <div className="mt-3">
-        <ResumeRevisionEditor jobId={jobId} versionId={version.id} revision={revision} disabled={deleting} />
-        <EvidencePortfolioDisclosure versionId={version.id} available={version.hasEvidencePortfolio} />
+      <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+        {version.instruction && <p className="wrap-anywhere">{version.instruction}</p>}
+        {!eligible && (
+          <p className="text-destructive">
+            {applied
+              ? "This resume failed fact-lock. Choose another resume or clear your selection before applying."
+              : "This resume must pass fact-lock before you can select it for an application."}
+          </p>
+        )}
+        {applied && eligible && <p>Selecting a document does not submit an application.</p>}
+        {eligible && !pdfAvailable && <p>No PDF is available. Generate one for this version before uploading.</p>}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <ResumeRevisionEditor jobId={jobId} versionId={version.id} revision={revision} disabled={deleting} />
+          <EvidencePortfolioDisclosure versionId={version.id} available={version.hasEvidencePortfolio} />
+        </div>
       </div>
     </li>
   );

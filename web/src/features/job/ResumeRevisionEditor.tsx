@@ -27,9 +27,9 @@ export function ResumeRevisionEditor({
   const retryInput = revision.retryInput;
 
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-2 has-[details[open]]:w-full">
       <details>
-        <summary className="w-fit cursor-pointer rounded-sm text-sm font-medium text-muted-foreground focus-visible:outline focus-visible:outline-ring">Revise content</summary>
+        <summary className="w-fit cursor-pointer rounded-sm py-0.5 text-sm font-medium text-muted-foreground focus-visible:outline focus-visible:outline-ring">Revise content</summary>
         <form className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end" onSubmit={(event) => {
           event.preventDefault();
           if (!busy && instruction.trim()) {
@@ -64,7 +64,7 @@ export function ResumeRevisionEditor({
       )}
       {run?.status === "failed" && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-destructive" role="alert">
-          <span>Revision failed: {run.error ?? "unknown error"}</span>
+          <span className="min-w-0 wrap-anywhere">Revision failed: {run.error ?? "unknown error"}</span>
           {retryInput && (
             <Button size="sm" variant="outline" disabled={busy} onClick={() => revise.mutate(retryInput)}>
               <RotateCcw data-icon="inline-start" aria-hidden="true" />
