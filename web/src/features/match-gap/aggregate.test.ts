@@ -108,6 +108,12 @@ const payload: Payload = {
 };
 
 describe("deriveView", () => {
+  it("matches job-description phrasing together with its parent domain", () => {
+    const view = deriveView(payload, { ...base, q: "Infrastructure Ｋ８Ｓ" });
+    expect(view.skills.map((skill) => skill.key)).toEqual(["kubernetes"]);
+    expect(view.categoryRows[0].domains[0].id).toBe("infra");
+  });
+
   it("joins edges by stable key and keeps member evidence", () => {
     const view = deriveView(payload, base);
     const kubernetes = view.skills.find((skill) => skill.key === "kubernetes")!;

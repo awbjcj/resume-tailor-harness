@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, GripVertical, MoveRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ListSection } from "@/components/ui/list-section";
 import { useSkillCopy } from "@/i18n/skill-copy";
 import { cn } from "@/lib/utils";
 import type {
@@ -12,39 +14,42 @@ import { SkillContainerPopover } from "./SkillContainerPopover";
 import { SkillContextPopover } from "./SkillContextPopover";
 import { useMoveSkillGroup } from "./use-profile-skills";
 import { useSkillDrag, type SkillDropTarget } from "./use-skill-drag";
+import type { SkillBranch, SkillDisclosure } from "./skill-tree";
+
+const CHIP_BATCH = 48;
 
 export function SkillCompactView({
-  rows,
-  allRows,
+  tree,
   groups,
   categories,
   disabled,
-  category,
-  group,
-  hasSearch,
+  focusedCategory,
+  query,
+  disclosure,
+  showAliases,
   selected,
   onEdit,
   onDelete,
   onAdd,
   onSelect,
-  onClear,
 }: {
-  rows: LibraryRow[];
-  allRows: LibraryRow[];
+  tree: SkillBranch[];
   groups: LibraryGroup[];
   categories: LibraryCategory[];
   disabled: boolean;
-  category: string;
-  group: string;
-  hasSearch: boolean;
+  focusedCategory: boolean;
+  query: string;
+  disclosure: SkillDisclosure;
+  showAliases: boolean;
   selected: Set<string>;
   onEdit: (row: LibraryRow, trigger: HTMLElement | null) => void;
   onDelete: (key: string) => void;
   onAdd: (group: string, trigger?: HTMLElement | null) => void;
   onSelect: (key: string) => void;
-  onClear: () => void;
 }) {
   const copy = useSkillCopy();
+  const { t } = useTranslation();
+  const [limits, setLimits] = useState<Record<string, number>>({});
   const move = useMoveSkillGroup();
   const [categoryMove, setCategoryMove] = useState<{
     category: string;
@@ -73,23 +78,10 @@ export function SkillCompactView({
     disabled,
     onDrop: drop,
   });
-  const members = new Map<string, LibraryRow[]>();
-  const known = new Set(groups.map((g) => g.slug));
-  for (const row of rows) {
-    const key = row.group && known.has(row.group) ? row.group : "other";
-    const bucket = members.get(key) ?? [];
-    bucket.push(row);
-    members.set(key, bucket);
-  }
-  const visibleCategories = categories.filter(
-    (c) => category === "all" || category === c.slug,
-  );
-  const validCategories = new Set(categories.map((c) => c.slug));
-  const groupCategory = (g: LibraryGroup) =>
-    validCategories.has(g.category) ? g.category : "other";
+  const shortList = tree.reduce((total, branch) => total + branch.count, 0) <= 50;
   return (
     <div
-      className="min-w-0 space-y-6"
+      className="min-w-0 space-y-2"
       role="region"
       aria-label={copy.compactView}
     >
@@ -110,53 +102,22 @@ export function SkillCompactView({
       <p className="sr-only" role="status" aria-live="polite">
         {dragging ? copy.draggingSkill(dragging.display) : announcement}
       </p>
-      {rows.length === 0 && hasSearch ? (
-        <div className="rounded-xl border border-dashed py-10 text-center">
-          <p className="text-sm text-muted-foreground">{copy.noMatches}</p>
-          <Button variant="ghost" onClick={onClear}>
-            {copy.clear_filters}
-          </Button>
-        </div>
-      ) : (
-        visibleCategories.map((container) => {
-          const children = groups.filter(
-            (g) =>
-              groupCategory(g) === container.slug &&
-              (group === "all" || g.slug === group) &&
-              (!hasSearch || members.get(g.slug)?.length),
-          );
-          if ((hasSearch || group !== "all") && !children.length) return null;
-          const count = children.reduce(
-            (sum, child) => sum + (members.get(child.slug)?.length ?? 0),
-            0,
-          );
-          const active =
-            target?.kind === "category" && target.key === container.slug;
-          return (
-            <section
-              key={container.slug}
-              data-skill-drop-category={container.slug}
-              aria-label={container.label}
-              className={cn(
-                "min-w-0 rounded-xl outline-2 outline-offset-4 outline-transparent",
-                active && "outline-primary/50",
-              )}
-            >
-              <div
-                className={cn(
-                  "mb-3 flex min-w-0 items-center gap-2 border-b pb-2",
-                  active && "border-primary text-primary",
-                )}
-              >
-                <h3 className="min-w-0 flex-1 text-sm font-semibold">
-                  {container.label}{" "}
-                  <span className="ml-2 font-normal tabular-nums text-muted-foreground">
-                    {count}
-                  </span>
-                </h3>
-                {active ? (
-                  <span className="text-xs">{copy.moveHere}</span>
-                ) : null}
+      {tree.map(({ category: container, groups: children, count }) => {
+        const active = target?.kind === "category" && target.key === container.slug;
+        return (
+          <ListSection
+            key={container.slug}
+            label={container.label}
+            count={count}
+            defaultOpen={shortList || focusedCategory || tree.length === 1}
+            query={query}
+            {...disclosure("category", container.slug)}
+            data-skill-drop-category={container.slug}
+            aria-label={container.label}
+            className={cn("rounded-lg border bg-muted/25", active && "border-primary ring-2 ring-primary/30")}
+            actions={
+              <div className="flex items-center gap-2 pr-2">
+                {active ? <span className="text-xs text-primary">{copy.moveHere}</span> : null}
                 <SkillContainerPopover
                   kind="category"
                   item={container}
@@ -164,37 +125,33 @@ export function SkillCompactView({
                   categories={categories}
                   disabled={disabled}
                   onAddSkill={onAdd}
-                  moveRow={
-                    categoryMove?.category === container.slug
-                      ? categoryMove.row
-                      : undefined
-                  }
+                  moveRow={categoryMove?.category === container.slug ? categoryMove.row : undefined}
                   onMoveDone={() => setCategoryMove(null)}
                 />
               </div>
-              <div className="min-w-0 space-y-2">
-                {children.map((child) => {
-                  const skills = members.get(child.slug) ?? [];
-                  const over =
-                    target?.kind === "group" && target.key === child.slug;
-                  return (
-                    <section
-                      key={child.slug}
-                      data-skill-drop-group={child.slug}
-                      aria-label={child.label}
-                      className={cn(
-                        "grid min-w-0 grid-cols-1 rounded-xl border border-border bg-card @2xl/library:grid-cols-[12rem_minmax(0,1fr)]",
-                        over &&
-                          "border-primary bg-primary/5 ring-1 ring-primary/30",
-                      )}
-                    >
-                      <div className="flex min-w-0 items-center gap-2 px-3 py-2 @2xl/library:items-start @2xl/library:border-r">
-                        <h4 className="min-w-0 flex-1 py-1 text-xs font-medium leading-relaxed">
-                          {child.label}{" "}
-                          <span className="ml-2 tabular-nums text-muted-foreground">
-                            {skills.length}
-                          </span>
-                        </h4>
+            }
+          >
+            <div className="min-w-0 space-y-2 px-2 pb-2 sm:px-3 sm:pb-3">
+              {children.map(({ group: child, rows: skills }) => {
+                const over = target?.kind === "group" && target.key === child.slug;
+                const limit = limits[child.slug] ?? CHIP_BATCH;
+                return (
+                  <ListSection
+                    key={child.slug}
+                    level={4}
+                    label={child.label}
+                    count={skills.length}
+                    defaultOpen={shortList || children.length === 1}
+                    query={query}
+                    {...disclosure("group", child.slug)}
+                    data-skill-drop-group={child.slug}
+                    aria-label={child.label}
+                    className={cn(
+                      "rounded-md border border-border bg-card",
+                      over && "border-primary bg-primary/5 ring-1 ring-primary/30",
+                    )}
+                    actions={
+                      <div className="pr-2">
                         <SkillContainerPopover
                           kind="group"
                           item={child}
@@ -204,39 +161,42 @@ export function SkillCompactView({
                           onAddSkill={onAdd}
                         />
                       </div>
-                      <div className="flex min-w-0 flex-wrap content-start items-start gap-1.5 px-3 pb-3 @2xl/library:py-3">
-                        {skills.map((row) => (
-                          <div
-                            key={row.key}
-                            data-skill-chip={row.key}
-                            data-selected={selected.has(row.key) || undefined}
+                    }
+                  >
+                    <div className="flex min-w-0 flex-wrap content-start items-start gap-1.5 border-t px-3 py-2.5">
+                      {skills.slice(0, limit).map((row) => (
+                        <div
+                          key={row.key}
+                          data-skill-chip={row.key}
+                          data-selected={selected.has(row.key) || undefined}
+                          className={cn(
+                            "inline-flex min-w-0 max-w-full items-center rounded-md border border-border bg-background text-foreground",
+                            selected.has(row.key) &&
+                              "border-primary/60 bg-primary/5",
+                            dragging?.key === row.key && "opacity-40",
+                          )}
+                        >
+                          <span
+                            aria-hidden="true"
+                            data-drag-skill={row.key}
+                            title={copy.dragHandleTitle}
                             className={cn(
-                              "inline-flex min-w-0 max-w-full items-center rounded-md border border-border bg-background text-foreground",
-                              selected.has(row.key) &&
-                                "border-primary/60 bg-primary/5",
-                              dragging?.key === row.key && "opacity-40",
+                              "flex min-h-8 w-6 shrink-0 touch-none select-none items-center justify-center text-muted-foreground",
+                              disabled
+                                ? "opacity-40"
+                                : "cursor-grab active:cursor-grabbing",
                             )}
+                            {...handleProps(row)}
                           >
-                            <span
-                              aria-hidden="true"
-                              data-drag-skill={row.key}
-                              title={copy.dragHandleTitle}
-                              className={cn(
-                                "flex min-h-8 w-6 shrink-0 touch-none select-none items-center justify-center text-muted-foreground",
-                                disabled
-                                  ? "opacity-40"
-                                  : "cursor-grab active:cursor-grabbing",
-                              )}
-                              {...handleProps(row)}
-                            >
-                              <GripVertical className="size-3" />
-                            </span>
-                            {selected.has(row.key) ? (
-                              <Check
-                                aria-hidden
-                                className="size-3 shrink-0 text-primary"
-                              />
-                            ) : null}
+                            <GripVertical className="size-3" />
+                          </span>
+                          {selected.has(row.key) ? (
+                            <Check
+                              aria-hidden
+                              className="size-3 shrink-0 text-primary"
+                            />
+                          ) : null}
+                          <div className="min-w-0">
                             <SkillContextPopover
                               row={row}
                               groups={groups}
@@ -248,68 +208,79 @@ export function SkillCompactView({
                               onDelete={onDelete}
                               onSelect={onSelect}
                             />
-                            {row.inferred ? (
-                              <span
-                                aria-hidden
-                                className="mr-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/70"
-                                title={copy.inferred}
-                              />
+                            {showAliases && row.aliases?.length ? (
+                              <span className="block px-2 pb-1.5 text-xs text-muted-foreground [overflow-wrap:anywhere]">{row.aliases.join(", ")}</span>
                             ) : null}
                           </div>
-                        ))}
-                        {!skills.length ? (
-                          <div className="flex w-full items-center justify-between gap-2 py-1">
-                            <p className="text-xs leading-relaxed text-muted-foreground">
-                              {over ? copy.dropSkill : copy.emptyGroup}
-                            </p>
-                            <Button
-                              size="icon-sm"
-                              variant="ghost"
-                              aria-label={`${copy.addSkill}: ${child.label}`}
-                              disabled={disabled}
-                              onClick={(event) =>
-                                onAdd(
-                                  child.slug,
-                                  document.getElementById(
-                                    `profile-group-context-${encodeURIComponent(child.slug)}`,
-                                  ) ?? event.currentTarget,
-                                )
-                              }
-                            >
-                              <Plus aria-hidden />
-                            </Button>
-                          </div>
-                        ) : null}
-                      </div>
-                    </section>
-                  );
-                })}
-                {!children.length ? (
-                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-5">
-                    <p className="text-xs text-muted-foreground">
-                      {copy.noDestination}
-                    </p>
-                    <SkillContainerPopover
-                      kind="category"
-                      item={container}
-                      groups={groups}
-                      categories={categories}
-                      disabled={disabled}
-                      onAddSkill={onAdd}
-                      create="group"
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </section>
-          );
-        })
-      )}
-      {!hasSearch && allRows.length ? (
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          {copy.dragHelp}
-        </p>
-      ) : null}
+                          {row.inferred ? (
+                            <span
+                              aria-hidden
+                              className="mr-2 size-1.5 shrink-0 rounded-full bg-muted-foreground/70"
+                              title={copy.inferred}
+                            />
+                          ) : null}
+                        </div>
+                      ))}
+                      {skills.length > limit ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setLimits((current) => ({ ...current, [child.slug]: limit + CHIP_BATCH }));
+                            requestAnimationFrame(() => {
+                              document.getElementById(`profile-skill-${encodeURIComponent(skills[limit].key)}`)?.focus();
+                            });
+                          }}
+                        >
+                          {t("longLists.showMore", { count: Math.min(CHIP_BATCH, skills.length - limit) })}
+                        </Button>
+                      ) : null}
+                      {!skills.length ? (
+                        <div className="flex w-full items-center justify-between gap-2 py-1">
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            {over ? copy.dropSkill : copy.emptyGroup}
+                          </p>
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            aria-label={`${copy.addSkill}: ${child.label}`}
+                            disabled={disabled}
+                            onClick={(event) =>
+                              onAdd(
+                                child.slug,
+                                document.getElementById(
+                                  `profile-group-context-${encodeURIComponent(child.slug)}`,
+                                ) ?? event.currentTarget,
+                              )
+                            }
+                          >
+                            <Plus aria-hidden />
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </ListSection>
+                );
+              })}
+              {!children.length ? (
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed px-4 py-3">
+                  <p className="text-xs text-muted-foreground">{copy.noDestination}</p>
+                  <SkillContainerPopover
+                    kind="category"
+                    item={container}
+                    groups={groups}
+                    categories={categories}
+                    disabled={disabled}
+                    onAddSkill={onAdd}
+                    create="group"
+                  />
+                </div>
+              ) : null}
+            </div>
+          </ListSection>
+        );
+      })}
       {dragging && !disabled ? (
         <div
           ref={previewRef}

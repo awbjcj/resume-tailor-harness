@@ -137,7 +137,7 @@ describe("SkillGroupsPanel skill library", () => {
     const user = userEvent.setup();
     show();
     await user.type(
-      screen.getByRole("textbox", { name: "Search skills and aliases" }),
+      screen.getByRole("textbox", { name: "Search skills, aliases, or groups" }),
       "rustlang",
     );
     expect(screen.getByText("Rust")).toBeInTheDocument();
@@ -145,9 +145,9 @@ describe("SkillGroupsPanel skill library", () => {
       screen.queryByRole("button", { name: "Python" }),
     ).not.toBeInTheDocument();
     await user.clear(
-      screen.getByRole("textbox", { name: "Search skills and aliases" }),
+      screen.getByRole("textbox", { name: "Search skills, aliases, or groups" }),
     );
-    await user.click(screen.getByRole("button", { name: /Technical skills/ }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Skill categories" }), "technical");
     expect(
       screen.queryByRole("button", { name: "Rust" }),
     ).not.toBeInTheDocument();
@@ -157,16 +157,35 @@ describe("SkillGroupsPanel skill library", () => {
     );
     expect(screen.getByText("No matching skills")).toBeInTheDocument();
   });
+
+  it("keeps browse expansion through a search that hides the category", async () => {
+    const user = userEvent.setup();
+    show();
+    const category = () => screen.getByRole("button", { name: /^Technical skills/ });
+    await user.click(category());
+    expect(category()).toHaveAttribute("aria-expanded", "false");
+
+    const search = screen.getByRole("textbox", { name: "Search skills, aliases, or groups" });
+    await user.type(search, "rustlang");
+    expect(screen.queryByRole("button", { name: /^Technical skills/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(category()).toHaveAttribute("aria-expanded", "false");
+
+    await user.type(search, "python");
+    expect(category()).toHaveAttribute("aria-expanded", "true");
+    await user.click(category());
+    await user.click(screen.getByRole("button", { name: "Clear search" }));
+    await user.type(search, "python");
+    expect(category()).toHaveAttribute("aria-expanded", "true");
+  });
   it("creates a skill with aliases and a selected group in one mutation", async () => {
     const user = userEvent.setup();
     show();
     await user.click(screen.getByRole("button", { name: "Add skill" }));
     await user.type(screen.getByLabelText("Skill name"), "TypeScript");
     await user.type(screen.getByLabelText("Aliases", { exact: true }), "TS{Enter}");
-    await user.selectOptions(
-      screen.getByLabelText("Group", { exact: true }),
-      "languages",
-    );
+    await user.click(screen.getByRole("combobox", { name: "Group" }));
+    await user.click(await screen.findByRole("option", { name: "Languages" }));
     await user.click(screen.getByRole("button", { name: "Add skill" }));
     expect(state.add).toHaveBeenCalledWith(
       {
@@ -254,7 +273,7 @@ describe("SkillGroupsPanel skill library", () => {
     show();
     await user.click(screen.getByRole("button", { name: "Delete Python" }));
     expect(state.remove).toHaveBeenCalledWith("python");
-    await user.click(screen.getByText(/Removed skills \(1\)/));
+    await user.click(screen.getByRole("button", { name: /Removed skills/ }));
     await user.click(
       screen.getByRole("button", { name: "Restore Kubernetes" }),
     );
@@ -326,7 +345,8 @@ describe("SkillGroupsPanel skill library", () => {
     await user.click(screen.getByRole("button", { name: "Compact" }));
     await user.click(screen.getByRole("button", { name: "Python" }));
     expect(screen.getByRole("dialog", { name: "Python" })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText("Move to group"), "other");
+    await user.click(screen.getByRole("combobox", { name: "Move to group" }));
+    await user.click(within(await screen.findByRole("listbox")).getByRole("option", { name: "Other" }));
     await user.click(screen.getByRole("button", { name: "Move skill" }));
     expect(state.move).toHaveBeenCalledWith(
       { key: "python", group: "other" },
@@ -376,8 +396,6 @@ describe("SkillGroupsPanel skill library", () => {
     expect(
       screen.getByRole("dialog", { name: "Add a skill" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Group", { exact: true })).toHaveValue(
-      "languages",
-    );
+    expect(screen.getByRole("combobox", { name: "Group" })).toHaveTextContent("Languages");
   });
 });

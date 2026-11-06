@@ -19,6 +19,7 @@ import { skillCategoryValue } from "./skill-categories";
 import { SkillAliasPicker } from "./SkillAliasPicker";
 import {
   SkillEditorFields,
+  type LibraryCategory,
   type LibraryGroup,
   type LibraryRow,
   type SkillDraft,
@@ -28,6 +29,7 @@ import { useAddSkill, useAddSkillAlias, useUpdateSkill } from "./use-profile-ski
 export function SkillEditorDialog({
   row,
   groups,
+  categories,
   onClose,
   disabled = false,
   initialGroup,
@@ -36,6 +38,7 @@ export function SkillEditorDialog({
 }: {
   row?: LibraryRow;
   groups?: LibraryGroup[];
+  categories?: LibraryCategory[];
   onClose: () => void;
   disabled?: boolean;
   initialGroup?: string;
@@ -60,6 +63,9 @@ export function SkillEditorDialog({
     (matrix.data?.groups ?? []).map((group) =>
       localizeSkillContainer(group, i18n.resolvedLanguage),
     );
+  const categoryOptions = categories ?? (matrix.data?.categories ?? []).map((category) =>
+    localizeSkillContainer(category, i18n.resolvedLanguage),
+  );
   const loadingGroups = groups === undefined && matrix.isPending;
   const groupError = groups === undefined && matrix.isError;
   const add = useAddSkill();
@@ -106,6 +112,7 @@ export function SkillEditorDialog({
         value={draft}
         onChange={setDraft}
         groups={groupOptions}
+        categories={categoryOptions}
         inferred={row?.inferred}
         disabled={blocked}
       />

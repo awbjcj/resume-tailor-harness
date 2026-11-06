@@ -139,12 +139,6 @@ export function SkillMap({
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const focusedCategory = activeView.level === "galaxy" ? null : categoryRows.find((category) => category.slug === (activeView.level === "category" ? activeView.slug : activeView.categorySlug)) ?? null;
   const focusedDomain = activeView.level === "domain" ? focusedCategory?.domains.find((domain) => domain.id === activeView.domainId) ?? null : null;
-  // Only consumed by the merge-skill dialog; keep the full taxonomy flat-map out
-  // of the per-zoom-tick render path.
-  const allSkills = useMemo(
-    () => editRows.flatMap((category) => category.domains.flatMap((domain) => domain.skills)),
-    [editRows],
-  );
 
   const applyZoom = (action: "in" | "out" | "reset") => {
     if (!svgRef.current || !zoomBehaviorRef.current) return;
@@ -332,7 +326,7 @@ export function SkillMap({
       </footer>
       {menuAction?.type === "add-skill" && <AddSkillDialog categoryRows={editRows} categories={categories} open onOpenChange={(open) => !open && setMenuAction(null)} />}
       {menuAction?.type === "move-skill" && <MoveSkillDialog skill={menuAction.skill} categoryRows={editRows} categories={categories} open onOpenChange={(open) => !open && setMenuAction(null)} />}
-      {menuAction?.type === "merge-skill" && <MergeSkillDialog skill={menuAction.skill} allSkills={allSkills} open onOpenChange={(open) => !open && setMenuAction(null)} />}
+      {menuAction?.type === "merge-skill" && <MergeSkillDialog skill={menuAction.skill} categoryRows={editRows} open onOpenChange={(open) => !open && setMenuAction(null)} />}
       {menuAction?.type === "remove-skill" && <RemoveSkillDialog skill={menuAction.skill} open onOpenChange={(open) => !open && setMenuAction(null)} />}
       {menuAction?.type === "rename-domain" && <RenameDomainDialog domainId={menuAction.domainId} currentLabel={menuAction.label} open onOpenChange={(open) => !open && setMenuAction(null)} />}
       {menuAction?.type === "change-category" && <ChangeCategoryDialog domainId={menuAction.domainId} currentSlug={menuAction.categorySlug} categories={categories} open onOpenChange={(open) => !open && setMenuAction(null)} />}
