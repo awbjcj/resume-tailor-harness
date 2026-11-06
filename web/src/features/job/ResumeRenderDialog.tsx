@@ -59,9 +59,9 @@ export function ResumeRenderDialog({
           <DialogDescription>
             {pdfAvailable
               ? applied
-                ? "This replaces the PDF selected for your application."
-                : "This replaces the PDF for this version."
-              : "Choose a style for the PDF."}
+                ? "The new PDF will replace the one selected for your application."
+                : "The new PDF will replace the current one for this version."
+              : "Use the workspace default or choose a style for this PDF."}
           </DialogDescription>
         </DialogHeader>
         <form className="grid grid-cols-1 gap-4" onSubmit={(event) => {
@@ -85,11 +85,11 @@ export function ResumeRenderDialog({
               }}
             >
               <option value="">Workspace default</option>
-              {selected && !style && <option value={selected} disabled={unavailable}>Saved style</option>}
+              {selected && !style && <option value={selected} disabled={unavailable}>{t("resumeVersions.savedStyle")}</option>}
               {templates.data?.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
             </select>
             {unavailable ? (
-              <p id={hintId} role="alert" className="text-sm text-destructive">This style is no longer available. Choose another style.</p>
+              <p id={hintId} role="alert" className="text-sm text-destructive">That style is no longer available. Choose another.</p>
             ) : style?.description && (
               <p id={hintId} className="text-sm text-muted-foreground">{style.description}</p>
             )}
@@ -104,9 +104,9 @@ export function ResumeRenderDialog({
           {render.isError && !unavailable && (
             <p role="alert" className="text-sm text-destructive">
               {errorCode === "resume_page_overflow"
-                ? "This style could not fit the current page limit. Try another style, revise the content, or adjust the page limit in Rendering settings."
+                ? "This resume exceeds the page limit. Try a different style, shorten the content, or change the page limit in Rendering settings."
                 : errorCode === "template_not_found"
-                  ? "This style is no longer available. Choose another style."
+                  ? "That style is no longer available. Choose another."
                   : errorCode === "NOT_FOUND"
                     ? "This version is no longer available."
                     : "Could not render the PDF. Try again or choose another style."}

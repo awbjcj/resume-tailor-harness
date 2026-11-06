@@ -181,7 +181,7 @@ def get_setup_provider(request: Request, response: Response) -> SetupProviderOut
         SetupProviderChoice(
             id=spec.id,
             label=spec.label,
-            available=next(available_native_models(spec.id, settings, endpoint), None)
+            available=next(available_native_models(spec.id, settings), None)
             is not None,
         )
         for spec in PROVIDER_SPECS
@@ -228,7 +228,6 @@ def put_setup_provider(body: SetupProviderUpdate, request: Request) -> None:
             model_id=body.model_id,
             allow_local_endpoint=request.app.state.app_mode == "local"
             and context is not None,
-            current_endpoint=context.local_provider_endpoint if context else None,
         )
     except ProviderSetupError as exc:
         raise ApiException(422, exc.code, str(exc)) from None

@@ -42,9 +42,9 @@ const STAGES: { id: RedoStage; label: string; hint: string }[] = [
   {
     id: "tailor",
     label: "Re-tailor resume",
-    hint: "Write a new resume version.",
+    hint: "Create a new resume version.",
   },
-  { id: "render", label: "Re-render PDF", hint: "Render the selected resume, or the latest version." },
+  { id: "render", label: "Re-render PDF", hint: "Regenerate the PDF for the resume selected for the application. If none is selected, use the latest version." },
 ];
 
 export interface RedoDialogProps {
@@ -126,8 +126,7 @@ function RedoDialogBody({
       const next = new Set(current);
       if (checked) {
         next.add(stage);
-        // Fresh text with stale criteria is a trap, so re-pull pre-ticks
-        // re-extract. It stays untickable afterwards.
+        // A fresh posting usually needs new criteria, so preselect re-extract.
         if (stage === "pull") next.add("extract");
       } else {
         next.delete(stage);
@@ -147,7 +146,7 @@ function RedoDialogBody({
   return (
     <DialogContent className="grid-cols-1 sm:max-w-lg" showCloseButton={!isLaunching}>
       <DialogHeader className="pr-9">
-        <DialogTitle>Redo pipeline stages</DialogTitle>
+        <DialogTitle>Redo job stages</DialogTitle>
         <DialogDescription>
           {t("interactionCopy.redo.description", { jobs: jobCountText })}
         </DialogDescription>
@@ -191,7 +190,7 @@ function RedoDialogBody({
             />
             <FieldContent>
               <FieldLabel htmlFor="redo-deep-review">Deep review</FieldLabel>
-              <FieldDescription>Full review panel; roughly 3–6× slower.</FieldDescription>
+              <FieldDescription>Use the full review panel. This usually takes 3–6 times as long.</FieldDescription>
             </FieldContent>
           </Field>
           <Field orientation="horizontal" className="rounded-lg border bg-muted/30 p-3 data-[cleanup]:border-destructive/40" data-cleanup={removePrevious || undefined}>

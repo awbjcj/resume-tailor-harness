@@ -64,15 +64,18 @@ function announceOne(run: RunRecord, openResult?: (runId: string) => void): void
 }
 
 function announceOneMessage(run: RunRecord, toast: { success: (message: string) => void; error: (message: string) => void; info: (message: string) => void }): void {
+  const redoOutcomes = run.kind === "redo" ? resultRecord(run)?.outcomes : null;
+  const removed = Array.isArray(redoOutcomes) ? removedVersionCount(redoOutcomes) : 0;
+  const removal = removed ? i18n.t("runHistory.redo.removed", { count: removed }) : null;
   if (run.status === "failed") {
-    toast.error(`${localizedRunLabel(run.kind)} ${i18n.t("runHistory.outcomes.failed")}: ${localizeRunError(run.error, i18n.resolvedLanguage) ?? i18n.t("dashboard.errorsUnavailable")}`);
+    const error = localizeRunError(run.error, i18n.resolvedLanguage) ?? i18n.t("dashboard.errorsUnavailable");
+    const detail = removal ? `${error} · ${removal}` : error;
+    toast.error(`${localizedRunLabel(run.kind)} ${i18n.t("runHistory.outcomes.failed")}: ${detail}`);
     return;
   }
   if (run.status === "cancelled") {
     const status = `${localizedRunLabel(run.kind)} ${i18n.t("runHistory.outcomes.cancelled")}`;
-    const outcomes = run.kind === "redo" ? resultRecord(run)?.outcomes : null;
-    const removed = Array.isArray(outcomes) ? removedVersionCount(outcomes) : 0;
-    toast.info(removed ? `${status} · ${i18n.t("runHistory.redo.removed", { count: removed })}` : status);
+    toast.info(removal ? `${status} · ${removal}` : status);
     return;
   }
   if (run.kind === "tailor") {
@@ -108,17 +111,15 @@ function announceOneMessage(run: RunRecord, toast: { success: (message: string) 
     return;
   }
   if (run.kind === "redo") {
-    const outcomes = resultRecord(run)?.outcomes;
-    if (!Array.isArray(outcomes)) {
-      toast.success("Pipeline redo complete.");
+    if (!Array.isArray(redoOutcomes)) {
+      toast.success(i18n.t("runHistory.redo.finished"));
       return;
     }
-    const messages = [`Pipeline redo complete: ${completedCount(outcomes.length, "stage")} processed.`];
-    const issues = outcomes.filter((outcome) => outcome?.status === "failed" || outcome?.cleanupError).length;
-    const removed = removedVersionCount(outcomes);
-    if (removed) messages.push(i18n.t("runHistory.redo.removed", { count: removed }));
+    const messages: string[] = [i18n.t("runHistory.redo.processed", { stages: completedCount(redoOutcomes.length, "stage") })];
+    const issues = redoOutcomes.filter((outcome) => outcome?.status === "failed" || outcome?.cleanupError).length;
+    if (removal) messages.push(removal);
     if (issues) messages.push(i18n.t("runHistory.redo.issues", { count: issues }));
-    const summary = messages.join(" ");
+    const summary = messages.join(i18n.resolvedLanguage === "zh-CN" ? "" : " ");
     if (issues) toast.info(summary);
     else toast.success(summary);
     return;

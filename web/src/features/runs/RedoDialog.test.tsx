@@ -82,9 +82,9 @@ describe("RedoDialog", () => {
   it("clears cleanup from the request when the user switches to Render alone", async () => {
     const user = userEvent.setup();
     const { onLaunch } = setup({ initialStages: ["tailor", "render"] });
-    await user.click(screen.getByRole("checkbox", { name: "Remove superseded generated versions" }));
+    await user.click(screen.getByRole("checkbox", { name: "Delete older generated versions" }));
     await user.click(screen.getByRole("checkbox", { name: "Re-tailor resume" }));
-    expect(screen.queryByRole("checkbox", { name: "Remove superseded generated versions" })).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: "Delete older generated versions" })).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "Redo 3 jobs" }));
 
@@ -96,14 +96,14 @@ describe("RedoDialog", () => {
   it("clears the removal opt-in when the tailor stage is turned off and back on", async () => {
     const user = userEvent.setup();
     setup();
-    await user.click(screen.getByRole("checkbox", { name: "Remove superseded generated versions" }));
-    expect(screen.getByRole("button", { name: "Redo and remove versions" })).toBeEnabled();
+    await user.click(screen.getByRole("checkbox", { name: "Delete older generated versions" }));
+    expect(screen.getByRole("button", { name: "Redo and delete older versions" })).toBeEnabled();
 
     const tailor = screen.getByRole("checkbox", { name: "Re-tailor resume" });
     await user.click(tailor);
     await user.click(tailor);
 
-    expect(screen.getByRole("checkbox", { name: "Remove superseded generated versions" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Delete older generated versions" })).not.toBeChecked();
   });
 
   it("keeps the pending launch dialog open when Escape is pressed", async () => {
@@ -147,8 +147,8 @@ describe("RedoDialog", () => {
     const user = userEvent.setup();
     setup();
     expect(screen.getByRole("button", { name: "重做（3 个职位）" })).toBeEnabled();
-    expect(screen.getByText("为3 个职位重新运行所选阶段。默认保留现有简历版本。")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "移除已被替换的自动生成版本" })).not.toBeChecked();
+    expect(screen.getByText("选择要为这 3 个职位重做的步骤。默认保留已有的简历版本。")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "删除较早生成的版本" })).not.toBeChecked();
     await user.click(screen.getByRole("checkbox", { name: /重新提取/ }));
     expect(screen.getByRole("button", { name: "重做（3 个职位）" })).toBeEnabled();
     await act(() => changeLanguage("en"));

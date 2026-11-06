@@ -271,10 +271,10 @@ describe("JobModal", () => {
     wrap(<JobModal jobId={42} onClose={onClose} />);
 
     await user.click(await screen.findByRole("button", { name: "Redo…" }));
-    expect(screen.getByRole("dialog", { name: "Redo pipeline stages" })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Redo job stages" })).toBeVisible();
     await user.keyboard("{Escape}");
 
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Redo pipeline stages" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Redo job stages" })).toBeNull());
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByRole("heading", { name: "Staff Engineer" })).toBeVisible();
   });

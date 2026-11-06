@@ -467,6 +467,22 @@ const HUMANIZED_ZH_CN_TRANSLATIONS = {
 const FIXED_ZH_CN_TRANSLATIONS = {
   ...BASE_ZH_CN_TRANSLATIONS,
   ...HUMANIZED_ZH_CN_TRANSLATIONS,
+  "Redo job stages": "重新处理职位",
+  "Create a new resume version.": "生成一个新的简历版本。",
+  "Regenerate the PDF for the resume selected for the application. If none is selected, use the latest version.": "为申请选用的简历重新生成 PDF。未选用时，使用最新版本。",
+  "Use the full review panel. This usually takes 3–6 times as long.": "使用完整的评审组，耗时通常是常规评审的 3 至 6 倍。",
+  "The new PDF will replace the one selected for your application.": "新的 PDF 会替换当前申请选用的文件。",
+  "The new PDF will replace the current one for this version.": "新的 PDF 会替换这个版本现有的文件。",
+  "Use the workspace default or choose a style for this PDF.": "可使用工作区的默认样式，也可为此 PDF 选择其他样式。",
+  "That style is no longer available. Choose another.": "此样式已不可用，请选择其他样式。",
+  "This resume exceeds the page limit. Try a different style, shorten the content, or change the page limit in Rendering settings.": "这份简历超出了页数限制。可以更换样式、精简内容，或在渲染设置中调整页数上限。",
+  "No resume versions yet.": "还没有保存的简历版本。",
+  "Resume versions": "简历版本",
+  "Generate a new version": "生成新版本",
+  "What should change?": "想修改哪些内容？",
+  "Review again": "重新评审",
+  "PDF is ready": "PDF 已生成",
+  "Clear this document's application selection before deleting it.": "请先取消在申请中选用这份文件，再删除。",
   // Context-sensitive copy: job roles, settings backups, and AI usage must not
   // inherit the translations of account roles, fallback models, or credentials.
   "Agent activity": "助手动态",
