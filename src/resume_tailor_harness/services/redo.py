@@ -1,17 +1,16 @@
 """Redo any pipeline stage on explicitly chosen jobs.
 
 The automatic paths (pull/discover/refresh/reprocess) guard against clobbering
-user work: merge.decide() freezes jd_text past raw, and reprocess() skips jobs
-with progress. Those guards are right for a scheduled run and wrong for a user
-who deliberately picked a job. Redo is the explicit escape hatch, and it never
-regresses status, never rejects, and never deletes prior artifacts.
+user work. Redo runs the selected stages explicitly and keeps the job's status
+as a high-water mark. It appends resume attempts and can clean up superseded
+versions after a successful replacement.
 """
 
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from typing import Literal
 
 import httpx
@@ -32,7 +31,7 @@ from resume_tailor_harness.discovery.url_ingest.recovery import (
     RecoveryRequired,
 )
 from resume_tailor_harness.profile.store import load_facts
-from resume_tailor_harness.progress import ProgressReporter
+from resume_tailor_harness.progress import ProgressReporter, RunCancelled
 from resume_tailor_harness.services.agents import (
     build_discovery_bundle,
     build_url_extract_agent,
@@ -43,9 +42,14 @@ from resume_tailor_harness.services.errors import (
     record_job_failure,
     resolve_job_failures,
 )
-from resume_tailor_harness.taxonomy.location import join_locations
+from resume_tailor_harness.services.redo_versions import (
+    VersionRef,
+    remove_superseded_versions,
+    snapshot_previous_versions,
+)
 from resume_tailor_harness.services.rendering import render_resume_version
 from resume_tailor_harness.services.tailoring import tailor
+from resume_tailor_harness.taxonomy.location import join_locations
 from resume_tailor_harness.tenancy.limits import enforce_active_budget
 from resume_tailor_harness.tenancy.paths import FACTS_PATH, SEARCH_PATH
 from resume_tailor_harness.tracking.dedup import (
@@ -59,7 +63,7 @@ from resume_tailor_harness.tracking.repository import (
     latest_resume_version_id,
     save_job,
 )
-from resume_tailor_harness.tracking.tables import Job
+from resume_tailor_harness.tracking.tables import Job, ResumeVersion
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +85,9 @@ class StageOutcome:
     stage: RedoStage
     status: Literal["ok", "skipped", "failed"]
     detail: str | None = None
+    version: VersionRef | None = None
+    removed_version_ids: tuple[int, ...] = ()
+    cleanup_error: str | None = None
 
 
 def repull_job(
@@ -154,39 +161,83 @@ def repull_job(
     return StageOutcome(job_id, "pull", "ok", detail), None
 
 
-def _record(session, job, stage, failure, run_id, model=None) -> None:
-    """Persist a failure. Never let bookkeeping turn a partial run into a total one."""
+def _settle(
+    session: Session,
+    job: Job,
+    outcome: StageOutcome,
+    failure: StageFailure | None,
+    run_id: str | None,
+    model: str | None = None,
+) -> StageOutcome:
     try:
-        record_job_failure(
-            session, job=job, stage=stage, failure=failure, run_id=run_id, model=model
-        )
+        if failure is not None:
+            record_job_failure(
+                session,
+                job=job,
+                stage=outcome.stage,
+                failure=failure,
+                run_id=run_id,
+                model=model,
+            )
+        elif outcome.status == "ok":
+            resolve_job_failures(session, outcome.job_id, outcome.stage)
     except Exception:
+        session.rollback()
         logger.warning(
-            "could not record failure for job=%s stage=%s", job.id, stage, exc_info=True
+            "could not update failure records for job=%s stage=%s",
+            outcome.job_id,
+            outcome.stage,
+            exc_info=True,
         )
-
-
-def _settle(session, job, stage, outcome, failure, run_id, model=None) -> StageOutcome:
-    if outcome.status == "failed" and failure is not None:
-        _record(session, job, stage, failure, run_id, model=model)
-    elif outcome.status == "ok":
-        resolve_job_failures(session, outcome.job_id, stage)
     return outcome
 
 
-def _run_pull(session, jobs, run_id) -> list[StageOutcome]:
+def _stage_result(
+    session: Session,
+    job: Job,
+    stage: RedoStage,
+    failure: StageFailure | None,
+    run_id: str | None,
+    *,
+    model: str | None = None,
+    version: VersionRef | None = None,
+) -> StageOutcome:
+    assert job.id is not None
+    outcome = (
+        StageOutcome(
+            job.id, stage, "failed", f"{failure.error_type}: {failure.message}"
+        )
+        if failure is not None
+        else StageOutcome(job.id, stage, "ok", version=version)
+    )
+    return _settle(session, job, outcome, failure, run_id, model)
+
+
+def _run_pull(
+    session: Session,
+    jobs: list[Job],
+    run_id: str | None,
+    reporter: ProgressReporter | None,
+) -> list[StageOutcome]:
     agent = build_url_extract_agent()
     allow_browser = get_settings().browser_enabled
     outcomes = []
     for job in jobs:
+        if reporter is not None:
+            reporter.checkpoint()
         outcome, failure = repull_job(
             session, job, agent=agent, allow_browser=allow_browser
         )
-        outcomes.append(_settle(session, job, "pull", outcome, failure, run_id))
+        outcomes.append(_settle(session, job, outcome, failure, run_id))
     return outcomes
 
 
-def _run_extract(session, jobs, run_id) -> list[StageOutcome]:
+def _run_extract(
+    session: Session,
+    jobs: list[Job],
+    run_id: str | None,
+    reporter: ProgressReporter | None,
+) -> list[StageOutcome]:
     """Re-run extract -> filter -> score over these ids, forward-only.
 
     run_relevance is deliberately not run: it exists to reject off-target raw
@@ -196,61 +247,48 @@ def _run_extract(session, jobs, run_id) -> list[StageOutcome]:
     facts = load_facts(FACTS_PATH)
     matrix, cluster_map = _skill_artifacts(FACTS_PATH, facts)
     bundle = build_discovery_bundle()
-    scope = StageScope(
-        job_ids=frozenset(job.id for job in jobs if job.id is not None),
-        any_status=True,
-        never_regress=True,
-    )
-    extract_failures = run_extract(
+    ids = frozenset(job.id for job in jobs if job.id is not None)
+    failures = run_extract(
         session,
         bundle.extract,
-        scope=scope,
+        scope=StageScope(job_ids=ids, any_status=True, never_regress=True),
         industry_classifier=bundle.industry_classifier,
     )
-    run_filter(session, config, scope)
-    score_failures = run_score(
-        session,
-        facts,
-        bundle.fit,
-        canonicalizer=bundle.canonicalizer,
-        scope=scope,
-        matrix=matrix,
-        cluster_map=cluster_map,
-    )
-    # A job that failed extraction never had valid criteria to score against,
-    # so an extract failure is the root cause and wins over a later score one.
-    failures = {**score_failures, **extract_failures}
-    outcomes = []
-    for job in jobs:
-        assert job.id is not None
-        failure = failures.get(job.id)
-        if failure is not None:
-            detail = f"{failure.error_type}: {failure.message}"
-            outcomes.append(
-                _settle(
-                    session,
-                    job,
-                    "extract",
-                    StageOutcome(job.id, "extract", "failed", detail),
-                    failure,
-                    run_id,
-                )
+    score_ids = ids.difference(failures)
+    if score_ids:
+        if reporter is not None:
+            reporter.checkpoint()
+        scope = StageScope(job_ids=score_ids, any_status=True, never_regress=True)
+        run_filter(session, config, scope)
+        failures.update(
+            run_score(
+                session,
+                facts,
+                bundle.fit,
+                canonicalizer=bundle.canonicalizer,
+                scope=scope,
+                matrix=matrix,
+                cluster_map=cluster_map,
             )
-        else:
-            outcomes.append(
-                _settle(
-                    session,
-                    job,
-                    "extract",
-                    StageOutcome(job.id, "extract", "ok", None),
-                    None,
-                    run_id,
-                )
-            )
-    return outcomes
+        )
+    return [
+        _stage_result(
+            session,
+            job,
+            "extract",
+            failures.get(job.id) if job.id is not None else None,
+            run_id,
+        )
+        for job in jobs
+    ]
 
 
-def _run_tailor(session, jobs, run_id, deep) -> list[StageOutcome]:
+def _run_tailor(
+    session: Session,
+    jobs: list[Job],
+    run_id: str | None,
+    deep: bool,
+) -> list[StageOutcome]:
     from resume_tailor_harness.services.tailoring import (
         DEFAULT_REVIEW,
         DEFAULT_REVIEW_DEEP,
@@ -266,34 +304,26 @@ def _run_tailor(session, jobs, run_id, deep) -> list[StageOutcome]:
     for job in jobs:
         assert job.id is not None
         failure = outcome.failures.get(job.id)
-        if failure is not None:
-            detail = f"{failure.error_type}: {failure.message}"
-            results.append(
-                _settle(
-                    session,
-                    job,
-                    "tailor",
-                    StageOutcome(job.id, "tailor", "failed", detail),
-                    failure,
-                    run_id,
-                    model=outcome.model,
-                )
+        versions = outcome.versions.get(job.id)
+        if failure is None and not versions:
+            failure = StageFailure(
+                "MissingResumeVersion", "tailoring produced no resume version", ""
             )
-        else:
-            results.append(
-                _settle(
-                    session,
-                    job,
-                    "tailor",
-                    StageOutcome(job.id, "tailor", "ok", None),
-                    None,
-                    run_id,
-                )
+        results.append(
+            _stage_result(
+                session,
+                job,
+                "tailor",
+                failure,
+                run_id,
+                model=outcome.model,
+                version=VersionRef.from_row(versions[-1]) if versions else None,
             )
+        )
     return results
 
 
-def _render_target(session, job_id: int) -> int | None:
+def _render_target(session: Session, job_id: int) -> int | None:
     """The Application's chosen version, else the highest-id version."""
     application = application_for_job(session, job_id)
     if application is not None and application.resume_version_id is not None:
@@ -301,48 +331,84 @@ def _render_target(session, job_id: int) -> int | None:
     return latest_resume_version_id(session, job_id)
 
 
-def _run_render(session, jobs, run_id) -> list[StageOutcome]:
+def _render_job(
+    session: Session,
+    job: Job,
+    run_id: str | None,
+    target: VersionRef | None,
+) -> StageOutcome:
+    assert job.id is not None
+    version_id = target.id if target is not None else _render_target(session, job.id)
+    if version_id is None:
+        return StageOutcome(job.id, "render", "skipped", "no resume version")
+    version = session.get(ResumeVersion, version_id, populate_existing=True)
+    if (
+        version is None
+        or version.job_id != job.id
+        or (target is not None and VersionRef.from_row(version) != target)
+    ):
+        return StageOutcome(job.id, "render", "skipped", "resume version unavailable")
+    ref = VersionRef.from_row(version)
+    try:
+        path = render_resume_version(session, version_id)
+    except Exception as exc:
+        session.rollback()
+        logger.warning("render job=%s failed", job.id, exc_info=exc)
+        return _stage_result(
+            session, job, "render", StageFailure.from_exception(exc), run_id
+        )
+    if path is None:
+        return StageOutcome(job.id, "render", "skipped", "resume version unavailable")
+    return _stage_result(session, job, "render", None, run_id, version=ref)
+
+
+def _run_render(
+    session: Session,
+    jobs: list[Job],
+    run_id: str | None,
+    reporter: ProgressReporter | None,
+    tailored: dict[int, VersionRef] | None,
+) -> list[StageOutcome]:
     outcomes = []
     for job in jobs:
         assert job.id is not None
-        version_id = _render_target(session, job.id)
-        if version_id is None:
+        if reporter is not None:
+            reporter.checkpoint()
+        if tailored is not None and job.id not in tailored:
             outcomes.append(
-                StageOutcome(job.id, "render", "skipped", "no resume version")
+                StageOutcome(job.id, "render", "skipped", "no new resume version")
             )
-            continue
-        try:
-            render_resume_version(session, version_id)
-        except Exception as exc:
-            logger.warning("render job=%s failed", job.id, exc_info=exc)
-            failure = StageFailure.from_exception(exc)
-            outcomes.append(
-                _settle(
-                    session,
-                    job,
-                    "render",
-                    StageOutcome(
-                        job.id,
-                        "render",
-                        "failed",
-                        f"{failure.error_type}: {failure.message}",
-                    ),
-                    failure,
-                    run_id,
-                )
-            )
-            continue
-        outcomes.append(
-            _settle(
-                session,
-                job,
-                "render",
-                StageOutcome(job.id, "render", "ok", None),
-                None,
-                run_id,
-            )
-        )
+        else:
+            target = tailored[job.id] if tailored is not None else None
+            outcomes.append(_render_job(session, job, run_id, target))
     return outcomes
+
+
+def _cleanup_previous_versions(
+    session: Session,
+    outcome: StageOutcome,
+    previous: set[VersionRef],
+    reporter: ProgressReporter | None,
+) -> StageOutcome:
+    if outcome.status != "ok" or outcome.version is None or not previous:
+        return outcome
+    try:
+        cleanup = remove_superseded_versions(
+            session,
+            outcome.job_id,
+            previous,
+            outcome.version,
+            checkpoint=reporter.checkpoint if reporter is not None else None,
+        )
+    except RunCancelled:
+        raise
+    except Exception as exc:
+        session.rollback()
+        logger.warning("redo cleanup job=%s failed", outcome.job_id, exc_info=exc)
+        return replace(outcome, cleanup_error=StageFailure.from_exception(exc).message)
+    return replace(
+        outcome, removed_version_ids=cleanup.removed_ids, cleanup_error=cleanup.error
+    )
 
 
 def redo_jobs(
@@ -351,7 +417,10 @@ def redo_jobs(
     job_ids: Sequence[int],
     stages: Sequence[RedoStage],
     deep: bool = False,
+    remove_previous_versions: bool = False,
+    previous_versions: Mapping[int, set[VersionRef]] | None = None,
     reporter: ProgressReporter | None = None,
+    on_cleanup: Callable[[Sequence[StageOutcome]], None] | None = None,
     run_id: str | None = None,
 ) -> list[StageOutcome]:
     """Re-run the chosen stages over the chosen jobs, stage-major.
@@ -360,23 +429,37 @@ def redo_jobs(
     deduped. This function trusts them.
     """
     enforce_active_budget()
-    ordered: list[RedoStage] = [stage for stage in REDO_STAGES if stage in set(stages)]
-    found = {job_id: get_job(session, job_id) for job_id in job_ids}
-    jobs = [job for job in found.values() if job is not None]
-
-    outcomes: list[StageOutcome] = [
-        StageOutcome(job_id, ordered[0], "skipped", "job not found")
-        for job_id, job in found.items()
-        if job is None
-    ]
+    requested = set(stages)
+    ordered: list[RedoStage] = [stage for stage in REDO_STAGES if stage in requested]
+    jobs: dict[int, Job] = {}
+    outcomes: list[StageOutcome] = []
+    for job_id in dict.fromkeys(job_ids):
+        job = get_job(session, job_id)
+        if job is None:
+            outcomes.append(
+                StageOutcome(job_id, ordered[0], "skipped", "job not found")
+            )
+        else:
+            jobs[job_id] = job
     if not jobs:
         return outcomes
 
+    previous: Mapping[int, set[VersionRef]] = {}
+    if remove_previous_versions and "tailor" in requested:
+        previous = (
+            previous_versions
+            if previous_versions is not None
+            else snapshot_previous_versions(session, list(jobs))
+        )
+    blocked: dict[int, RedoStage] = {}
+    tailored: dict[int, VersionRef] | None = None
     runners = {
-        "pull": lambda: _run_pull(session, jobs, run_id),
-        "extract": lambda: _run_extract(session, jobs, run_id),
-        "tailor": lambda: _run_tailor(session, jobs, run_id, deep),
-        "render": lambda: _run_render(session, jobs, run_id),
+        "pull": lambda targets: _run_pull(session, targets, run_id, reporter),
+        "extract": lambda targets: _run_extract(session, targets, run_id, reporter),
+        "tailor": lambda targets: _run_tailor(session, targets, run_id, deep),
+        "render": lambda targets: _run_render(
+            session, targets, run_id, reporter, tailored
+        ),
     }
     for index, stage in enumerate(ordered):
         if reporter:
@@ -386,9 +469,35 @@ def redo_jobs(
                 phase_index=index + 1,
                 phase_count=len(ordered),
             )
-        outcomes.extend(runners[stage]())
+        targets = [job for job_id, job in jobs.items() if job_id not in blocked]
+        results = runners[stage](targets) if targets else []
+        by_job = {result.job_id: result for result in results}
+        if stage == "tailor":
+            tailored = {
+                result.job_id: result.version
+                for result in results
+                if result.status == "ok" and result.version is not None
+            }
+        for job_id in jobs:
+            if job_id in blocked:
+                outcomes.append(
+                    StageOutcome(job_id, stage, "skipped", f"{blocked[job_id]} failed")
+                )
+                continue
+            result = by_job.get(job_id)
+            if result is None:
+                continue
+            if result.status == "failed":
+                blocked[job_id] = stage
+            if stage == ordered[-1] and job_id in previous:
+                if reporter is not None:
+                    reporter.checkpoint()
+                result = _cleanup_previous_versions(
+                    session, result, previous[job_id], reporter
+                )
+            outcomes.append(result)
+            if result.removed_version_ids and on_cleanup is not None:
+                on_cleanup(outcomes)
         if reporter:
             reporter.step(len(jobs))
-    if reporter:
-        reporter.done()
     return outcomes

@@ -15270,11 +15270,19 @@
           },
           "jobIds": {
             "items": {
+              "maximum": 9.223372036854776e+18,
+              "minimum": 1.0,
               "type": "integer"
             },
             "minItems": 1,
             "title": "Jobids",
             "type": "array"
+          },
+          "removePreviousVersions": {
+            "default": false,
+            "description": "Remove superseded generated resume versions after a usable replacement. Requires the tailor stage.",
+            "title": "Removepreviousversions",
+            "type": "boolean"
           },
           "stages": {
             "items": {

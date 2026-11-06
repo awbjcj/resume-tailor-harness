@@ -10386,6 +10386,12 @@ export interface components {
             deep: boolean;
             /** Jobids */
             jobIds: number[];
+            /**
+             * Removepreviousversions
+             * @description Remove superseded generated resume versions after a usable replacement. Requires the tailor stage.
+             * @default false
+             */
+            removePreviousVersions: boolean;
             /** Stages */
             stages: ("pull" | "extract" | "tailor" | "render")[];
         };

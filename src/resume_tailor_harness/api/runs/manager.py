@@ -40,6 +40,7 @@ from resume_tailor_harness.progress import (
     clear_progress,
     read_progress,
 )
+from resume_tailor_harness.progress import RunCancelled as RunCancelled
 from resume_tailor_harness.security.paths import confined_path
 from resume_tailor_harness.tenancy.context import current_context
 
@@ -64,15 +65,6 @@ def _revision_key(snapshot: RunSnapshot) -> tuple[str, object] | None:
         return None
     artifact_id = snapshot.meta.get(meta_key)
     return None if artifact_id is None else (snapshot.kind, artifact_id)
-
-
-class RunCancelled(Exception):
-    """Raised inside a worker when its run has been cancel-requested.
-
-    Cooperative: only surfaces at a progress checkpoint (begin/step), so the
-    worker stops cleanly between units of work rather than being killed
-    mid-network-call. Caught by the runner, which stamps a ``cancelled`` record.
-    """
 
 
 class RunQuotaError(RuntimeError):
@@ -151,6 +143,10 @@ class RunProgressReporter(ProgressReporter):
 
     def checkpoint(self) -> None:
         self._raise_if_cancelled()
+
+    def record_partial_result(self, result: object) -> None:
+        """Keep a receipt for committed work even if the next checkpoint stops."""
+        self._record["result"] = result
 
     def begin(
         self,

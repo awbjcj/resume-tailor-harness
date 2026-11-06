@@ -9,6 +9,7 @@ never the request session (not safe to share across threads) — so
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
@@ -65,7 +66,8 @@ from resume_tailor_harness.services.discovery import (
 )
 from resume_tailor_harness.services.errors import record_source_failures
 from resume_tailor_harness.services.pagination import paginate
-from resume_tailor_harness.services.redo import redo_jobs
+from resume_tailor_harness.services.redo import StageOutcome, redo_jobs
+from resume_tailor_harness.services.redo_versions import snapshot_previous_versions
 from resume_tailor_harness.services.revision import revise_resume_version
 from resume_tailor_harness.services.tailoring import (
     DEFAULT_REVIEW,
@@ -137,7 +139,7 @@ def launch_resume_revise(
         singleton_key=f"revise:{version_id}",
         singleton_conflict="raise",
         meta=meta,
-        busy_message="A revision is already running for this item",
+        busy_message="Work is already in progress for this resume version",
     )
 
 
@@ -373,16 +375,12 @@ def launch_redo(
     params: RedoParams, request: Request, mgr: RunManager = Depends(get_run_manager)
 ):
     engine = _engine(request)
+    previous = {}
+    if params.remove_previous_versions:
+        with get_session(engine) as session:
+            previous = snapshot_previous_versions(session, params.job_ids)
 
-    def do_redo(session, reporter):
-        outcomes = redo_jobs(
-            session,
-            job_ids=params.job_ids,
-            stages=params.stages,
-            deep=params.deep,
-            reporter=reporter,
-            run_id=reporter.run_id,
-        )
+    def receipt(outcomes: Sequence[StageOutcome]) -> dict:
         return RedoResultOut(
             outcomes=[
                 StageOutcomeOut(
@@ -390,12 +388,44 @@ def launch_redo(
                     stage=outcome.stage,
                     status=outcome.status,
                     detail=outcome.detail,
+                    version_id=outcome.version.id if outcome.version else None,
+                    removed_version_ids=list(outcome.removed_version_ids),
+                    cleanup_error=outcome.cleanup_error,
                 )
                 for outcome in outcomes
-            ]
+            ],
+            version_id=(
+                next((o.version.id for o in reversed(outcomes) if o.version), None)
+                if len(params.job_ids) == 1 else None
+            ),
         ).model_dump(by_alias=True)
 
-    return launch(mgr, "redo", session_work(engine, do_redo), meta={"jobIds": params.job_ids})
+    def do_redo(session, reporter):
+        outcomes = redo_jobs(
+            session,
+            job_ids=params.job_ids,
+            stages=params.stages,
+            deep=params.deep,
+            remove_previous_versions=params.remove_previous_versions,
+            previous_versions=previous,
+            reporter=reporter,
+            run_id=reporter.run_id,
+            on_cleanup=lambda outcomes: reporter.record_partial_result(receipt(outcomes)),
+        )
+        return receipt(outcomes)
+
+    return launch(
+        mgr,
+        "redo",
+        session_work(engine, do_redo),
+        singleton_keys=[
+            *(f"redo:{job_id}" for job_id in params.job_ids),
+            *(f"revise:{ref.id}" for refs in previous.values() for ref in refs),
+        ],
+        singleton_conflict="raise",
+        meta={"jobIds": params.job_ids},
+        busy_message="Redo or revision is already running for a selected job",
+    )
 
 
 @router.post("/cover-letters", response_model=RunOut, status_code=202)

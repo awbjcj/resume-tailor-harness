@@ -386,6 +386,13 @@ def test_cli_text_import_keeps_complete_camelcase_body(tmp_path, monkeypatch, ca
             {"jobIds": [42], "stages": ["render"], "deep": False},
             {"runId": "redo-run"},
         ),
+        (
+            ["redo", "42", "--stage", "tailor", "--remove-previous-versions"],
+            "POST",
+            "/api/redo",
+            {"jobIds": [42], "stages": ["tailor"], "deep": False, "removePreviousVersions": True},
+            {"runId": "redo-run"},
+        ),
     ],
 )
 def test_workflow_cli_uses_authenticated_public_interfaces(
