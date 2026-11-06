@@ -69,7 +69,7 @@ export function InsightsCard({ summary }: { summary: DashboardSummary }) {
               </p>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-muted-foreground">{t("dashboard.sourcesHealthy")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.sourcesHealthy")}</p>
           )}
         </section> : null}
       </CardContent>

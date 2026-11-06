@@ -22,7 +22,7 @@ export function MinFitInput({
   onChange: (value: number) => void;
 }) {
   return (
-    <Field className="w-full gap-1.5 sm:w-auto sm:min-w-36 sm:flex-1">
+    <Field className="min-w-0 gap-1.5">
       <FieldLabel htmlFor={id} className={CONTROL_LABEL_CLASS}>
         Min fit
       </FieldLabel>

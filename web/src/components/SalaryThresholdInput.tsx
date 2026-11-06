@@ -30,7 +30,7 @@ export function SalaryThresholdInput({
   const descriptionId = `${id}-description`;
 
   return (
-    <Field className="relative w-full gap-1.5 sm:w-32" data-invalid={!valid || undefined}>
+    <Field className="relative min-w-0 gap-1.5" data-invalid={!valid || undefined}>
       <FieldLabel htmlFor={id} className={CONTROL_LABEL_CLASS}>
         Min salary (USD)
       </FieldLabel>

@@ -22,16 +22,6 @@ describe("FilterDesk min-fit input", () => {
       "aria-label",
       "Minimum fit slider",
     );
-    expect(screen.getByText("Min fit").parentElement).toHaveClass(
-      "w-full",
-      "sm:w-auto",
-      "sm:min-w-36",
-      "sm:flex-1",
-    );
-    expect(document.querySelector('[data-slot="slider"]')).toHaveClass(
-      "min-w-0",
-      "flex-1",
-    );
   });
 
   it("keeps the numeric value local until filters are applied", () => {
