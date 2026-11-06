@@ -37,6 +37,8 @@
     "Closing your session": "正在结束会话",
     "Writing your recap": "正在整理对话摘要",
     "Redo: {{value}}": "正在重做：{{value}}",
+    "Redo or revision is already running for a selected job": "所选职位中已有重做或修订任务正在运行",
+    "Work is already in progress for this resume version": "此简历版本已有任务正在运行",
     "Reconciling skill synonyms": "正在整理技能同义词",
     "Grouping skills into domains": "正在按领域归类技能",
     "Checking skill clusters": "正在检查技能分组",
