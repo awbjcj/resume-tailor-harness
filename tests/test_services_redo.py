@@ -281,7 +281,8 @@ def test_redo_renders_its_own_attempt_and_only_removes_eligible_old_versions(
 
     rendered_ids = []
 
-    def render(session, version_id):
+    def render(session, version_id, *, template_id=None):
+        assert template_id is None
         rendered_ids.append(version_id)
         version = session.get(ResumeVersion, version_id)
         assert version is not None and version.round == 2
@@ -368,7 +369,8 @@ def test_redo_keeps_older_work_until_its_replacement_is_usable(
             }
         )
 
-    def render(session, version_id):
+    def render(session, version_id, *, template_id=None):
+        assert template_id is None
         assert failure_stage == "render"
         raise ValueError("render failed")
 
@@ -465,22 +467,26 @@ def test_redo_skips_failed_dependencies_without_blocking_other_jobs(
     assert [v.id for v in resume_versions_for_job(session, bad_id)] == [bad_old_id]
 
 
-def test_render_only_keeps_application_target(session, monkeypatch):
+@pytest.mark.parametrize("template_id", [None, "modern"])
+def test_render_only_keeps_application_target_and_style(
+    session, monkeypatch, template_id
+):
     job = _rendered_job(session)
     assert job.id is not None
     job_id = job.id
-    selected_id = _version(session, job_id).id
+    selected_id = _version(session, job_id, pdf_template_id=template_id).id
     _version(session, job_id)
     session.add(Application(job_id=job_id, resume_version_id=selected_id))
     session.commit()
     seen = []
-    monkeypatch.setattr(
-        redo,
-        "render_resume_version",
-        lambda _, vid: seen.append(vid) or Path("rendered.pdf"),
-    )
+
+    def render(_session, version_id, *, template_id=None):
+        seen.append((version_id, template_id))
+        return Path("rendered.pdf")
+
+    monkeypatch.setattr(redo, "render_resume_version", render)
 
     [outcome] = redo.redo_jobs(session, job_ids=[job_id], stages=["render"])
 
-    assert seen == [selected_id]
+    assert seen == [(selected_id, template_id)]
     assert outcome.version is not None and outcome.version.id == selected_id

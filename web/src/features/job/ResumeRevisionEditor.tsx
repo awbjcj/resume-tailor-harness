@@ -37,19 +37,18 @@ export function ResumeRevisionEditor({
           }
         }}>
           <div className="grid min-w-0 gap-1.5">
-            <Label htmlFor={instructionId}>Resume revision instruction</Label>
+            <Label htmlFor={instructionId}>What should change?</Label>
             <Input
               id={instructionId}
               className="h-11"
               value={instruction}
               onChange={(event) => setInstruction(event.target.value)}
-              placeholder="Revise this version"
               disabled={busy}
             />
           </div>
           <label htmlFor={checkboxId} className="flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
             <Checkbox id={checkboxId} checked={reReview} disabled={busy} onCheckedChange={(value) => setReReview(Boolean(value))} />
-            Re-review
+            Review again
           </label>
           <Button type="submit" size="sm" className="min-h-11" disabled={!instruction.trim() || busy}>
             {revise.isPending ? <Spinner data-icon="inline-start" aria-hidden="true" /> : <RotateCcw data-icon="inline-start" aria-hidden="true" />}

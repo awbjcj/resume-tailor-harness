@@ -141,7 +141,7 @@ export function useRenderVersion(jobId: number) {
         resumeVersions: job.resumeVersions.map((saved) => saved.id === version.id ? version : saved),
       }));
       void invalidateBoards(qc, jobId);
-      toast.success("PDF rendered");
+      toast.success("PDF is ready");
     },
   });
 }
@@ -248,7 +248,7 @@ function useDeleteArtifacts<TVars>(
     onError: (error: Error) => {
       void qc.invalidateQueries({ queryKey: ["job", jobId] });
       const code = error instanceof ApiError ? error.code : undefined;
-      if (code === "ARTIFACT_IN_USE") toast.error("Clear the application selection before deleting this item.");
+      if (code === "ARTIFACT_IN_USE") toast.error("Clear this document's application selection before deleting it.");
       else if (code === "NOT_FOUND") toast.error("Some selected items are no longer available.");
       else toast.error("Could not delete the selected items.");
     },

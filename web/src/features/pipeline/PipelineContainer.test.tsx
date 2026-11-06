@@ -331,12 +331,12 @@ describe("PipelineContainer", () => {
     expect(
       await screen.findByRole("checkbox", { name: /re-tailor resume/i }),
     ).toBeChecked();
-    const cleanup = screen.getByRole("checkbox", { name: "Remove superseded generated versions" });
+    const cleanup = screen.getByRole("checkbox", { name: "Delete older generated versions" });
     expect(cleanup).not.toBeChecked();
     await user.click(cleanup);
     await user.click(screen.getByRole("checkbox", { name: "Re-render PDF" }));
-    expect(screen.getByText("Render the final resume from this run.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Redo and remove versions" }));
+    expect(screen.getByText("Create a PDF from the final resume in this run.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Redo and delete older versions" }));
     await waitFor(() => expect(payload).toEqual({
       jobIds: [9], stages: ["tailor", "render"], deep: false, removePreviousVersions: true,
     }));

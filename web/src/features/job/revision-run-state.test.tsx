@@ -52,7 +52,7 @@ describe("revision lifecycle UI", () => {
     );
 
     expect(screen.getByText("Revision in progress")).toBeInTheDocument();
-    expect(screen.getByLabelText("Resume revision instruction")).toBeDisabled();
+    expect(screen.getByLabelText("What should change?")).toBeDisabled();
   });
 
   it("marks a completed child as just created", () => {
