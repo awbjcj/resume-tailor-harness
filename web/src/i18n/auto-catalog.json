@@ -939,6 +939,11 @@
     "en": "AI matching preference confirmation date",
     "zh-CN": "AI 匹配偏好确认日期"
   },
+  "AI provider": {
+    "key": "ui_8791254537f4",
+    "en": "AI provider",
+    "zh-CN": "AI 服务商"
+  },
   "AI-assisted candidate matching": {
     "key": "ui_3752884b75a1",
     "en": "AI-assisted candidate matching",
@@ -5454,11 +5459,6 @@
     "en": "Live interview",
     "zh-CN": "面试进行中"
   },
-  "LLM API key": {
-    "key": "ui_49888e06bc4e",
-    "en": "LLM API key",
-    "zh-CN": "大模型 API 密钥"
-  },
   "Load more": {
     "key": "ui_ac8991ef0101",
     "en": "Load more",
@@ -6008,11 +6008,6 @@
     "key": "ui_ef7bc3387d6b",
     "en": "more domains",
     "zh-CN": "更多领域"
-  },
-  "More providers & sources": {
-    "key": "ui_abd0ef0447dc",
-    "en": "More providers & sources",
-    "zh-CN": "更多服务商与来源"
   },
   "more skills": {
     "key": "ui_eea62a98bd6d",

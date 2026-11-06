@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
-import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { useSetupStatus } from "@/features/settings/use-setup-status";
@@ -12,7 +13,12 @@ import { cn } from "@/lib/utils";
 export function SetupWizard() {
   const { data: status } = useSetupStatus();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const content = useRef<HTMLElement>(null);
   const { destination, steps, stepPath } = useSetupContinuation();
+
+  useEffect(() => { content.current?.focus(); }, [pathname]);
+
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-2xl flex-col gap-8 px-5 py-10">
       <header className="flex items-center gap-3">
@@ -45,7 +51,7 @@ export function SetupWizard() {
           </div>
         ))}
       </nav>
-      <main className="flex-1"><Outlet /></main>
+      <main ref={content} tabIndex={-1} className="flex-1 focus:outline-none"><Outlet /></main>
     </div>
   );
 }

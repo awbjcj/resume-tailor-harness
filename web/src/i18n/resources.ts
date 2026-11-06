@@ -1,5 +1,6 @@
 import { emailNotificationsEn, emailNotificationsZh } from "./email-notifications";
 import type { workflowEn } from "./workflow";
+import type { providerSetupEn } from "./provider-setup";
 import autoEn from "./auto-en.json";
 import { billingEn, billingZh } from "./billing";
 import type { passwordManagerEn } from "./password-manager";
@@ -30,6 +31,7 @@ const en = {
   interactionCopy: {} as InteractionCopy,
   decisions: {} as typeof decisionsEn,
   workflow: {} as typeof workflowEn,
+  providerSetup: {} as typeof providerSetupEn,
   deferred: { loading: "Loading…", failed: "This form could not load. Try again.", appFailed: "The workspace could not load. Try again.", retry: "Try again", reload: "Reload page" },
   salary: { hour: "hour", month: "month", week: "week", day: "day" },
   chat: {
@@ -711,7 +713,7 @@ const en = {
     deskReady: "Workspace is ready",
     resumeSetup: "Resume setup",
     health: {
-      apiKey: "LLM API key",
+      apiKey: "AI provider",
       resume: "Profile evidence",
       facts: "Profile facts built",
       search: "Search configured",
@@ -900,6 +902,7 @@ const zhCN = {
   interactionCopy: {} as InteractionCopy,
   decisions: {} as typeof decisionsEn,
   workflow: {} as typeof workflowEn,
+  providerSetup: {} as typeof providerSetupEn,
   deferred: { loading: "正在加载…", failed: "无法加载此表单，请重试。", appFailed: "无法加载工作区，请重试。", retry: "重试", reload: "重新加载页面" },
   salary: { hour: "小时", month: "月", week: "周", day: "天" },
   chat: {
@@ -1553,7 +1556,7 @@ const zhCN = {
     deskReady: "工作区已就绪",
     resumeSetup: "继续设置",
     health: {
-      apiKey: "大模型 API 密钥",
+      apiKey: "AI 服务商",
       resume: "个人资料依据",
       facts: "个人经历已整理",
       search: "搜索已配置",
