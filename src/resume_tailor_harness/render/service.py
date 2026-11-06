@@ -100,7 +100,7 @@ def render_version(
                 and existing.name.startswith(private_prefix)
                 and existing.suffix == ".pdf"
             ):
-                out_path = existing
+                out_path = out_path.with_name(existing.name)
             destination = artifact_pdf_identity(out_path)
             if destination is None or referenced_pdf_paths(
                 session, [destination], exclude_resume_ids=[version_id]

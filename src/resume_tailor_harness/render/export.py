@@ -89,7 +89,9 @@ def _version_entry(version: ResumeVersion) -> dict[str, Any]:
         "factCheckPassed": version.fact_lock_passed,
         "reviewScore": version.review_score,
         "createdAt": version.created_at.isoformat() if version.created_at else None,
-        "file": Path(version.pdf_path).name if version.pdf_path else resume_pdf_name(version),
+        "file": (
+            Path(version.pdf_path).name if version.pdf_path else resume_pdf_name(version)
+        ),
         "pdfTemplateId": version.pdf_template_id,
         "contentFile": resume_json_name(version),
     }
@@ -175,18 +177,21 @@ def _prune_previous_exports(
                 continue
             versions = manifest.get("resumeVersions", [])
             if isinstance(versions, list):
-                removed_ids = [
-                    entry.get("id")
-                    for entry in versions
-                    if isinstance(entry, dict) and entry.get("contentFile") in removed
-                ]
+                kept = []
+                removed_ids = []
+                for entry in versions:
+                    filename = entry.get("contentFile") if isinstance(entry, dict) else None
+                    if isinstance(filename, str) and filename in removed:
+                        removed_ids.append(entry.get("id"))
+                    else:
+                        kept.append(entry)
                 if removed_ids:
-                    manifest["resumeVersions"] = [
-                        entry for entry in versions
-                        if not isinstance(entry, dict) or entry.get("id") not in removed_ids
-                    ]
+                    manifest["resumeVersions"] = kept
                     applied = manifest.get("applied")
-                    if isinstance(applied, dict) and applied.get("resumeVersionId") in removed_ids:
+                    if (
+                        isinstance(applied, dict)
+                        and applied.get("resumeVersionId") in removed_ids
+                    ):
                         applied["resumeVersionId"] = None
                     _write_json(manifest_path, manifest)
         for filename in removed:
