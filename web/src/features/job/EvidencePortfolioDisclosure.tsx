@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { evidencePortfolioWarningLabel } from "@/i18n/profile-build-diagnostics";
 import { localizeDisplayValue } from "@/i18n/dynamic-labels";
 import type { components } from "@/lib/api/schema";
+import { cn } from "@/lib/utils";
 import { useEvidencePortfolio } from "./use-evidence-portfolio";
 
 type Requirement = components["schemas"]["PortfolioRequirementOut"];
@@ -108,29 +109,20 @@ export function EvidencePortfolioDisclosure({
     );
 
   return (
-    <div className="mt-4 border-t pt-4">
+    <div className={cn("min-w-0", expanded && "w-full")}>
       <Button
         size="sm"
-        variant="outline"
-        className="h-auto w-full justify-between rounded-lg px-3 py-2.5 text-left motion-safe:active:scale-[0.99]"
+        variant="ghost"
+        className="h-auto min-h-8 max-w-full justify-start px-2 py-1 text-left whitespace-normal text-muted-foreground"
         aria-expanded={expanded}
-        aria-controls={panelId}
+        aria-controls={expanded ? panelId : undefined}
         onClick={() => {
           setExpanded((value) => !value);
           if (expanded) setShowAllDetails(false);
         }}
       >
-        <span className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
-            <ListChecks className="size-4" aria-hidden="true" />
-          </span>
-          <span className="min-w-0">
-            <span className="block font-semibold">Why this experience was chosen</span>
-            <span className="block text-xs font-normal text-muted-foreground">
-              See which job requirements this version emphasizes and which evidence it uses.
-            </span>
-          </span>
-        </span>
+        <ListChecks className="size-4 text-primary" aria-hidden="true" />
+        <span>Why this experience was chosen</span>
         <ChevronDown
           className={`size-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out-strong motion-reduce:transition-none ${
             expanded ? "rotate-180" : ""
