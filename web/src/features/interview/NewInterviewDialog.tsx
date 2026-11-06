@@ -69,7 +69,7 @@ export function NewInterviewDialog({ open, onOpenChange }: { open: boolean; onOp
         </DialogHeader>
         {loadError ? (
           <Alert variant="destructive">
-            <AlertTitle>Could not load jobs</AlertTitle>
+            <AlertTitle>Could not load interview options</AlertTitle>
             <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
               <span>Check the connection and try again.</span>
               <Button size="sm" variant="outline" disabled={jobs.isFetching || sessions.isFetching} onClick={() => {
@@ -81,7 +81,7 @@ export function NewInterviewDialog({ open, onOpenChange }: { open: boolean; onOp
         ) : !ready ? (
           <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner aria-hidden />Loading jobs…</p>
         ) : candidates.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No jobs are ready for interview practice. Tailor a resume first.</p>
+          <p className="text-sm text-muted-foreground">No jobs are available for interview practice. Tailor a resume or check your sessions for an interview in progress.</p>
         ) : (
           <Field>
             <FieldLabel htmlFor="new-interview-job">Job</FieldLabel>

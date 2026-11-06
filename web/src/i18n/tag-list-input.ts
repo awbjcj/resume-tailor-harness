@@ -8,9 +8,9 @@ export const tagListEn = {
   remove: "Remove {{value}}",
   removed: "Removed {{value}}.",
   noMatches: "No matches. You can still add a value.",
-  pending: "Add the typed value or clear the field before saving.",
+  pending: "Press Enter or use Add to add your entry, or clear the field before saving.",
   suggestions: "Suggestions for {{field}}",
-  limit: "Add up to {{count}} values. Remove one to make room.",
+  limit: "You can add up to {{count}} values. Remove some or enter fewer at a time.",
   repositories: {
     preferences: "Import preferences",
     search: "Search repositories",
@@ -26,7 +26,7 @@ export const tagListEn = {
     invalidLimit: "Enter a whole number from 1 to 100 to save.",
   },
   offers: {
-    heading: "Offer comparison references",
+    heading: "Offers for comparison",
     label: "Offers",
     search: "Company, role, or ID",
     help: "Add up to 10 offers.",
@@ -38,12 +38,12 @@ export const tagListEn = {
   search: {
     keywords: "Keywords",
     keywordExample: "e.g. distributed systems",
-    titles: "Titles",
+    titles: "Job titles",
     titleExample: "Software Engineer…",
     location: "e.g. Austin, TX",
-    roleAnchors: "Role anchors",
-    excludeTerms: "Exclude terms",
-    normalizing: "Formatting locations…",
+    roleAnchors: "Role keywords",
+    excludeTerms: "Excluded terms",
+    normalizing: "Standardizing locations…",
   },
 };
 
@@ -55,9 +55,9 @@ const zh: typeof tagListEn = {
   remove: "移除 {{value}}",
   removed: "已移除 {{value}}。",
   noMatches: "没有匹配项。仍可输入并添加。",
-  pending: "请先添加输入的值，或清空此输入框，再保存。",
+  pending: "保存前，请按 Enter 或点击“添加”来添加输入内容，或清空输入框。",
   suggestions: "{{field}}的建议",
-  limit: "最多添加 {{count}} 个值。请先移除已有值。",
+  limit: "最多添加 {{count}} 个值。请移除已添加的值，或减少本次输入的数量。",
   repositories: {
     preferences: "导入偏好",
     search: "搜索仓库",
@@ -65,7 +65,7 @@ const zh: typeof tagListEn = {
     loading: "正在加载仓库…",
     unavailable: "暂时无法加载仓库。仍可输入并添加仓库名称。",
     include: "始终包含代码仓库",
-    includeHelp: "这些仓库会跳过排名，直接纳入导入范围。",
+    includeHelp: "这些仓库会跳过排名。",
     exclude: "排除代码仓库",
     excludeHelp: "导入时会跳过这些仓库。",
     limit: "代码仓库数量上限",
@@ -73,7 +73,7 @@ const zh: typeof tagListEn = {
     invalidLimit: "请输入 1 到 100 之间的整数后保存。",
   },
   offers: {
-    heading: "录用通知比较参考",
+    heading: "用于对比的录用通知",
     label: "录用通知",
     search: "公司、职位或申请 ID",
     help: "最多添加 10 份录用通知。",
@@ -85,12 +85,12 @@ const zh: typeof tagListEn = {
   search: {
     keywords: "关键词",
     keywordExample: "例如：分布式系统",
-    titles: "标题",
+    titles: "职位名称",
     titleExample: "软件工程师…",
     location: "例如：Austin, TX",
-    roleAnchors: "目标职位关键词",
-    excludeTerms: "排除关键词",
-    normalizing: "正在整理地点格式…",
+    roleAnchors: "职位关键词",
+    excludeTerms: "排除词",
+    normalizing: "正在规范地点…",
   },
 };
 
