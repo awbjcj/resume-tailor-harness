@@ -107,6 +107,18 @@ it("reports removals and stages needing attention after a partial redo", async (
   expect(toast.info).toHaveBeenCalledWith("流程重做完成：已处理 2 个阶段。 已移除 2 个旧版本。 1 个阶段需要处理。");
 });
 
+it.each<["en" | "zh-CN", string]>([
+  ["en", "1 older version removed."],
+  ["zh-CN", "已移除 1 个旧版本。"],
+])("reports committed removals after cancellation in %s", async (language, summary) => {
+  await changeLanguage(language);
+  announceCompletions([run({ kind: "redo", status: "cancelled", result: { outcomes: [
+    { status: "ok", removedVersionIds: [11] },
+  ] } })]);
+  expect(toast.info).toHaveBeenCalledWith(expect.stringContaining(summary));
+  expect(toast.success).not.toHaveBeenCalled();
+});
+
 it("counts tailored jobs from the jobs array even when nested version counts are absent", () => {
   announceCompletions([
     run({ result: { jobs: [{ jobId: 1 }, { jobId: 2 }] } }),
