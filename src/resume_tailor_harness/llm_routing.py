@@ -35,9 +35,11 @@ __all__ = [
     "direct_api_base_url",
     "effective_mode",
     "gateway_origin",
+    "provider_sdk_base_url",
     "route_mode",
     "subscription_configured",
     "subscription_key",
+    "validate_base_url",
 ]
 
 EffectiveMode = Literal["subscription", "api"]
@@ -72,26 +74,39 @@ _DIRECT_API_BASE_URL_DEFAULTS = {
 ROUTE_MODE_FIELDS = {spec.id: spec.route_mode_field for spec in PROVIDER_SPECS}
 
 
-def _validated_base_url(raw_value: str, setting_name: str) -> str:
+def validate_base_url(raw_value: str, setting_name: str) -> str:
     """Return a validated HTTP(S) base URL without a trailing slash."""
 
     raw = (raw_value or "").strip().rstrip("/")
     if not raw:
         return ""
-    parsed = urlsplit(raw)
+    message = f"{setting_name} must be an absolute HTTP(S) URL without credentials, a query, or a fragment"
+    try:
+        parsed = urlsplit(raw)
+        port = parsed.port
+    except ValueError:
+        raise RouteConfigError(message) from None
     if (
         parsed.scheme not in {"http", "https"}
         or not parsed.hostname
         or parsed.username is not None
         or parsed.password is not None
-        or parsed.query
-        or parsed.fragment
+        or port == 0
+        or any(c.isspace() or not c.isprintable() for c in raw)
+        or any(c in raw for c in "?#\\")
     ):
-        raise RouteConfigError(
-            f"{setting_name} must be an absolute http(s) URL with no "
-            f"credentials, query, or fragment (got {raw_value!r})"
-        )
+        raise RouteConfigError(message)
     return raw
+
+
+def provider_sdk_base_url(provider: str, origin: str | None) -> str | None:
+    """Adapt a deployment endpoint or gateway origin to the provider SDK."""
+    if not origin:
+        return None
+    normalized = origin.rstrip("/")
+    if provider in {"openai", "deepseek"} and not normalized.endswith("/v1"):
+        return f"{normalized}/v1"
+    return normalized
 
 
 def _origin(settings: Settings) -> str:
@@ -101,7 +116,7 @@ def _origin(settings: Settings) -> str:
     reverse proxy at ``/sub2api``); credentials, query, and fragment are not,
     because none of them survive being concatenated with an SDK's own path.
     """
-    return _validated_base_url(settings.sub2api_base_url, "SUB2API_BASE_URL")
+    return validate_base_url(settings.sub2api_base_url, "SUB2API_BASE_URL")
 
 
 def direct_api_base_url(provider: str, settings: Settings) -> str | None:
@@ -117,7 +132,7 @@ def direct_api_base_url(provider: str, settings: Settings) -> str | None:
         return None
     configured = str(getattr(settings, field, "") or "")
     raw = configured or _DIRECT_API_BASE_URL_DEFAULTS[provider]
-    return _validated_base_url(raw, field.upper())
+    return validate_base_url(raw, field.upper())
 
 
 def subscription_key(provider: str, settings: Settings) -> str:

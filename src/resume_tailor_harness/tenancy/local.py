@@ -59,6 +59,9 @@ def resolve_local_context(
         env_settings(),
         EngineRegistry(),
         system_engine=system_engine,
+        # The implicit workspace is the local operator's. Explicit tenant
+        # selection uses the deployment-managed routes for that account.
+        allow_local_endpoint=username is None,
     )
 
 

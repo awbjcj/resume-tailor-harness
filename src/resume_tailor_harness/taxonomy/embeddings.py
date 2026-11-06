@@ -77,7 +77,6 @@ class OpenAIEmbeddingProvider:
     def _embed_sync(self, texts: list[str]) -> list[list[float]]:
         from resume_tailor_harness.llm_runner import (
             model_access_available,
-            provider_sdk_base_url,
             resolve_route,
             split_provider,
         )
@@ -103,7 +102,7 @@ class OpenAIEmbeddingProvider:
                 )
                 response = OpenAI(
                     api_key=route.api_key,
-                    base_url=provider_sdk_base_url(provider, route.base_url),
+                    base_url=route.sdk_base_url,
                 ).embeddings.create(
                     model=model,
                     input=texts,

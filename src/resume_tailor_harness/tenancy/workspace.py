@@ -5,7 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 from resume_tailor_harness.config import Settings
-from resume_tailor_harness.llm_routing import DIRECT_API_BASE_URL_FIELDS, SUB2API_KEY_FIELDS
+from resume_tailor_harness.llm_routing import (
+    DIRECT_API_BASE_URL_FIELDS,
+    SUB2API_KEY_FIELDS,
+)
+from resume_tailor_harness.local_provider import (
+    LocalProviderEndpoint,
+    local_provider_endpoint,
+)
 from resume_tailor_harness.setup.env_writer import parse_env
 
 _PLATFORM_FIELDS = frozenset(
@@ -113,6 +120,7 @@ class SettingsOverlay:
     settings: Settings
     own_key_providers: frozenset[str]
     user_provider_keys: dict[str, str]
+    local_provider_endpoint: LocalProviderEndpoint | None = None
 
 
 def workspace_paths(data_root: Path | str, user_id: str) -> WorkspacePaths:
@@ -160,11 +168,16 @@ def provision_workspace(
     return paths
 
 
-def effective_settings(base: Settings, paths: WorkspacePaths) -> SettingsOverlay:
+def effective_settings(
+    base: Settings, paths: WorkspacePaths, *, allow_local_endpoint: bool = False
+) -> SettingsOverlay:
     updates: dict[str, object] = {"db_url": paths.db_url}
     user_provider_keys: dict[str, str] = {}
+    endpoint = None
     if paths.secrets_env.is_file():
         values = parse_env(paths.secrets_env.read_text(encoding="utf-8"))
+        if allow_local_endpoint:
+            endpoint = local_provider_endpoint(values)
         for env_name, value in values.items():
             field_name = env_name.lower()
             if field_name in _OVERLAY_FIELDS and value:
@@ -184,4 +197,5 @@ def effective_settings(base: Settings, paths: WorkspacePaths) -> SettingsOverlay
         settings=settings,
         own_key_providers=own_keys,
         user_provider_keys=user_provider_keys,
+        local_provider_endpoint=endpoint,
     )

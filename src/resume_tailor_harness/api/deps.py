@@ -17,6 +17,7 @@ from sqlmodel import Session
 from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.services.config_store import YamlConfigStore
+from resume_tailor_harness.services.env_config import env_lock
 from resume_tailor_harness.services.profile_documents import DocumentStore
 from resume_tailor_harness.tenancy.bootstrap import build_context
 from resume_tailor_harness.tenancy.context import UserContext, current_context, use_context
@@ -281,7 +282,7 @@ def refresh_app_settings(app, fresh: Settings) -> None:
         # requests reuse default_context, so refresh it too, keeping the
         # platform settings as its base rather than promoting workspace keys.
         if app.state.app_mode == "local":
-            refresh_platform_settings(app, app.state.settings)
+            _refresh_default_context(app)
         return
     refresh_platform_settings(app, fresh)
 
@@ -301,27 +302,38 @@ def refresh_platform_settings(app, fresh: Settings) -> None:
         }
     )
     app.state.settings = refreshed
+    _refresh_default_context(app)
+
+
+def _refresh_default_context(app) -> None:
     context = getattr(app.state, "default_context", None)
     if context is None:
         return
-    overlay = effective_settings(refreshed, context.paths)
-    platform_provider_keys = {
-        provider: key
-        for provider, key in {
-            "anthropic": refreshed.anthropic_api_key,
-            "openai": refreshed.openai_api_key,
-            "gemini": refreshed.gemini_api_key,
-            "deepseek": refreshed.deepseek_api_key,
-        }.items()
-        if key
-    }
-    app.state.default_context = replace(
-        context,
-        settings=overlay.settings,
-        own_key_providers=overlay.own_key_providers,
-        platform_provider_keys=platform_provider_keys,
-        user_provider_keys=overlay.user_provider_keys,
-        selected_own_key_providers={},
-        selected_model_own_keys={},
-        spend_decisions={},
-    )
+    # Concurrent saves must publish the latest workspace file, even when an
+    # earlier request reaches refresh after a later write.
+    with env_lock(context.paths.secrets_env):
+        base: Settings = app.state.settings
+        overlay = effective_settings(
+            base, context.paths, allow_local_endpoint=app.state.app_mode == "local"
+        )
+        platform_provider_keys = {
+            provider: key
+            for provider, key in {
+                "anthropic": base.anthropic_api_key,
+                "openai": base.openai_api_key,
+                "gemini": base.gemini_api_key,
+                "deepseek": base.deepseek_api_key,
+            }.items()
+            if key
+        }
+        app.state.default_context = replace(
+            context,
+            settings=overlay.settings,
+            own_key_providers=overlay.own_key_providers,
+            platform_provider_keys=platform_provider_keys,
+            user_provider_keys=overlay.user_provider_keys,
+            local_provider_endpoint=overlay.local_provider_endpoint,
+            selected_own_key_providers={},
+            selected_model_own_keys={},
+            spend_decisions={},
+        )

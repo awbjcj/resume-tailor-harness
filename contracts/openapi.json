@@ -18212,6 +18212,17 @@
           "anyLlmKey": {
             "title": "Anyllmkey",
             "type": "boolean"
+          },
+          "modelTiersReady": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modeltiersready"
           }
         },
         "required": [
@@ -18448,6 +18459,158 @@
           "careerSkills"
         ],
         "title": "SetupCapabilities",
+        "type": "object"
+      },
+      "SetupCustomEndpoint": {
+        "properties": {
+          "baseUrl": {
+            "title": "Baseurl",
+            "type": "string"
+          },
+          "modelId": {
+            "title": "Modelid",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "selected": {
+            "title": "Selected",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "provider",
+          "baseUrl",
+          "modelId",
+          "selected"
+        ],
+        "title": "SetupCustomEndpoint",
+        "type": "object"
+      },
+      "SetupProviderChoice": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "available"
+        ],
+        "title": "SetupProviderChoice",
+        "type": "object"
+      },
+      "SetupProviderOut": {
+        "properties": {
+          "customEndpoint": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SetupCustomEndpoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "customEndpointAllowed": {
+            "title": "Customendpointallowed",
+            "type": "boolean"
+          },
+          "modelTiersReady": {
+            "title": "Modeltiersready",
+            "type": "boolean"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/SetupProviderChoice"
+            },
+            "title": "Providers",
+            "type": "array"
+          },
+          "selectedProvider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selectedprovider"
+          }
+        },
+        "required": [
+          "providers",
+          "selectedProvider",
+          "modelTiersReady",
+          "customEndpointAllowed"
+        ],
+        "title": "SetupProviderOut",
+        "type": "object"
+      },
+      "SetupProviderUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "apiKey": {
+            "anyOf": [
+              {
+                "format": "password",
+                "maxLength": 4096,
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apikey"
+          },
+          "baseUrl": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseurl"
+          },
+          "modelId": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelid"
+          },
+          "provider": {
+            "maxLength": 32,
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider"
+        ],
+        "title": "SetupProviderUpdate",
         "type": "object"
       },
       "SetupStatusOut": {
@@ -40791,6 +40954,99 @@
         "tags": [
           "settings"
         ]
+      }
+    },
+    "/api/setup/provider": {
+      "get": {
+        "operationId": "get_setup_provider_api_setup_provider_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupProviderOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Setup Provider"
+      },
+      "put": {
+        "operationId": "put_setup_provider_api_setup_provider_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupProviderUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Setup Provider"
       }
     },
     "/api/setup/status": {

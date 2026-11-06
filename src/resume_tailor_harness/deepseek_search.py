@@ -36,8 +36,7 @@ class DeepSeekSearchTools:
                     raise ValueError(
                         "DeepSeek Search and Fetch require a DeepSeek API key"
                     )
-                origin = (route.base_url or "https://api.deepseek.com").rstrip("/")
-                base = origin if origin.endswith("/v1") else f"{origin}/v1"
+                base = route.sdk_base_url or "https://api.deepseek.com/v1"
                 try:
                     with llm_call():
                         SpendGate(settings=self.settings).recheck(

@@ -31,6 +31,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from resume_tailor_harness.config import Settings
+from resume_tailor_harness.llm_routing import provider_sdk_base_url
 from resume_tailor_harness.tenancy.context import UserContext, current_context
 from resume_tailor_harness.tenancy.costs import (
     OPENAI_DECISIONS_RATE_MODEL,
@@ -76,6 +77,14 @@ class SpendDecision:
     # resolved beside the credential so the two cannot come from different
     # evaluations of the same config (ADR-0009).
     base_url: str | None = None
+    exact_base_url: bool = False
+
+    @property
+    def sdk_base_url(self) -> str | None:
+        # A workspace endpoint is already a complete API base path.
+        if self.exact_base_url:
+            return self.base_url
+        return provider_sdk_base_url(self.provider, self.base_url)
 
 
 @dataclass
@@ -445,6 +454,23 @@ class SpendGate:
         *,
         now: datetime | None,
     ) -> _CachedDecision:
+        endpoint = context.local_provider_endpoint
+        if endpoint is not None and (provider, model) == (
+            endpoint.provider,
+            endpoint.model,
+        ):
+            return _settled(
+                SpendDecision(
+                    api_key=endpoint.api_key,
+                    own_key=True,
+                    provider=provider,
+                    model=model,
+                    reason="local-custom-endpoint",
+                    base_url=endpoint.base_url,
+                    exact_base_url=True,
+                )
+            )
+
         # Ahead of every key source: a routed provider has a different
         # endpoint, so no API key -- platform, user, or settings -- is the
         # right credential for it.
