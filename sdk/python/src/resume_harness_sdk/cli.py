@@ -103,6 +103,11 @@ def main() -> int:
         required=True,
     )
     redo.add_argument("--deep", action="store_true")
+    redo.add_argument(
+        "--remove-previous-versions",
+        action="store_true",
+        help="Remove superseded generated resume versions after a usable replacement",
+    )
     for name in (
         "job",
         "context",
@@ -267,7 +272,10 @@ def main() -> int:
                     )
                 elif command == "redo":
                     result = client.redo_jobs(
-                        [args.job_id], stages=args.stage, deep=args.deep
+                        [args.job_id],
+                        stages=args.stage,
+                        deep=args.deep,
+                        remove_previous_versions=args.remove_previous_versions,
                     )
                 elif command == "pull":
                     result = client.pull_jobs(

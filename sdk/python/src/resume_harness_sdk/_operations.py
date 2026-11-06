@@ -49,8 +49,9 @@ class OperationAPI(_Transport):
         *,
         stages: list[operations.RedoStage],
         deep: bool = False,
+        remove_previous_versions: bool = False,
     ) -> JSON:
-        """Explicitly rerun chosen stages; old artifacts and progress are kept."""
+        """Rerun stages and optionally remove older versions after replacement."""
         if not job_ids or not stages:
             raise ValueError("Provide at least one job ID and stage")
         for job_id in job_ids:
@@ -59,15 +60,16 @@ class OperationAPI(_Transport):
             stage not in {"pull", "extract", "tailor", "render"} for stage in stages
         ):
             raise ValueError("stage must be pull, extract, tailor, or render")
-        return self._request(
-            "POST",
-            "redo",
-            json={
-                "jobIds": list(dict.fromkeys(job_ids)),
-                "stages": list(dict.fromkeys(stages)),
-                "deep": deep,
-            },
-        ).json()
+        body: dict[str, object] = {
+            "jobIds": list(dict.fromkeys(job_ids)),
+            "stages": list(dict.fromkeys(stages)),
+            "deep": deep,
+        }
+        if remove_previous_versions:
+            if "tailor" not in stages:
+                raise ValueError("Removing previous versions requires the tailor stage")
+            body["removePreviousVersions"] = True
+        return self._request("POST", "redo", json=body).json()
 
     def get_evidence_portfolio(self, version_id: int) -> operations.EvidencePortfolio:
         """Inspect saved requirement coverage and excerpts; legacy versions may 404."""
