@@ -52,7 +52,7 @@ export function DashboardPage() {
       {totalJobs > 0 && <StageRail summary={summary} />}
       <aside
         aria-label={t("dashboard.systemStatus")}
-        className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] items-start gap-4 empty:hidden"
+        className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] items-stretch gap-4 empty:hidden"
       >
         <InProgressCard summary={summary} />
         <InsightsCard summary={summary} />

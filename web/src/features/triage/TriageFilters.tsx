@@ -124,26 +124,8 @@ export function TriageFilters({
     rejectReason.trim() !== filter.rejectReason;
 
   return (
-    <section aria-label="Triage filters" className="mb-5 rounded-lg border bg-card p-4">
-      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-            {t("interactionCopy.filters.matching", { count: total.toLocaleString() })}
-          </span>
-          <SavedViewsControl
-            board="triage"
-            filter={filter}
-            defaultSort="recency"
-            extraQuery={{ archived: archived ? "1" : undefined }}
-            onApply={(nextFilter, params) => {
-              onChange(nextFilter);
-              onArchivedChange(params.get("archived") === "1");
-            }}
-          />
-        </div>
-      </div>
-
-      <form onSubmit={(event) => {
+    <section aria-label="Triage filters" className="mb-5 @container/filters rounded-lg border bg-card p-4">
+      <form id="triage-filters" onSubmit={(event) => {
         event.preventDefault();
         onChange({
           ...filter,
@@ -151,9 +133,9 @@ export function TriageFilters({
           rejectReason: rejectReason.trim(),
         });
       }}>
-        <FieldGroup className="flex-row flex-wrap items-end gap-2">
-          <Field className="w-full gap-1.5 sm:w-30">
-            <FieldTitle className="sr-only">Status</FieldTitle>
+        <FieldGroup className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] items-end gap-3">
+          <Field className="min-w-0 gap-1.5">
+            <FieldTitle className={CONTROL_LABEL}>Status</FieldTitle>
             <FacetPopover
               label="Status"
               counts={statusCounts}
@@ -164,8 +146,8 @@ export function TriageFilters({
             />
           </Field>
 
-          <Field className="w-full gap-1.5 sm:w-36">
-            <FieldTitle className="sr-only">Source</FieldTitle>
+          <Field className="min-w-0 gap-1.5">
+            <FieldTitle className={CONTROL_LABEL}>Source</FieldTitle>
             <FacetPopover
               label="Source"
               counts={sourceCounts}
@@ -175,43 +157,41 @@ export function TriageFilters({
             />
           </Field>
 
-          <div className="flex w-full flex-col gap-2 sm:flex-row lg:min-w-[28rem] lg:flex-1">
-            <Field className="w-full gap-1.5 sm:basis-0 sm:flex-1">
-              <FieldLabel htmlFor="triage-search" className={CONTROL_LABEL}>
-                Search
-              </FieldLabel>
-              <div className="relative">
-                <SearchIcon
-                  aria-hidden
-                  className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  id="triage-search"
-                  type="search"
-                  placeholder="Title or company…"
-                  className="h-9 bg-background pl-8"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </div>
-            </Field>
-
-            <Field className="w-full gap-1.5 sm:basis-0 sm:flex-1">
-              <FieldLabel htmlFor="triage-reason" className={CONTROL_LABEL}>
-                Rejection reason
-              </FieldLabel>
-              <Input
-                id="triage-reason"
-                type="search"
-                placeholder="Sponsorship, salary, experience…"
-                className="h-9 bg-background"
-                value={rejectReason}
-                onChange={(event) => setRejectReason(event.target.value)}
+          <Field className="min-w-0 gap-1.5">
+            <FieldLabel htmlFor="triage-search" className={CONTROL_LABEL}>
+              Search
+            </FieldLabel>
+            <div className="relative">
+              <SearchIcon
+                aria-hidden
+                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
               />
-            </Field>
-          </div>
+              <Input
+                id="triage-search"
+                type="search"
+                placeholder="Title or company…"
+                className="h-9 bg-background pl-8"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+          </Field>
 
-          <Field className="w-full gap-1.5 sm:w-44">
+          <Field className="min-w-0 gap-1.5">
+            <FieldLabel htmlFor="triage-reason" className={CONTROL_LABEL}>
+              Rejection reason
+            </FieldLabel>
+            <Input
+              id="triage-reason"
+              type="search"
+              placeholder="Sponsorship, salary, experience…"
+              className="h-9 bg-background"
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+            />
+          </Field>
+
+          <Field className="min-w-0 gap-1.5">
             <FieldLabel htmlFor="triage-stale" className={CONTROL_LABEL}>
               Posted age
             </FieldLabel>
@@ -237,32 +217,49 @@ export function TriageFilters({
               </SelectContent>
             </Select>
           </Field>
+        </FieldGroup>
+      </form>
 
+      <div className="mt-3 grid items-end gap-3 border-t pt-3 @2xl/filters:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="show-archived"
+              checked={archived}
+              onCheckedChange={onArchivedChange}
+            />
+            <Label htmlFor="show-archived" className="text-sm font-medium">
+              Show archived
+            </Label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <ManualJobDialog />
+            <ImportJobsButton />
+          </div>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+            {t("interactionCopy.filters.matching", { count: total.toLocaleString() })}
+          </span>
+          <SavedViewsControl
+            board="triage"
+            filter={filter}
+            defaultSort="recency"
+            extraQuery={{ archived: archived ? "1" : undefined }}
+            onApply={(nextFilter, params) => {
+              onChange(nextFilter);
+              onArchivedChange(params.get("archived") === "1");
+            }}
+          />
           <Button
             type="submit"
+            form="triage-filters"
             size="sm"
-            className="w-full sm:ml-auto sm:w-auto"
+            className="shrink-0"
             disabled={!hasDraftChanges}
           >
             Apply
           </Button>
-        </FieldGroup>
-      </form>
-
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-        <div className="flex items-center gap-2">
-          <Switch
-            id="show-archived"
-            checked={archived}
-            onCheckedChange={onArchivedChange}
-          />
-          <Label htmlFor="show-archived" className="text-sm font-medium">
-            Show archived
-          </Label>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <ManualJobDialog />
-          <ImportJobsButton />
         </div>
       </div>
 
