@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from resume_tailor_harness.career_skills.models import (
     CoverLetterSkillName,
@@ -114,14 +114,25 @@ class RedoParams(CamelModel):
     stages matters because ["tailor", "tailor"] would otherwise bill twice.
     """
 
-    job_ids: list[int] = Field(min_length=1)
+    job_ids: list[Annotated[int, Field(strict=True, ge=1, le=2**63 - 1)]] = Field(min_length=1)
     stages: list[RedoStage] = Field(min_length=1)
     deep: bool = False
+    remove_previous_versions: bool = Field(
+        default=False,
+        strict=True,
+        description="Remove superseded generated resume versions after a usable replacement. Requires the tailor stage.",
+    )
 
     @field_validator("job_ids", "stages")
     @classmethod
     def _drop_duplicates(cls, value: list) -> list:
         return _dedupe(value)
+
+    @model_validator(mode="after")
+    def _require_replacement_stage(self) -> RedoParams:
+        if self.remove_previous_versions and "tailor" not in self.stages:
+            raise ValueError("Removing previous versions requires the tailor stage")
+        return self
 
 
 class StageOutcomeOut(CamelModel):
@@ -129,7 +140,11 @@ class StageOutcomeOut(CamelModel):
     stage: RedoStage
     status: Literal["ok", "skipped", "failed"]
     detail: str | None = None
+    version_id: int | None = None
+    removed_version_ids: list[int] = Field(default_factory=list)
+    cleanup_error: str | None = None
 
 
 class RedoResultOut(CamelModel):
     outcomes: list[StageOutcomeOut] = Field(default_factory=list)
+    version_id: int | None = None

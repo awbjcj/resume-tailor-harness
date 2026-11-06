@@ -281,7 +281,10 @@ def test_deleted_artifact_id_cannot_redirect_history_to_a_replacement(
         record(app, meta={"jobId": job_id}, result={key: artifact_id})
         session.delete(original)
         session.commit()
+        # An imported row may reuse a historical ID even on databases whose
+        # normal allocator now assigns increasing resume IDs.
         replacement = model(
+            id=artifact_id,
             job_id=other.id,
             fact_check_passed=True,
         )

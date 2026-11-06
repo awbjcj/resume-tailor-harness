@@ -139,6 +139,10 @@ def clear_progress(process: str, root: Path | str = PROGRESS_ROOT) -> None:
         return
 
 
+class RunCancelled(Exception):
+    """Raised at a cooperative progress checkpoint to stop a background run."""
+
+
 class ProgressReporter:
     """Writes one process's live progress to its JSON file.
 

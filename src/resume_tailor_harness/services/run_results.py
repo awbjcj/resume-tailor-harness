@@ -261,7 +261,9 @@ def completion_results(
                 and letter is None
             )
             output.result_available = row.status == "succeeded" and not artifact_missing
-            if len(live_steps) == 1 and live_steps[0].kind != "track":
+            if len(live_steps) == 1 and row.kind == "redo" and resume is not None:
+                output.result_href = f"/pipeline?job={live_steps[0].job_id}&tab=resumes"
+            elif len(live_steps) == 1 and live_steps[0].kind != "track":
                 tab = {
                     "revise": "resumes",
                     "render": "resumes",

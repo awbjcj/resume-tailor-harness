@@ -167,10 +167,11 @@ before changing code near the invariant.
   irreversible paths; `delete_job` refuses jobs with progress. A bare `ready`
   Application does not count: opening the Tracking tab writes one
   unconditionally. → `tracking/CLAUDE.md`
-- **Redo — forward-only, never destructive.** `services/redo.py` re-runs any
-  stage explicitly; status never regresses, never rejects, never deletes —
-  new attempts are appended under an incremented `attempt`. →
-  `tracking/CLAUDE.md`
+- **Redo preserves progress and keeps resume history by default.**
+  `services/redo.py` appends new attempts and renders the version produced by
+  the same run when Tailor and Render are selected together. Optional cleanup
+  removes only superseded generated versions with a usable replacement. See
+  `tracking/CLAUDE.md` for the retention rules.
 
 ## Hot paths (most-edited files)
 

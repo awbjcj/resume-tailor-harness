@@ -43,7 +43,7 @@ existing `{ "error": { "code", "message", "details" } }` envelope.
 | `GET /api/resume-versions/{id}/evidence-portfolio` | Saved requirement coverage and fact excerpts. SDK: `get_evidence_portfolio`; legacy versions may return 404. |
 | `GET /api/setup/status` | Readiness and profile publication/freshness/pending-source metadata. SDK: `setup_status`. |
 | `POST /api/jobs` / `POST /api/jobs/from-url` | Import supplied JD text / launch URL ingestion. SDK: `create_job` or `add_job`, `add_job_url`. |
-| `POST /api/redo` | Explicit stage rerun, retaining progress and prior artifacts. SDK: `redo_jobs`; inspect per-stage outcomes. |
+| `POST /api/redo` | Rerun explicit stages while preserving job progress. `redo_jobs` keeps prior resume versions by default. `removePreviousVersions` with Tailor removes eligible older versions after a usable replacement. Check per-stage outcomes for version IDs and removals. |
 | `GET /api/run-completions` / `by-run/{run_id}` | Durable terminal history list / current result destination. SDK: `list_run_completions`, `get_run_completion`. Reads do not mark history read. |
 | `GET /api/run-completions/{id}/logs` | Retained logs by integer completion ID. SDK: `get_run_logs`. |
 | `GET /api/jobs/{job_id}/events` | Existing timeline history, including earlier submission evidence. SDK: `list_application_events`. |

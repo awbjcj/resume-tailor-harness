@@ -161,7 +161,7 @@ def test_duplicate_resume_revise_returns_conflict_with_active_run(
             assert duplicate.status_code == 409
             assert duplicate.json()["error"] == {
                 "code": "CONFLICT",
-                "message": "A revision is already running for this item",
+                "message": "Work is already in progress for this resume version",
                 "details": {"runId": first.json()["runId"]},
             }
             release.set()
