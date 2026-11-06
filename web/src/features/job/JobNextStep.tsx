@@ -43,7 +43,7 @@ export function JobNextStep({ job, onTab }: { job: Pick<JobDetail, "id" | "nextS
       setStarting(true);
       void runs.tailorSelected([job.id], false).finally(() => setStarting(false));
     } else if (step.kind === "render" && step.resumeVersionId) {
-      render.mutate(step.resumeVersionId);
+      render.mutate({ versionId: step.resumeVersionId });
     }
   };
 

@@ -319,7 +319,7 @@ export function PipelineContainer() {
         jobIds={redoJobIds}
         initialStages={["tailor"]}
         onOpenChange={setRedoOpen}
-        onLaunch={(jobIds, stages, deep) => redoRun.redo(jobIds, stages, deep)}
+        onLaunch={redoRun.redo}
       />
     </>
   );

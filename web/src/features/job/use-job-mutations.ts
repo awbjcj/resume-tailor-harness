@@ -1,14 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { api, unwrap } from "@/lib/api/client";
+import { api, ApiError, unwrap } from "@/lib/api/client";
 import { useLaunchRun } from "@/features/runs/use-launch-run";
+import type { JobDetail } from "./use-job-detail";
 
 function invalidateBoards(qc: ReturnType<typeof useQueryClient>, jobId: number) {
-  qc.invalidateQueries({ queryKey: ["job", jobId] });
-  for (const k of ["shortlist", "pipeline", "triage", "dashboard-summary"]) {
-    qc.invalidateQueries({ queryKey: [k] });
-  }
+  const keys = [["job", jobId], ["shortlist"], ["pipeline"], ["triage"], ["dashboard-summary"]];
+  return Promise.all(keys.map((queryKey) => qc.invalidateQueries({ queryKey })));
 }
 
 export function useCheckH1BSponsorship(jobId: number) {
@@ -129,13 +128,21 @@ export function useUpsertApplication(jobId: number) {
 export function useRenderVersion(jobId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (versionId: number) =>
+    mutationFn: ({ versionId, templateId }: { versionId: number; templateId?: string }) =>
       unwrap(
         api.POST("/api/resume-versions/{version_id}/render", {
           params: { path: { version_id: versionId } },
+          ...(templateId ? { body: { templateId } } : {}),
         }),
       ),
-    onSuccess: () => invalidateBoards(qc, jobId),
+    onSuccess: (version) => {
+      qc.setQueryData<JobDetail>(["job", jobId], (job) => job && ({
+        ...job,
+        resumeVersions: job.resumeVersions.map((saved) => saved.id === version.id ? version : saved),
+      }));
+      void invalidateBoards(qc, jobId);
+      toast.success("PDF rendered");
+    },
   });
 }
 
@@ -175,6 +182,13 @@ export function useSelectResume(jobId: number) {
         }),
       ),
     onSuccess: () => invalidateBoards(qc, jobId),
+    onError: (error: Error) => {
+      void qc.invalidateQueries({ queryKey: ["job", jobId] });
+      const ineligible = error instanceof ApiError && error.code === "MATERIAL_NOT_ELIGIBLE";
+      toast.error(ineligible
+        ? "This resume must pass fact-lock before you can select it for an application."
+        : "Could not select this resume.");
+    },
   });
 }
 
@@ -217,9 +231,7 @@ export function useDeselectCoverLetter(jobId: number) {
  * tables, so a board left uninvalidated would keep showing artifacts that no
  * longer exist.
  *
- * The error toast carries the server's own message rather than a generic one,
- * because the two failure modes need different fixes from the user: an id
- * that is gone (reload) versus one that is in use (unselect it first).
+ * Refresh stale rows if the server reports an unavailable or selected item.
  */
 function useDeleteArtifacts<TVars>(
   jobId: number,
@@ -229,11 +241,17 @@ function useDeleteArtifacts<TVars>(
   const qc = useQueryClient();
   return useMutation({
     mutationFn,
-    onSuccess: (_data, vars) => {
-      invalidateBoards(qc, jobId);
+    onSuccess: async (_data, vars) => {
+      await invalidateBoards(qc, jobId);
       toast.success(successMessage(vars));
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => {
+      void qc.invalidateQueries({ queryKey: ["job", jobId] });
+      const code = error instanceof ApiError ? error.code : undefined;
+      if (code === "ARTIFACT_IN_USE") toast.error("Clear the application selection before deleting this item.");
+      else if (code === "NOT_FOUND") toast.error("Some selected items are no longer available.");
+      else toast.error("Could not delete the selected items.");
+    },
   });
 }
 

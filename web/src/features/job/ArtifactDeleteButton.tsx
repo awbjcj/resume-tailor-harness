@@ -14,19 +14,21 @@ import { Button } from "@/components/ui/button";
 export function ArtifactDeleteButton({
   noun,
   label,
+  showLabel,
   applied,
   disabled,
   onConfirm,
 }: {
   noun: string;
   label: string;
+  showLabel?: boolean;
   applied: boolean;
   disabled?: boolean;
   onConfirm: () => void;
 }) {
   const trigger = (
     <Button
-      size="icon-sm"
+      size={showLabel ? "sm" : "icon-sm"}
       variant="ghost"
       className="text-muted-foreground hover:text-destructive"
       disabled={applied || disabled}
@@ -36,6 +38,7 @@ export function ArtifactDeleteButton({
       }
     >
       <Trash2 aria-hidden="true" />
+      {showLabel && "Delete"}
     </Button>
   );
 

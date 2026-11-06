@@ -97,6 +97,16 @@ it("uses Chinese counts for cover letters and redo stages after a language chang
   expect(toast.success).toHaveBeenNthCalledWith(2, "流程重做完成：已处理 1 个阶段。");
 });
 
+it("reports removals and stages needing attention after a partial redo", async () => {
+  await changeLanguage("zh-CN");
+  announceCompletions([run({ kind: "redo", result: { outcomes: [
+    { status: "ok", removedVersionIds: [11, 12] },
+    { status: "failed" },
+  ] } })]);
+
+  expect(toast.info).toHaveBeenCalledWith("流程重做完成：已处理 2 个阶段。 已移除 2 个旧版本。 1 个阶段需要处理。");
+});
+
 it("counts tailored jobs from the jobs array even when nested version counts are absent", () => {
   announceCompletions([
     run({ result: { jobs: [{ jobId: 1 }, { jobId: 2 }] } }),

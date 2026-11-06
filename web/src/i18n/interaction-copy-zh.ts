@@ -47,12 +47,12 @@ export const interactionCopyZh: InteractionCopy = {
   redo: {
     jobCount_one: "{{count}} 个职位",
     jobCount_other: "{{count}} 个职位",
-    button: "{{stages}}（{{jobs}}）",
-    description: "可对{{jobs}}重新运行任意阶段，职位状态不受限制。现有简历版本和 PDF 会保留。",
-    pull: "重新获取",
-    extract: "重新提取",
-    tailor: "重新定制",
-    render: "重新生成",
+    button: "重做（{{jobs}}）",
+    cleanupButton: "重做并移除旧版本",
+    description: "为{{jobs}}重新运行所选阶段。默认保留现有简历版本。",
+    renderNew: "将本次定制的最终简历生成 PDF。",
+    removePrevious: "移除已被替换的自动生成版本",
+    removePreviousHint: "新简历通过事实校验后，永久删除未使用的自动生成版本。已选为申请材料的版本，以及关联修改稿或求职信的版本会保留。如需删除已有 PDF 的旧版本，请同时选择“重新生成 PDF”，待新 PDF 就绪后再删除。",
   },
   filters: {
     title: "按{{label}}筛选",

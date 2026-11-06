@@ -3,12 +3,12 @@ import i18n from "i18next";
 export const redoCopyEn = {
   jobCount_one: "{{count}} job",
   jobCount_other: "{{count}} jobs",
-  button: "{{stages}} {{jobs}}",
-  description: "Re-run any stage on {{jobs}}, whatever their status. Existing resume versions and PDFs are kept.",
-  pull: "Re-pull",
-  extract: "Re-extract",
-  tailor: "Re-tailor",
-  render: "Re-render",
+  button: "Redo {{jobs}}",
+  cleanupButton: "Redo and remove versions",
+  description: "Re-run stages for {{jobs}}. Existing resume versions are kept by default.",
+  renderNew: "Render the final resume from this run.",
+  removePrevious: "Remove superseded generated versions",
+  removePreviousHint: "After the new resume passes fact-lock, permanently delete unused generated versions. Application selections and versions linked to revisions or cover letters are kept. Include Re-render PDF to remove older rendered versions once the new PDF is ready.",
 };
 
 function register() {

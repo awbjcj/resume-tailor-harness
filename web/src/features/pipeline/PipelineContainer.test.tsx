@@ -4,11 +4,13 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { server } from "@/test/server";
 import { changeLanguage } from "@/i18n";
 import { PipelineContainer } from "./PipelineContainer";
+
+vi.mock("@/lib/runs/tracker", () => ({ trackRun: vi.fn() }));
 
 const wrap = (ui: ReactNode) => {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -305,14 +307,19 @@ describe("PipelineContainer", () => {
     }));
   });
 
-  it("opens redo for the current selection with re-tailor pre-ticked", async () => {
+  it("launches redo cleanup only after an explicit opt-in for the selected jobs", async () => {
     const user = userEvent.setup();
+    let payload: unknown;
     localStorage.setItem("pipeline-view", "list");
     server.use(
       statusAware([
         pipelineItem(9, "tailored", "Operator"),
         pipelineItem(10, "rendered", "Architect"),
       ]),
+      http.post("/api/redo", async ({ request }) => {
+        payload = await request.json();
+        return HttpResponse.json({ runId: "redo-operator", kind: "redo", state: "pending" }, { status: 202 });
+      }),
     );
     wrap(<PipelineContainer />);
 
@@ -324,7 +331,15 @@ describe("PipelineContainer", () => {
     expect(
       await screen.findByRole("checkbox", { name: /re-tailor resume/i }),
     ).toBeChecked();
-    expect(screen.getByRole("button", { name: /re-tailor 1 job/i })).toBeEnabled();
+    const cleanup = screen.getByRole("checkbox", { name: "Remove superseded generated versions" });
+    expect(cleanup).not.toBeChecked();
+    await user.click(cleanup);
+    await user.click(screen.getByRole("checkbox", { name: "Re-render PDF" }));
+    expect(screen.getByText("Render the final resume from this run.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Redo and remove versions" }));
+    await waitFor(() => expect(payload).toEqual({
+      jobIds: [9], stages: ["tailor", "render"], deep: false, removePreviousVersions: true,
+    }));
   });
 
   it("allows redo on a rendered job", async () => {
@@ -338,6 +353,6 @@ describe("PipelineContainer", () => {
     );
     await user.click(screen.getByRole("button", { name: /^redo/i }));
 
-    expect(screen.getByRole("button", { name: /re-tailor 1 job/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Redo 1 job" })).toBeEnabled();
   });
 });

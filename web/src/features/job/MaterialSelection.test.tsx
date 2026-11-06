@@ -33,6 +33,7 @@ vi.mock("./artifact-runs", () => ({
 vi.mock("./EvidencePortfolioDisclosure", () => ({ EvidencePortfolioDisclosure: () => null }));
 vi.mock("./PdfPreviewDialog", () => ({ PdfPreviewDialog: () => null }));
 vi.mock("./ArtifactDeleteButton", () => ({ ArtifactDeleteButton: () => null }));
+vi.mock("@/features/settings/use-render-templates", () => ({ useRenderTemplates: () => ({}) }));
 
 type Version = ComponentProps<typeof VersionRow>["version"];
 function version(overrides: Partial<Version> = {}): Version {
@@ -68,7 +69,7 @@ describe("application material selection", () => {
 
   it("allows a previously selected unsafe resume to be cleared without calling it applied", () => {
     render(<VersionRow jobId={7} version={version({ applicationEligible: false })} appliedVersionId={11} />);
-    const selected = screen.getByRole("button", { name: "Selected for application" });
+    const selected = screen.getByRole("button", { name: "Clear selection" });
     expect(selected).toBeEnabled();
     expect(screen.queryByText("Applied")).not.toBeInTheDocument();
     expect(screen.getByText("This resume failed fact-lock. Choose another resume or clear your selection before applying.")).toBeInTheDocument();
@@ -79,7 +80,7 @@ describe("application material selection", () => {
   it("uses actual PDF availability instead of a stale saved path", () => {
     render(<VersionRow jobId={7} version={version({ pdfPath: "stale.pdf" })} appliedVersionId={11} />);
     expect(screen.queryByRole("link", { name: "Download" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Render" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Render PDF" })).toBeInTheDocument();
     expect(screen.getByText("Selecting a document does not submit an application.")).toBeInTheDocument();
   });
 
@@ -91,7 +92,7 @@ describe("application material selection", () => {
       expect(screen.getByText("当前没有 PDF。上传前请先为此版本生成 PDF。")).toBeInTheDocument();
       view.rerender(<VersionRow jobId={7} version={version({ applicationEligible: false })} appliedVersionId={11} />);
       expect(screen.getByText("所选简历未通过真实性校验。申请前请更换简历或取消选择。")).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "已选用于申请" }));
+      fireEvent.click(screen.getByRole("button", { name: "清除选择" }));
       expect(mutations.deselectResume).toHaveBeenCalledOnce();
     } finally {
       view.unmount();

@@ -99,11 +99,19 @@ function announceOneMessage(run: RunRecord, toast: { success: (message: string) 
   }
   if (run.kind === "redo") {
     const outcomes = resultRecord(run)?.outcomes;
-    toast.success(
-      Array.isArray(outcomes)
-        ? `Pipeline redo complete: ${completedCount(outcomes.length, "stage")} processed.`
-        : "Pipeline redo complete.",
-    );
+    if (!Array.isArray(outcomes)) {
+      toast.success("Pipeline redo complete.");
+      return;
+    }
+    const messages = [`Pipeline redo complete: ${completedCount(outcomes.length, "stage")} processed.`];
+    const issues = outcomes.filter((outcome) => outcome?.status === "failed" || outcome?.cleanupError).length;
+    const removed = outcomes.reduce<number>((total, outcome) =>
+      total + (Array.isArray(outcome?.removedVersionIds) ? outcome.removedVersionIds.length : 0), 0);
+    if (removed) messages.push(i18n.t("runHistory.redo.removed", { count: removed }));
+    if (issues) messages.push(i18n.t("runHistory.redo.issues", { count: issues }));
+    const summary = messages.join(" ");
+    if (issues) toast.info(summary);
+    else toast.success(summary);
     return;
   }
   if (run.kind === "refreshClusters") {
