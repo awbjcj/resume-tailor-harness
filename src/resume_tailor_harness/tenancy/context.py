@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 
     from resume_tailor_harness.config import Settings
+    from resume_tailor_harness.local_provider import LocalProviderEndpoint
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class UserContext:
     own_key_providers: frozenset[str]
     platform_provider_keys: dict[str, str] = field(default_factory=dict, repr=False)
     user_provider_keys: dict[str, str] = field(default_factory=dict, repr=False)
+    local_provider_endpoint: LocalProviderEndpoint | None = None
     selected_own_key_providers: dict[str, bool] = field(
         default_factory=dict, repr=False, compare=False
     )

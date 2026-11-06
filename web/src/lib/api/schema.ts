@@ -4337,6 +4337,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/setup/provider": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Setup Provider */
+        get: operations["get_setup_provider_api_setup_provider_get"];
+        /** Put Setup Provider */
+        put: operations["put_setup_provider_api_setup_provider_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/setup/status": {
         parameters: {
             query?: never;
@@ -11514,6 +11532,8 @@ export interface components {
             anthropicKey: boolean;
             /** Anyllmkey */
             anyLlmKey: boolean;
+            /** Modeltiersready */
+            modelTiersReady?: boolean | null;
         };
         /**
          * SecretsUpdate
@@ -11580,6 +11600,49 @@ export interface components {
         SetupCapabilities: {
             careerSkills: components["schemas"]["CareerSkillsCapabilityStatus"];
             h1B?: components["schemas"]["H1BCapabilityStatus"] | null;
+        };
+        /** SetupCustomEndpoint */
+        SetupCustomEndpoint: {
+            /** Baseurl */
+            baseUrl: string;
+            /** Modelid */
+            modelId: string;
+            /** Provider */
+            provider: string;
+            /** Selected */
+            selected: boolean;
+        };
+        /** SetupProviderChoice */
+        SetupProviderChoice: {
+            /** Available */
+            available: boolean;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+        };
+        /** SetupProviderOut */
+        SetupProviderOut: {
+            customEndpoint?: components["schemas"]["SetupCustomEndpoint"] | null;
+            /** Customendpointallowed */
+            customEndpointAllowed: boolean;
+            /** Modeltiersready */
+            modelTiersReady: boolean;
+            /** Providers */
+            providers: components["schemas"]["SetupProviderChoice"][];
+            /** Selectedprovider */
+            selectedProvider: string | null;
+        };
+        /** SetupProviderUpdate */
+        SetupProviderUpdate: {
+            /** Apikey */
+            apiKey?: string | null;
+            /** Baseurl */
+            baseUrl?: string | null;
+            /** Modelid */
+            modelId?: string | null;
+            /** Provider */
+            provider: string;
         };
         /** SetupStatusOut */
         SetupStatusOut: {
@@ -24009,6 +24072,70 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SettingsSectionOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_setup_provider_api_setup_provider_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupProviderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_setup_provider_api_setup_provider_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupProviderUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

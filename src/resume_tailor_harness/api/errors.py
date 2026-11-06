@@ -116,7 +116,8 @@ def install_error_handlers(app: FastAPI) -> None:
                 None
                 if (
                     "/application-account" in request.url.path
-                    or request.url.path == "/api/admin/routing/decisions"
+                    or request.url.path
+                    in {"/api/admin/routing/decisions", "/api/setup/provider"}
                 )
                 else [
                     {"loc": error["loc"], "type": error["type"]}

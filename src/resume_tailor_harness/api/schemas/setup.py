@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Literal
 
+from pydantic import ConfigDict, Field, SecretStr
+
 from resume_tailor_harness.api.schemas.base import CamelModel
 from resume_tailor_harness.profile.publication import ProfileFreshness
 
@@ -11,6 +13,37 @@ from resume_tailor_harness.profile.publication import ProfileFreshness
 class SecretsStatus(CamelModel):
     anthropic_key: bool
     any_llm_key: bool
+    model_tiers_ready: bool | None = None
+
+
+class SetupProviderChoice(CamelModel):
+    id: str
+    label: str
+    available: bool
+
+
+class SetupCustomEndpoint(CamelModel):
+    provider: str
+    base_url: str
+    model_id: str
+    selected: bool
+
+
+class SetupProviderOut(CamelModel):
+    providers: list[SetupProviderChoice]
+    selected_provider: str | None
+    model_tiers_ready: bool
+    custom_endpoint_allowed: bool
+    custom_endpoint: SetupCustomEndpoint | None = None
+
+
+class SetupProviderUpdate(CamelModel):
+    model_config = ConfigDict(extra="forbid")
+
+    provider: str = Field(max_length=32)
+    api_key: SecretStr | None = Field(default=None, max_length=4096)
+    base_url: str | None = Field(default=None, max_length=2048)
+    model_id: str | None = Field(default=None, max_length=256)
 
 
 class ProfileStatus(CamelModel):

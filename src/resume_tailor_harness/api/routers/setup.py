@@ -1,12 +1,21 @@
-"""GET /setup/status — one aggregate the gate, wizard, and dashboard all read."""
+"""First-run readiness and provider configuration."""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import cast
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 
+from resume_tailor_harness.api.deps import (
+    get_config_store,
+    get_document_store,
+    get_env_path,
+    get_profile_dir,
+    get_settings_dep,
+    refresh_app_settings,
+)
+from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.schemas.config import ProfileConfigDoc, SearchConfigDoc
 from resume_tailor_harness.api.schemas.setup import (
     CareerSkillsCapabilityStatus,
@@ -15,24 +24,31 @@ from resume_tailor_harness.api.schemas.setup import (
     SearchStatus,
     SecretsStatus,
     SetupCapabilities,
+    SetupCustomEndpoint,
+    SetupProviderChoice,
+    SetupProviderOut,
+    SetupProviderUpdate,
     SetupStatusOut,
     SourcesStatus,
 )
-from resume_tailor_harness.llm_runner import MODEL_CATALOG, provider_access_available
-from resume_tailor_harness.profile.corpus import MANIFEST_NAME, doc_path, load_manifest
+from resume_tailor_harness.career_skills.registry import CareerSkillRegistry
+from resume_tailor_harness.llm_runner import MODEL_CATALOG, split_provider
 from resume_tailor_harness.profile.conversation import (
     can_rebuild_without_resume,
     load_edits,
 )
+from resume_tailor_harness.profile.corpus import MANIFEST_NAME, doc_path, load_manifest
 from resume_tailor_harness.profile.publication import publication_status
-from resume_tailor_harness.services.sources import list_sources
-from resume_tailor_harness.career_skills.registry import CareerSkillRegistry
-from resume_tailor_harness.api.deps import (
-    get_config_store,
-    get_document_store,
-    get_profile_dir,
-    get_settings_dep,
+from resume_tailor_harness.provider_registry import PROVIDER_SPECS
+from resume_tailor_harness.services.provider_setup import (
+    ProviderSetupError,
+    available_native_models,
+    save_initial_provider,
+    setup_model_available,
+    tier_models,
 )
+from resume_tailor_harness.services.sources import list_sources
+from resume_tailor_harness.tenancy.context import current_context
 
 router = APIRouter()
 
@@ -40,12 +56,24 @@ router = APIRouter()
 @router.get("/setup/status", response_model=SetupStatusOut)
 def get_setup_status(request: Request):
     settings = get_settings_dep(request)
+    available_tiers = [
+        setup_model_available(model, settings) for model in tier_models(settings)
+    ]
+    anthropic_key = any(
+        setup_model_available(entry.id, settings)
+        for entry in MODEL_CATALOG["anthropic"]
+    )
     secrets = SecretsStatus(
-        anthropic_key=provider_access_available("anthropic", settings=settings),
-        any_llm_key=any(
-            provider_access_available(provider, settings=settings)
-            for provider in MODEL_CATALOG
+        anthropic_key=anthropic_key,
+        any_llm_key=any(available_tiers)
+        or anthropic_key
+        or any(
+            setup_model_available(entry.id, settings)
+            for provider, entries in MODEL_CATALOG.items()
+            if provider != "anthropic"
+            for entry in entries
         ),
+        model_tiers_ready=all(available_tiers),
     )
 
     document_store = get_document_store(request)
@@ -119,7 +147,7 @@ def get_setup_status(request: Request):
         unavailable += 1
 
     complete = (
-        secrets.any_llm_key
+        all(available_tiers)
         and profile.can_rebuild
         and profile.facts_built_at is not None
         and search.configured
@@ -141,3 +169,67 @@ def get_setup_status(request: Request):
         ),
         complete=complete,
     )
+
+
+@router.get("/setup/provider", response_model=SetupProviderOut)
+def get_setup_provider(request: Request, response: Response) -> SetupProviderOut:
+    response.headers["Cache-Control"] = "no-store"
+    settings = get_settings_dep(request)
+    context = current_context()
+    endpoint = context.local_provider_endpoint if context else None
+    choices = [
+        SetupProviderChoice(
+            id=spec.id,
+            label=spec.label,
+            available=next(available_native_models(spec.id, settings, endpoint), None)
+            is not None,
+        )
+        for spec in PROVIDER_SPECS
+    ]
+    models = tier_models(settings)
+    ready = all(setup_model_available(model, settings) for model in models)
+    providers = {split_provider(model)[0] for model in models}
+    if len(providers) == 1:
+        selected = providers.pop()
+    elif ready:
+        selected = None
+    else:
+        selected = next((choice.id for choice in choices if choice.available), "openai")
+    return SetupProviderOut(
+        providers=choices,
+        selected_provider=selected,
+        model_tiers_ready=ready,
+        custom_endpoint_allowed=request.app.state.app_mode == "local"
+        and context is not None,
+        custom_endpoint=SetupCustomEndpoint(
+            provider=endpoint.provider,
+            base_url=endpoint.base_url,
+            model_id=endpoint.model,
+            selected=all(
+                split_provider(model) == (endpoint.provider, endpoint.model)
+                for model in models
+            ),
+        )
+        if endpoint
+        else None,
+    )
+
+
+@router.put("/setup/provider", status_code=204)
+def put_setup_provider(body: SetupProviderUpdate, request: Request) -> None:
+    context = current_context()
+    try:
+        fresh = save_initial_provider(
+            settings=get_settings_dep(request),
+            env_path=get_env_path(request),
+            provider=body.provider,
+            api_key=body.api_key.get_secret_value() if body.api_key else "",
+            base_url=body.base_url,
+            model_id=body.model_id,
+            allow_local_endpoint=request.app.state.app_mode == "local"
+            and context is not None,
+            current_endpoint=context.local_provider_endpoint if context else None,
+        )
+    except ProviderSetupError as exc:
+        raise ApiException(422, exc.code, str(exc)) from None
+    refresh_app_settings(request.app, fresh)

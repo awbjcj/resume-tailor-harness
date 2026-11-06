@@ -21,6 +21,13 @@ hosted-only settings such as `APP_BASE_URL`, `AUTH_PASSWORD_HASH`, or
 
 ## LLM providers and models
 
+In the web setup wizard, choose OpenAI, Anthropic, Gemini, or DeepSeek to set
+the workspace's initial model tiers. Local mode also lets you enter a custom
+API base URL, model ID, and API key. Choose the API format your endpoint
+implements and enter its full base path. CLI commands in the implicit local
+workspace use the same connection. Hosted workspaces and explicitly selected
+CLI accounts use the deployment's provider endpoints.
+
 | Variable | Default | Accepted values and purpose |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | empty | Shared Anthropic credential. Bare model IDs route to Anthropic. |
