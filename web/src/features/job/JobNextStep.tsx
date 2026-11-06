@@ -3,7 +3,7 @@ import "@/i18n/workflow";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { useSetupStatus } from "@/features/settings/use-setup-status";
+import { setupModelsReady, useSetupStatus } from "@/features/settings/use-setup-status";
 import { useBulkRun } from "@/features/runs/use-bulk-run";
 import { useApprove } from "@/features/shortlist/use-approve";
 import { useRunStore } from "@/lib/runs/store";
@@ -24,7 +24,7 @@ export function JobNextStep({ job, onTab }: { job: Pick<JobDetail, "id" | "nextS
   const step = job.nextStep;
   if (!step) return null;
   const busy = Object.values(runMap).some((run) => ["queued", "running", "cancelling"].includes(run.status) && runCoversJob(run, job.id));
-  const requiresSetup = step.kind === "tailor" && setup.data && (!setup.data.secrets.anyLlmKey || !setup.data.profile.factsBuiltAt || setup.data.profile.freshness === "refresh-needed");
+  const requiresSetup = step.kind === "tailor" && setup.data && (!setupModelsReady(setup.data) || !setup.data.profile.factsBuiltAt || setup.data.profile.freshness === "refresh-needed");
   const continueTask = () => {
     if (step.kind === "approve") {
       approve.mutate(job.id);

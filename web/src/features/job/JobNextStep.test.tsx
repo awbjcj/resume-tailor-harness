@@ -30,7 +30,7 @@ describe("Job next step", () => {
   });
 
   it("keeps missing prerequisites attached to this Job", async () => {
-    server.use(http.get("/api/setup/status", () => HttpResponse.json({ secrets: { anyLlmKey: false }, profile: { factsBuiltAt: null } })));
+    server.use(http.get("/api/setup/status", () => HttpResponse.json({ secrets: { anyLlmKey: true, modelTiersReady: false }, profile: { factsBuiltAt: "today" } })));
     render(<MemoryRouter><JobNextStep job={{ id: 17, nextStep: { jobId: 17, kind: "tailor", href: "/pipeline?job=17&tab=resumes" } }} onTab={() => {}} /></MemoryRouter>, { wrapper: withQueryClient });
     const link = await screen.findByRole("link", { name: "Continue setup" });
     expect(new URL(link.getAttribute("href")!, "https://example.test").searchParams.get("returnTo")).toBe("/pipeline?job=17&tab=resumes");

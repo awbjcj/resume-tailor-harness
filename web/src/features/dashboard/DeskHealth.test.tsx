@@ -71,12 +71,10 @@ describe("DeskHealth", () => {
   });
 
   it("shows ready when complete via a non-Anthropic LLM key", async () => {
-    // Backend completeness is provider-agnostic (any_llm_key); the checklist
-    // must not perpetually flag a working non-Anthropic setup as broken.
     server.use(
       http.get("/api/setup/status", () =>
         HttpResponse.json({
-          secrets: { anthropicKey: false, anyLlmKey: true },
+          secrets: { anthropicKey: false, anyLlmKey: true, modelTiersReady: true },
           profile: { documentCount: 1, hasResume: true, factsBuiltAt: "2026-07-01T00:00:00Z", githubUsername: null },
           search: { configured: true },
           sources: { enabledCount: 2 },
@@ -88,6 +86,15 @@ describe("DeskHealth", () => {
     await waitFor(() =>
       expect(screen.getByText(/workspace is ready/i)).toBeInTheDocument(),
     );
+  });
+
+  it("links to provider setup when a saved key cannot run the selected tiers", async () => {
+    server.use(http.get("/api/setup/status", () => HttpResponse.json({
+      ...STATUS,
+      secrets: { ...STATUS.secrets, modelTiersReady: false },
+    })));
+    renderHealth();
+    expect(await screen.findByRole("link", { name: "AI provider" })).toHaveAttribute("href", "/setup/keys");
   });
 
   it("shows ready with conversational profile evidence and no resume upload", async () => {
