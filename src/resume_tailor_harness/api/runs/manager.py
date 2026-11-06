@@ -119,6 +119,7 @@ class RunProgressReporter(ProgressReporter):
         # between the write and a client seeing it.
         self._notify = notify
         self._history: list[dict[str, str]] = []
+        self._partial_result: object = None
 
     def _flush(self, *, force: bool) -> None:
         message = str(
@@ -146,7 +147,7 @@ class RunProgressReporter(ProgressReporter):
 
     def record_partial_result(self, result: object) -> None:
         """Keep a receipt for committed work even if the next checkpoint stops."""
-        self._record["result"] = result
+        self._partial_result = result
 
     def begin(
         self,
@@ -178,6 +179,8 @@ class RunProgressReporter(ProgressReporter):
 
     def done(self, *, error: str | None = None, **extra: object) -> None:
         self._raise_if_cancelled()
+        if error and self._partial_result is not None:
+            extra["result"] = self._partial_result
         super().done(
             error=error,
             kind=self.kind,
@@ -189,6 +192,8 @@ class RunProgressReporter(ProgressReporter):
         self._wake()
 
     def cancelled(self, **extra: object) -> None:
+        if self._partial_result is not None:
+            extra["result"] = self._partial_result
         super().cancelled(
             kind=self.kind,
             created_at=self.created_at,
@@ -310,23 +315,27 @@ class RunManager:
         """
         if not valid_run_id(run_id):
             return False
-        record = self._read_record(run_id)
-        snapshot = parse_run_snapshot(run_id, record)
-        if snapshot is None or snapshot.state in TERMINAL_RUN_STATES:
-            return False
-        assert record is not None
-        self._cancel_requested.add(run_id)
-        future = self._futures.get(run_id)
-        if future is not None and future.cancel():
-            record.update(
-                state="cancelled", label="Cancelled", error=None, updated_at=_now()
-            )
+        # A worker can reach its next checkpoint while this request is still
+        # writing. Order this write with its final state and result publication.
+        with self._singleton_lock:
+            record = self._read_record(run_id)
+            snapshot = parse_run_snapshot(run_id, record)
+            if snapshot is None or snapshot.state in TERMINAL_RUN_STATES:
+                return False
+            assert record is not None
+            self._cancel_requested.add(run_id)
+            future = self._futures.get(run_id)
+            queued = future is not None and future.cancel()
+            if queued:
+                record.update(
+                    state="cancelled", label="Cancelled", error=None, updated_at=_now()
+                )
+                self._cancel_requested.discard(run_id)
+            else:
+                record.update(state="cancelling", label="Cancelling", updated_at=_now())
             self._write(run_id, record)
+        if queued:
             self._emit_terminal(run_id)
-            self._cancel_requested.discard(run_id)
-            return True
-        record.update(state="cancelling", label="Cancelling", updated_at=_now())
-        self._write(run_id, record)
         return True
 
     def is_cancel_requested(self, run_id: str) -> bool:
@@ -472,9 +481,11 @@ class RunManager:
             def _execute() -> None:
                 try:
                     result = fn(reporter)
-                    reporter.done(result=result)
+                    with self._singleton_lock:
+                        reporter.done(result=result)
                 except RunCancelled:  # cooperative stop — terminal but not a failure
-                    reporter.cancelled()
+                    with self._singleton_lock:
+                        reporter.cancelled()
                 except Exception as exc:  # noqa: BLE001 — surface any failure as run error
                     error = f"{type(exc).__name__}: {exc}"
                     reporter.done(

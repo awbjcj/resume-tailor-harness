@@ -161,6 +161,7 @@ def test_redo_cancellation_preserves_only_committed_removals(
         if after_commit:
             cleanup_started.set()
             assert release.wait(5)
+            raise RuntimeError("export failed after deletion")
         return export(*args, **kwargs)
 
     monkeypatch.setattr(redo, "tailor", tailor)
@@ -210,6 +211,7 @@ def test_redo_cancellation_preserves_only_committed_removals(
             [outcome] = run["result"]["outcomes"]
             assert outcome["versionId"] == replacements[first]
             assert outcome["removedVersionIds"] == [old[first]]
+            assert outcome["cleanupError"]
         else:
             assert run["result"] is None
 
