@@ -66,11 +66,12 @@ def artifact_pdf_identity(
     if not pdf_path:
         return None
     context = current_context()
-    root = output_root if output_root is not None else (
-        context.paths.output_dir if context is not None else None
-    )
+    if output_root is None and context is not None:
+        output_root = context.paths.output_dir
     try:
-        return _confine(pdf_path, root, prefix="output") if root is not None else Path(pdf_path).resolve()
+        if output_root is not None:
+            return _confine(pdf_path, output_root, prefix="output")
+        return Path(pdf_path).resolve()
     except (OSError, RuntimeError, ValueError):
         return None
 
@@ -82,9 +83,9 @@ def resolve_artifact_pdf(pdf_path: str | None) -> Path | None:
         return None
     try:
         path = artifact_path(pdf_path)
-    except TenantPathError:
+        return path if path.is_file() else None
+    except (OSError, RuntimeError, ValueError):
         return None
-    return path if path.is_file() else None
 
 
 def delete_artifact_pdf(pdf_path: str | None) -> bool:

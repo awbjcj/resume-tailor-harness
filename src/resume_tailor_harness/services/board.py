@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal, Sequence, cast
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
 from resume_tailor_harness.db import workspace_write
@@ -513,7 +514,7 @@ def _delete_resume_rows(session: Session, rows: list[ResumeVersion]) -> None:
             export_job_artifacts(
                 session, job_id, removed_resume_sidecars=names, existing_only=True
             )
-        except (OSError, TenantPathError):
+        except (OSError, SQLAlchemyError, TenantPathError):
             logger.warning("could not refresh exports for job %s", job_id, exc_info=True)
 
 

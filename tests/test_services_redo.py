@@ -5,7 +5,7 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
 from resume_tailor_harness.progress import ProgressReporter
-from resume_tailor_harness.render.export import export_job_artifacts
+from resume_tailor_harness.render.export import export_job_artifacts, job_dir
 from resume_tailor_harness.services import redo
 from resume_tailor_harness.services.errors import StageFailure, list_error_records
 from resume_tailor_harness.tailor.service import TailorOutcome
@@ -272,6 +272,8 @@ def test_redo_renders_its_own_attempt_and_only_removes_eligible_old_versions(
     }
 
     def tailor(session, **_kwargs):
+        job.title = "Updated title"
+        save_job(session, job)
         first = _version(session, job_id, attempt=2, round=1)
         final = _version(session, job_id, attempt=2, round=2, fact_check_passed=True)
         _version(session, job_id, attempt=3)  # A separate author finishes later.
@@ -323,8 +325,10 @@ def test_redo_renders_its_own_attempt_and_only_removes_eligible_old_versions(
             export / f"resume-v{version_id}-tailor.content.json"
         ).exists() is not remove_previous
     if remove_previous:
-        manifest = json.loads((export / "manifest.json").read_text(encoding="utf-8"))
-        assert {item["id"] for item in manifest["resumeVersions"]} == {
+        old_manifest = json.loads((export / "manifest.json").read_text(encoding="utf-8"))
+        assert {item["id"] for item in old_manifest["resumeVersions"]} == old_ids
+        new_manifest = job_dir("output", job) / "manifest.json"
+        assert {item["id"] for item in json.loads(new_manifest.read_text(encoding="utf-8"))["resumeVersions"]} == {
             v.id for v in versions
         }
 

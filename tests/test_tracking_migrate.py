@@ -125,6 +125,7 @@ def test_resume_storage_migration_keeps_ids_and_references(tmp_path):
     with engine.begin() as conn:
         conn.execute(CreateTable(legacy))
         conn.exec_driver_sql("ALTER TABLE resume_versions DROP COLUMN pdf_template_id")
+        conn.exec_driver_sql("ALTER TABLE resume_versions DROP COLUMN pdf_file_key")
         conn.exec_driver_sql("CREATE INDEX ix_resume_versions_job_id ON resume_versions(job_id)")
         conn.exec_driver_sql(
             "INSERT INTO resume_versions "
@@ -137,9 +138,10 @@ def test_resume_storage_migration_keeps_ids_and_references(tmp_path):
     init_db(engine)
     with engine.begin() as conn:
         assert conn.exec_driver_sql(
-            "SELECT id, parent_version_id, pdf_path, pdf_template_id FROM resume_versions ORDER BY id"
-        ).all() == [(8, None, "output/original.pdf", None), (9, 8, None, None)]
-        assert "ix_resume_versions_job_id" in {
+            "SELECT id, parent_version_id, pdf_path, pdf_template_id, pdf_file_key "
+            "FROM resume_versions ORDER BY id"
+        ).all() == [(8, None, "output/original.pdf", None, "original.pdf"), (9, 8, None, None, None)]
+        assert {"ix_resume_versions_job_id", "ix_resume_versions_pdf_file_key"} <= {
             row[1] for row in conn.exec_driver_sql("PRAGMA index_list(resume_versions)")
         }
         conn.exec_driver_sql("DELETE FROM resume_versions")

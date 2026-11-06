@@ -568,7 +568,7 @@ def referenced_pdf_paths(
     exclude_resume_ids: Collection[int] = (),
     exclude_cover_letter_ids: Collection[int] = (),
 ) -> set[Path]:
-    """Resolve references only for the candidate PDFs, across both tables."""
+    """Use the filename index for candidates and compare their full paths."""
     if not paths:
         return set()
 

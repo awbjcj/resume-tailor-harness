@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -15,11 +16,13 @@ from resume_tailor_harness.services.board import delete_resume_versions
 from resume_tailor_harness.tenancy.context import UserContext, use_context
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 from resume_tailor_harness.tracking.repository import (
+    application_for_job,
     get_resume_version,
+    save_application,
     save_job,
     save_resume_version,
 )
-from resume_tailor_harness.tracking.tables import Job, JobStatus, ResumeVersion
+from resume_tailor_harness.tracking.tables import Application, Job, JobStatus, ResumeVersion
 
 
 def _session() -> Session:
@@ -344,6 +347,66 @@ def test_rendering_does_not_overwrite_the_pdf_a_version_filename_links_to(tmp_pa
         assert path == output and not output.is_symlink()
         assert output.read_bytes() == b"%PDF-new"
         assert other_pdf.read_bytes() == b"%PDF-retained"
+
+
+def test_style_change_isolates_pdf_shared_with_selected_version(tmp_path):
+    context = UserContext(
+        user_id="alice0000000",
+        username="alice",
+        role="user",
+        paths=WorkspacePaths(tmp_path),
+        settings=Settings(_env_file=None),  # type: ignore[call-arg]
+        engine=None,
+        system_engine=None,
+        own_key_providers=frozenset(),
+    )
+
+    def fake_render(_content, output_path, template_path, **_kwargs):
+        output_path.write_bytes(template_path.stem.encode())
+        return output_path
+
+    with use_context(context), _session() as session:
+        job_id = _require_id(save_job(session, Job(source="manual")).id)
+        version = save_resume_version(
+            session,
+            ResumeVersion(
+                job_id=job_id,
+                content_json=ResumeContent(contact=Contact(name="Ada")).model_dump(mode="json"),
+            ),
+        )
+        version_id = _require_id(version.id)
+        shared = render_version(session, version_id, RenderConfig(template="classic"), fake_render)
+        assert shared is not None
+        classic = shared.read_bytes()
+        selected = save_resume_version(
+            session,
+            ResumeVersion(
+                job_id=job_id,
+                pdf_path=shared.relative_to(tmp_path).as_posix(),
+                pdf_template_id="classic",
+            ),
+        )
+        selected_id = _require_id(selected.id)
+        save_application(session, Application(job_id=job_id, resume_version_id=selected_id))
+
+        path = render_version(session, version_id, RenderConfig(template="modern"), fake_render)
+
+        assert path is not None and path != shared
+        assert path.read_bytes() != classic
+        assert version.pdf_path == str(path)
+        assert version.pdf_template_id == "modern"
+        assert shared.read_bytes() == classic
+        assert selected.pdf_template_id == "classic"
+        application = application_for_job(session, job_id)
+        assert application is not None and application.resume_version_id == selected_id
+        manifest = json.loads((path.parent / "manifest.json").read_text(encoding="utf-8"))
+        assert [entry["file"] for entry in manifest["resumeVersions"]] == [path.name, shared.name]
+
+        assert render_version(
+            session, version_id, RenderConfig(template="technical"), fake_render
+        ) == path
+        assert shared.read_bytes() == classic
+        assert set(path.parent.glob("*.pdf")) == {path, shared}
 
 
 def test_render_commit_failure_restores_the_previous_pdf(monkeypatch, tmp_path):
