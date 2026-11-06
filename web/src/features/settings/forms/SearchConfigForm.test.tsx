@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { server } from "@/test/server";
 import { withQueryClient } from "@/test/utils";
 import { SearchConfigForm, type SearchDoc } from "./SearchConfigForm";
@@ -32,6 +33,18 @@ function renderHarness() {
 }
 
 describe("SearchConfigForm", () => {
+  it("uses job-search terminology for Chinese labels and tag actions", async () => {
+    await changeLanguage("zh-CN");
+    const user = userEvent.setup();
+    renderHarness();
+
+    await user.type(screen.getByLabelText("职位名称"), "Engineer");
+    expect(screen.getByRole("button", { name: "添加到职位名称" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "相关性调优" }));
+    expect(screen.getByLabelText("职位关键词")).toBeInTheDocument();
+    expect(screen.getByLabelText("排除词")).toBeInTheDocument();
+  });
+
   it("adds and removes keywords and toggles multiple remote policies", async () => {
     const user = userEvent.setup();
     renderHarness();

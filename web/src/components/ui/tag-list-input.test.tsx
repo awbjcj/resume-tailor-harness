@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { TagListInput } from "./tag-list-input";
 
 function Harness() {
@@ -71,10 +72,28 @@ describe("TagListInput", () => {
     await user.type(input, "Python");
     await user.click(save);
     expect(submit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Add the typed value or clear the field before saving.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Press Enter or use Add to add your entry, or clear the field before saving.");
     await user.click(screen.getByRole("button", { name: "Add to Tags" }));
     await user.click(save);
     expect(submit).toHaveBeenCalledOnce();
+  });
+
+  it("explains how to add an entry before saving in Chinese", async () => {
+    await changeLanguage("zh-CN");
+    const user = userEvent.setup();
+    const submit = vi.fn((event) => event.preventDefault());
+    render(
+      <form onSubmit={submit}>
+        <TagListInput id="skills" label="技能" value={[]} onChange={vi.fn()} />
+        <button type="submit">保存</button>
+      </form>,
+    );
+
+    await user.type(screen.getByLabelText("技能"), "Python");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    expect(submit).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("保存前，请按 Enter 或点击“添加”来添加输入内容，或清空输入框。");
+    expect(screen.getByRole("button", { name: "添加到技能" })).toBeEnabled();
   });
 
   it("keeps an invalid pasted list available for correction", async () => {

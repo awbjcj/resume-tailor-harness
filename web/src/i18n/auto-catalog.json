@@ -2599,10 +2599,10 @@
     "en": "Could not load Gmail client settings.",
     "zh-CN": "无法加载 Gmail 客户端设置。"
   },
-  "Could not load jobs": {
-    "key": "ui_4ef9f85ac3d1",
-    "en": "Could not load jobs",
-    "zh-CN": "无法加载职位"
+  "Could not load interview options": {
+    "key": "ui_cdccdc9b4eb1",
+    "en": "Could not load interview options",
+    "zh-CN": "无法加载面试选项"
   },
   "Could not load repositories. Check your saved username and GitHub access, then refresh.": {
     "key": "ui_07fe80b59b81",
@@ -6209,10 +6209,10 @@
     "en": "No job selected",
     "zh-CN": "未选择职位"
   },
-  "No jobs are ready for interview practice. Tailor a resume first.": {
-    "key": "ui_717572df5fa9",
-    "en": "No jobs are ready for interview practice. Tailor a resume first.",
-    "zh-CN": "暂无可用于面试练习的职位。请先定制一份简历。"
+  "No jobs are available for interview practice. Tailor a resume or check your sessions for an interview in progress.": {
+    "key": "ui_c697a1b40c2d",
+    "en": "No jobs are available for interview practice. Tailor a resume or check your sessions for an interview in progress.",
+    "zh-CN": "没有可用于面试练习的职位。请先定制简历，或在会话列表中查看进行中的面试。"
   },
   "No jobs in the pipeline": {
     "key": "ui_559c2183244b",

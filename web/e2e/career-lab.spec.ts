@@ -154,6 +154,22 @@ test("Career Lab reveals live reference filters only for an active session", asy
   await expect(page.getByRole("combobox", { name: "Job status" }).getByRole("option", { name: "tailored" })).toHaveCount(0);
 });
 
+test("Career Lab labels offer references in Chinese", async ({ page }) => {
+  await page.unrouteAll();
+  await mockCareerLab(page, true);
+  await page.addInitScript(() => localStorage.setItem("resume-tailor-harness-language", "zh-CN"));
+  await page.route("**/api/applications", (route) => route.fulfill({ json: {
+    technicalRoundColumns: 0,
+    rows: [{ jobId: 7, applicationId: 42, status: "offer", company: "Acme", title: "Engineer" }],
+  } }));
+  await page.goto("/career-lab");
+  await page.getByText("用于对比的录用通知").click();
+  const offers = page.getByRole("combobox", { name: "录用通知", exact: true });
+  await offers.fill("42");
+  await page.getByRole("button", { name: "添加到录用通知" }).click();
+  await expect(page.getByRole("button", { name: "移除 Acme · Engineer · #42" })).toBeVisible();
+});
+
 test("Career Lab searches offers and keeps the selected references on a narrow dark layout", async ({ page }, testInfo) => {
   await page.unrouteAll();
   await mockCareerLab(page, true);
@@ -176,7 +192,7 @@ test("Career Lab searches offers and keeps the selected references on a narrow d
   await page.goto("/career-lab");
   await expect(page.getByText("Reference context")).toBeVisible();
   expect(applicationReads).toBe(0);
-  await page.getByText("Offer comparison references").click();
+  await page.getByText("Offers for comparison").click();
   const input = page.getByRole("combobox", { name: "Offers", exact: true });
   await input.click();
   const options = page.getByRole("listbox");

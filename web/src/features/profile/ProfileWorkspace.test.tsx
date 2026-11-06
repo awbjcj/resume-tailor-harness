@@ -215,7 +215,7 @@ describe("ProfileWorkspace", () => {
     expect(screen.getByRole("button", { name: "Remove engine" })).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(mocks.save).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Add the typed value or clear the field before saving.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Press Enter or use Add to add your entry, or clear the field before saving.");
     await userEvent.clear(screen.getByLabelText("Always include repositories"));
     await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(mocks.save).toHaveBeenCalledWith(

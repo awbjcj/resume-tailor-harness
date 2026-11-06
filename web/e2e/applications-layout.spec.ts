@@ -60,6 +60,7 @@ for (const { locale, colorScheme } of appearances) {
 
         const table = page.getByRole("table");
         await expect(table).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByText(locale === "zh-CN" ? "符合条件的申请：4 条，共 4 条" : "Matching applications: 4 of 4")).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
         await expect(table.getByRole("columnheader", {
           name: locale === "zh-CN" ? "职位" : "Role", exact: true,

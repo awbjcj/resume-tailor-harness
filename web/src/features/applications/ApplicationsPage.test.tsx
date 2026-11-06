@@ -75,6 +75,7 @@ describe("ApplicationsPage", () => {
     );
 
     expect(await screen.findByText("Page 1 of 2")).toBeVisible();
+    expect(screen.getByText("Matching applications: 42 of 42")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Café Labs" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Next application page" }));
     expect(screen.getByRole("link", { name: "Café Labs" })).toBeVisible();
@@ -82,7 +83,7 @@ describe("ApplicationsPage", () => {
     await user.type(screen.getByLabelText("Company or role"), "engineer cafe");
     expect(screen.getByRole("link", { name: "Café Labs" })).toBeVisible();
     expect(screen.getByRole("cell", { name: "Engineer 42" })).toBeVisible();
-    expect(screen.getByText("Showing 1 of 42 applications")).toBeVisible();
+    expect(screen.getByText("Matching applications: 1 of 42")).toBeVisible();
     expect(screen.getByRole("cell", { name: "Engineer 42" }).closest("tbody")?.querySelector('th[scope="rowgroup"]')).toHaveTextContent("Offer");
     expect(screen.queryByRole("columnheader", { name: "Status" })).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("Company or role"), " nowhere");
@@ -102,7 +103,7 @@ describe("ApplicationsPage", () => {
     expect(screen.getByRole("option", { name: "公司名称 A–Z" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "按申请状态分组" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "面试中" })).toBeInTheDocument();
-    expect(screen.getByText("显示 1 条，共 1 条申请记录")).toBeInTheDocument();
+    expect(screen.getByText("符合条件的申请：1 条，共 1 条")).toBeInTheDocument();
   });
 
   it("compares two selected roles using the deterministic evidence endpoint", async () => {
