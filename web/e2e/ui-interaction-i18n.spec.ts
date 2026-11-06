@@ -52,6 +52,7 @@ test("keeps selected actions, interview banner, and notifications usable while s
   await expect(dialog.getByText("归档所选的 1 个职位？")).toBeVisible();
   await expect(dialog.getByText("将影响 1 个职位。")).toBeVisible();
   await dialog.getByRole("button", { name: "取消" }).click();
+  await expect(dialog).toBeHidden();
 
   await page.getByRole("button", { name: "通知（1 条待处理）" }).click();
   await expect(page.getByText("20 天没有新动态：Acme · Platform Engineer")).toBeVisible();
