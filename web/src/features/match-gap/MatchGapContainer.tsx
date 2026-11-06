@@ -264,6 +264,7 @@ export function MatchGapContainer() {
                   <RankedList
                     domainRows={view.domainRows}
                     categoryRows={view.categoryRows}
+                    query={filters.q.trim()}
                     stateOf={suggestionRuns.stateOf}
                     selected={selectedIds}
                     onToggleSelect={toggleSelection}

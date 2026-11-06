@@ -1,3 +1,4 @@
+import "@/i18n/application-list-copy";
 import type { TFunction } from "i18next";
 
 export const ApplicationTimelineStage = {

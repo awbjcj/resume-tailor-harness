@@ -1,5 +1,18 @@
 import type { Page } from "@playwright/test";
 
+export const PROVIDER_SETUP = {
+  providers: [
+    { id: "openai", label: "OpenAI", available: false },
+    { id: "anthropic", label: "Anthropic", available: false },
+    { id: "gemini", label: "Gemini", available: false },
+    { id: "deepseek", label: "DeepSeek", available: false },
+  ],
+  selectedProvider: "openai",
+  modelTiersReady: false,
+  customEndpointAllowed: true,
+  customEndpoint: null,
+};
+
 export async function mockGmailSettings(page: Page) {
   await page.route("**/api/mailboxes", (route) => route.fulfill({ json: { providers: [], accounts: [] } }));
   await page.route("**/api/gmail/status", (route) => route.fulfill({ json: {

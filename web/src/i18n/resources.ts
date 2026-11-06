@@ -12,6 +12,8 @@ import type { profilePublicationEn } from "./profile-publication";
 import type { decisionsEn } from "./decisions";
 import type { InteractionCopy } from "./interaction-copy";
 import type { tagListEn } from "./tag-list-input";
+import type { longListEn } from "./long-list-copy";
+import type { applicationListEn } from "./application-list-copy";
 
 const autoZhCN = {} as typeof autoEn;
 
@@ -82,6 +84,7 @@ const en = {
   app: {
     documentTitle: "Résumé Tailor Harness",
   },
+  longLists: {} as typeof longListEn,
   model: {
     select: "Select a model",
     customModelId: "Custom model ID…",
@@ -465,57 +468,7 @@ const en = {
         "{{setting}} must be an absolute HTTP(S) URL with no credentials, query, or fragment (current value: {{value}}).",
     },
   },
-  applications: {
-    sortBy: "Sort by",
-    status: "Status",
-    allStatuses: "All statuses",
-    sortOptions: {
-      newest: "Newest activity",
-      companyAscending: "Company A–Z",
-      companyDescending: "Company Z–A",
-      status: "Status",
-    },
-    showing: "Showing {{shown}} of {{total}} applications",
-    comparison: {
-      column: "Compare",
-      selectRole: "Select {{company}} {{role}} for comparison",
-      terminalRole: "{{company}} {{role}} is closed and cannot be compared",
-      unknownRole: "role",
-      kicker: "Stored evidence only",
-      title: "Role comparison",
-      description:
-        "Missing information is marked. This table does not call a model or guess answers.",
-      headers: {
-        role: "Role",
-        fit: "Fit",
-        stage: "Stage",
-        companyEvidence: "Company evidence",
-        h1bEvidence: "H-1B evidence",
-        latestOffer: "Latest offer",
-      },
-      notResearched: "Not researched",
-      noClaims: "no claims",
-      stale: "stale",
-      current: "current",
-      unknownDepth: "unknown depth",
-      evidenceSummary:
-        "{{depth}} · {{count}} sources · {{verification}} · {{freshness}}",
-      depth: { quick: "quick", standard: "standard", deep: "deep" },
-      verification: {
-        inferred: "inferred",
-        single_source: "single source",
-        corroborated: "corroborated",
-      },
-      sponsorship: {
-        matched: "Historical filing match",
-        noMatch: "No historical match",
-        unavailable: "Research unavailable",
-        notChecked: "Not checked",
-      },
-      notScored: "Not scored",
-      noStructuredOffer: "No structured offer",
-    },
-  },
+  applications: {} as typeof applicationListEn,
   applicationTimeline: {
     headers: {
       caption: "Application timeline grid",
@@ -956,6 +909,7 @@ const zhCN = {
   app: {
     documentTitle: "求职助手",
   },
+  longLists: {} as typeof longListEn,
   model: {
     select: "选择模型",
     customModelId: "自定义模型 ID…",
@@ -1315,56 +1269,7 @@ const zhCN = {
         "{{setting}} 必须是完整的 HTTP(S) 网址，不含登录凭据、查询参数或片段标识（当前值：{{value}}）。",
     },
   },
-  applications: {
-    sortBy: "排序方式",
-    status: "状态",
-    allStatuses: "全部状态",
-    sortOptions: {
-      newest: "最新动态",
-      companyAscending: "公司名称 A–Z",
-      companyDescending: "公司名称 Z–A",
-      status: "申请状态",
-    },
-    showing: "显示 {{shown}} 条，共 {{total}} 条申请记录",
-    comparison: {
-      column: "对比",
-      selectRole: "选择 {{company}} 的 {{role}} 进行对比",
-      terminalRole: "{{company}} 的 {{role}} 已结束，无法对比",
-      unknownRole: "职位",
-      kicker: "仅使用已保存的证据",
-      title: "职位对比",
-      description: "缺失的信息会明确标出，这张表不会调用模型推测答案。",
-      headers: {
-        role: "职位",
-        fit: "匹配度",
-        stage: "阶段",
-        companyEvidence: "公司调研依据",
-        h1bEvidence: "H-1B 证据",
-        latestOffer: "最新录用通知",
-      },
-      notResearched: "尚未调研",
-      noClaims: "无结论",
-      stale: "已过时",
-      current: "当前有效",
-      unknownDepth: "深度未知",
-      evidenceSummary:
-        "{{depth}} · {{count}} 个来源 · {{verification}} · {{freshness}}",
-      depth: { quick: "快速", standard: "标准", deep: "深度" },
-      verification: {
-        inferred: "推断",
-        single_source: "单一来源",
-        corroborated: "多来源印证",
-      },
-      sponsorship: {
-        matched: "找到历史申报记录",
-        noMatch: "未找到历史申报记录",
-        unavailable: "调研暂不可用",
-        notChecked: "尚未检查",
-      },
-      notScored: "尚未评分",
-      noStructuredOffer: "尚未记录录用通知的具体信息",
-    },
-  },
+  applications: {} as typeof applicationListEn,
   applicationTimeline: {
     headers: {
       caption: "申请时间线表格",

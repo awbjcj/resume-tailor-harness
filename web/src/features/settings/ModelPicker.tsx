@@ -4,16 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { reasoningEffortLabel } from "@/i18n/model-labels";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DeepSeekPricingBadge } from "./DeepSeekPricingBadge";
 import type { ProviderModelCatalog } from "./use-model-catalog";
@@ -37,7 +28,7 @@ function CapabilityBadges({ model }: { model: ModelEntry }) {
   const { t } = useTranslation();
   if (!model.supportsReasoning && !model.supportsNativeSearch) return null;
   return (
-    <span className="ml-auto flex gap-1">
+    <span className="mt-1 flex flex-wrap gap-1">
       {model.supportsReasoning && (
         <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
           {t("model.capabilities.reasoning")}
@@ -63,15 +54,6 @@ export function ModelPicker({
   const { t } = useTranslation();
   const allModels = useMemo(() => (catalog ?? []).flatMap((p) => p.models), [catalog]);
   const knownIds = useMemo(() => new Set(allModels.map((m) => m.id)), [allModels]);
-  // Base UI's <SelectValue> resolves labels through an internal items store
-  // that items only populate while the popup is mounted, so on first paint
-  // (nothing opened yet) it falls back to the raw value string. Resolve the
-  // trigger label ourselves instead of relying on that store.
-  const labelFor = (v: string | undefined) => {
-    if (!v) return t("model.select");
-    if (v === CUSTOM_VALUE) return t("model.customModelId");
-    return allModels.find((m) => m.id === v)?.label ?? v;
-  };
   // Explicit escape hatch: once the user picks "Custom model id…", stay in
   // custom mode even while they clear/retype the field to something empty or
   // (transiently) matching a catalog id — only picking a real dropdown item
@@ -81,62 +63,50 @@ export function ModelPicker({
   const isCustom =
     customValue === value ||
     (catalogReady && value !== "" && !knownIds.has(value));
-  const selectValue = isCustom ? CUSTOM_VALUE : value || undefined;
-
   return (
     <div className="flex flex-col gap-2">
-      <Select
-        value={selectValue}
-        onValueChange={(v) => {
-          if (!v) return;
-          if (v === CUSTOM_VALUE) {
+      <SearchableSelect
+        id={id}
+        label={id ? undefined : t("model.select")}
+        placeholder={t("model.select")}
+        searchLabel={t("longLists.searchModels")}
+        value={isCustom ? CUSTOM_VALUE : value || null}
+        onChange={(selected) => {
+          if (selected === CUSTOM_VALUE) {
             setCustomValue(value);
             return;
           }
           setCustomValue(null);
-          onChange(v);
+          onChange(selected);
         }}
-      >
-        <SelectTrigger id={id} className="w-full">
-          <SelectValue>{(v) => labelFor(v as string | undefined)}</SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {(catalog ?? []).map((provider) => (
-            <SelectGroup key={provider.provider}>
-              <SelectLabel className="flex items-center gap-1.5">
-                {provider.label}
-                <span className="ml-auto flex items-center gap-1.5">
-                  {provider.provider === "deepseek" && <DeepSeekPricingBadge />}
-                  {!provider.hasKey && (
-                    <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
-                      {t("model.noKey")}
-                    </Badge>
-                  )}
-                </span>
-              </SelectLabel>
-              {provider.models.map((model) => (
-                <SelectItem
-                  key={model.id}
-                  value={model.id}
-                  disabled={!provider.hasKey}
-                  title={!provider.hasKey
-                    ? t("model.addProviderKey", { provider: provider.label })
-                    : undefined}
-                >
-                  <span className="flex w-full items-center gap-1.5">
-                    <span>{model.label}</span>
-                    <CapabilityBadges model={model} />
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          ))}
-          <SelectSeparator />
-          <SelectItem value={CUSTOM_VALUE}>{t("model.customModelId")}</SelectItem>
-        </SelectContent>
-      </Select>
+        groups={[
+          ...(catalog ?? []).map((provider) => ({
+            id: provider.provider,
+            label: provider.label,
+            detail: (
+              <span className="flex flex-wrap items-center gap-1.5">
+                {provider.provider === "deepseek" ? <DeepSeekPricingBadge /> : null}
+                {!provider.hasKey ? (
+                  <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
+                    {t("model.noKey")}
+                  </Badge>
+                ) : null}
+              </span>
+            ),
+            items: provider.models.map((model) => ({
+              value: model.id,
+              label: model.label,
+              disabled: !provider.hasKey,
+              detail: <CapabilityBadges model={model} />,
+              title: !provider.hasKey ? t("model.addProviderKey", { provider: provider.label }) : undefined,
+            })),
+          })),
+          { id: CUSTOM_VALUE, items: [{ value: CUSTOM_VALUE, label: t("model.customModelId") }] },
+        ]}
+      />
       {isCustom && (
         <Input
+          aria-label={t("model.customModelId")}
           value={value}
           placeholder={t("model.customModelPlaceholder")}
           onChange={(e) => {

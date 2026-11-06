@@ -39,11 +39,6 @@
     "en": "· run usage limit reached",
     "zh-CN": "· 已达到本次运行的用量上限"
   },
-  "· score": {
-    "key": "ui_f1374842159c",
-    "en": "· score",
-    "zh-CN": "· 分数"
-  },
   "'s official job board.": {
     "key": "ui_5c94c70a4b93",
     "en": "'s official job board.",
@@ -218,11 +213,6 @@
     "key": "ui_199d149bc206",
     "en": "{{v0}} job{{v1}} waiting on you",
     "zh-CN": "有 {{v0}} 个职位等待你处理"
-  },
-  "{{v0}} matching skills": {
-    "key": "ui_c684dbebe4b3",
-    "en": "{{v0}} matching skills",
-    "zh-CN": "{{v0}} 项匹配技能"
   },
   "{{v0}} member{{v1}} on this tier · {{v2}} spent this period": {
     "key": "ui_f8b66a138b1d",
@@ -1374,11 +1364,6 @@
     "en": "Archive tier",
     "zh-CN": "归档档位"
   },
-  "Archived": {
-    "key": "ui_bdb86505f806",
-    "en": "Archived",
-    "zh-CN": "已归档"
-  },
   "Archiving…": {
     "key": "ui_af9e1c99f193",
     "en": "Archiving…",
@@ -1609,11 +1594,6 @@
     "en": "Boards & careers pages",
     "zh-CN": "招聘列表与招聘页面"
   },
-  "Branch for {{v0}}": {
-    "key": "ui_ebc178dcf03a",
-    "en": "Branch for {{v0}}",
-    "zh-CN": "{{v0}} 的分支"
-  },
   "Breezy HR": {
     "key": "ui_d21be6a31b80",
     "en": "Breezy HR",
@@ -1828,16 +1808,6 @@
     "key": "ui_17a919ce0537",
     "en": "Careers or board URL",
     "zh-CN": "招聘页面或招聘列表网址"
-  },
-  "categories": {
-    "key": "ui_a6216ea03e57",
-    "en": "categories",
-    "zh-CN": "分类"
-  },
-  "category": {
-    "key": "ui_edb2cd3b74c9",
-    "en": "category",
-    "zh-CN": "分类"
   },
   "Category": {
     "key": "ui_292c06f0045a",
@@ -3034,16 +3004,6 @@
     "en": "Default",
     "zh-CN": "默认"
   },
-  "Default ({{v0}})": {
-    "key": "ui_f7164c05e330",
-    "en": "Default ({{v0}})",
-    "zh-CN": "默认（{{v0}}）"
-  },
-  "Default branch": {
-    "key": "ui_411aa61aea55",
-    "en": "Default branch",
-    "zh-CN": "默认分支"
-  },
   "Defaults could not be saved": {
     "key": "ui_28a58a6d413b",
     "en": "Defaults could not be saved",
@@ -3353,11 +3313,6 @@
     "key": "ui_5b8d8706cde3",
     "en": "Domain updated",
     "zh-CN": "领域已更新"
-  },
-  "domains": {
-    "key": "ui_1b0ec1954eec",
-    "en": "domains",
-    "zh-CN": "领域"
   },
   "Domains merged": {
     "key": "ui_66b21aa6be95",
@@ -3913,11 +3868,6 @@
     "key": "ui_07548c2c6511",
     "en": "Expand",
     "zh-CN": "展开"
-  },
-  "Expand a category to see its domains, then a domain to inspect skills and evidence status.": {
-    "key": "ui_de8720b02dad",
-    "en": "Expand a category to see its domains, then a domain to inspect skills and evidence status.",
-    "zh-CN": "展开分类查看技能领域，再展开领域查看技能及其依据状态。"
   },
   "Expected salary": {
     "key": "ui_da8f6de0897b",
@@ -4859,11 +4809,6 @@
     "en": "Include your profile",
     "zh-CN": "包含你的个人资料"
   },
-  "Included": {
-    "key": "ui_ba829a98b799",
-    "en": "Included",
-    "zh-CN": "已纳入"
-  },
   "Industry": {
     "key": "ui_b44484a0fa28",
     "en": "Industry",
@@ -5434,11 +5379,6 @@
     "en": "Loading audio…",
     "zh-CN": "正在加载音频…"
   },
-  "Loading branches…": {
-    "key": "ui_55704e8f6004",
-    "en": "Loading branches…",
-    "zh-CN": "正在加载分支…"
-  },
   "Loading extraction preview…": {
     "key": "ui_8b5cd6256f47",
     "en": "Loading extraction preview…",
@@ -5984,11 +5924,6 @@
     "en": "Must",
     "zh-CN": "必须项"
   },
-  "Must-have": {
-    "key": "ui_7a3120b81d85",
-    "en": "Must-have",
-    "zh-CN": "必备"
-  },
   "My workspace data": {
     "key": "ui_ae88b6b3ed28",
     "en": "My workspace data",
@@ -6179,11 +6114,6 @@
     "en": "Nice",
     "zh-CN": "加分项"
   },
-  "Nice-to-have": {
-    "key": "ui_52fc68016286",
-    "en": "Nice-to-have",
-    "zh-CN": "加分项"
-  },
   "No": {
     "key": "ui_1ea442a134b2",
     "en": "No",
@@ -6308,11 +6238,6 @@
     "key": "ui_21d1cfa353a3",
     "en": "No matching entries. Use All skill entries to review other unwanted items.",
     "zh-CN": "没有匹配的条目。切换到“全部技能条目”，查看其他需要排除的内容。"
-  },
-  "No matching skills": {
-    "key": "ui_706bb2bf3ff7",
-    "en": "No matching skills",
-    "zh-CN": "没有匹配的技能"
   },
   "No material evidence changes were detected.": {
     "key": "ui_66d67ca9569e",
@@ -6518,11 +6443,6 @@
     "key": "ui_8c76ce5e65e7",
     "en": "not scored",
     "zh-CN": "不计分"
-  },
-  "Not selected for sync": {
-    "key": "ui_d11d1aca95ad",
-    "en": "Not selected for sync",
-    "zh-CN": "未选入同步范围"
   },
   "Not set": {
     "key": "ui_4895f73177ab",
@@ -7194,11 +7114,6 @@
     "en": "Primary",
     "zh-CN": "主要"
   },
-  "Primary resume": {
-    "key": "ui_f3ea18653b42",
-    "en": "Primary resume",
-    "zh-CN": "主要简历"
-  },
   "Priority competencies": {
     "key": "ui_5447609e826a",
     "en": "Priority competencies",
@@ -7298,11 +7213,6 @@
     "key": "ui_f02f5dcaf985",
     "en": "Profile skills",
     "zh-CN": "个人技能"
-  },
-  "Project dossier": {
-    "key": "ui_0379c2332c86",
-    "en": "Project dossier",
-    "zh-CN": "项目档案"
   },
   "projects": {
     "key": "ui_2577c0f557b2",
@@ -8059,11 +7969,6 @@
     "en": "Removed GitHub sources stay excluded from future syncs.",
     "zh-CN": "已移除的 GitHub 来源不会在后续同步时重新导入。"
   },
-  "Removed skills ({{v0}})": {
-    "key": "ui_5ff499c1e6f1",
-    "en": "Removed skills ({{v0}})",
-    "zh-CN": "已移除的技能（{{v0}}）"
-  },
   "Rename": {
     "key": "ui_3064d79a295c",
     "en": "Rename",
@@ -8413,11 +8318,6 @@
     "key": "ui_a76e13b98392",
     "en": "Restore",
     "zh-CN": "恢复"
-  },
-  "Restore {{v0}}": {
-    "key": "ui_5ec37798e61f",
-    "en": "Restore {{v0}}",
-    "zh-CN": "恢复 {{v0}}"
   },
   "Restore all": {
     "key": "ui_a9c39ca5e456",
@@ -9489,11 +9389,6 @@
     "en": "Showing {{v0}} connected skills.",
     "zh-CN": "显示 {{v0}} 项关联技能。"
   },
-  "Showing {{v0}} of {{v1}} matching entries": {
-    "key": "ui_883315d7cf4a",
-    "en": "Showing {{v0}} of {{v1}} matching entries",
-    "zh-CN": "共 {{v1}} 个匹配条目，当前显示 {{v0}} 个"
-  },
   "shown · administrators are quota-exempt": {
     "key": "ui_36e0b21ddd97",
     "en": "shown · administrators are quota-exempt",
@@ -10038,11 +9933,6 @@
     "key": "ui_c165800065d1",
     "en": "Supported",
     "zh-CN": "有依据"
-  },
-  "Supporting document": {
-    "key": "ui_cacb2035870a",
-    "en": "Supporting document",
-    "zh-CN": "辅助材料"
   },
   "Supports": {
     "key": "ui_f52bdea88ef9",

@@ -9,16 +9,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { UNASSIGNED_ID, type CategoryRow } from "../aggregate";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import type { CategoryRow } from "../aggregate";
+import { domainSearchGroups } from "./domain-search-groups";
 import { useMergeDomains } from "../use-taxonomy";
 export function MergeDomainDialog({
   domainId,
@@ -33,12 +26,6 @@ export function MergeDomainDialog({
 }) {
   const [into, setInto] = useState("");
   const mutation = useMergeDomains();
-  // Exclude the source domain and the render-only "Unassigned" pseudo-domain,
-  // which has no persisted id and would 404 as a merge target.
-  const isTargetable = (id: string) => id !== domainId && id !== UNASSIGNED_ID;
-  const items = categoryRows.flatMap((category) =>
-    category.domains.filter((domain) => isTargetable(domain.id)).map((domain) => domain.id),
-  );
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -50,29 +37,14 @@ export function MergeDomainDialog({
         </DialogHeader>
         <Field>
           <FieldLabel>Target domain</FieldLabel>
-          <Select
-            items={items.map((value) => ({ label: value, value }))}
+          <SearchableSelect
+            label="Target domain"
+            placeholder="Choose a domain"
+            groups={domainSearchGroups(categoryRows, domainId)}
             value={into || null}
-            onValueChange={(value) => value && setInto(value)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue>{into ? undefined : "Choose a domain"}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {categoryRows.map((category) => (
-                <SelectGroup key={category.slug}>
-                  <SelectLabel>{category.label}</SelectLabel>
-                  {category.domains
-                    .filter((domain) => isTargetable(domain.id))
-                    .map((domain) => (
-                      <SelectItem key={domain.id} value={domain.id}>
-                        {domain.label}
-                      </SelectItem>
-                    ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={setInto}
+            disabled={mutation.isPending}
+          />
         </Field>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

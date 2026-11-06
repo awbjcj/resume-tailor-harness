@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TagListInput } from "@/components/ui/tag-list-input";
 import type { ProfileMatrix } from "@/features/settings/use-matrix";
 import { useSkillCopy } from "@/i18n/skill-copy";
@@ -9,6 +10,7 @@ import {
   skillCategoryValue,
   type SkillCategory,
 } from "./skill-categories";
+import { skillGroupOptions } from "./skill-group-options";
 
 export type LibraryRow = NonNullable<ProfileMatrix["rows"]>[number];
 export type LibraryGroup = NonNullable<ProfileMatrix["groups"]>[number];
@@ -54,12 +56,14 @@ export function SkillEditorFields({
   value,
   onChange,
   groups,
+  categories,
   inferred = false,
   disabled,
 }: {
   value: SkillDraft;
   onChange: (value: SkillDraft) => void;
   groups: LibraryGroup[];
+  categories: LibraryCategory[];
   inferred?: boolean;
   disabled: boolean;
 }) {
@@ -115,19 +119,16 @@ export function SkillEditorFields({
           <label htmlFor={`${id}-group`} className="text-sm font-medium">
             {copy.group}
           </label>
-          <LibrarySelect
+          <SearchableSelect
             id={`${id}-group`}
             value={value.group}
             onChange={(group) => onChange({ ...value, group })}
             disabled={disabled}
-          >
-            <option value="">{copy.automatic_grouping}</option>
-            {groups.map((group) => (
-              <option key={group.slug} value={group.slug}>
-                {group.label}
-              </option>
-            ))}
-          </LibrarySelect>
+            groups={[
+              { id: "automatic", items: [{ value: "", label: copy.automatic_grouping }] },
+              ...skillGroupOptions(groups, categories),
+            ]}
+          />
         </div>
       </div>
     </>

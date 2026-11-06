@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { PROVIDER_SETUP } from "./support";
 
 const pagination = { page: 1, pageSize: 200, totalItems: 0, totalPages: 1 };
 const paged = { data: [], pagination };
@@ -23,6 +24,7 @@ const responses: Record<string, unknown> = {
     profile: { documentCount: 1, hasResume: true, canRebuild: true, freshness: "current", factsBuiltAt: "2026-11-04T12:00:00Z", githubUsername: null },
     search: { configured: true }, sources: { enabledCount: 1 }, complete: true,
   },
+  "/api/setup/provider": PROVIDER_SETUP,
   "/api/runs": paged,
   "/api/errors": { records: [] },
   "/api/notifications": [],

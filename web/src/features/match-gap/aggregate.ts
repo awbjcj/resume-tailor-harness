@@ -1,5 +1,6 @@
 import type { components } from "@/lib/api/schema";
 import { normalizePipelineStage } from "@/features/pipeline/pipeline-stages";
+import { listSearch } from "@/lib/list-search";
 
 type Payload = components["schemas"]["MatchGapOut"];
 type JobLite = Payload["jobs"][number];
@@ -202,7 +203,11 @@ export function deriveView(payload: Payload, filters: Filters): DerivedView {
     jobsBySkill.set(edge.skillKey, counts.jobs);
   }
 
-  const q = filters.q.trim().toLowerCase();
+  const q = filters.q.trim();
+  const matches = listSearch(q);
+  const domainLabels = new Map(payload.domains.map((domain) => [domain.id, domain.label]));
+  const domainCategory = new Map(payload.domains.map((domain) => [domain.id, domain.category]));
+  const categoryMeta = new Map(payload.categories.map((category) => [category.slug, category]));
   const generalDomains = new Set(payload.categories.map((category) => `general-${category.slug}`));
   const skills = payload.skills
     .flatMap((node): SkillRow[] => {
@@ -216,7 +221,13 @@ export function deriveView(payload: Payload, filters: Filters): DerivedView {
       };
       const coverage = node.coverage ?? (node.covered ? "covered" : "gap");
       if (filters.gapsOnly && coverage !== "gap") return [];
-      if (q && !node.skill.toLowerCase().includes(q)) return [];
+      if (q) {
+        const domainId = node.domainId ?? UNASSIGNED_ID;
+        const domain = domainLabels.get(domainId) ?? (domainId === UNASSIGNED_ID ? "Unassigned" : domainId);
+        const category = domainCategory.get(domainId) ?? "other";
+        const categoryLabel = categoryMeta.get(category)?.label ?? (category === "other" ? "Other" : category);
+        if (!matches(node.skill, node.key, domain, categoryLabel, ...Object.keys(node.members))) return [];
+      }
       return [
         {
           key: node.key,
@@ -247,8 +258,6 @@ export function deriveView(payload: Payload, filters: Filters): DerivedView {
         left.key.localeCompare(right.key),
     );
 
-  const domainLabels = new Map(payload.domains.map((domain) => [domain.id, domain.label]));
-  const domainCategory = new Map(payload.domains.map((domain) => [domain.id, domain.category]));
   const domainGroups = new Map<string, DomainRow & { jobs: Set<number> }>();
   for (const skill of skills) {
     const id = skill.domainId ?? UNASSIGNED_ID;
@@ -292,7 +301,6 @@ export function deriveView(payload: Payload, filters: Filters): DerivedView {
         left.id.localeCompare(right.id),
     );
 
-  const categoryMeta = new Map(payload.categories.map((category) => [category.slug, category]));
   const domainsByCategory = new Map<string, DomainRow[]>();
   for (const domain of domainRows) {
     domainsByCategory.set(domain.category, [

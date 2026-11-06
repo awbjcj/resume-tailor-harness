@@ -1,29 +1,22 @@
 import { useSkillCopy } from "@/i18n/skill-copy";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useIsMutating } from "@tanstack/react-query";
 import {
   Check,
-  ChevronLeft,
-  ChevronRight,
   CircleAlert,
   FolderCog,
   LayoutGrid,
   List,
+  ListFilter,
   GitMerge,
-  Pencil,
   Plus,
   RefreshCw,
-  Search,
   Sparkles,
-  Trash2,
-  Undo2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +25,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { ListSearch } from "@/components/ui/list-search";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
@@ -46,6 +40,8 @@ import {
 } from "@/features/settings/use-matrix";
 import { localizeRunError, localizeRunPhase } from "@/i18n/dynamic-labels";
 import { api, unwrap } from "@/lib/api/client";
+import { listSearch } from "@/lib/list-search";
+import { cn } from "@/lib/utils";
 import {
   localizeSkillContainer,
   localizeSkillLabel,
@@ -56,8 +52,11 @@ import {
 } from "./SkillEditorFields";
 import { SkillEditorDialog } from "./SkillEditorDialog";
 import { SkillCompactView } from "./SkillCompactView";
-import { SkillContextPopover } from "./SkillContextPopover";
+import { SkillDetailedView } from "./SkillDetailedView";
 import { SkillOrganizationDialog } from "./SkillOrganizationDialog";
+import { RemovedSkillList } from "./RemovedSkillList";
+import { buildSkillTree, type SkillDisclosure } from "./skill-tree";
+import { skillGroupOptions } from "./skill-group-options";
 import {
   SKILL_MUTATION_KEY,
   useCleanProfileSkills,
@@ -66,8 +65,8 @@ import {
   useSkillCleanupPolicy,
 } from "./use-profile-skills";
 
-const PAGE_SIZE = 40;
 const ACTIVE = ["queued", "running", "cancelling"];
+const OTHER_SLUG = "other";
 
 function CleanupDialog({ onClose }: { onClose: () => void }) {
   const copy = useSkillCopy();
@@ -269,7 +268,9 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
   const policy = useSkillCleanupPolicy();
   const mutating = useIsMutating({ mutationKey: SKILL_MUTATION_KEY });
   const { launch } = useLaunchRun();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const searchId = useId();
+  const filterId = useId();
   const run = useActiveRun("profile-skills-rebuild");
   const profileRun = useActiveRun("profile-build");
   const [launching, setLaunching] = useState(false);
@@ -280,10 +281,11 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
     !!(profileRun && ACTIVE.includes(profileRun.status)) ||
     mutating > 0;
   const [search, setSearch] = useState("");
+  const [disclosures, setDisclosures] = useState<Record<string, boolean>>({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [categoryFilter, setCategory] = useState("all");
   const [groupFilter, setGroup] = useState("all");
   const [origin, setOrigin] = useState("all");
-  const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editor, setEditor] = useState<LibraryRow | "new" | null>(null);
   const [newSkillGroup, setNewSkillGroup] = useState<string>();
@@ -323,14 +325,27 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
     );
 
   const rows = matrix.data.rows ?? [];
-  const groups = (matrix.data.groups ?? []).map((item) =>
-    localizeSkillContainer(item, i18n.resolvedLanguage),
-  );
-  const categories = matrix.data.categories?.length
-    ? matrix.data.categories.map((item) =>
-        localizeSkillContainer(item, i18n.resolvedLanguage),
-      )
-    : [{ slug: "other", label: "Other", customized: false }];
+  const fallback = { slug: OTHER_SLUG, label: "Other", customized: false };
+  const localize = <T extends { label: string; customized?: boolean }>(item: T) => ({
+    ...localizeSkillContainer(item, i18n.resolvedLanguage),
+    originalLabel: item.label,
+  });
+  const categories = (matrix.data.categories ?? []).map(localize);
+  const categorySlugs = new Set(categories.map((item) => item.slug));
+  const groups = (matrix.data.groups ?? []).map((item) => localize({
+    ...item,
+    category: categorySlugs.has(item.category) ? item.category : fallback.slug,
+  }));
+  const byGroup = new Map(groups.map((item) => [item.slug, item]));
+  if (!byGroup.has("other") && rows.some((row) => !byGroup.has(row.group ?? "other"))) {
+    const other = localize({ ...fallback, category: "other" });
+    groups.push(other);
+    byGroup.set(other.slug, other);
+  }
+  if (!categorySlugs.has("other") && (!categories.length || groups.some((item) => item.category === "other"))) {
+    categories.push(localize(fallback));
+  }
+  const byCategory = new Map(categories.map((item) => [item.slug, item]));
   const category = categories.some((item) => item.slug === categoryFilter)
     ? categoryFilter
     : "all";
@@ -341,27 +356,31 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
   )
     ? groupFilter
     : "all";
-  const byGroup = new Map(groups.map((g) => [g.slug, g]));
-  const rowCategory = (row: LibraryRow) =>
-    byGroup.get(row.group ?? "other")?.category ?? "other";
-  const normalized = search.trim().toLocaleLowerCase();
-  const filtered = rows.filter(
-    (row) =>
-      (category === "all" || rowCategory(row) === category) &&
-      (group === "all" || (row.group ?? "other") === group) &&
+  const groupOf = (row: LibraryRow) => byGroup.get(row.group ?? "other")?.slug ?? "other";
+  const matches = listSearch(search);
+  const filtered = rows.filter((row) => {
+    const owner = byGroup.get(groupOf(row));
+    const parent = byCategory.get(owner?.category ?? "other");
+    return (category === "all" || parent?.slug === category) &&
+      (group === "all" || owner?.slug === group) &&
       (origin === "all" || row.inferred === (origin === "inferred")) &&
-      [row.display, ...(row.aliases ?? [])].some((name) =>
-        name.toLocaleLowerCase().includes(normalized),
-      ),
-  );
-  const safePage = Math.min(
-    page,
-    Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1),
-  );
-  const visible = filtered.slice(
-    safePage * PAGE_SIZE,
-    (safePage + 1) * PAGE_SIZE,
-  );
+      matches(row.display, row.key, owner?.label, owner?.originalLabel, parent?.label, parent?.originalLabel, ...(row.aliases ?? []));
+  });
+  const hasSearch = !!search.trim();
+  const hasFilters = category !== "all" || group !== "all" || origin !== "all";
+  const filterScope = hasSearch || hasFilters ? JSON.stringify([search.trim(), category, group, origin]) : "";
+  const tree = buildSkillTree(categories, groups, filtered, groupOf, {
+    category,
+    group,
+    showEmpty: view === "compact" && !hasSearch && origin === "all",
+  });
+  const disclosure: SkillDisclosure = (kind, slug) => {
+    const key = `${kind}:${slug}`;
+    return {
+      browseOpen: disclosures[key],
+      onBrowseOpenChange: (open) => setDisclosures((current) => ({ ...current, [key]: open })),
+    };
+  };
   const selectedRows = rows.filter((row) => selected.has(row.key));
   const built = !!matrix.data.generatedAt;
   const unclassified =
@@ -369,8 +388,13 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
   const chooseCategory = (slug: string) => {
     setCategory(slug);
     setGroup("all");
-    setPage(0);
   };
+  function clearFilters() {
+    setSearch("");
+    chooseCategory("all");
+    setOrigin("all");
+    document.getElementById(searchId)?.focus();
+  }
   function openEditor(row: LibraryRow, trigger: HTMLElement | null) {
     setEditorFocus(trigger);
     setEditor(row);
@@ -388,6 +412,16 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
       return next;
     });
   }
+  function selectPage(visible: LibraryRow[], checked: boolean) {
+    setSelected((previous) => {
+      const next = new Set(previous);
+      for (const row of visible) {
+        if (checked) next.add(row.key);
+        else next.delete(row.key);
+      }
+      return next;
+    });
+  }
   function chooseView(next: "list" | "compact") {
     setView(next);
     try {
@@ -397,66 +431,42 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
     }
   }
   const filters = (
-    <div className="flex min-w-0 flex-wrap gap-2">
-      {view === "compact" ? (
-        <LibrarySelect
-          value={category}
-          onChange={chooseCategory}
-          label={copy.skill_categories}
-        >
+    <div className="flex min-w-0 flex-wrap items-start gap-2">
+      <ListSearch id={searchId} value={search} onChange={setSearch} aria-label={copy.searchLibrary} placeholder={copy.searchLibrary} className="flex-[1_1_12rem]" />
+      <Button
+        type="button"
+        variant={hasFilters ? "secondary" : "outline"}
+        size="icon"
+        className="size-11 self-stretch @3xl/library:hidden"
+        aria-label={copy.skillFilters}
+        aria-expanded={filtersOpen}
+        aria-controls={filterId}
+        onClick={() => setFiltersOpen(!filtersOpen)}
+      >
+        <ListFilter aria-hidden />
+      </Button>
+      <div id={filterId} className={cn("w-full min-w-0 flex-wrap items-center gap-2 @3xl/library:flex @3xl/library:w-auto [&_select]:h-11", filtersOpen ? "flex" : "hidden")}>
+        <LibrarySelect value={category} onChange={chooseCategory} label={copy.skill_categories}>
           <option value="all">{copy.all_skills}</option>
-          {categories.map((item) => (
-            <option key={item.slug} value={item.slug}>
-              {item.label}
-            </option>
-          ))}
+          {categories.map((item) => <option key={item.slug} value={item.slug}>{item.label}</option>)}
         </LibrarySelect>
-      ) : null}
-      <div className="relative min-w-0 flex-[1_1_15rem]">
-        <Search
-          aria-hidden
-          className="pointer-events-none absolute left-3 top-3 size-4 text-muted-foreground"
+        <SearchableSelect
+          label={copy.filter_by_group}
+          searchLabel={copy.searchOrganization}
+          className="min-h-11 w-auto max-w-full"
+          value={group}
+          onChange={setGroup}
+          groups={[
+            { id: "all-groups", items: [{ value: "all", label: copy.all_groups }] },
+            ...skillGroupOptions(groups.filter((item) => category === "all" || item.category === category), categories),
+          ]}
         />
-        <Input
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-          }}
-          aria-label={copy.search_skills_and_aliases}
-          placeholder={copy.search_skills_and_aliases_placeholder}
-          className="pl-9"
-        />
+        <LibrarySelect value={origin} onChange={setOrigin} label={copy.filter_by_evidence}>
+          <option value="all">{copy.all_evidence}</option>
+          <option value="literal">{copy.listed_skills}</option>
+          <option value="inferred">{copy.inferred_skills}</option>
+        </LibrarySelect>
       </div>
-      <LibrarySelect
-        value={group}
-        onChange={(v) => {
-          setGroup(v);
-          setPage(0);
-        }}
-        label={copy.filter_by_group}
-      >
-        <option value="all">{copy.all_groups}</option>
-        {groups
-          .filter((g) => category === "all" || g.category === category)
-          .map((g) => (
-            <option key={g.slug} value={g.slug}>
-              {g.label}
-            </option>
-          ))}
-      </LibrarySelect>
-      <LibrarySelect
-        value={origin}
-        onChange={(v) => {
-          setOrigin(v);
-          setPage(0);
-        }}
-        label={copy.filter_by_evidence}
-      >
-        <option value="all">{copy.all_evidence}</option>
-        <option value="literal">{copy.listed_skills}</option>
-        <option value="inferred">{copy.inferred_skills}</option>
-      </LibrarySelect>
     </div>
   );
   const selectionBar =
@@ -617,241 +627,50 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
         </div>
       ) : (
         <>
-          {view === "compact" ? (
-            <div className="min-w-0 space-y-4">
-              {filters}
-              {selectionBar}
-              <SkillCompactView
-                rows={filtered}
-                allRows={rows}
-                groups={groups}
-                categories={categories}
-                disabled={busy}
-                category={category}
-                group={group}
-                hasSearch={!!search.trim() || origin !== "all"}
-                selected={selected}
-                onEdit={openEditor}
-                onDelete={(key) => remove.mutate(key)}
-                onAdd={addToGroup}
-                onSelect={toggleSelection}
-                onClear={() => {
-                  setSearch("");
-                  chooseCategory("all");
-                  setOrigin("all");
-                }}
-              />
+          {filters}
+          <p role="status" className="text-sm text-muted-foreground empty:sr-only">
+            {hasSearch || hasFilters ? t("longLists.results", { shown: filtered.length, total: rows.length }) : null}
+          </p>
+          {selectionBar}
+          {!tree.length ? (
+            <div className="rounded-lg border border-dashed px-4 py-8 text-center">
+              <p className="font-medium">{rows.length ? copy.noMatchingSkills : copy.no_skills_yet}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{rows.length ? copy.noMatches : copy.noSkills}</p>
+              {filterScope ? (
+                <Button type="button" variant="ghost" className="mt-2" onClick={clearFilters}>{copy.clear_filters}</Button>
+              ) : null}
             </div>
+          ) : view === "compact" ? (
+            <SkillCompactView
+              tree={tree}
+              groups={groups}
+              categories={categories}
+              disabled={busy}
+              focusedCategory={category !== "all"}
+              query={filterScope}
+              disclosure={disclosure}
+              showAliases={hasSearch}
+              selected={selected}
+              onEdit={openEditor}
+              onDelete={(key) => remove.mutate(key)}
+              onAdd={addToGroup}
+              onSelect={toggleSelection}
+            />
           ) : (
-            <div className="grid min-w-0 gap-5 @3xl/library:grid-cols-[12rem_minmax(0,1fr)]">
-              <nav
-                aria-label={copy.skill_categories}
-                className="flex min-w-0 flex-wrap content-start gap-1 @3xl/library:flex-col"
-              >
-                {[{ slug: "all", label: copy.all_skills }, ...categories].map(
-                  (item) => (
-                    <Button
-                      key={item.slug}
-                      variant={category === item.slug ? "secondary" : "ghost"}
-                      className="h-auto min-h-10 max-w-full justify-between gap-3 whitespace-normal text-left text-sm"
-                      aria-pressed={category === item.slug}
-                      onClick={() => chooseCategory(item.slug)}
-                    >
-                      <span>{item.label}</span>
-                      <span className="tabular-nums text-muted-foreground">
-                        {item.slug === "all"
-                          ? rows.length
-                          : rows.filter((row) => rowCategory(row) === item.slug)
-                              .length}
-                      </span>
-                    </Button>
-                  ),
-                )}
-              </nav>
-              <div className="min-w-0 space-y-3">
-                {filters}
-                {selectionBar}
-                <div className="@container/skills rounded-xl border border-border">
-                  <div className="flex items-center gap-3 border-b bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
-                    <Checkbox
-                      aria-label={copy.select_visible_skills}
-                      disabled={busy || !visible.length}
-                      checked={
-                        visible.length > 0 &&
-                        visible.every((row) => selected.has(row.key))
-                      }
-                      onCheckedChange={(checked) =>
-                        setSelected((previous) => {
-                          const next = new Set(previous);
-                          visible.forEach((row) => {
-                            if (checked) next.add(row.key);
-                            else next.delete(row.key);
-                          });
-                          return next;
-                        })
-                      }
-                    />
-                    <span className="flex-1">{copy.skill_aliases}</span>
-                    <span className="hidden w-44 @2xl/skills:block">
-                      {copy.group}
-                    </span>
-                    <span className="w-20 text-right">Actions</span>
-                  </div>
-                  {visible.length === 0 ? (
-                    <div className="px-5 py-12 text-center">
-                      <p className="font-medium">
-                        {rows.length
-                          ? "No matching skills"
-                          : copy.no_skills_yet}
-                      </p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {rows.length ? copy.noMatches : copy.noSkills}
-                      </p>
-                      {rows.length ? (
-                        <Button
-                          variant="ghost"
-                          className="mt-3"
-                          onClick={() => {
-                            setSearch("");
-                            chooseCategory("all");
-                            setOrigin("all");
-                          }}
-                        >
-                          {copy.clear_filters}
-                        </Button>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <ul className="divide-y">
-                      {visible.map((row) => (
-                        <li
-                          key={row.key}
-                          className="flex min-w-0 items-start gap-3 px-4 py-3.5"
-                        >
-                          <Checkbox
-                            className="mt-1.5"
-                            aria-label={`Select ${row.display}`}
-                            checked={selected.has(row.key)}
-                            disabled={busy}
-                            onCheckedChange={(checked) =>
-                              setSelected((previous) => {
-                                const next = new Set(previous);
-                                if (checked) next.add(row.key);
-                                else next.delete(row.key);
-                                return next;
-                              })
-                            }
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <SkillContextPopover
-                                row={row}
-                                groups={groups}
-                                categories={categories}
-                                disabled={busy}
-                                selected={selected.has(row.key)}
-                                onEdit={openEditor}
-                                onDelete={(key) => remove.mutate(key)}
-                                onSelect={toggleSelection}
-                              />
-                              {row.inferred ? (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[0.65rem]"
-                                >
-                                  {copy.inferred}
-                                </Badge>
-                              ) : null}
-                            </div>
-                            {row.aliases?.length ? (
-                              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                                {row.aliases.join(", ")}
-                              </p>
-                            ) : null}
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {row.inferred
-                                ? copy.linked_to_profile_evidence
-                                : copy.listed_in_your_profile}
-                              <span className="@2xl/skills:hidden">
-                                {" "}
-                                ·{" "}
-                                {byGroup.get(row.group ?? "other")?.label ??
-                                  "Other"}
-                              </span>
-                            </p>
-                          </div>
-                          <div className="hidden w-44 shrink-0 pt-1 @2xl/skills:block">
-                            <span className="text-xs leading-relaxed text-muted-foreground">
-                              {byGroup.get(row.group ?? "other")?.label ??
-                                "Other"}
-                            </span>
-                            {row.groupSource === "correction" ? (
-                              <p className="mt-1 text-[0.65rem] text-muted-foreground">
-                                {copy.manually_assigned}
-                              </p>
-                            ) : null}
-                          </div>
-                          <div className="flex w-20 shrink-0 justify-end">
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={`Edit ${row.display}`}
-                              disabled={busy}
-                              onClick={(event) =>
-                                openEditor(row, event.currentTarget)
-                              }
-                            >
-                              <Pencil aria-hidden />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={`Delete ${row.display}`}
-                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                              disabled={busy}
-                              onClick={() => remove.mutate(row.key)}
-                            >
-                              <Trash2 aria-hidden />
-                            </Button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <span aria-live="polite">
-                    {`${filtered.length} matching skills`}
-                  </span>
-                  {filtered.length > PAGE_SIZE ? (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={copy.previous_skills_page}
-                        disabled={safePage === 0}
-                        onClick={() => setPage(safePage - 1)}
-                      >
-                        <ChevronLeft aria-hidden />
-                      </Button>
-                      <span className="tabular-nums">
-                        {safePage + 1} /{" "}
-                        {Math.ceil(filtered.length / PAGE_SIZE)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={copy.next_skills_page}
-                        disabled={(safePage + 1) * PAGE_SIZE >= filtered.length}
-                        onClick={() => setPage(safePage + 1)}
-                      >
-                        <ChevronRight aria-hidden />
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </div>
+            <SkillDetailedView
+              tree={tree}
+              groups={groups}
+              categories={categories}
+              disabled={busy}
+              focusedCategory={category !== "all"}
+              query={filterScope}
+              disclosure={disclosure}
+              selected={selected}
+              onEdit={openEditor}
+              onDelete={(key) => remove.mutate(key)}
+              onSelect={toggleSelection}
+              onSelectPage={selectPage}
+            />
           )}
           <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-4">
             <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -891,31 +710,11 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
               </Button>
             </p>
           ) : suppressed.data?.length ? (
-            <details className="border-t pt-4">
-              <summary className="cursor-pointer text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                {`Removed skills (${suppressed.data.length})`}
-              </summary>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {copy.restoreHelp}
-              </p>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {suppressed.data.map((skill) => (
-                  <li key={skill.token}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-auto min-h-9 max-w-full whitespace-normal text-left"
-                      disabled={busy}
-                      aria-label={`Restore ${skill.display}`}
-                      onClick={() => restore.mutate(skill.token)}
-                    >
-                      <Undo2 aria-hidden />
-                      {skill.display}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </details>
+            <RemovedSkillList
+              skills={suppressed.data}
+              disabled={busy}
+              onRestore={(token) => restore.mutate(token)}
+            />
           ) : null}
         </>
       )}
@@ -924,6 +723,7 @@ export function SkillLibrary({ disabled = false }: { disabled?: boolean }) {
           key={editor === "new" ? "new" : editor.key}
           row={editor === "new" ? undefined : editor}
           groups={groups}
+          categories={categories}
           initialGroup={editor === "new" ? newSkillGroup : undefined}
           returnFocus={editorFocus}
           disabled={disabled || rebuilding}

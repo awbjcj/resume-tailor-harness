@@ -52,7 +52,8 @@ describe("adding a job skill to the personal library", () => {
     await user.type(screen.getByRole("textbox", { name: "Aliases" }), "rustlang, rustlang, Rust language");
     await user.click(screen.getByRole("button", { name: "Add to Aliases" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Skill type" }), "domain");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Group" }), "custom");
+    await user.click(screen.getByRole("combobox", { name: "Group" }));
+    await user.click(await screen.findByRole("option", { name: "My tools" }));
     await user.click(screen.getByRole("button", { name: "Add skill" }));
     await waitFor(() => expect(body).toEqual({
       name: "Rust", category: "domain", group: "custom", aliases: ["rustlang", "Rust language"],
@@ -111,12 +112,13 @@ describe("adding a job skill to the personal library", () => {
     show();
     await open(user);
     await user.type(await screen.findByRole("textbox", { name: "Aliases" }), "rustlang{Enter}");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Group" }), "custom");
+    await user.click(screen.getByRole("combobox", { name: "Group" }));
+    await user.click(await screen.findByRole("option", { name: "My tools" }));
     await user.click(screen.getByRole("tab", { name: "Use existing skill" }));
     await screen.findByText("No personal skills yet. Add this as a new skill.");
     await user.click(screen.getByRole("tab", { name: "New skill" }));
     expect(screen.getByRole("button", { name: "Remove rustlang" })).toBeVisible();
-    expect(screen.getByRole("combobox", { name: "Group" })).toHaveValue("custom");
+    expect(screen.getByRole("combobox", { name: "Group" })).toHaveTextContent("My tools");
   });
 
   it("shows an inline save failure and lets the user correct and retry", async () => {
@@ -146,7 +148,7 @@ describe("adding a job skill to the personal library", () => {
     expect(screen.queryByRole("button", { name: "Add skill" })).not.toBeInTheDocument();
     server.use(http.get("*/api/profile/matrix", () => HttpResponse.json(matrix)));
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByRole("combobox", { name: "Group" })).toHaveValue("");
+    expect(await screen.findByRole("combobox", { name: "Group" })).toHaveTextContent("Automatic grouping");
   });
 
   it("distinguishes a failed alias-target read from an empty library and allows retry", async () => {
@@ -205,8 +207,9 @@ describe("adding a job skill to the personal library", () => {
     await act(async () => { await changeLanguage("zh-CN"); });
     expect(within(dialog).getByRole("tab", { name: "关联已有技能" })).toBeInTheDocument();
     expect(within(dialog).getByRole("textbox", { name: "技能名称" })).toHaveValue("Rust");
-    expect(within(dialog).getByRole("option", { name: "编程语言" })).toBeInTheDocument();
-    expect(within(dialog).getByRole("option", { name: "My tools" })).toBeInTheDocument();
     expect(within(dialog).getByRole("combobox", { name: "技能类型" })).toHaveValue("hard");
+    await userEvent.click(within(dialog).getByRole("combobox", { name: "分组" }));
+    expect(await screen.findByRole("option", { name: "编程语言" })).toBeVisible();
+    expect(screen.getByRole("option", { name: "My tools" })).toBeVisible();
   });
 });

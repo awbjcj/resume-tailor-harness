@@ -6,11 +6,12 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UNASSIGNED_ID, type CategoryRow } from "../aggregate";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import type { CategoryRow } from "../aggregate";
+import { domainSearchGroups } from "./domain-search-groups";
 import type { NewDomainInput } from "../use-taxonomy";
 
 type Category = { slug: string; label: string; kind: "hard" | "soft" };
@@ -30,17 +31,6 @@ export function DomainPicker({
   onDomainIdChange: (value: string) => void;
   onNewDomainChange: (value: NewDomainInput | null) => void;
 }) {
-  // The synthetic "Unassigned" domain is render-only and has no persisted id,
-  // so it must never be offered as a move/add target.
-  const pickableCategories = categoryRows
-    .map((category) => ({
-      ...category,
-      domains: category.domains.filter((domain) => domain.id !== UNASSIGNED_ID),
-    }))
-    .filter((category) => category.domains.length > 0);
-  const domainItems = pickableCategories.flatMap((category) =>
-    category.domains.map((domain) => ({ label: domain.label, value: domain.id })),
-  );
   const categoryItems = categories.map((category) => ({
     label: category.label,
     value: category.slug,
@@ -50,29 +40,13 @@ export function DomainPicker({
       {!newDomain && (
         <Field>
           <FieldLabel>Domain</FieldLabel>
-          <Select
-            items={domainItems}
+          <SearchableSelect
+            label="Domain"
+            placeholder="Choose a domain"
+            groups={domainSearchGroups(categoryRows)}
             value={domainId || null}
-            onValueChange={(value) => value && onDomainIdChange(value)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue>
-                {domainId ? undefined : "Choose a domain"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent alignItemWithTrigger={false}>
-              {pickableCategories.map((category) => (
-                <SelectGroup key={category.slug}>
-                  <SelectLabel>{category.label}</SelectLabel>
-                  {category.domains.map((domain) => (
-                    <SelectItem key={domain.id} value={domain.id}>
-                      {domain.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={onDomainIdChange}
+          />
         </Field>
       )}
       {newDomain && (
