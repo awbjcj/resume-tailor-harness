@@ -2,6 +2,7 @@ import { Trash2 } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /**
  * The per-row destructive action for a resume version or cover letter.
@@ -30,7 +31,7 @@ export function ArtifactDeleteButton({
     <Button
       size={showLabel ? "sm" : "icon-sm"}
       variant="ghost"
-      className="text-muted-foreground hover:text-destructive"
+      className={cn("text-muted-foreground hover:text-destructive", showLabel && "max-sm:w-9 max-sm:px-0")}
       disabled={applied || disabled}
       aria-label={`Delete ${label}`}
       title={
@@ -38,7 +39,7 @@ export function ArtifactDeleteButton({
       }
     >
       <Trash2 aria-hidden="true" />
-      {showLabel && "Delete"}
+      {showLabel && <span className="hidden sm:inline">Delete</span>}
     </Button>
   );
 

@@ -49,35 +49,18 @@ export function DashboardPage() {
       />
       {totalJobs > 0 && <ActionQueue summary={summary} />}
       <JourneyRail />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="stagger-children flex min-w-0 flex-col gap-6">
-          {/* When the funnel has no active jobs the JourneyRail already carries
-              the right next step (add sources, or pull), so no separate empty
-              card is needed — it would only duplicate that guidance. */}
-          {totalJobs > 0 && <StageRail summary={summary} />}
-          <InProgressCard summary={summary} />
-          <InsightsCard summary={summary} />
-          <UpcomingCard events={summary.upcomingEvents ?? []} />
-          <AttentionCard />
-        </div>
-        {/* Standing "is the desk working?" column: setup readiness plus live run
-            activity. It is a landmark rather than a bare <div> so the grouping
-            is nameable without a third uppercase heading competing with the two
-            card titles already inside it.
-
-            `self-start` is what makes `sticky` do anything here — a grid item
-            defaults to `stretch`, so it would already be as tall as the row and
-            have nothing to stick within. Status stays on screen while the work
-            column scrolls; below xl the columns stack and status follows the
-            work, which is the right priority order. */}
-        <aside
-          aria-label={t("dashboard.systemStatus")}
-          className="stagger-children flex min-w-0 flex-col gap-6 xl:sticky xl:top-20 xl:self-start"
-        >
-          <DeskHealth />
-          <RecentRuns />
-        </aside>
-      </div>
+      {totalJobs > 0 && <StageRail summary={summary} />}
+      <aside
+        aria-label={t("dashboard.systemStatus")}
+        className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] items-start gap-4 empty:hidden"
+      >
+        <InProgressCard summary={summary} />
+        <InsightsCard summary={summary} />
+        <DeskHealth />
+      </aside>
+      <UpcomingCard events={summary.upcomingEvents ?? []} />
+      <AttentionCard />
+      <RecentRuns />
       <QuickAccess />
     </div>
   );

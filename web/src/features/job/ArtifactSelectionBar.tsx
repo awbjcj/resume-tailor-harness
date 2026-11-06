@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 /**
  * Select-all plus the destructive bulk action, shared by the resume-version
@@ -18,6 +19,7 @@ export function ArtifactSelectionBar({
   onToggleAll,
   onDelete,
   disabled,
+  className,
 }: {
   kind: "version" | "coverLetter";
   selectedCount: number;
@@ -25,12 +27,13 @@ export function ArtifactSelectionBar({
   onToggleAll: () => void;
   onDelete: () => void;
   disabled?: boolean;
+  className?: string;
 }) {
   const { t } = useTranslation();
   const version = kind === "version";
 
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 px-3 py-2">
+    <div className={cn("mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 px-3 py-2", className)}>
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <Checkbox
           checked={allSelected}
