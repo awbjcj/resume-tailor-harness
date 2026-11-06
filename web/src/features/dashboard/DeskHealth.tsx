@@ -61,7 +61,16 @@ export function DeskHealth() {
   // Fail-open: a broken status endpoint must not break the dashboard (spec §7).
   if (isPending || isError || !status) return null;
   const allOk = HEALTH_ITEMS.every((item) => item.ok(status));
-  if (allOk) return <Card className="py-4"><CardContent><p className="flex items-center gap-2 text-sm"><CheckCircle2 className="size-4 text-primary" aria-hidden="true" />{t("dashboard.deskReady")}</p></CardContent></Card>;
+  if (allOk) return (
+    <Card className="justify-center py-4">
+      <CardContent>
+        <p className="flex items-center gap-2 text-sm">
+          <CheckCircle2 className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          {t("dashboard.deskReady")}
+        </p>
+      </CardContent>
+    </Card>
+  );
   return (
     <Card>
       <CardHeader>

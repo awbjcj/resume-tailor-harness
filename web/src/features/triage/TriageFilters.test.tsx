@@ -46,14 +46,6 @@ describe("TriageFilters", () => {
     expect(screen.getByRole("button", { name: "Source" })).toBeInTheDocument();
     expect(screen.getByLabelText("Posted age")).toBeInTheDocument();
     expect(screen.queryByText(/low fit/i)).not.toBeInTheDocument();
-
-    const searchField = screen.getByRole("searchbox", { name: "Search" })
-      .closest('[data-slot="field"]');
-    const reasonField = screen.getByRole("searchbox", { name: "Rejection reason" })
-      .closest('[data-slot="field"]');
-    expect(searchField?.parentElement).toBe(reasonField?.parentElement);
-    expect(searchField).toHaveClass("sm:flex-1");
-    expect(reasonField).toHaveClass("sm:flex-1");
   });
 
   it("resyncs text drafts when committed URL filters change", () => {

@@ -302,34 +302,19 @@ export function FilterDesk({
   return (
     <section
       aria-label="Filter and sort"
-      className="mb-6 rounded-lg border bg-card p-4"
+      className="mb-6 @container/filters rounded-lg border bg-card p-4"
     >
-      <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-            {t("interactionCopy.filters.matching", { count: total.toLocaleString() })}
-          </span>
-          {savedViewBoard && (
-            <SavedViewsControl
-              board={savedViewBoard}
-              filter={filter}
-              defaultSort={defaultSort}
-              onApply={onChange}
-            />
-          )}
-        </div>
-      </div>
-
       <form
+        id="board-filters"
         onSubmit={(event) => {
           event.preventDefault();
           applyPrimaryFilters();
         }}
       >
-        <FieldGroup className="flex-row flex-wrap items-end gap-2">
+        <FieldGroup className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] items-end gap-3">
           {showStatus && (
-            <Field className="w-full gap-1.5 sm:w-30">
-              <FieldTitle className="sr-only">Status</FieldTitle>
+            <Field className="min-w-0 gap-1.5">
+              <FieldTitle className={CONTROL_LABEL_CLASS}>Status</FieldTitle>
               <FacetPopover
                 label="Status"
                 counts={statusCounts}
@@ -345,35 +330,33 @@ export function FilterDesk({
             </Field>
           )}
 
-          <div className="flex w-full flex-col gap-2 sm:flex-row lg:min-w-[28rem] lg:flex-1">
-            <Field className="w-full gap-1.5 sm:basis-0 sm:flex-1">
-              <FieldLabel htmlFor="f-q" className={CONTROL_LABEL_CLASS}>
-                Search
-              </FieldLabel>
-              <div className="relative">
-                <SearchIcon
-                  aria-hidden
-                  className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  id="f-q"
-                  type="search"
-                  placeholder="Title, company, skill…"
-                  className="h-9 bg-background pl-8"
-                  value={draft.q}
-                  onChange={(event) =>
-                    setPrimaryDraft({ ...draft, q: event.target.value })
-                  }
-                />
-              </div>
-            </Field>
+          <Field className="min-w-0 gap-1.5">
+            <FieldLabel htmlFor="f-q" className={CONTROL_LABEL_CLASS}>
+              Search
+            </FieldLabel>
+            <div className="relative">
+              <SearchIcon
+                aria-hidden
+                className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                id="f-q"
+                type="search"
+                placeholder="Title, company, skill…"
+                className="h-9 bg-background pl-8"
+                value={draft.q}
+                onChange={(event) =>
+                  setPrimaryDraft({ ...draft, q: event.target.value })
+                }
+              />
+            </div>
+          </Field>
 
-            <MinFitInput
-              id="f-fit"
-              value={draft.fitMin}
-              onChange={(fitMin) => setPrimaryDraft({ ...draft, fitMin })}
-            />
-          </div>
+          <MinFitInput
+            id="f-fit"
+            value={draft.fitMin}
+            onChange={(fitMin) => setPrimaryDraft({ ...draft, fitMin })}
+          />
 
           <SalaryThresholdInput
             id="f-salary"
@@ -382,7 +365,7 @@ export function FilterDesk({
             onChange={(salaryMin) => setPrimaryDraft({ ...draft, salaryMin })}
           />
 
-          <Field className="w-full gap-1.5 sm:w-30">
+          <Field className="min-w-0 gap-1.5">
             <FieldLabel htmlFor="f-stale" className={CONTROL_LABEL_CLASS}>
               {t("filters.posted.label")}
             </FieldLabel>
@@ -418,7 +401,7 @@ export function FilterDesk({
             </Select>
           </Field>
 
-          <Field className="w-full gap-1.5 sm:w-28">
+          <Field className="min-w-0 gap-1.5">
             <FieldLabel htmlFor="f-sort" className={CONTROL_LABEL_CLASS}>
               {t("filters.sortBy")}
             </FieldLabel>
@@ -451,7 +434,7 @@ export function FilterDesk({
           </Field>
 
           {filter.sort === "composite" && (
-            <Field className="w-full gap-1.5 sm:w-28">
+            <Field className="min-w-0 gap-1.5">
               <FieldLabel htmlFor="f-preset" className={CONTROL_LABEL_CLASS}>
                 {t("filters.preset")}
               </FieldLabel>
@@ -483,37 +466,52 @@ export function FilterDesk({
               </Select>
             </Field>
           )}
+        </FieldGroup>
+      </form>
 
+      <div className="mt-3 grid items-end gap-3 border-t pt-3 @2xl/filters:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {facetSpecs.map(({ key, label, options, getLabel }) => {
+            const counts = countsWithSelected(facets[key], filter[key]);
+            for (const option of options ?? []) counts[option] ??= 0;
+            if (!hasOptions(counts, filter[key])) return null;
+            return (
+              <FacetPopover
+                key={key}
+                label={label}
+                counts={counts}
+                selected={filter[key]}
+                onChange={(next) => setFacet(key, next)}
+                open={openFacet === key}
+                onOpenChange={(nextOpen) => handleFacetOpenChange(key, nextOpen)}
+                getLabel={getLabel ?? pretty}
+              />
+            );
+          })}
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+            {t("interactionCopy.filters.matching", { count: total.toLocaleString() })}
+          </span>
+          {savedViewBoard && (
+            <SavedViewsControl
+              board={savedViewBoard}
+              filter={filter}
+              defaultSort={defaultSort}
+              onApply={onChange}
+            />
+          )}
           <Button
             type="submit"
+            form="board-filters"
             size="sm"
-            className="w-full sm:ml-auto sm:w-auto"
+            className="shrink-0"
             disabled={!hasPrimaryDraftChanges || !salaryDraft.valid}
           >
             <SearchIcon data-icon="inline-start" />
             Apply
           </Button>
-        </FieldGroup>
-      </form>
-
-      <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
-        {facetSpecs.map(({ key, label, options, getLabel }) => {
-          const counts = countsWithSelected(facets[key], filter[key]);
-          for (const option of options ?? []) counts[option] ??= 0;
-          if (!hasOptions(counts, filter[key])) return null;
-          return (
-            <FacetPopover
-              key={key}
-              label={label}
-              counts={counts}
-              selected={filter[key]}
-              onChange={(next) => setFacet(key, next)}
-              open={openFacet === key}
-              onOpenChange={(nextOpen) => handleFacetOpenChange(key, nextOpen)}
-              getLabel={getLabel ?? pretty}
-            />
-          );
-        })}
+        </div>
       </div>
 
       <ActiveFilterSummary
