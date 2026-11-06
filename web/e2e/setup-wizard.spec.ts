@@ -65,7 +65,7 @@ test("first run gates to the wizard; exit reaches the app; settings nav works", 
   await page.getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL(/\/settings\/search$/);
   await page.getByRole("link", { name: "Search" }).click();
-  await expect(page.getByLabel("Keywords")).toBeVisible();
+  await expect(page.getByLabel("Keywords", { exact: true })).toBeVisible();
 });
 
 test("a named provider can be set up with a single key", async ({ page }) => {

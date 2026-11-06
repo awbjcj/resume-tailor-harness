@@ -1054,11 +1054,6 @@
     "en": "Alternate email",
     "zh-CN": "备用电子邮箱"
   },
-  "Always include repositories": {
-    "key": "ui_2b1b7990f3f1",
-    "en": "Always include repositories",
-    "zh-CN": "始终包含代码仓库"
-  },
   "Ambiguous requests will ask you to choose a skill.": {
     "key": "ui_eaea14ad5f74",
     "en": "Ambiguous requests will ask you to choose a skill.",
@@ -1378,11 +1373,6 @@
     "key": "ui_0b2b32868a1a",
     "en": "Archive tier",
     "zh-CN": "归档档位"
-  },
-  "archive, experiments": {
-    "key": "ui_fb5cb63cc378",
-    "en": "archive, experiments",
-    "zh-CN": "归档、实验"
   },
   "Archived": {
     "key": "ui_bdb86505f806",
@@ -2218,16 +2208,6 @@
     "key": "ui_e6039c2b1728",
     "en": "Combining reviews saves time and cost. Turn this off to run each advisory reviewer separately.",
     "zh-CN": "合并评审可减少耗时和费用；关闭后，各项评审将分别运行。"
-  },
-  "Comma-separated repository names that are never harvested.": {
-    "key": "ui_369f1c3b09c2",
-    "en": "Comma-separated repository names that are never harvested.",
-    "zh-CN": "永不采集的仓库名称，以逗号分隔。"
-  },
-  "Comma-separated repository names that bypass ranking.": {
-    "key": "ui_5fe61cf3c6b1",
-    "en": "Comma-separated repository names that bypass ranking.",
-    "zh-CN": "跳过排名的仓库名称，以逗号分隔。"
   },
   "Committed only": {
     "key": "ui_6e42abce3d4f",
@@ -3484,11 +3464,6 @@
     "en": "Duration (minutes)",
     "zh-CN": "时长（分钟）"
   },
-  "e.g. 12, 18": {
-    "key": "ui_4c5f8a190e11",
-    "en": "e.g. 12, 18",
-    "zh-CN": "例如 12、18"
-  },
   "e.g. 15.00": {
     "key": "ui_d42ebe692b9d",
     "en": "e.g. 15.00",
@@ -3784,11 +3759,6 @@
     "en": "Enter a valid IANA timezone, such as America/New_York.",
     "zh-CN": "请输入有效的 IANA 时区，例如 America/New_York。"
   },
-  "Enter a whole number from 1 to 100 to save.": {
-    "key": "ui_fe9bb763ca66",
-    "en": "Enter a whole number from 1 to 100 to save.",
-    "zh-CN": "请输入 1 到 100 之间的整数后保存。"
-  },
   "Enter each part of your name and address as it should appear on applications. Blank fields stay unknown; your existing contact notes are kept.": {
     "key": "ui_f580f7aea800",
     "en": "Enter each part of your name and address as it should appear on applications. Blank fields stay unknown; your existing contact notes are kept.",
@@ -3918,16 +3888,6 @@
     "key": "ui_35a90de290ff",
     "en": "Exact question or degree option details",
     "zh-CN": "问题原文或学位选项说明"
-  },
-  "Exclude repositories": {
-    "key": "ui_6a032b573c2e",
-    "en": "Exclude repositories",
-    "zh-CN": "排除代码仓库"
-  },
-  "Exclude terms": {
-    "key": "ui_9c8445fcc16c",
-    "en": "Exclude terms",
-    "zh-CN": "排除关键词"
   },
   "Exclude this entry from skill demand and future regrouping. You can restore it from discarded non-skills. Original job descriptions stay intact.": {
     "key": "ui_ed631ab54200",
@@ -4849,11 +4809,6 @@
     "en": "Import jobs",
     "zh-CN": "导入职位"
   },
-  "Import preferences": {
-    "key": "ui_9481bf9dc922",
-    "en": "Import preferences",
-    "zh-CN": "导入偏好"
-  },
   "Import text from a public HTTP or HTTPS page as profile evidence.": {
     "key": "ui_2dfd3a12e310",
     "en": "Import text from a public HTTP or HTTPS page as profile evidence.",
@@ -5289,11 +5244,6 @@
     "en": "Keyword",
     "zh-CN": "关键词"
   },
-  "Keywords": {
-    "key": "ui_8bfdb93cafaa",
-    "en": "Keywords",
-    "zh-CN": "关键词"
-  },
   "Label": {
     "key": "ui_0e66373f45dc",
     "en": "Label",
@@ -5629,11 +5579,6 @@
     "en": "Locations",
     "zh-CN": "地点"
   },
-  "Locations (one per line)": {
-    "key": "ui_8045f91edbb7",
-    "en": "Locations (one per line)",
-    "zh-CN": "工作地点（每行一个）"
-  },
   "Make {{v0}} primary": {
     "key": "ui_ea3af0396711",
     "en": "Make {{v0}} primary",
@@ -5743,11 +5688,6 @@
     "key": "ui_44e46588aba0",
     "en": "Maximum number of writing and review rounds. The best version is kept.",
     "zh-CN": "最多进行多少轮写作和评审，最后保留效果最好的一版。"
-  },
-  "Maximum ranked repositories to import, from 1 to 100.": {
-    "key": "ui_24e59ec418e0",
-    "en": "Maximum ranked repositories to import, from 1 to 100.",
-    "zh-CN": "按排名导入的仓库数量上限，可设为 1 到 100。"
   },
   "Maximum years": {
     "key": "ui_bf1920efaffe",
@@ -6694,16 +6634,6 @@
     "en": "Off-peak rates are active until {{v0}} UTC. Weekday peak hours are 01:00–04:00 and 06:00–10:00 UTC.",
     "zh-CN": "当前为非高峰计费时段，持续至 {{v0}} UTC。工作日高峰时段为 01:00–04:00 和 06:00–10:00 UTC。"
   },
-  "Offer application ids": {
-    "key": "ui_9ce3151db6b1",
-    "en": "Offer application ids",
-    "zh-CN": "录用通知对应的申请 ID"
-  },
-  "Offer comparison references": {
-    "key": "ui_a13219713c8d",
-    "en": "Offer comparison references",
-    "zh-CN": "录用通知对比参考"
-  },
   "Offer deadline": {
     "key": "ui_77fff3dfc875",
     "en": "Offer deadline",
@@ -7114,11 +7044,6 @@
     "en": "Portfolio URL",
     "zh-CN": "作品集链接"
   },
-  "portfolio, flagship-project": {
-    "key": "ui_066fd1d4077b",
-    "en": "portfolio, flagship-project",
-    "zh-CN": "portfolio, flagship-project"
-  },
   "Postal code": {
     "key": "ui_ae53cea8228b",
     "en": "Postal code",
@@ -7518,11 +7443,6 @@
     "key": "ui_9b64db70252f",
     "en": "Pulled jobs, applications, tailored resumes, cover letters, rendered files, and run history.",
     "zh-CN": "已获取的职位、申请、定制简历、求职信、生成文件和运行历史记录。"
-  },
-  "python, distributed systems…": {
-    "key": "ui_438f8f5cacf3",
-    "en": "python, distributed systems…",
-    "zh-CN": "python、分布式系统…"
   },
   "Quarterly H-1B filings in the server cache.": {
     "key": "ui_804ec9bd9fa8",
@@ -8074,11 +7994,6 @@
     "en": "Remote policy",
     "zh-CN": "远程办公政策"
   },
-  "Remote, Austin TX…": {
-    "key": "ui_c2d081b41cd9",
-    "en": "Remote, Austin TX…",
-    "zh-CN": "远程、德克萨斯州奥斯汀…"
-  },
   "Remove": {
     "key": "ui_c3812fc4acb8",
     "en": "Remove",
@@ -8263,11 +8178,6 @@
     "key": "ui_0e5ec668ea9b",
     "en": "Repository branches",
     "zh-CN": "仓库分支"
-  },
-  "Repository limit": {
-    "key": "ui_10096d2f113c",
-    "en": "Repository limit",
-    "zh-CN": "代码仓库数量上限"
   },
   "Reprocess": {
     "key": "ui_55ecdf865231",
@@ -8793,11 +8703,6 @@
     "key": "ui_14736a2eb9f4",
     "en": "Role",
     "zh-CN": "角色"
-  },
-  "Role anchors": {
-    "key": "ui_212cf823b37d",
-    "en": "Role anchors",
-    "zh-CN": "目标职位关键词"
   },
   "Role comparison controls": {
     "key": "ui_84afe9661cb5",
@@ -9773,11 +9678,6 @@
     "key": "ui_62dda0e4a81d",
     "en": "SmartRecruiters",
     "zh-CN": "SmartRecruiters"
-  },
-  "Software Engineer…": {
-    "key": "ui_12018317f2d1",
-    "en": "Software Engineer…",
-    "zh-CN": "软件工程师…"
   },
   "Some files could not be added. Check the files and upload them again.": {
     "key": "ui_21212bcfe9f2",
@@ -10924,11 +10824,6 @@
     "en": "Title, company, skill…",
     "zh-CN": "职位、公司、技能…"
   },
-  "Titles": {
-    "key": "ui_3b23a123fa00",
-    "en": "Titles",
-    "zh-CN": "标题"
-  },
   "to defaults?": {
     "key": "ui_cdb0faa33c94",
     "en": "to defaults?",
@@ -11198,11 +11093,6 @@
     "key": "ui_9a5044cd78bc",
     "en": "Up to {{v0}} bullet{{v1}}",
     "zh-CN": "最多 {{v0}} 条要点"
-  },
-  "Up to 10 offer-status application ids.": {
-    "key": "ui_7c693512df80",
-    "en": "Up to 10 offer-status application ids.",
-    "zh-CN": "最多填写 10 个已收到录用通知的申请 ID。"
   },
   "Upcoming": {
     "key": "ui_5f1a2542e4e4",

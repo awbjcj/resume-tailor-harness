@@ -47,7 +47,7 @@ export function SkillEditorDialog({
   const [mode, setMode] = useState<"new" | "alias">("new");
   const [draft, setDraft] = useState<SkillDraft>(() => ({
     name: row?.display ?? suggestedSkill ?? "",
-    aliases: (row?.aliases ?? []).join("\n"),
+    aliases: row?.aliases ?? [],
     category: row ? skillCategoryValue(row.category) : "hard",
     group:
       row?.groupSource === "correction"
@@ -80,12 +80,7 @@ export function SkillEditorDialog({
         : [];
     const body = {
       name: draft.name.trim(),
-      aliases: [
-        ...new Set([
-          ...draft.aliases.split(/[,\n]/).map((name) => name.trim()).filter(Boolean),
-          ...previousName,
-        ]),
-      ],
+      aliases: [...new Set([...draft.aliases, ...previousName])],
       category: draft.category === "unspecified" ? null : draft.category,
       group: draft.group,
     };

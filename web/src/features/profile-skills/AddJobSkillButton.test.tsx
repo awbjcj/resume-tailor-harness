@@ -49,7 +49,8 @@ describe("adding a job skill to the personal library", () => {
     const name = await screen.findByRole("textbox", { name: "Skill name" });
     expect(name).toHaveValue("Rust");
     expect(screen.getByRole("combobox", { name: "Skill type" })).toHaveValue("hard");
-    await user.type(screen.getByRole("textbox", { name: "Aliases" }), "rustlang, rustlang\nRust language");
+    await user.type(screen.getByRole("textbox", { name: "Aliases" }), "rustlang, rustlang, Rust language");
+    await user.click(screen.getByRole("button", { name: "Add to Aliases" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Skill type" }), "domain");
     await user.selectOptions(screen.getByRole("combobox", { name: "Group" }), "custom");
     await user.click(screen.getByRole("button", { name: "Add skill" }));
@@ -109,12 +110,12 @@ describe("adding a job skill to the personal library", () => {
     const user = userEvent.setup();
     show();
     await open(user);
-    await user.type(await screen.findByRole("textbox", { name: "Aliases" }), "rustlang");
+    await user.type(await screen.findByRole("textbox", { name: "Aliases" }), "rustlang{Enter}");
     await user.selectOptions(screen.getByRole("combobox", { name: "Group" }), "custom");
     await user.click(screen.getByRole("tab", { name: "Use existing skill" }));
     await screen.findByText("No personal skills yet. Add this as a new skill.");
     await user.click(screen.getByRole("tab", { name: "New skill" }));
-    expect(screen.getByRole("textbox", { name: "Aliases" })).toHaveValue("rustlang");
+    expect(screen.getByRole("button", { name: "Remove rustlang" })).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Group" })).toHaveValue("custom");
   });
 

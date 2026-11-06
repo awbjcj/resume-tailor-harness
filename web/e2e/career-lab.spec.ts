@@ -153,3 +153,58 @@ test("Career Lab reveals live reference filters only for an active session", asy
   await expect(page.getByRole("combobox", { name: "Job status" }).getByRole("option", { name: "applied" })).toHaveCount(1);
   await expect(page.getByRole("combobox", { name: "Job status" }).getByRole("option", { name: "tailored" })).toHaveCount(0);
 });
+
+test("Career Lab searches offers and keeps the selected references on a narrow dark layout", async ({ page }, testInfo) => {
+  await page.unrouteAll();
+  await mockCareerLab(page, true);
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
+  const title = "Staff Engineer, Distributed Systems and Platform Reliability";
+  const offer = `Acme · ${title} · #42`;
+  let applicationReads = 0;
+  await page.route("**/api/applications", (route) => {
+    applicationReads++;
+    return route.fulfill({ json: {
+      technicalRoundColumns: 0,
+      rows: [
+        { jobId: 7, applicationId: 42, status: "offer", company: "Acme", title },
+        { jobId: 8, applicationId: 17, status: "submitted", company: "Globex", title: "Product Lead" },
+      ],
+    } });
+  });
+  await page.goto("/career-lab");
+  await expect(page.getByText("Reference context")).toBeVisible();
+  expect(applicationReads).toBe(0);
+  await page.getByText("Offer comparison references").click();
+  const input = page.getByRole("combobox", { name: "Offers", exact: true });
+  await input.click();
+  const options = page.getByRole("listbox");
+  await expect(options.getByRole("option", { name: offer })).toBeVisible();
+  await expect(options.getByRole("option", { name: /Globex/ })).toHaveCount(0);
+  await input.fill("Staff");
+  await input.press("ArrowDown");
+  await input.press("Enter");
+  const acme = page.getByRole("button", { name: `Remove ${offer}` });
+  await expect(acme).toBeVisible();
+  await expect(input).toHaveValue("");
+  await expect(options).toBeHidden();
+  await input.fill("17");
+  await page.getByRole("button", { name: "Add to Offers" }).click();
+  await expect(page.getByRole("alert")).toContainText("application with an offer");
+  await expect(page.getByRole("button", { name: "Remove 17" })).toHaveCount(0);
+  await input.fill("75");
+  await page.getByRole("button", { name: "Add to Offers" }).click();
+  await expect(page.getByRole("button", { name: "Remove 75" })).toBeVisible();
+  await expect(options).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("offer-reference-labels.png") });
+  await acme.click();
+  await expect(acme).toHaveCount(0);
+  await expect(input).toBeFocused();
+  await page.setViewportSize({ width: 667, height: 375 });
+  await page.evaluate(() => { document.documentElement.style.fontSize = "125%"; });
+  await expect(page.getByRole("button", { name: "Remove 75" })).toBeVisible();
+  const field = page.locator('[data-slot="tag-list-input"]');
+  expect(await field.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+});

@@ -32,6 +32,16 @@ export function useGithubExclusions() {
   });
 }
 
+export function useGithubRepositories(username: string | null, settingsKey: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["github-repositories", username, settingsKey],
+    enabled: enabled && !!username,
+    retry: false,
+    staleTime: 60_000,
+    queryFn: () => unwrap(api.GET("/api/profile/github/repositories")),
+  });
+}
+
 export function useRestoreGithubSources() {
   const qc = useQueryClient();
   return useMutation({

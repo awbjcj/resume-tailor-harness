@@ -18,6 +18,7 @@ class PivotCellOut(CamelModel):
 
 class PivotRowOut(CamelModel):
     job_id: int
+    application_id: int | None = None
     company: str | None
     title: str | None
     status: str

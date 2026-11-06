@@ -1,8 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { api, unwrap } from "@/lib/api/client";
 import type { paths } from "@/lib/api/schema";
+
+export const SEARCH_LOCATION_NORMALIZATION_KEY = ["search-location-normalization"] as const;
+
+export function useSearchLocationNormalizationPending() {
+  return useIsMutating({ mutationKey: SEARCH_LOCATION_NORMALIZATION_KEY }) > 0;
+}
 
 export type ConfigPath =
   | "/api/config/application-profile"

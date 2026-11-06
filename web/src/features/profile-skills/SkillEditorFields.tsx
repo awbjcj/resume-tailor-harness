@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { TagListInput } from "@/components/ui/tag-list-input";
 import type { ProfileMatrix } from "@/features/settings/use-matrix";
 import { useSkillCopy } from "@/i18n/skill-copy";
 import {
@@ -16,7 +16,7 @@ export type LibraryCategory = NonNullable<ProfileMatrix["categories"]>[number];
 
 export type SkillDraft = {
   name: string;
-  aliases: string;
+  aliases: string[];
   category: SkillCategory;
   group: string;
 };
@@ -81,22 +81,14 @@ export function SkillEditorFields({
           disabled={disabled}
         />
       </div>
-      <div className="grid gap-1.5">
-        <label htmlFor={`${id}-aliases`} className="text-sm font-medium">
-          {copy.aliases}
-        </label>
-        <Textarea
-          id={`${id}-aliases`}
-          value={value.aliases}
-          onChange={(event) => onChange({ ...value, aliases: event.target.value })}
-          maxLength={10000}
-          disabled={disabled}
-          aria-describedby={`${id}-alias-help`}
-        />
-        <p id={`${id}-alias-help`} className="text-xs text-muted-foreground">
-          {copy.aliasHelp}
-        </p>
-      </div>
+      <TagListInput
+        id={`${id}-aliases`}
+        label={copy.aliases}
+        value={value.aliases}
+        onChange={(aliases) => onChange({ ...value, aliases })}
+        disabled={disabled}
+        description={copy.aliasHelp}
+      />
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <div className="grid min-w-0 gap-1.5">
           <label htmlFor={`${id}-type`} className="text-sm font-medium">

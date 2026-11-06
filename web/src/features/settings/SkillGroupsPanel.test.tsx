@@ -162,7 +162,7 @@ describe("SkillGroupsPanel skill library", () => {
     show();
     await user.click(screen.getByRole("button", { name: "Add skill" }));
     await user.type(screen.getByLabelText("Skill name"), "TypeScript");
-    await user.type(screen.getByLabelText("Aliases", { exact: true }), "TS");
+    await user.type(screen.getByLabelText("Aliases", { exact: true }), "TS{Enter}");
     await user.selectOptions(
       screen.getByLabelText("Group", { exact: true }),
       "languages",

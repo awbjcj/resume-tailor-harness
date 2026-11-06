@@ -62,6 +62,26 @@ describe("SearchConfigForm", () => {
     );
   });
 
+  it("preserves commas in a location and keeps edits made during normalization", async () => {
+    let finish = () => {};
+    const pending = new Promise<void>((resolve) => { finish = resolve; });
+    server.use(
+      http.post("/api/config/search/normalize-locations", async ({ request }) => {
+        const { raw } = (await request.json()) as { raw: string[] };
+        await pending;
+        return HttpResponse.json({ normalized: raw.map((location) => location === "austin, tx" ? "Austin, TX" : location) });
+      }),
+    );
+    const user = userEvent.setup();
+    renderHarness();
+    await user.type(screen.getByLabelText("Locations"), "austin, tx{Enter}");
+    expect(screen.getByTestId("locations").textContent).toBe("austin, tx");
+    await user.type(screen.getByLabelText("Keywords"), "platform{Enter}");
+    finish();
+    await waitFor(() => expect(screen.getByTestId("locations").textContent).toBe("Austin, TX"));
+    expect(screen.getByTestId("keywords").textContent).toBe("platform");
+  });
+
   it("leaves the raw location text alone when normalization fails", async () => {
     server.use(
       http.post("/api/config/search/normalize-locations", () => HttpResponse.error()),

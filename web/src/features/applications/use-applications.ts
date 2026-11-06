@@ -5,9 +5,10 @@ import type { components } from "@/lib/api/schema";
 
 export type ApplicationsTableData = components["schemas"]["PivotTableOut"];
 
-export function useApplications() {
+export function useApplications(enabled = true) {
   return useQuery({
     queryKey: ["applications"],
+    enabled,
     queryFn: (): Promise<ApplicationsTableData> => unwrap(api.GET("/api/applications")),
   });
 }

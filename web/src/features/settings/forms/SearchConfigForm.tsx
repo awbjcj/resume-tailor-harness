@@ -1,17 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { TagListInput } from "@/components/ui/tag-list-input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { api, unwrap } from "@/lib/api/client";
 import type { paths } from "@/lib/api/schema";
-
-import { TagListInput } from "./TagListInput";
+import { SEARCH_LOCATION_NORMALIZATION_KEY, useSearchLocationNormalizationPending } from "../use-config";
 
 export type SearchDoc =
   paths["/api/config/search"]["get"]["responses"][200]["content"]["application/json"];
@@ -27,61 +27,52 @@ function numOrNull(raw: string): number | null {
 }
 
 export function SearchConfigForm({
-  value, onChange,
+  value, onChange, disabled = false,
 }: {
-  value: SearchDoc; onChange: (next: SearchDoc) => void;
+  value: SearchDoc;
+  onChange: (update: (current: SearchDoc) => SearchDoc) => void;
+  disabled?: boolean;
 }) {
+  const { t } = useTranslation();
+  const normalizing = useSearchLocationNormalizationPending();
   const set = <K extends keyof SearchDoc>(key: K, v: SearchDoc[K]) =>
-    onChange({ ...value, [key]: v });
-
-  // Kept fresh every render so the async normalize response below can patch
-  // in canonical location text without clobbering an edit made while it was
-  // in flight (the mutation closes over whatever `value` was at call time).
-  const locationsRef = useRef<string[]>(value.locations ?? []);
-  useEffect(() => {
-    locationsRef.current = value.locations ?? [];
-  }, [value.locations]);
+    onChange((current) => ({ ...current, [key]: v }));
 
   const normalizeLocations = useMutation({
+    mutationKey: SEARCH_LOCATION_NORMALIZATION_KEY,
     mutationFn: (raw: string[]) =>
       unwrap(
         api.POST("/api/config/search/normalize-locations", { body: { raw } }),
       ),
+    onSuccess: ({ normalized = [] }, added) => {
+      const canonical = new Map(added.map((raw, index) => [raw, normalized[index]]));
+      // Apply each response to the latest draft. Removed values stay removed.
+      onChange((current) => {
+        if (!current.locations?.some((location) => canonical.has(location))) return current;
+        return {
+          ...current,
+          locations: [...new Set(current.locations.map((location) => canonical.get(location) || location))],
+        };
+      });
+    },
   });
 
   const handleLocationsChange = (next: string[]) => {
-    const prevCount = locationsRef.current.length;
+    const added = next.filter((location) => !value.locations?.includes(location));
     set("locations", next);
-    if (next.length <= prevCount) return; // a removal; nothing to normalize
-    const added = next.slice(prevCount);
-    normalizeLocations.mutate(added, {
-      onSuccess: ({ normalized = [] }) => {
-        const canonical = new Map(added.map((raw, i) => [raw, normalized[i]]));
-        set(
-          "locations",
-          locationsRef.current.map((loc) => canonical.get(loc) ?? loc),
-        );
-      },
-    });
+    if (added.length) normalizeLocations.mutate(added);
   };
 
   return (
-    <FieldGroup>
-      <Field>
-        <FieldLabel htmlFor="keywords">Keywords</FieldLabel>
-        <TagListInput id="keywords" value={value.keywords ?? []}
-          onChange={(v) => set("keywords", v)} placeholder="python, distributed systems…" />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="titles">Titles</FieldLabel>
-        <TagListInput id="titles" value={value.titles ?? []}
-          onChange={(v) => set("titles", v)} placeholder="Software Engineer…" />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="locations">Locations</FieldLabel>
-        <TagListInput id="locations" value={value.locations ?? []}
-          onChange={handleLocationsChange} placeholder="Remote, Austin TX…" />
-      </Field>
+    <FieldSet disabled={disabled} className="gap-5">
+      <TagListInput id="keywords" label={t("tagList.search.keywords")} value={value.keywords ?? []}
+        disabled={disabled} onChange={(v) => set("keywords", v)} placeholder={t("tagList.search.keywordExample")} />
+      <TagListInput id="titles" label={t("tagList.search.titles")} value={value.titles ?? []}
+        disabled={disabled} onChange={(v) => set("titles", v)} placeholder={t("tagList.search.titleExample")} />
+      <TagListInput id="locations" label="Locations" value={value.locations ?? []}
+        disabled={disabled} separator="semicolon"
+        onChange={handleLocationsChange} placeholder={t("tagList.search.location")}
+        description={normalizing ? t("tagList.search.normalizing") : undefined} />
       <Field>
         <FieldLabel>Remote policy</FieldLabel>
         <ToggleGroup
@@ -122,16 +113,10 @@ export function SearchConfigForm({
           <AccordionTrigger>Relevance tuning</AccordionTrigger>
           <AccordionContent>
             <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="roleAnchors">Role anchors</FieldLabel>
-                <TagListInput id="roleAnchors" value={value.roleAnchors ?? []}
-                  onChange={(v) => set("roleAnchors", v)} />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="excludeTerms">Exclude terms</FieldLabel>
-                <TagListInput id="excludeTerms" value={value.excludeTerms ?? []}
-                  onChange={(v) => set("excludeTerms", v)} />
-              </Field>
+              <TagListInput id="roleAnchors" label={t("tagList.search.roleAnchors")} value={value.roleAnchors ?? []}
+                disabled={disabled} onChange={(v) => set("roleAnchors", v)} />
+              <TagListInput id="excludeTerms" label={t("tagList.search.excludeTerms")} value={value.excludeTerms ?? []}
+                disabled={disabled} onChange={(v) => set("excludeTerms", v)} />
               <Field>
                 <FieldLabel htmlFor="targetRole">Target role</FieldLabel>
                 <Input id="targetRole" value={value.targetRole ?? ""}
@@ -141,6 +126,6 @@ export function SearchConfigForm({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-    </FieldGroup>
+    </FieldSet>
   );
 }
