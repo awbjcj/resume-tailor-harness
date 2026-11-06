@@ -1,5 +1,7 @@
 import pytest
-from sqlalchemy import text
+from sqlalchemy import MetaData, text
+from sqlalchemy.schema import CreateTable
+from sqlmodel import SQLModel
 
 from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.api.schemas.jobs import ResumeVersionOut
@@ -111,6 +113,45 @@ def test_init_db_creates_attempt_columns():
         ]
 
     assert {"attempt", "tailor_model"}.issubset(resume_cols)
+
+
+def test_resume_storage_migration_keeps_ids_and_references(tmp_path):
+    engine = make_engine(f"sqlite:///{(tmp_path / 'legacy.db').as_posix()}")
+    metadata = MetaData()
+    SQLModel.metadata.tables["jobs"].to_metadata(metadata)
+    legacy = SQLModel.metadata.tables["resume_versions"].to_metadata(metadata)
+    legacy.dialect_options["sqlite"]["autoincrement"] = False
+
+    with engine.begin() as conn:
+        conn.execute(CreateTable(legacy))
+        conn.exec_driver_sql("ALTER TABLE resume_versions DROP COLUMN pdf_template_id")
+        conn.exec_driver_sql("CREATE INDEX ix_resume_versions_job_id ON resume_versions(job_id)")
+        conn.exec_driver_sql(
+            "INSERT INTO resume_versions "
+            "(id, job_id, round, fact_check_passed, attempt, origin, parent_version_id, "
+            "schema_version, created_at, pdf_path) VALUES "
+            "(8, 1, 2, 1, 3, 'tailor', NULL, 1, '2026-11-01', 'output/original.pdf'), "
+            "(9, 1, 2, 1, 0, 'revision', 8, 1, '2026-11-02', NULL)"
+        )
+
+    init_db(engine)
+    with engine.begin() as conn:
+        assert conn.exec_driver_sql(
+            "SELECT id, parent_version_id, pdf_path, pdf_template_id FROM resume_versions ORDER BY id"
+        ).all() == [(8, None, "output/original.pdf", None), (9, 8, None, None)]
+        assert "ix_resume_versions_job_id" in {
+            row[1] for row in conn.exec_driver_sql("PRAGMA index_list(resume_versions)")
+        }
+        conn.exec_driver_sql("DELETE FROM resume_versions")
+
+    init_db(engine)
+    with engine.begin() as conn:
+        new_id = conn.exec_driver_sql(
+            "INSERT INTO resume_versions (job_id, round, fact_check_passed, attempt, origin, "
+            "schema_version, created_at) VALUES (1, 1, 1, 4, 'tailor', 1, '2026-11-03') RETURNING id"
+        ).scalar_one()
+        assert new_id == 10
+    engine.dispose()
 
 
 def test_gate_reviewers_migration_leaves_existing_rows_null():

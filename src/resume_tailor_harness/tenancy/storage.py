@@ -59,6 +59,22 @@ def artifact_path(path: Path | str) -> Path:
     return _confine(path, context.paths.output_dir, prefix="output")
 
 
+def artifact_pdf_identity(
+    pdf_path: str | Path | None, *, output_root: Path | None = None
+) -> Path | None:
+    """Canonical path for comparing PDF references, even before a file exists."""
+    if not pdf_path:
+        return None
+    context = current_context()
+    root = output_root if output_root is not None else (
+        context.paths.output_dir if context is not None else None
+    )
+    try:
+        return _confine(pdf_path, root, prefix="output") if root is not None else Path(pdf_path).resolve()
+    except (OSError, RuntimeError, ValueError):
+        return None
+
+
 def resolve_artifact_pdf(pdf_path: str | None) -> Path | None:
     """Resolve a stored ``pdf_path`` to a tenant-confined existing file, or None."""
 

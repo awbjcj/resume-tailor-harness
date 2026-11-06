@@ -20,7 +20,14 @@ def _load_config(path: str) -> RenderConfig:
 
 
 def render_resume_version(
-    session: Session, version_id: int, *, render_path: str = DEFAULT_RENDER
+    session: Session,
+    version_id: int,
+    *,
+    render_path: str = DEFAULT_RENDER,
+    template_id: str | None = None,
 ) -> Path | None:
     """Render a stored version to PDF; None if the version does not exist."""
-    return render_version(session, version_id, _load_config(render_path))
+    config = _load_config(render_path)
+    if template_id is not None:
+        config = config.model_copy(update={"template": template_id})
+    return render_version(session, version_id, config)

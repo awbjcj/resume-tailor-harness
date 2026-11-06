@@ -1,4 +1,7 @@
+import sqlite3
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from sqlalchemy import event
@@ -27,12 +30,14 @@ from resume_tailor_harness.tracking.migrate import (
     ensure_industry_pending_column,
     ensure_industry_labels_capitalized,
     ensure_job_location_instances,
+    ensure_pdf_file_keys,
     ensure_posted_at_column,
     ensure_reject_category_column,
     ensure_resume_version_attempt_columns,
     ensure_resume_version_evidence_portfolio_columns,
     ensure_resume_version_gate_reviewers_column,
     ensure_resume_version_revision_columns,
+    ensure_resume_version_storage,
     ensure_resume_version_taxonomy_columns,
     ensure_url_index,
     ensure_source_identity_column,
@@ -97,7 +102,7 @@ def make_engine(url: str | None = None) -> Engine:
     return engine
 
 
-def init_db(engine: Engine) -> None:
+def init_db(engine: Engine, *, artifact_root: Path | None = None) -> None:
     SQLModel.metadata.create_all(engine)
     gmail_tables.ensure_cross_account_index(engine)
     ensure_dedup_key_column(engine)
@@ -117,6 +122,8 @@ def init_db(engine: Engine) -> None:
     ensure_cover_letter_revision_columns(engine)
     ensure_application_cover_letter_id_column(engine)
     ensure_agent_metadata_columns(engine)
+    ensure_resume_version_storage(engine)
+    ensure_pdf_file_keys(engine, output_root=artifact_root)
     ensure_source_identity_column(engine)
     ensure_url_index(engine)
     ensure_application_event_sequence_override_column(engine)
@@ -125,3 +132,20 @@ def init_db(engine: Engine) -> None:
 
 def get_session(engine: Engine) -> Session:
     return Session(engine)
+
+
+@contextmanager
+def workspace_write(session: Session) -> Iterator[None]:
+    """Reserve SQLite's writer before reading state used by a mutation."""
+    connection = session.connection()
+    driver = connection.connection.driver_connection
+    if not isinstance(driver, sqlite3.Connection) or driver.in_transaction:
+        yield
+        return
+    transaction = session.get_transaction()
+    connection.exec_driver_sql("BEGIN IMMEDIATE")
+    try:
+        yield
+    finally:
+        if session.get_transaction() is transaction:
+            session.rollback()

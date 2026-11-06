@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlmodel import Session
 
+from resume_tailor_harness.db import workspace_write
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.career_skills.provenance import append_skill_use
@@ -26,7 +27,7 @@ from resume_tailor_harness.tracking.repository import (
     get_resume_version,
     save_resume_version,
 )
-from resume_tailor_harness.tracking.tables import ResumeVersion
+from resume_tailor_harness.tracking.tables import Job, ResumeVersion
 
 from resume_tailor_harness.tenancy.paths import (
     FACTS_PATH as DEFAULT_FACTS,
@@ -47,6 +48,12 @@ def revise_resume_version(
     parent = get_resume_version(session, version_id)
     if parent is None:
         return None
+    job_id = parent.job_id
+    parent_created_at = parent.created_at
+    job = get_job(session, job_id)
+    if job is None:
+        return None
+    job_created_at = job.created_at
 
     facts = load_facts(facts_path)
     config = load_review_config(review_path) if re_review or bundle is None else None
@@ -73,9 +80,7 @@ def revise_resume_version(
     # No panel ran unless re-reviewed, so no reviewer-configured gate applies
     # to this round yet - an empty (known) roster, not None/"unknown".
     gate_reviewers: list[str] = []
-    job = get_job(session, parent.job_id)
-
-    if re_review and provenance.passed and job is not None:
+    if re_review and provenance.passed:
         assert config is not None
         render_config = _load_config(DEFAULT_RENDER)
         config = for_rendering(config, render_config)
@@ -102,29 +107,37 @@ def revise_resume_version(
     inherited_portfolio = (
         portfolio.model_copy(update={"status": "inherited"}) if portfolio else None
     )
-    child = save_resume_version(
-        session,
-        ResumeVersion(
-            job_id=parent.job_id,
-            round=parent.round,
-            content_json=revised.model_dump(mode="json"),
-            review_score=review_score,
-            fact_check_passed=fact_check_passed,
-            critique_json=[c.model_dump(mode="json") for c in critiques],
-            evidence_portfolio_json=(
-                inherited_portfolio.model_dump(mode="json")
-                if inherited_portfolio is not None
-                else None
-            ),
-            evidence_portfolio_status=(
-                inherited_portfolio.status if inherited_portfolio is not None else None
-            ),
-            gate_reviewers_json=gate_reviewers,
-            origin="revision",
-            instruction=instruction,
-            parent_version_id=parent.id,
-            skill_uses_json=skill_uses,
+    child = ResumeVersion(
+        job_id=job_id,
+        round=parent.round,
+        content_json=revised.model_dump(mode="json"),
+        review_score=review_score,
+        fact_check_passed=fact_check_passed,
+        critique_json=[c.model_dump(mode="json") for c in critiques],
+        evidence_portfolio_json=(
+            inherited_portfolio.model_dump(mode="json")
+            if inherited_portfolio is not None
+            else None
         ),
+        evidence_portfolio_status=(
+            inherited_portfolio.status if inherited_portfolio is not None else None
+        ),
+        gate_reviewers_json=gate_reviewers,
+        origin="revision",
+        instruction=instruction,
+        skill_uses_json=skill_uses,
     )
-    export_job_artifacts(session, child.job_id)
+    with workspace_write(session):
+        job = session.get(Job, job_id, populate_existing=True)
+        if job is None or job.created_at != job_created_at:
+            return None
+        source = session.get(ResumeVersion, version_id, populate_existing=True)
+        if (
+            source is not None
+            and source.job_id == job_id
+            and source.created_at == parent_created_at
+        ):
+            child.parent_version_id = version_id
+        save_resume_version(session, child)
+    export_job_artifacts(session, job_id)
     return child

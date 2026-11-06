@@ -4,11 +4,14 @@ import pytest
 from sqlmodel import Session, SQLModel, create_engine
 
 from resume_tailor_harness.config import Settings
+from resume_tailor_harness.db import make_engine
 from resume_tailor_harness.models.resume import ResumeContent
 from resume_tailor_harness.models.evidence_portfolio import EvidencePortfolio
 from resume_tailor_harness.models.profile import Contact
+from resume_tailor_harness.render.export import job_dir, resume_pdf_name
 from resume_tailor_harness.render.render_config import RenderConfig
 from resume_tailor_harness.render.service import render_version
+from resume_tailor_harness.services.board import delete_resume_versions
 from resume_tailor_harness.tenancy.context import UserContext, use_context
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 from resume_tailor_harness.tracking.repository import (
@@ -267,6 +270,120 @@ def test_render_version_can_disable_one_page_fit(tmp_path):
     assert calls["fit_pages"] == 2
 
 
+def test_deleting_during_compilation_does_not_recreate_the_pdf(tmp_path):
+    engine = make_engine(f"sqlite:///{(tmp_path / 'workspace.db').as_posix()}")
+    SQLModel.metadata.create_all(engine)
+    config = RenderConfig(template="classic", output_dir=str(tmp_path / "output"))
+    with Session(engine) as session:
+        job = save_job(session, Job(source="manual"))
+        version = save_resume_version(
+            session,
+            ResumeVersion(
+                job_id=_require_id(job.id),
+                content_json=ResumeContent(contact=Contact(name="Ada")).model_dump(
+                    mode="json"
+                ),
+            ),
+        )
+        version_id = _require_id(version.id)
+
+        def render_then_delete(_content, output_path, _template_path, **_kwargs):
+            output_path.write_bytes(b"%PDF-staged")
+            with Session(engine) as deleting:
+                assert delete_resume_versions(deleting, [version_id]).deleted == 1
+            return output_path
+
+        assert (
+            render_version(session, version_id, config, render_fn=render_then_delete)
+            is None
+        )
+        assert not list((tmp_path / "output").rglob("*.pdf"))
+    engine.dispose()
+
+
+def test_rendering_does_not_overwrite_the_pdf_a_version_filename_links_to(tmp_path):
+    workspace = WorkspacePaths(tmp_path / "alice")
+    context = UserContext(
+        user_id="alice0000000",
+        username="alice",
+        role="user",
+        paths=workspace,
+        settings=Settings(_env_file=None),  # type: ignore[call-arg]
+        engine=None,
+        system_engine=None,
+        own_key_providers=frozenset(),
+    )
+    config = RenderConfig(template="classic")
+
+    def fake_render(_content, output_path, _template_path, **_kwargs):
+        output_path.write_bytes(b"%PDF-new")
+        return output_path
+
+    with _session() as session, use_context(context):
+        job = save_job(session, Job(source="manual"))
+        version = save_resume_version(
+            session,
+            ResumeVersion(
+                job_id=_require_id(job.id),
+                content_json=ResumeContent(contact=Contact(name="Ada")).model_dump(
+                    mode="json"
+                ),
+            ),
+        )
+        directory = job_dir(workspace.output_dir, job)
+        directory.mkdir(parents=True)
+        other_pdf = directory / "retained.pdf"
+        other_pdf.write_bytes(b"%PDF-retained")
+        output = directory / resume_pdf_name(version)
+        output.symlink_to(other_pdf)
+
+        path = render_version(
+            session, _require_id(version.id), config, render_fn=fake_render
+        )
+
+        assert path == output and not output.is_symlink()
+        assert output.read_bytes() == b"%PDF-new"
+        assert other_pdf.read_bytes() == b"%PDF-retained"
+
+
+def test_render_commit_failure_restores_the_previous_pdf(monkeypatch, tmp_path):
+    def fake_render(_content, output_path, template_path, **_kwargs):
+        output_path.write_bytes(template_path.name.encode())
+        return output_path
+
+    config = RenderConfig(template="classic", output_dir=str(tmp_path / "output"))
+    with _session() as session:
+        job = save_job(session, Job(source="manual"))
+        version = save_resume_version(
+            session,
+            ResumeVersion(
+                job_id=_require_id(job.id),
+                content_json=ResumeContent(contact=Contact(name="Ada")).model_dump(
+                    mode="json"
+                ),
+            ),
+        )
+        version_id = _require_id(version.id)
+        path = render_version(session, version_id, config, render_fn=fake_render)
+        assert path is not None
+        original = path.read_bytes()
+
+        def fail_commit():
+            raise RuntimeError("commit failed")
+
+        monkeypatch.setattr(session, "commit", fail_commit)
+        with pytest.raises(RuntimeError, match="commit failed"):
+            render_version(
+                session,
+                version_id,
+                config.model_copy(update={"template": "modern"}),
+                render_fn=fake_render,
+            )
+
+        assert path.read_bytes() == original
+        assert version.pdf_template_id == "classic"
+
+
 class _FakeConfigStore:
     """Minimal store honoring the get/put contract clear_custom_render_template needs."""
 
@@ -283,7 +400,9 @@ class _FakeConfigStore:
 
 
 def test_clear_custom_render_template_falls_back_to_classic():
-    from resume_tailor_harness.services.render_templates import clear_custom_render_template
+    from resume_tailor_harness.services.render_templates import (
+        clear_custom_render_template,
+    )
 
     store = _FakeConfigStore(RenderConfig(template="custom:mine"))
     clear_custom_render_template(store)
@@ -291,7 +410,9 @@ def test_clear_custom_render_template_falls_back_to_classic():
 
 
 def test_clear_custom_render_template_leaves_bundled_and_empty_alone():
-    from resume_tailor_harness.services.render_templates import clear_custom_render_template
+    from resume_tailor_harness.services.render_templates import (
+        clear_custom_render_template,
+    )
 
     for template in ("classic", None):
         store = _FakeConfigStore(RenderConfig(template=template))

@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 from sqlmodel import Session
 
+from resume_tailor_harness.db import workspace_write
+from resume_tailor_harness.progress import atomic_write_text
 from resume_tailor_harness.render.renderer import _slug
+from resume_tailor_harness.tenancy.paths import resolve_tenant_path
+from resume_tailor_harness.tenancy.storage import TenantPathError, artifact_path
 from resume_tailor_harness.tracking.repository import (
     application_for_job,
     cover_letters_for_job,
@@ -31,8 +36,6 @@ def job_slug(job: Job) -> str:
 
 
 def job_dir(base: str | Path, job: Job) -> Path:
-    from resume_tailor_harness.tenancy.paths import resolve_tenant_path
-
     return resolve_tenant_path(base) / job_slug(job)
 
 
@@ -86,7 +89,8 @@ def _version_entry(version: ResumeVersion) -> dict[str, Any]:
         "factCheckPassed": version.fact_lock_passed,
         "reviewScore": version.review_score,
         "createdAt": version.created_at.isoformat() if version.created_at else None,
-        "file": resume_pdf_name(version),
+        "file": Path(version.pdf_path).name if version.pdf_path else resume_pdf_name(version),
+        "pdfTemplateId": version.pdf_template_id,
         "contentFile": resume_json_name(version),
     }
 
@@ -136,30 +140,101 @@ def _row_id(row: ResumeVersion | CoverLetter) -> int:
 
 
 def _write_json(path: Path, value: Any) -> None:
-    path.write_text(json.dumps(value, indent=2, sort_keys=True), encoding="utf-8")
+    if path.is_symlink():
+        raise TenantPathError("export file is a symbolic link")
+    atomic_write_text(
+        path, json.dumps(value, indent=2, sort_keys=True), root=path.parent
+    )
+
+
+def _prune_previous_exports(
+    root: Path, current: Path, job_id: int, removed: set[str]
+) -> None:
+    # Company and title can change after a re-pull. Both slugs omit hyphens,
+    # so the last part of a generated directory name is always the job ID.
+    name_pattern = re.compile(rf"[a-z0-9_]+-[a-z0-9_]+-{job_id}")
+    for directory in root.glob(f"*-{job_id}"):
+        if (
+            directory == current
+            or not name_pattern.fullmatch(directory.name)
+            or directory.is_symlink()
+            or directory.is_junction()
+            or not directory.is_dir()
+        ):
+            continue
+        manifest_path = directory / "manifest.json"
+        if manifest_path.is_symlink():
+            continue
+        if manifest_path.is_file():
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except ValueError as exc:
+                raise OSError(f"could not read export manifest for job {job_id}") from exc
+            job = manifest.get("job") if isinstance(manifest, dict) else None
+            if not isinstance(job, dict) or job.get("id") != job_id:
+                continue
+            versions = manifest.get("resumeVersions", [])
+            if isinstance(versions, list):
+                removed_ids = [
+                    entry.get("id")
+                    for entry in versions
+                    if isinstance(entry, dict) and entry.get("contentFile") in removed
+                ]
+                if removed_ids:
+                    manifest["resumeVersions"] = [
+                        entry for entry in versions
+                        if not isinstance(entry, dict) or entry.get("id") not in removed_ids
+                    ]
+                    applied = manifest.get("applied")
+                    if isinstance(applied, dict) and applied.get("resumeVersionId") in removed_ids:
+                        applied["resumeVersionId"] = None
+                    _write_json(manifest_path, manifest)
+        for filename in removed:
+            (directory / filename).unlink(missing_ok=True)
 
 
 def export_job_artifacts(
-    session: Session, job_id: int, base: str | Path = "output"
+    session: Session,
+    job_id: int,
+    base: str | Path = "output",
+    *,
+    removed_resume_sidecars: Sequence[str] = (),
+    existing_only: bool = False,
 ) -> Path | None:
-    job = get_job(session, job_id)
-    if job is None:
-        return None
+    # Callers export committed rows. Serialize the snapshot and file writes so
+    # an older export cannot restore a version removed by a newer operation.
+    with workspace_write(session):
+        session.expire_all()
+        job = get_job(session, job_id)
+        if job is None:
+            return None
 
-    versions = sorted(resume_versions_for_job(session, job_id), key=_row_id)
-    cover_letters = sorted(cover_letters_for_job(session, job_id), key=_row_id)
-    application = application_for_job(session, job_id)
+        versions = sorted(resume_versions_for_job(session, job_id), key=_row_id)
+        cover_letters = sorted(cover_letters_for_job(session, job_id), key=_row_id)
+        application = application_for_job(session, job_id)
 
-    out = job_dir(base, job)
-    out.mkdir(parents=True, exist_ok=True)
+        root = artifact_path(resolve_tenant_path(base))
+        out = artifact_path(root / job_slug(job))
+        removed = set(removed_resume_sidecars) - {resume_json_name(v) for v in versions}
+        if removed:
+            if any(Path(name).name != name for name in removed):
+                raise TenantPathError("invalid export filename")
+            _prune_previous_exports(root, out, job_id, removed)
+            for name in removed:
+                (out / name).unlink(missing_ok=True)
+        if existing_only and not (out / "manifest.json").is_file():
+            return None
+        out.mkdir(parents=True, exist_ok=True)
 
-    for version in versions:
-        _write_json(out / resume_json_name(version), version.content_json or {})
-    for cover_letter in cover_letters:
+        for version in versions:
+            _write_json(out / resume_json_name(version), version.content_json or {})
+        for cover_letter in cover_letters:
+            _write_json(
+                out / cover_letter_json_name(cover_letter),
+                cover_letter.content_json or {},
+            )
         _write_json(
-            out / cover_letter_json_name(cover_letter), cover_letter.content_json or {}
+            out / "manifest.json",
+            build_manifest(job, versions, cover_letters, application),
         )
-    _write_json(
-        out / "manifest.json", build_manifest(job, versions, cover_letters, application)
-    )
-    return out
+        return out
