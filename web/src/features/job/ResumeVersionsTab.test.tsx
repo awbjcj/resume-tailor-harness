@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,8 +23,7 @@ import { ResumeVersionsTab } from "./ResumeVersionsTab";
 
 type Version = components["schemas"]["ResumeVersionOut"];
 
-function wrap(ui: ReactNode) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function wrap(ui: ReactNode, client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(ui, {
     wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
   });
@@ -182,9 +181,20 @@ describe("ResumeVersionsTab", () => {
     );
   });
 
-  it("re-renders an existing version with the selected style", async () => {
+  it("updates the version and closes the style dialog while boards refresh", async () => {
     const user = userEvent.setup();
-    wrap(<ResumeVersionsTab jobId={3} versions={[version(9, 1, { pdfAvailable: true, pdfTemplateId: "classic" })]} appliedVersionId={9} />);
+    const client = new QueryClient();
+    const current = version(9, 1, { pdfAvailable: true, pdfTemplateId: "classic" });
+    const updated = { ...current, pdfTemplateId: "modern" };
+    const sibling = version(8, 1);
+    const job = { application: { resumeVersionId: 9 }, resumeVersions: [current, sibling] };
+    client.setQueryData(["job", 3], job);
+    const boardRefresh = new Promise<void>(() => {});
+    const invalidate = vi.spyOn(client, "invalidateQueries").mockImplementation(({ queryKey } = {}) =>
+      queryKey?.[0] === "pipeline" ? boardRefresh : Promise.resolve(),
+    );
+    mocks.api.POST.mockResolvedValue({ data: updated });
+    wrap(<ResumeVersionsTab jobId={3} versions={[current, sibling]} appliedVersionId={9} />, client);
 
     await user.click(screen.getByRole("button", { name: "Change style" }));
     const dialog = await screen.findByRole("dialog", { name: "Render version 9" });
@@ -199,6 +209,9 @@ describe("ResumeVersionsTab", () => {
       params: { path: { version_id: 9 } },
       body: { templateId: "modern" },
     });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Render version 9" })).not.toBeInTheDocument());
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["pipeline"] });
+    expect(client.getQueryData(["job", 3])).toEqual({ ...job, resumeVersions: [updated, sibling] });
   });
 
   it("requires an explicit choice before replacing a PDF whose saved style was removed", async () => {
