@@ -24,13 +24,13 @@ const payload = {
   suggestionStatuses: [],
 };
 
-async function mockMatchGap(page: import("@playwright/test").Page) {
+async function mockMatchGap(page: import("@playwright/test").Page, data = payload) {
   await mockEmptyRuns(page);
   await page.route("**/api/notifications", (route) => route.fulfill({ json: [] }));
   await page.route("**/api/setup/status", (route) => route.fulfill({ json: { secrets: { anthropicKey: true, anyLlmKey: true }, profile: { documentCount: 1, hasResume: true, factsBuiltAt: "2026-07-18T00:00:00Z", githubUsername: null }, search: { configured: true }, sources: { enabledCount: 1 }, complete: true } }));
   await page.route(
     (url) => url.pathname === "/api/match-gap",
-    (route) => route.fulfill({ json: payload }),
+    (route) => route.fulfill({ json: data }),
   );
 }
 
@@ -85,4 +85,26 @@ test("keeps match-gap filters in document flow on desktop", async ({ page }) => 
     "position",
     "static",
   );
+});
+
+test("wraps long taxonomy labels and statistics in the mobile outline", async ({ page }, testInfo) => {
+  const categoryLabel = "Distributed Cloud Infrastructure, Reliability, and Security Engineering";
+  const domainLabel = "Regional Platform Operations and Infrastructure Automation";
+  await mockMatchGap(page, {
+    ...payload,
+    categories: [{ ...payload.categories[0], label: categoryLabel }],
+    domains: [{ ...payload.domains[0], label: domainLabel }],
+  });
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/match-gap");
+  await page.evaluate(() => { document.documentElement.style.fontSize = "125%"; });
+  await page.getByRole("tab", { name: "Outline" }).click();
+  const category = page.getByRole("button", { name: `Collapse ${categoryLabel}` });
+  await expect(category).toBeVisible();
+  expect(await category.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.getByRole("button", { name: `Expand ${domainLabel}` }).click();
+  await expect(page.getByRole("button", { name: "Open Kubernetes details" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.getByRole("region", { name: "Skill outline" }).screenshot({ path: testInfo.outputPath("taxonomy-outline-320.png") });
 });

@@ -195,6 +195,11 @@ test.beforeEach(async ({ page }) => {
       },
     });
   });
+  await page.route("**/api/profile/github/repositories", (route) => route.fulfill({
+    json: ["portfolio", "archive", "flagship"].map((name) => ({
+      owner: "octocat", name, fullName: `octocat/${name}`, included: true, uploadedOverride: false,
+    })),
+  }));
   await page.route("**/api/profile/sources/note", (route) =>
     route.fulfill({
       status: 201,
@@ -246,10 +251,19 @@ test("profile depth controls and grouped skills form one working story", async (
   await expect(page.getByRole("dialog", { name: "Add a note" })).toHaveCount(0);
 
   await page.getByText("Import preferences", { exact: true }).click();
-  await page
-    .getByLabel("Always include repositories")
-    .fill("portfolio, flagship");
-  await page.getByLabel("Exclude repositories").fill("archive");
+  const include = page.getByLabel("Always include repositories", { exact: true });
+  await include.click();
+  await include.fill("port");
+  await expect(page.getByRole("option", { name: "octocat/portfolio" })).toBeVisible();
+  await include.press("ArrowDown");
+  await include.press("Enter");
+  await expect(page.getByRole("button", { name: "Remove octocat/portfolio" })).toBeVisible();
+  await include.fill("flagship");
+  await page.getByRole("button", { name: "Add to Always include repositories" }).click();
+  const exclude = page.getByLabel("Exclude repositories", { exact: true });
+  await exclude.click();
+  await exclude.fill("archive");
+  await page.getByRole("option", { name: "octocat/archive" }).click();
   await page.getByLabel("Repository limit").fill("5");
   const saveRequest = page.waitForRequest(
     (request) =>
@@ -258,8 +272,8 @@ test("profile depth controls and grouped skills form one working story", async (
   );
   await page.getByRole("button", { name: "Save changes" }).click();
   expect((await saveRequest).postDataJSON()).toMatchObject({
-    githubRepoAllow: ["portfolio", "flagship"],
-    githubRepoDeny: ["archive"],
+    githubRepoAllow: ["octocat/portfolio", "flagship"],
+    githubRepoDeny: ["octocat/archive"],
     githubRepoLimit: 5,
   });
   await expect(page.getByRole("button", { name: "Save changes" })).toHaveCount(
@@ -277,9 +291,8 @@ test("profile depth controls and grouped skills form one working story", async (
   await page.getByRole("button", { name: "Add skill", exact: true }).click();
   const addDialog = page.getByRole("dialog", { name: "Add a skill" });
   await addDialog.getByLabel("Skill name").fill("TypeScript");
-  await addDialog
-    .getByLabel("Group", { exact: true })
-    .selectOption("languages");
+  await addDialog.getByRole("combobox", { name: "Group", exact: true }).click();
+  await page.getByRole("listbox").getByRole("option", { name: "Programming Languages", exact: true }).click();
   const addRequest = page.waitForRequest(
     (request) =>
       request.url().endsWith("/api/profile/skills") &&
@@ -299,7 +312,8 @@ test("profile depth controls and grouped skills form one working story", async (
   for (const group of ["other", ""]) {
     await page.getByRole("button", { name: "Edit Python" }).click();
     const dialog = page.getByRole("dialog", { name: "Edit skill" });
-    await dialog.getByLabel("Group", { exact: true }).selectOption(group);
+    await dialog.getByRole("combobox", { name: "Group", exact: true }).click();
+    await page.getByRole("listbox").getByRole("option", { name: group === "other" ? "Other" : "Automatic grouping", exact: true }).click();
     const editRequest = page.waitForRequest(
       (request) =>
         request.url().endsWith("/api/profile/skills/python") &&
@@ -424,12 +438,9 @@ test("source files can be replaced and removed without losing their roles", asyn
     mimeType: "text/markdown",
     buffer: Buffer.from("# Updated evidence"),
   });
-  await expect(
-    page.getByRole("article", { name: /updated-dossier\.md/i }),
-  ).toContainText("Project");
-  await expect(
-    page.getByRole("article", { name: /resume\.pdf/i }),
-  ).toContainText("Primary");
+  await expect(page.getByRole("region", { name: "Project dossiers" }).getByRole("article", { name: /updated-dossier\.md/i })).toBeVisible();
+  const primaryResume = page.getByRole("region", { name: "Primary resume" });
+  await expect(primaryResume.getByRole("article", { name: /resume\.pdf/i })).toBeVisible();
 
   const resumeChooser = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: "Replace resume.pdf" }).click();
@@ -440,9 +451,7 @@ test("source files can be replaced and removed without losing their roles", asyn
     mimeType: "application/pdf",
     buffer: Buffer.from("new resume"),
   });
-  await expect(
-    page.getByRole("article", { name: /new-resume\.pdf/i }),
-  ).toContainText("Primary");
+  await expect(primaryResume.getByRole("article", { name: /new-resume\.pdf/i })).toBeVisible();
   await page.getByRole("button", { name: "Remove updated-dossier.md" }).click();
   await page
     .getByRole("button", { name: "Remove source", exact: true })
@@ -508,6 +517,7 @@ test("repository branch choices are saved and survive reload", async ({
     name: "Branch for octocat/portfolio",
   });
   await branch.click();
+  await page.getByRole("combobox", { name: "Search branches…" }).fill("feature dossier");
   await page
     .getByRole("option", { name: "feature/dossier", exact: true })
     .click();
@@ -539,7 +549,7 @@ test("repository branch choices are saved and survive reload", async ({
     .focus();
   await page.keyboard.press("ArrowDown");
   await expect(page.getByRole("listbox")).toBeVisible();
-  await expect(page.locator('[data-slot="select-content"]')).toHaveCSS(
+  await expect(page.getByRole("dialog").filter({ has: page.getByRole("listbox") })).toHaveCSS(
     "animation-name",
     "none",
   );
@@ -651,7 +661,7 @@ test("source and branch controls reflow with long names in both themes", async (
       name: "Branch for octocat/portfolio",
     });
     const textBounds = await branchTrigger
-      .locator('[data-slot="select-value"]')
+      .getByText(branchName, { exact: true })
       .boundingBox();
     const triggerBounds = await branchTrigger.boundingBox();
     expect(textBounds!.y).toBeGreaterThanOrEqual(triggerBounds!.y);
@@ -875,6 +885,7 @@ test("skill editor and organization controls support keyboard and narrow screens
   );
   await page.getByLabel("Skill name").fill("TypeScript");
   await page.getByLabel("Aliases", { exact: true }).fill("TS");
+  await page.getByRole("button", { name: "Add to Aliases" }).click();
   await expect(dialog).toHaveJSProperty(
     "scrollWidth",
     await dialog.evaluate((node) => node.clientWidth),
@@ -1143,9 +1154,54 @@ test("compact view displays every skill and remembers its density", async ({
     page.getByRole("button", { name: "Compact", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Detailed", exact: true }).click();
+  await page.getByRole("button", { name: /Technical skills/ }).click();
+  await page.getByRole("button", { name: /Backend & APIs/ }).click();
   await expect(
     page.getByRole("button", { name: "Next skills page" }),
   ).toBeVisible();
+});
+
+test("search reveals a matching skill in its category and group on mobile", async ({ page }, testInfo) => {
+  await mockCompactSkills(page, 90);
+  await page.setViewportSize({ width: 375, height: 820 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/profile?tab=skills");
+  const library = page.getByRole("region", { name: "Your skill library" });
+  const search = library.getByRole("textbox", { name: "Search skills, aliases, or groups" });
+  const category = library.getByRole("button", { name: /Technical skills/ });
+  const filters = library.getByRole("button", { name: "Skill filters" });
+  await expect(filters).toHaveAttribute("aria-expanded", "false");
+  await filters.click();
+  await expect(library.getByRole("combobox", { name: "Filter by group" })).toBeVisible();
+  await filters.click();
+  await expect(category).toHaveAttribute("aria-expanded", "false");
+  await expect(library.getByRole("button", { name: "Python", exact: true })).toHaveCount(0);
+
+  await search.fill("programming py");
+  await expect(category).toHaveAttribute("aria-expanded", "true");
+  await expect(library.getByRole("button", { name: /Programming Languages/ })).toHaveAttribute("aria-expanded", "true");
+  await expect(library.getByRole("button", { name: "Python", exact: true })).toBeVisible();
+  await expect(library.getByRole("status")).toHaveText("1 of 92 results");
+  const row = library.getByRole("listitem").filter({ has: page.getByRole("button", { name: "Python", exact: true }) });
+  const centers = await row.locator("button, [role=checkbox]").evaluateAll((controls) =>
+    controls.map((control) => {
+      const rect = control.getBoundingClientRect();
+      return rect.top + rect.height / 2;
+    }),
+  );
+  expect(centers.length).toBeGreaterThan(2);
+  expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1);
+  await category.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("grouped-skill-search-mobile.png") });
+
+  await library.getByRole("button", { name: "Clear search", exact: true }).click();
+  await expect(search).toBeFocused();
+  await expect(category).toHaveAttribute("aria-expanded", "false");
+  await library.getByRole("button", { name: "Compact", exact: true }).click();
+  await search.fill("backend 89");
+  await expect(library.getByRole("button", { name: "Skill 89", exact: true })).toBeVisible();
+  await expect(library.getByRole("button", { name: "Skill 88", exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
 });
 
 test("skill context windows support keyboard moving, editing and deleting", async ({
@@ -1160,7 +1216,8 @@ test("skill context windows support keyboard moving, editing and deleting", asyn
   let popup = page.getByRole("dialog", { name: "Python", exact: true });
   await expect(popup).toBeVisible();
   await expect(popup).toHaveCSS("animation-name", "none");
-  await popup.getByLabel("Move to group").selectOption("leadership-management");
+  await popup.getByRole("combobox", { name: "Move to group" }).click();
+  await page.getByRole("listbox").getByRole("option", { name: "Leadership & Management", exact: true }).click();
   await popup.getByRole("button", { name: "Move skill", exact: true }).click();
   await expect
     .poll(() => state.moves)
@@ -1212,9 +1269,7 @@ test("group contexts add a skill with keyboard focus and keep its chosen group",
     .click();
   const editor = page.getByRole("dialog", { name: "Add a skill", exact: true });
   await expect(editor.getByLabel("Skill name")).toBeFocused();
-  await expect(editor.getByLabel("Group", { exact: true })).toHaveValue(
-    "languages",
-  );
+  await expect(editor.getByRole("combobox", { name: "Group", exact: true })).toHaveText("Programming Languages");
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
   await trigger.click();
@@ -1233,9 +1288,7 @@ test("group contexts add a skill with keyboard focus and keep its chosen group",
   await page
     .getByRole("button", { name: "Add skill: Other", exact: true })
     .click();
-  await expect(editor.getByLabel("Group", { exact: true })).toHaveValue(
-    "other",
-  );
+  await expect(editor.getByRole("combobox", { name: "Group", exact: true })).toHaveText("Other");
   await editor.getByLabel("Skill name").fill("Documentation");
   await editor.getByRole("button", { name: "Add skill", exact: true }).click();
   await expect(
@@ -1290,7 +1343,8 @@ test("pointer dragging moves skills, cancels safely, and reports a rejected move
   state.failNextMove();
   await page.getByRole("button", { name: "Python", exact: true }).click();
   const popup = page.getByRole("dialog", { name: "Python", exact: true });
-  await popup.getByLabel("Move to group").selectOption("other");
+  await popup.getByRole("combobox", { name: "Move to group" }).click();
+  await page.getByRole("listbox").getByRole("option", { name: "Other", exact: true }).click();
   await popup.getByRole("button", { name: "Move skill", exact: true }).click();
   await expect(popup.getByRole("alert")).toContainText("Move failed");
   await expect(destination.locator('[data-skill-chip="python"]')).toBeVisible();
@@ -1344,9 +1398,8 @@ test("category and group context windows create, rename and delete containers", 
   await popup
     .getByRole("button", { name: "Save changes", exact: true })
     .click();
-  await page
-    .getByRole("combobox", { name: "Filter by group", exact: true })
-    .selectOption("custom-000000000002");
+  await page.getByRole("combobox", { name: "Filter by group", exact: true }).click();
+  await page.getByRole("listbox").getByRole("option", { name: "Core tools", exact: true }).click();
   await page
     .getByRole("button", { name: "Group actions for Core tools", exact: true })
     .click();
@@ -1362,7 +1415,7 @@ test("category and group context windows create, rename and delete containers", 
   ).toHaveCount(0);
   await expect(
     page.getByRole("combobox", { name: "Filter by group", exact: true }),
-  ).toHaveValue("all");
+  ).toHaveText("All groups");
   await page
     .getByRole("combobox", { name: "Skill categories", exact: true })
     .selectOption("custom-000000000001");
@@ -1420,7 +1473,8 @@ test("touch dragging moves a skill and category drops ask for a destination", as
   await expect(popup).toBeVisible();
   await expect(popup).toContainText("Choose a group in this category");
   expect(state.moves).toEqual([]);
-  await popup.getByLabel("Move to group").selectOption("backend-apis");
+  await popup.getByRole("combobox", { name: "Move to group" }).click();
+  await page.getByRole("listbox").getByRole("option", { name: "Backend & APIs", exact: true }).click();
   await popup.getByRole("button", { name: "Move skill", exact: true }).click();
   await expect.poll(() => state.moves).toHaveLength(1);
   await expect(
@@ -1433,12 +1487,14 @@ test("touch dragging moves a skill and category drops ask for a destination", as
   ).toBeEnabled();
 
   await page.setViewportSize({ width: 375, height: 1000 });
-  await source.scrollIntoViewIfNeeded();
-  const destination = page.locator('[data-skill-drop-group="languages"]');
-  from = (await source.boundingBox())!;
-  to = (await destination.boundingBox())!;
   const session = await page.context().newCDPSession(page);
   await session.send("Emulation.setTouchEmulationEnabled", { enabled: true });
+  // Center the gesture so the drag's edge autoscroll cannot move either target.
+  await source.evaluate((node) => node.scrollIntoView({ block: "center", behavior: "instant" }));
+  const destination = page.locator('[data-skill-drop-group="languages"]');
+  await expect(destination).toBeInViewport();
+  from = (await source.boundingBox())!;
+  to = (await destination.boundingBox())!;
   await session.send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: [

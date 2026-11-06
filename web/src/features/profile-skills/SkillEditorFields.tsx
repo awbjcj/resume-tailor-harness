@@ -1,7 +1,8 @@
 import { useId, type ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { TagListInput } from "@/components/ui/tag-list-input";
 import type { ProfileMatrix } from "@/features/settings/use-matrix";
 import { useSkillCopy } from "@/i18n/skill-copy";
 import {
@@ -9,6 +10,7 @@ import {
   skillCategoryValue,
   type SkillCategory,
 } from "./skill-categories";
+import { skillGroupOptions } from "./skill-group-options";
 
 export type LibraryRow = NonNullable<ProfileMatrix["rows"]>[number];
 export type LibraryGroup = NonNullable<ProfileMatrix["groups"]>[number];
@@ -16,7 +18,7 @@ export type LibraryCategory = NonNullable<ProfileMatrix["categories"]>[number];
 
 export type SkillDraft = {
   name: string;
-  aliases: string;
+  aliases: string[];
   category: SkillCategory;
   group: string;
 };
@@ -54,12 +56,14 @@ export function SkillEditorFields({
   value,
   onChange,
   groups,
+  categories,
   inferred = false,
   disabled,
 }: {
   value: SkillDraft;
   onChange: (value: SkillDraft) => void;
   groups: LibraryGroup[];
+  categories: LibraryCategory[];
   inferred?: boolean;
   disabled: boolean;
 }) {
@@ -81,22 +85,14 @@ export function SkillEditorFields({
           disabled={disabled}
         />
       </div>
-      <div className="grid gap-1.5">
-        <label htmlFor={`${id}-aliases`} className="text-sm font-medium">
-          {copy.aliases}
-        </label>
-        <Textarea
-          id={`${id}-aliases`}
-          value={value.aliases}
-          onChange={(event) => onChange({ ...value, aliases: event.target.value })}
-          maxLength={10000}
-          disabled={disabled}
-          aria-describedby={`${id}-alias-help`}
-        />
-        <p id={`${id}-alias-help`} className="text-xs text-muted-foreground">
-          {copy.aliasHelp}
-        </p>
-      </div>
+      <TagListInput
+        id={`${id}-aliases`}
+        label={copy.aliases}
+        value={value.aliases}
+        onChange={(aliases) => onChange({ ...value, aliases })}
+        disabled={disabled}
+        description={copy.aliasHelp}
+      />
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <div className="grid min-w-0 gap-1.5">
           <label htmlFor={`${id}-type`} className="text-sm font-medium">
@@ -123,19 +119,16 @@ export function SkillEditorFields({
           <label htmlFor={`${id}-group`} className="text-sm font-medium">
             {copy.group}
           </label>
-          <LibrarySelect
+          <SearchableSelect
             id={`${id}-group`}
             value={value.group}
             onChange={(group) => onChange({ ...value, group })}
             disabled={disabled}
-          >
-            <option value="">{copy.automatic_grouping}</option>
-            {groups.map((group) => (
-              <option key={group.slug} value={group.slug}>
-                {group.label}
-              </option>
-            ))}
-          </LibrarySelect>
+            groups={[
+              { id: "automatic", items: [{ value: "", label: copy.automatic_grouping }] },
+              ...skillGroupOptions(groups, categories),
+            ]}
+          />
         </div>
       </div>
     </>

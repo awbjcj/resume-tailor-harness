@@ -27,12 +27,22 @@ for (const language of ["en", "zh-CN"] as const) {
       await expect(dialog.getByLabel(zh ? "职位名称 *" : "Job title *", { exact: true })).toHaveAttribute("required", "");
       for (const [name, value] of Object.entries({
         title: "Platform Engineer", company: "Acme", jdText: "Build reliable Python services.\nOwn distributed systems.",
-        location: "Boston, MA; New York, NY", url: "https://example.com/jobs/42", applicationUrl: "https://apply.example.com/42",
+        url: "https://example.com/jobs/42", applicationUrl: "https://apply.example.com/42",
         postingId: "REQ-42", postedAt: "2026-10-01", closesAt: "2026-11-30",
         remoteRestrictions: "United States", attendance: "Two days per week", industry: "Software",
-        companySize: "201-500", yoeMin: "5", techStack: "Python\nSQL", mustHaveSkills: "Distributed systems",
-        niceToHaveSkills: "Kubernetes", salaryMin: "120000", salaryMax: "160000", salaryCurrency: "USD",
+        companySize: "201-500", yoeMin: "5",
+        salaryMin: "120000", salaryMax: "160000", salaryCurrency: "USD",
       })) await dialog.locator(`[name="${name}"]`).fill(value);
+      for (const [label, value] of [
+        [zh ? "工作地点" : "Locations", "Boston, MA; New York, NY"],
+        [zh ? "技术栈" : "Technology stack", "Python"],
+        [zh ? "技术栈" : "Technology stack", "SQL"],
+        [zh ? "必备技能" : "Required skills", "Distributed systems"],
+        [zh ? "加分技能" : "Preferred skills", "Kubernetes"],
+      ]) {
+        await dialog.getByLabel(label, { exact: true }).fill(value);
+        await dialog.getByRole("button", { name: zh ? `添加到${label}` : `Add to ${label}`, exact: true }).click();
+      }
       for (const [name, value] of Object.entries({
         remotePolicy: "hybrid", employmentType: "full_time", seniority: "senior", sponsorshipSignal: "offered", salaryPeriod: "year",
       })) await dialog.locator(`[name="${name}"]`).selectOption(value);

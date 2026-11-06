@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Popover,
   PopoverContent,
@@ -19,12 +20,12 @@ import {
 } from "@/components/ui/popover";
 import { useSkillCopy } from "@/i18n/skill-copy";
 import {
-  LibrarySelect,
   type LibraryCategory,
   type LibraryGroup,
   type LibraryRow,
 } from "./SkillEditorFields";
 import { skillCategoryValue } from "./skill-categories";
+import { skillGroupOptions } from "./skill-group-options";
 import { useMoveSkillGroup } from "./use-profile-skills";
 
 export const skillPopoverClass =
@@ -46,6 +47,7 @@ export function SkillMoveForm({
 }) {
   const copy = useSkillCopy();
   const id = useId();
+  const form = useRef<HTMLFormElement>(null);
   const [chosen, setChosen] = useState("");
   const move = useMoveSkillGroup();
   const destination =
@@ -59,28 +61,19 @@ export function SkillMoveForm({
       move.mutate({ key: row.key, group: destination }, { onSuccess: onDone });
   }
   return (
-    <form className="grid min-w-0 gap-3" onSubmit={submit}>
+    <form ref={form} className="grid min-w-0 gap-3" onSubmit={submit}>
       <label htmlFor={id} className="text-xs font-medium">
         {copy.moveTo}
       </label>
-      <LibrarySelect
+      <SearchableSelect
         id={id}
-        value={destination}
+        value={destination || null}
         onChange={setChosen}
         disabled={disabled || move.isPending}
-      >
-        {categories.map((category) => (
-          <optgroup key={category.slug} label={category.label}>
-            {groups
-              .filter((group) => group.category === category.slug)
-              .map((group) => (
-                <option key={group.slug} value={group.slug}>
-                  {group.label}
-                </option>
-              ))}
-          </optgroup>
-        ))}
-      </LibrarySelect>
+        groups={skillGroupOptions(groups, categories)}
+        // Keep the nested picker inside the action popover's focus boundary.
+        portalContainer={form}
+      />
       {move.error ? (
         <p role="alert" className="text-xs text-destructive">
           {move.error.message}

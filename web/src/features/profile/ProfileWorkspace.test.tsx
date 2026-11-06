@@ -1,9 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { withQueryClient } from "@/test/utils";
+import { server } from "@/test/server";
 import { ProfileWorkspace } from "./ProfileWorkspace";
 
 const mocks = vi.hoisted(() => ({
@@ -115,10 +117,11 @@ describe("ProfileWorkspace", () => {
 
     await user.click(screen.getByText("Import preferences"));
     await user.type(
-      screen.getByLabelText(/always include repositories/i),
-      "important, fork",
+      screen.getByLabelText("Always include repositories"),
+      "important, fork{Enter}",
     );
-    await user.type(screen.getByLabelText(/exclude repositories/i), "noise");
+    await user.type(screen.getByLabelText("Exclude repositories"), "noise");
+    await user.click(screen.getByRole("button", { name: "Add to Exclude repositories" }));
     await user.clear(screen.getByLabelText(/repository limit/i));
     await user.type(screen.getByLabelText(/repository limit/i), "5");
     await user.click(screen.getByRole("button", { name: /save changes/i }));
@@ -198,7 +201,7 @@ describe("ProfileWorkspace", () => {
     await userEvent.click(screen.getByText("Import preferences"));
     await userEvent.type(
       screen.getByLabelText("Always include repositories"),
-      "engine, ",
+      "engine{Enter}another",
     );
     mocks.config = { ...mocks.config, githubRepoAllow: ["remote-change"] };
     view.rerender(
@@ -207,12 +210,32 @@ describe("ProfileWorkspace", () => {
       </MemoryRouter>,
     );
     expect(screen.getByLabelText("Always include repositories")).toHaveValue(
-      "engine, ",
+      "another",
     );
+    expect(screen.getByRole("button", { name: "Remove engine" })).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(mocks.save).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("Press Enter or use Add to add your entry, or clear the field before saving.");
+    await userEvent.clear(screen.getByLabelText("Always include repositories"));
     await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(mocks.save).toHaveBeenCalledWith(
       expect.objectContaining({ githubRepoAllow: ["engine"] }),
       expect.any(Object),
     );
+  });
+
+  it("recognizes a saved short repository name and accepts the same repository only once", async () => {
+    mocks.config = { ...mocks.config, githubUsername: "Ada", githubRepoAllow: ["Engine"] };
+    server.use(http.get("/api/profile/github/repositories", () => HttpResponse.json([
+      { owner: "ada", name: "engine", fullName: "ada/engine", included: true, uploadedOverride: false },
+    ])));
+    const user = userEvent.setup();
+    renderWorkspace();
+    await user.click(screen.getByText("Import preferences"));
+    await screen.findByRole("button", { name: "Remove ada/engine" });
+    const include = screen.getByLabelText("Always include repositories");
+    await user.type(include, "ADA/ENGINE{Enter}");
+    expect(screen.getAllByRole("button", { name: /^Remove / })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument();
   });
 });

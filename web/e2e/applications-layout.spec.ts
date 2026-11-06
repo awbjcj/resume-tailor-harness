@@ -47,17 +47,31 @@ for (const { locale, colorScheme } of appearances) {
             totalComp: null,
             compCurrency: null,
             offerDeadline: null,
-            cells: {},
+            cells: index === titles.length - 1 ? {
+              application_submitted: {
+                occurredAt: "2026-10-29T16:00:00Z",
+                result: "advanced",
+                interviewers: "Recruiting operations and platform infrastructure hiring panel",
+              },
+            } : {},
           })),
         } }));
         await page.goto("/applications");
 
         const table = page.getByRole("table");
         await expect(table).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByText(locale === "zh-CN" ? "符合条件的申请：4 条，共 4 条" : "Matching applications: 4 of 4")).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
         await expect(table.getByRole("columnheader", {
           name: locale === "zh-CN" ? "职位" : "Role", exact: true,
         })).toBeVisible();
+        const controls = page.locator("section").filter({ has: page.locator("#application-company-search") });
+        const fields = await controls.locator("input, select").evaluateAll((elements) =>
+          elements.map((element) => ({ y: element.getBoundingClientRect().y, height: element.clientHeight })),
+        );
+        expect(fields).toHaveLength(3);
+        expect(fields.every((field) => field.height === fields[0].height)).toBe(true);
+        if (width >= 1440) expect(fields.every((field) => Math.abs(field.y - fields[0].y) <= 1)).toBe(true);
 
         // Layout geometry catches truncation and sticky-column overlap that
         // DOM-only component tests cannot detect.
@@ -77,6 +91,19 @@ for (const { locale, colorScheme } of appearances) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 
         const scroller = table.locator("..");
+        if (width === 375 && locale === "en" && colorScheme === "light") {
+          const date = table.getByRole("button", { name: "Application submitted details" });
+          await date.click();
+          const detail = page.getByText(/Recruiting operations and platform infrastructure hiring panel/);
+          await expect(detail).toBeInViewport({ ratio: 1 });
+          expect(await detail.evaluate((element) => {
+            const { left, top, width, height } = element.getBoundingClientRect();
+            return element.contains(document.elementFromPoint(left + width / 2, top + height / 2));
+          })).toBe(true);
+          await page.keyboard.press("Escape");
+          await expect(detail).toHaveCount(0);
+          await expect(date).toBeFocused();
+        }
         await scroller.evaluate((element) => { element.scrollLeft = element.scrollWidth; });
         await expect(table.getByRole("columnheader", {
           name: locale === "zh-CN" ? "其他" : "Other", exact: true,
@@ -84,6 +111,7 @@ for (const { locale, colorScheme } of appearances) {
         if (width === 1440 || (width === 2619 && locale === "zh-CN" && colorScheme === "dark")) {
           await scroller.evaluate((element) => { element.scrollLeft = 0; });
           await scroller.screenshot({ path: testInfo.outputPath(`applications-${locale}-${colorScheme}.png`) });
+          await controls.screenshot({ path: testInfo.outputPath(`application-filters-${locale}-${colorScheme}.png`) });
         }
       });
     }

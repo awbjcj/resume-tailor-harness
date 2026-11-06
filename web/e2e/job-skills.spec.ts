@@ -66,7 +66,9 @@ for (const language of ["en", "zh-CN"] as const) {
       await addRust.click();
       await editor.getByLabel(chinese ? "技能名称" : "Skill name", { exact: true }).fill("Rust");
       await editor.getByLabel(chinese ? "别名" : "Aliases", { exact: true }).fill("rustlang");
-      await editor.getByLabel(chinese ? "分组" : "Group", { exact: true }).selectOption("languages");
+      await editor.getByRole("button", { name: chinese ? "添加到别名" : "Add to Aliases", exact: true }).click();
+      await editor.getByRole("combobox", { name: chinese ? "分组" : "Group", exact: true }).click();
+      await page.getByRole("listbox").getByRole("option", { name: chinese ? "编程语言" : "Programming Languages", exact: true }).click();
       const newTab = editor.getByRole("tab", { name: chinese ? "新建技能" : "New skill", exact: true });
       await newTab.focus();
       await page.keyboard.press("ArrowRight");
@@ -74,6 +76,7 @@ for (const language of ["en", "zh-CN"] as const) {
       await expect(aliasTab).toBeFocused();
       await newTab.click();
       await expect(editor.getByLabel(chinese ? "技能名称" : "Skill name", { exact: true })).toHaveValue("Rust");
+      await expect(editor.getByRole("button", { name: chinese ? "移除 rustlang" : "Remove rustlang" })).toBeVisible();
       await expect(editor).toBeInViewport({ ratio: 1 });
       expect(await editor.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
       await page.screenshot({ path: testInfo.outputPath(`job-skill-new-${language}-${width}.png`) });

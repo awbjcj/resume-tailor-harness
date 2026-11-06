@@ -9,29 +9,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field, FieldLabel } from "@/components/ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { SkillRow } from "../aggregate";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import type { CategoryRow, SkillRow } from "../aggregate";
 import { useMergeSkills } from "../use-taxonomy";
 export function MergeSkillDialog({
   skill,
-  allSkills,
+  categoryRows,
   open,
   onOpenChange,
 }: {
   skill: SkillRow;
-  allSkills: SkillRow[];
+  categoryRows: CategoryRow[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const mutation = useMergeSkills();
-  const options = allSkills.filter((item) => item.key !== skill.key);
   const [canonical, setCanonical] = useState("");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -44,26 +36,22 @@ export function MergeSkillDialog({
         </DialogHeader>
         <Field>
           <FieldLabel>Canonical skill</FieldLabel>
-          <Select
-            items={options.map((item) => ({ label: item.skill, value: item.key }))}
+          <SearchableSelect
+            label="Canonical skill"
+            placeholder="Choose a skill"
+            groups={categoryRows.flatMap((category) => category.domains.map((domain) => ({
+              id: domain.id,
+              label: `${category.label} / ${domain.label}`,
+              items: domain.skills.filter((item) => item.key !== skill.key).map((item) => ({
+                value: item.key,
+                label: item.skill,
+                keywords: Object.keys(item.members),
+              })),
+            })))}
             value={canonical || null}
-            onValueChange={(value) => value && setCanonical(value)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue>
-                {canonical ? undefined : "Choose a skill"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {options.map((item) => (
-                  <SelectItem key={item.key} value={item.key}>
-                    {item.skill}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+            onChange={setCanonical}
+            disabled={mutation.isPending}
+          />
         </Field>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

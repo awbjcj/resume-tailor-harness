@@ -54,9 +54,7 @@ describe("ModelPicker", () => {
 
   describe("DeepSeek pricing badge", () => {
     beforeEach(() => {
-      // Only Date is faked — the Select popup's own content (including this
-      // badge) mounts lazily on open, and userEvent's internal waiting needs
-      // real setTimeout/requestAnimationFrame to ever resolve.
+      // Freeze the pricing clock while leaving interaction timers live.
       vi.useFakeTimers({ toFake: ["Date"] });
       vi.setSystemTime(new Date("2026-08-17T02:00:00Z")); // a peak-hour moment
     });
@@ -86,9 +84,10 @@ describe("ModelPicker", () => {
       const user = userEvent.setup();
       render(<ModelPicker value={KNOWN_MODEL} onChange={vi.fn()} catalog={catalog} />);
 
-      await user.click(screen.getByRole("combobox"));
+      await user.tab();
+      await user.keyboard("{Enter}");
 
-      const openaiGroup = screen.getByRole("group", { name: /OpenAI/ });
+      const openaiGroup = await screen.findByRole("group", { name: /OpenAI/ });
       expect(within(openaiGroup).queryByText("Peak")).not.toBeInTheDocument();
       const deepseekGroup = screen.getByRole("group", { name: /DeepSeek/ });
       expect(within(deepseekGroup).getByText("Peak")).toBeInTheDocument();

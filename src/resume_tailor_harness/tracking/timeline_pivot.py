@@ -34,6 +34,7 @@ class PivotCell:
 @dataclass(frozen=True)
 class PivotRow:
     job_id: int
+    application_id: int
     company: str | None
     title: str | None
     status: str
@@ -129,7 +130,7 @@ def build_pivot(
     overflow_by_job: dict[int, int] = {}
     maximum_round = 0
     for application, job in application_rows:
-        if job.id is None:
+        if job.id is None or application.id is None:
             continue
         events = sorted(
             events_by_application.get(application.id or -1, []),
@@ -183,6 +184,7 @@ def build_pivot(
                 recent,
                 PivotRow(
                     job_id=job.id,
+                    application_id=application.id,
                     company=job.company,
                     title=job.title,
                     status=application.status,

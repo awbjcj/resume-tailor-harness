@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { targetId, UNASSIGNED_ID, type DomainRow } from "./aggregate";
 import { RankedList } from "./RankedList";
 
@@ -61,6 +62,7 @@ it("discloses skills with independent selection and detail controls", async () =
     />,
   );
 
+  expect(screen.getAllByText(/1 adjacent skill/).length).toBeGreaterThan(0);
   await userEvent.click(screen.getByRole("button", { name: /expand backend/i }));
   expect(screen.getByText("Ready")).toBeInTheDocument();
   expect(screen.getByText("Adjacent")).toBeInTheDocument();
@@ -73,6 +75,8 @@ it("discloses skills with independent selection and detail controls", async () =
   expect(onToggleSelect).toHaveBeenCalledWith(
     expect.objectContaining({ kind: "skill", key: "django" }),
   );
+  await changeLanguage("zh-CN");
+  expect(await screen.findAllByText(/1 项相近技能/)).not.toHaveLength(0);
 });
 
 it("does not allow selecting the synthetic undomaind group", () => {

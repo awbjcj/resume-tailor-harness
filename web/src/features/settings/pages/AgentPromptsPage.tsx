@@ -13,10 +13,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { ListSearch } from "@/components/ui/list-search";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import promptLabelsZh from "@/i18n/agent-prompt-zh-CN.json";
+import { listSearch } from "@/lib/list-search";
 
 import { ResetSectionButton } from "../ResetSectionButton";
 import {
@@ -43,7 +45,7 @@ function instructionsForDisplay(item: AgentPromptItem): string[] {
   return [item.instructions.slice(0, prefixLength).join(""), ...item.instructions.slice(prefixLength)];
 }
 
-function PromptRow({ item }: { item: AgentPromptItem }) {
+function PromptRow({ item, visible }: { item: AgentPromptItem; visible: boolean }) {
   const save = useSaveGuidance();
   const [guidance, setGuidance] = useState(item.guidance ?? "");
   const { i18n } = useTranslation();
@@ -55,7 +57,7 @@ function PromptRow({ item }: { item: AgentPromptItem }) {
 
   const guidanceId = `guidance-${item.key}`;
   return (
-    <AccordionItem value={item.key}>
+    <AccordionItem value={item.key} hidden={!visible} disabled={!visible}>
       <AccordionTrigger>
         <span className="flex min-w-0 flex-col gap-0.5 pr-3">
           <span>{title}</span>
@@ -118,7 +120,8 @@ function PromptRow({ item }: { item: AgentPromptItem }) {
 
 export function AgentPromptsPage() {
   const prompts = usePrompts();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [search, setSearch] = useState("");
 
   if (prompts.isPending) {
     return <Skeleton className="h-80 w-full" aria-label="Loading agent prompts" />;
@@ -133,23 +136,41 @@ export function AgentPromptsPage() {
     );
   }
 
+  const matches = listSearch(search);
+  const labels: Record<string, string> = i18n.resolvedLanguage?.startsWith("zh") ? promptLabelsZh : {};
+  const sections = STAGES.map(([stage, label]) => ({
+    stage,
+    label,
+    items: prompts.data.filter((item) => item.stage === stage).map((item) => ({
+      item,
+      visible: matches(stage, label, item.key, item.title, item.description, labels[item.title], labels[item.description]),
+    })),
+  }));
+  const shown = sections.reduce((total, section) => total + section.items.filter(({ visible }) => visible).length, 0);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Agent prompts" actions={<ResetSectionButton sectionId="agent_guidance" label="Agent prompts" />} />
       <p className="text-sm text-muted-foreground">{t("agentPrompts.originalLanguage")}</p>
-      {STAGES.map(([stage, label]) => {
-        const items = prompts.data.filter((item) => item.stage === stage);
+      <div className="space-y-2">
+        <ListSearch value={search} onChange={setSearch} aria-label={t("longLists.searchAgentPrompts")} placeholder={t("longLists.searchAgentPrompts")} className="max-w-lg" />
+        <p role="status" className="text-sm text-muted-foreground empty:sr-only">
+          {search.trim() ? shown ? t("longLists.results", { shown, total: prompts.data.length }) : t("longLists.noMatches") : null}
+        </p>
+      </div>
+      {sections.map(({ stage, label, items }) => {
         if (items.length === 0) return null;
         return (
-          <section key={stage} aria-labelledby={`${stage}-heading`}>
+          <section key={stage} aria-labelledby={`${stage}-heading`} hidden={items.every(({ visible }) => !visible)}>
             <h2 id={`${stage}-heading`} className="text-base font-semibold">
               {label}
             </h2>
             <Accordion multiple className="mt-2 rounded-lg border px-3">
-              {items.map((item) => (
+              {items.map(({ item, visible }) => (
                 <PromptRow
                   key={`${item.key}:${item.guidance ?? ""}`}
                   item={item}
+                  visible={visible}
                 />
               ))}
             </Accordion>

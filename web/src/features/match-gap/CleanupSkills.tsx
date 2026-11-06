@@ -13,8 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { ListSearch } from "@/components/ui/list-search";
 import type { components } from "@/lib/api/schema";
+import { listSearch } from "@/lib/list-search";
 import { useDiscardSkills } from "./use-taxonomy";
 
 type MatchGap = components["schemas"]["MatchGapOut"];
@@ -49,6 +50,7 @@ function CleanupDialog({
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const entries = useMemo(() => {
+    const matches = listSearch(query);
     const candidates = new Map(
       (data.cleanupCandidates ?? []).map((entry) => [entry.key, entry.reason]),
     );
@@ -64,13 +66,11 @@ function CleanupDialog({
         label: skills.get(key) ?? key,
         reason: candidates.get(key),
       }))
-      .filter((entry) =>
-        `${entry.label} ${entry.key}`
-          .toLowerCase()
-          .includes(query.toLowerCase()),
-      )
+      .filter((entry) => matches(entry.label, entry.key, entry.reason,
+        entry.reason ? localizeDisplayValue(entry.reason, i18n.resolvedLanguage) : undefined,
+      ))
       .sort((a, b) => a.label.localeCompare(b.label));
-  }, [data, allSkills, query]);
+  }, [data, allSkills, query, i18n.resolvedLanguage]);
   const visible = entries.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const toggle = (key: string, checked: boolean) =>
     setSelected((current) => {
@@ -114,12 +114,12 @@ function CleanupDialog({
           All skill entries
         </Button>
       </div>
-      <Input
+      <ListSearch
         aria-label="Search cleanup entries"
         placeholder="Search entries…"
         value={query}
-        onChange={(event) => {
-          setQuery(event.target.value);
+        onChange={(value) => {
+          setQuery(value);
           setPage(0);
         }}
       />

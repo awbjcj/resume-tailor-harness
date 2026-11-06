@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { components } from "@/lib/api/schema";
 
+import { CareerLabOfferReferences } from "./CareerLabOfferReferences";
 import {
   type CareerLabContext,
   type CareerLabJob,
@@ -214,14 +215,6 @@ export function CareerLabContextRail({
   }, [context, jobDetail.data?.resumeVersions, setContext]);
 
   const updateContext = (changes: Partial<CareerLabContext>) => setContext({ ...context, ...changes });
-  const updateOfferIds = (value: string) => {
-    const offerApplicationIds = value
-      .split(",")
-      .map((part) => Number(part.trim()))
-      .filter((id) => Number.isInteger(id) && id > 0)
-      .slice(0, 10);
-    updateContext({ offerApplicationIds });
-  };
 
   return (
     <div className="space-y-4">
@@ -323,22 +316,10 @@ export function CareerLabContextRail({
             </div>
           </details>
 
-          <details className="rounded-lg border bg-muted/20 p-3">
-            <summary className="cursor-pointer text-sm font-medium">Offer comparison references</summary>
-            <div className="mt-4 space-y-1.5">
-              <Label htmlFor="career-offer-ids">Offer application ids</Label>
-              <input
-                id="career-offer-ids"
-                type="text"
-                inputMode="numeric"
-                placeholder="e.g. 12, 18"
-                value={(context.offerApplicationIds ?? []).join(", ")}
-                onChange={(event) => updateOfferIds(event.target.value)}
-                className="h-9 w-full rounded-lg border border-input bg-background px-2 text-sm"
-              />
-              <p className="text-xs leading-5 text-muted-foreground">Up to 10 offer-status application ids.</p>
-            </div>
-          </details>
+          <CareerLabOfferReferences
+            value={context.offerApplicationIds ?? []}
+            onChange={(offerApplicationIds) => updateContext({ offerApplicationIds })}
+          />
         </CardContent>
       </Card>
     </div>

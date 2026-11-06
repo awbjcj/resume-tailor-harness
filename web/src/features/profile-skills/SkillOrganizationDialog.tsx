@@ -11,6 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ListSearch } from "@/components/ui/list-search";
+import { ListSection } from "@/components/ui/list-section";
+import { listSearch } from "@/lib/list-search";
+import { useTranslation } from "react-i18next";
 import {
   LibrarySelect,
   type LibraryGroup,
@@ -38,7 +42,9 @@ export function SkillOrganizationDialog({
   disabled?: boolean;
 }) {
   const copy = useSkillCopy();
+  const { t } = useTranslation();
   const id = useId();
+  const [search, setSearch] = useState("");
   const [edit, setEdit] = useState<Edit | null>(null);
   const mutation = useSkillOrganization();
   const pending = disabled || mutation.isPending;
@@ -47,6 +53,13 @@ export function SkillOrganizationDialog({
     if (edit && !pending)
       mutation.mutate(edit, { onSuccess: () => setEdit(null) });
   }
+  const matches = listSearch(search);
+  const sections = categories.flatMap((category) => {
+    const rows = groups.filter((group) => group.category === category.slug &&
+      matches(category.label, category.slug, group.label, group.slug),
+    );
+    return rows.length || matches(category.label, category.slug) ? [{ category, rows }] : [];
+  });
   return (
     <Dialog
       open
@@ -171,95 +184,103 @@ export function SkillOrganizationDialog({
             </Button>
           </div>
         )}
-        <div className="max-h-[50svh] space-y-5 overflow-y-auto pr-1">
-          {categories.map((category) => (
-            <section key={category.slug} className="min-w-0">
-              <div className="flex min-w-0 items-center gap-2 border-b pb-2">
-                <h3 className="min-w-0 flex-1 break-words font-semibold">
-                  {category.label}
-                </h3>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={`Edit category ${category.label}`}
-                  disabled={pending}
-                  onClick={() =>
-                    setEdit({
-                      kind: "category",
-                      key: category.slug,
-                      label: category.label,
-                      category: "other",
-                    })
-                  }
-                >
-                  <Pencil aria-hidden />
-                </Button>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label={`Delete category ${category.label}`}
-                  disabled={pending || category.slug === "other"}
-                  onClick={() =>
-                    setEdit({
-                      kind: "category",
-                      key: category.slug,
-                      label: category.label,
-                      category: "other",
-                      remove: true,
-                    })
-                  }
-                >
-                  <Trash2 aria-hidden />
-                </Button>
-              </div>
-              <ul className="divide-y">
-                {groups
-                  .filter((g) => g.category === category.slug)
-                  .map((group) => (
-                    <li
-                      key={group.slug}
-                      className="flex min-w-0 items-center gap-2 py-1 pl-3"
+        <ListSearch value={search} onChange={setSearch} aria-label={copy.searchOrganization} placeholder={copy.searchOrganization} />
+        <p role="status" className="text-sm text-muted-foreground empty:sr-only">
+          {sections.length === 0 ? t("longLists.noMatches") : null}
+        </p>
+        <div className="max-h-[50svh] space-y-2 overflow-y-auto p-0.5">
+          {sections.map(({ category, rows }) => (
+            <ListSection
+              key={category.slug}
+              label={category.label}
+              count={rows.length}
+              query={search.trim()}
+              defaultOpen={groups.length <= 16}
+              className="rounded-lg border bg-muted/20"
+              actions={
+                <div className="flex shrink-0 items-center pr-2">
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Edit category ${category.label}`}
+                    disabled={pending}
+                    onClick={() =>
+                      setEdit({
+                        kind: "category",
+                        key: category.slug,
+                        label: category.label,
+                        category: "other",
+                      })
+                    }
+                  >
+                    <Pencil aria-hidden />
+                  </Button>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Delete category ${category.label}`}
+                    disabled={pending || category.slug === "other"}
+                    onClick={() =>
+                      setEdit({
+                        kind: "category",
+                        key: category.slug,
+                        label: category.label,
+                        category: "other",
+                        remove: true,
+                      })
+                    }
+                  >
+                    <Trash2 aria-hidden />
+                  </Button>
+                </div>
+              }
+            >
+              <ul className="divide-y border-t">
+                {rows.map((group) => (
+                  <li
+                    key={group.slug}
+                    className="flex min-w-0 items-center gap-2 py-1 pl-3"
+                  >
+                    <span className="min-w-0 flex-1 break-words text-sm text-muted-foreground">
+                      {group.label}
+                    </span>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      aria-label={`Edit group ${group.label}`}
+                      disabled={pending}
+                      onClick={() =>
+                        setEdit({
+                          kind: "group",
+                          key: group.slug,
+                          label: group.label,
+                          category: group.category,
+                        })
+                      }
                     >
-                      <span className="min-w-0 flex-1 break-words text-sm text-muted-foreground">
-                        {group.label}
-                      </span>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label={`Edit group ${group.label}`}
-                        disabled={pending}
-                        onClick={() =>
-                          setEdit({
-                            kind: "group",
-                            key: group.slug,
-                            label: group.label,
-                            category: group.category,
-                          })
-                        }
-                      >
-                        <Pencil aria-hidden />
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label={`Delete group ${group.label}`}
-                        disabled={pending || group.slug === "other"}
-                        onClick={() =>
-                          setEdit({
-                            kind: "group",
-                            key: group.slug,
-                            label: group.label,
-                            category: group.category,
-                            remove: true,
-                          })
-                        }
-                      >
-                        <Trash2 aria-hidden />
-                      </Button>
-                    </li>
-                  ))}
+                      <Pencil aria-hidden />
+                    </Button>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      aria-label={`Delete group ${group.label}`}
+                      disabled={pending || group.slug === "other"}
+                      onClick={() =>
+                        setEdit({
+                          kind: "group",
+                          key: group.slug,
+                          label: group.label,
+                          category: group.category,
+                          remove: true,
+                        })
+                      }
+                    >
+                      <Trash2 aria-hidden />
+                    </Button>
+                  </li>
+                ))}
               </ul>
-            </section>
+            </ListSection>
           ))}
         </div>
       </DialogContent>

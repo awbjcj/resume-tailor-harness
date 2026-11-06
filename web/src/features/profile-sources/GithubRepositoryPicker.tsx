@@ -1,20 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { GitBranch, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { api, unwrap } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ListSearch } from "@/components/ui/list-search";
+import { ListSection } from "@/components/ui/list-section";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { listSearch } from "@/lib/list-search";
+import { useGithubRepositories } from "./use-sources";
 
 type Repository = components["schemas"]["GithubRepositoryOut"];
 const DEFAULT_BRANCH = ":default";
@@ -30,6 +28,7 @@ function RepositoryBranch({
   disabled: boolean;
   onChange: (branch: string) => void;
 }) {
+  const { t } = useTranslation();
   const [load, setLoad] = useState(false);
   const branches = useQuery({
     queryKey: ["github-branches", repo.owner, repo.name],
@@ -47,24 +46,9 @@ function RepositoryBranch({
     ...new Set([...(branches.data ?? []), ...(value ? [value] : [])]),
   ];
   return (
-    <li className="grid min-w-0 gap-x-6 gap-y-3 border-t border-border py-3 @3xl/repositories:grid-cols-[minmax(0,1fr)_minmax(14rem,20rem)] @3xl/repositories:items-center">
-      <div className="min-w-0 space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="min-w-0 font-medium [overflow-wrap:anywhere]">
-            {repo.fullName}
-          </span>
-          <Badge
-            variant={repo.included ? "secondary" : "outline"}
-            className="h-auto min-h-5 max-w-full whitespace-normal text-left"
-          >
-            {repo.included ? "Included" : "Not selected for sync"}
-          </Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {repo.included
-            ? "Your selection will be used in the next sync or profile build."
-            : 'To sync this branch, add the repository to "Always include repositories" and remove any exclusions for it.'}
-        </p>
+    <li className="grid min-w-0 items-start gap-x-6 gap-y-2 py-3 @xl/repositories:grid-cols-[minmax(0,1fr)_minmax(12rem,18rem)]">
+      <div className="flex min-w-0 flex-col justify-center gap-1 @xl/repositories:min-h-11">
+        <span className="min-w-0 font-medium [overflow-wrap:anywhere]">{repo.fullName}</span>
         {repo.uploadedOverride ? (
           <p className="text-sm text-muted-foreground">
             An uploaded dossier takes priority over synced files for this
@@ -73,69 +57,26 @@ function RepositoryBranch({
         ) : null}
       </div>
       <div className="min-w-0 space-y-2">
-        <label
-          className="sr-only"
-          htmlFor={`branch-${repo.fullName}`}
-        >
-          {`Branch for ${repo.fullName}`}
-        </label>
-        <Select
+        <SearchableSelect
+          label={t("longLists.branchFor", { name: repo.fullName })}
+          className="min-h-11"
           value={value || DEFAULT_BRANCH}
           disabled={disabled}
-          onOpenChange={(open) => {
-            if (open) setLoad(true);
-          }}
-          onValueChange={(selected) =>
-            onChange(selected === DEFAULT_BRANCH ? "" : (selected ?? ""))
-          }
-        >
-          <SelectTrigger
-            id={`branch-${repo.fullName}`}
-            style={{ height: "auto" }}
-            className="min-h-11 w-full min-w-0 whitespace-normal [&_[data-slot=select-value]]:line-clamp-none"
-          >
-            <GitBranch
-              className="size-4 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <SelectValue className="min-w-0 [overflow-wrap:anywhere]">
-              {value ||
-                (repo.defaultBranch
-                  ? `Default (${repo.defaultBranch})`
-                  : "Default branch")}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent
-            alignItemWithTrigger={false}
-            className="max-w-[calc(100vw-2rem)] data-open:animate-none data-closed:animate-none"
-          >
-            <SelectItem value={DEFAULT_BRANCH}>
-              {repo.defaultBranch
-                ? `Default (${repo.defaultBranch})`
-                : "Default branch"}
-            </SelectItem>
-            {branches.isFetching ? (
-              <div
-                role="status"
-                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground"
-              >
-                <Spinner />
-                Loading branches…
-              </div>
-            ) : null}
-            {options.map((branch) => (
-              <SelectItem
-                key={branch}
-                value={branch}
-                className="[&>div]:min-w-0 [&>div]:shrink"
-              >
-                <span className="whitespace-normal [overflow-wrap:anywhere]">
-                  {branch}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          searchLabel={t("longLists.searchBranches")}
+          loadingLabel={branches.isFetching ? t("longLists.loadingBranches") : undefined}
+          onOpenChange={(open) => { if (open) setLoad(true); }}
+          onChange={(selected) => onChange(selected === DEFAULT_BRANCH ? "" : selected)}
+          groups={[
+            {
+              id: "default-branch",
+              items: [{
+                value: DEFAULT_BRANCH,
+                label: repo.defaultBranch ? t("longLists.defaultNamedBranch", { branch: repo.defaultBranch }) : t("longLists.defaultBranch"),
+              }],
+            },
+            { id: "branches", label: t("longLists.branches"), items: options.map((branch) => ({ value: branch, label: branch })) },
+          ]}
+        />
         {branches.isError ? (
           <div className="space-y-2">
             <p role="alert" className="text-sm text-destructive">
@@ -168,14 +109,23 @@ export function GithubRepositoryPicker({
   disabled: boolean;
   onChange: (branches: Record<string, string>) => void;
 }) {
+  const { t } = useTranslation();
   const [load, setLoad] = useState(false);
-  const repositories = useQuery({
-    queryKey: ["github-repositories", username, settingsKey],
-    enabled: load && !!username,
-    retry: false,
-    staleTime: 60_000,
-    queryFn: () => unwrap(api.GET("/api/profile/github/repositories")),
-  });
+  const [search, setSearch] = useState("");
+  const repositories = useGithubRepositories(username, settingsKey, load);
+  const all = repositories.data ?? [];
+  const matches = listSearch(search);
+  const sections = [
+    { included: true, label: t("longLists.includedRepositories") },
+    { included: false, label: t("longLists.excludedRepositories") },
+  ].map(({ included, label }) => ({
+    included,
+    label,
+    rows: all.filter((repo) => Boolean(repo.included) === included && matches(
+      repo.fullName, repo.defaultBranch, branches[repo.fullName.toLowerCase()] ?? branches[repo.name.toLowerCase()], label,
+    )),
+  }));
+  const shown = sections.reduce((count, section) => count + section.rows.length, 0);
   return (
     <div className="@container/repositories min-w-0 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -185,13 +135,13 @@ export function GithubRepositoryPicker({
         <Button
           variant="outline"
           className="h-auto min-h-11 max-w-full whitespace-normal text-left"
-          disabled={!username || disabled || repositories.isFetching}
+          disabled={!username || disabled || (load && repositories.isFetching)}
           onClick={() => {
             setLoad(true);
             if (load) void repositories.refetch();
           }}
         >
-          {repositories.isFetching ? (
+          {load && repositories.isFetching ? (
             <Spinner data-icon="inline-start" />
           ) : load ? (
             <RefreshCw data-icon="inline-start" aria-hidden="true" />
@@ -206,40 +156,51 @@ export function GithubRepositoryPicker({
           Save your GitHub username to load repositories and their branches.
         </p>
       ) : null}
-      {repositories.isLoading ? <Skeleton className="h-24 w-full" /> : null}
-      {repositories.isError ? (
+      {load && repositories.isLoading ? <Skeleton className="h-24 w-full" /> : null}
+      {load && repositories.isError ? (
         <p role="alert" className="text-sm text-destructive">
           Could not load repositories. Check your saved username and GitHub
           access, then refresh.
         </p>
       ) : null}
-      {repositories.data?.length === 0 ? (
+      {load && repositories.data?.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No repositories found for this username.
         </p>
       ) : null}
-      {repositories.data?.length ? (
-        <ul>
-          {repositories.data.map((repo) => (
-            <RepositoryBranch
-              key={repo.fullName}
-              repo={repo}
-              disabled={disabled}
-              value={
-                branches[repo.fullName.toLowerCase()] ??
-                branches[repo.name.toLowerCase()] ??
-                ""
-              }
-              onChange={(branch) => {
-                const next = { ...branches };
-                delete next[repo.name.toLowerCase()];
-                if (branch) next[repo.fullName.toLowerCase()] = branch;
-                else delete next[repo.fullName.toLowerCase()];
-                onChange(next);
-              }}
-            />
-          ))}
-        </ul>
+      {load && repositories.data?.length ? (
+        <div className="space-y-2">
+          <ListSearch value={search} onChange={setSearch} aria-label={t("longLists.searchRepositories")} placeholder={t("longLists.searchRepositories")} />
+          <p role="status" className="text-sm text-muted-foreground empty:sr-only">
+            {search.trim() ? (shown ? t("longLists.results", { shown, total: all.length }) : t("longLists.noMatches")) : null}
+          </p>
+          {sections.map(({ included, label, rows }) => rows.length ? (
+            <ListSection key={String(included)} label={label} count={rows.length} query={search.trim()} defaultOpen={all.length <= 10} className="rounded-lg border bg-muted/20">
+              <p className="border-t px-3 pt-2 text-sm text-muted-foreground sm:px-4">
+                {included
+                  ? "Your selection will be used in the next sync or profile build."
+                  : 'To sync this branch, add the repository to "Always include repositories" and remove any exclusions for it.'}
+              </p>
+              <ul className="divide-y px-3 sm:px-4">
+                {rows.map((repo) => (
+                  <RepositoryBranch
+                    key={repo.fullName}
+                    repo={repo}
+                    disabled={disabled}
+                    value={branches[repo.fullName.toLowerCase()] ?? branches[repo.name.toLowerCase()] ?? ""}
+                    onChange={(branch) => {
+                      const next = { ...branches };
+                      delete next[repo.name.toLowerCase()];
+                      if (branch) next[repo.fullName.toLowerCase()] = branch;
+                      else delete next[repo.fullName.toLowerCase()];
+                      onChange(next);
+                    }}
+                  />
+                ))}
+              </ul>
+            </ListSection>
+          ) : null)}
+        </div>
       ) : null}
     </div>
   );

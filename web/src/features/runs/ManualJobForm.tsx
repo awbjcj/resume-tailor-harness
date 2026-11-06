@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { TagListInput } from "@/components/ui/tag-list-input";
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { api } from "@/lib/api/client";
 import type { components } from "@/lib/api/schema";
@@ -12,8 +13,10 @@ import { invalidateBoardQueries } from "@/features/board/query-invalidation";
 import type { manualJobEn } from "@/i18n/manual-job";
 
 type FieldName = keyof typeof manualJobEn.fields;
+type ListField = "location" | "techStack" | "mustHaveSkills" | "niceToHaveSkills";
+type TextField = Exclude<FieldName, ListField>;
 type Option = keyof typeof manualJobEn.options;
-type Values = Partial<Record<FieldName, string>>;
+type Values = Partial<Record<TextField, string>>;
 type Details = components["schemas"]["ManualJobDetails"];
 
 function validLink(value: string) {
@@ -29,22 +32,23 @@ export default function ManualJobForm({ onClose, onBusyChange }: { onClose: () =
   const id = useId();
   const queryClient = useQueryClient();
   const [values, setValues] = useState<Values>({});
+  const [lists, setLists] = useState<Partial<Record<ListField, string[]>>>({});
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
   const [saved, setSaved] = useState<{ id: number; title: string; company: string } | null>(null);
 
-  const field = (name: FieldName, type = "text", required = false) => (
+  const field = (name: TextField, type = "text", required = false) => (
     <label className="grid min-w-0 gap-1.5 text-sm" htmlFor={`${id}-${name}`} key={name}>
       {t(`manualJob.fields.${name}`)}
       <Input id={`${id}-${name}`} name={name} type={type} required={required}
-        value={values[name] ?? ""} maxLength={name === "location" ? 4000 : type === "url" ? 4096 : 1000}
+        value={values[name] ?? ""} maxLength={type === "url" ? 4096 : 1000}
         min={type === "number" ? 0 : undefined} max={name === "yoeMin" ? 100 : undefined}
         step={name === "yoeMin" ? 1 : type === "number" ? "any" : undefined}
         onChange={(event) => setValues({ ...values, [name]: event.target.value })} />
     </label>
   );
-  const select = (name: FieldName, options: Option[]) => (
+  const select = (name: TextField, options: Option[]) => (
     <label className="grid min-w-0 gap-1.5 text-sm" htmlFor={`${id}-${name}`} key={name}>
       {t(`manualJob.fields.${name}`)}
       <select id={`${id}-${name}`} name={name} value={values[name] ?? ""}
@@ -55,24 +59,23 @@ export default function ManualJobForm({ onClose, onBusyChange }: { onClose: () =
       </select>
     </label>
   );
-  const textarea = (name: FieldName, required = false) => (
-    <label className="grid gap-1.5 text-sm" htmlFor={`${id}-${name}`} key={name}>
-      {t(`manualJob.fields.${name}`)}
-      <textarea id={`${id}-${name}`} name={name} required={required} rows={required ? 9 : 3}
-        maxLength={required ? 2_000_000 : 40000} value={values[name] ?? ""}
-        aria-describedby={required ? undefined : `${id}-list-help`}
-        className="w-full resize-y rounded-md border border-input bg-background p-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
-        onChange={(event) => setValues({ ...values, [name]: event.target.value })} />
-    </label>
+  const tagField = (name: ListField) => (
+    <TagListInput
+      id={`${id}-${name}`}
+      label={t(`manualJob.fields.${name}`)}
+      value={lists[name] ?? []}
+      onChange={(next) => setLists((current) => ({ ...current, [name]: next }))}
+      separator={name === "location" ? "semicolon" : "newline"}
+      disabled={saving}
+    />
   );
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting.current) return;
     setError("");
-    const text = (name: FieldName) => values[name]?.trim() || null;
-    const number = (name: FieldName) => text(name) === null ? null : Number(text(name));
-    const list = (name: FieldName) => (text(name) ?? "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+    const text = (name: TextField) => values[name]?.trim() || null;
+    const number = (name: TextField) => text(name) === null ? null : Number(text(name));
     if (!text("title") || !text("company") || !text("jdText")) {
       setError(t("manualJob.required")); return;
     }
@@ -96,7 +99,7 @@ export default function ManualJobForm({ onClose, onBusyChange }: { onClose: () =
       sponsorshipSignal: text("sponsorshipSignal") as Details["sponsorshipSignal"],
       remoteRestrictions: text("remoteRestrictions"), attendance: text("attendance"),
       industry: text("industry"), companySize: text("companySize"), yoeMin: number("yoeMin"),
-      techStack: list("techStack"), mustHaveSkills: list("mustHaveSkills"), niceToHaveSkills: list("niceToHaveSkills"),
+      techStack: lists.techStack ?? [], mustHaveSkills: lists.mustHaveSkills ?? [], niceToHaveSkills: lists.niceToHaveSkills ?? [],
       salaryMin: minimum, salaryMax: maximum, salaryCurrency: currency,
       salaryPeriod: text("salaryPeriod") as Details["salaryPeriod"],
       postingId: text("postingId"), closesAt: text("closesAt"), applicationUrl: text("applicationUrl"),
@@ -106,7 +109,7 @@ export default function ManualJobForm({ onClose, onBusyChange }: { onClose: () =
     try {
       const result = await api.POST("/api/jobs", { body: {
         title: text("title"), company: text("company"), jdText: text("jdText")!,
-        url: text("url"), location: text("location"),
+        url: text("url"), location: lists.location?.join("; ") || null,
         postedAt: text("postedAt") ? `${text("postedAt")}T00:00:00Z` : null, details,
       } });
       if (!result.data) {
@@ -115,6 +118,7 @@ export default function ManualJobForm({ onClose, onBusyChange }: { onClose: () =
       }
       setSaved({ id: result.data.id, title: result.data.title ?? text("title")!, company: result.data.company ?? text("company")! });
       setValues({});
+      setLists({});
       // Saving succeeded even if an unrelated board refetch fails.
       void invalidateBoardQueries(queryClient);
       void queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
@@ -141,7 +145,16 @@ export default function ManualJobForm({ onClose, onBusyChange }: { onClose: () =
             <fieldset className="space-y-3">
               <legend className="mb-3 text-sm font-semibold">{t("manualJob.basics")}</legend>
               <div className="grid gap-3 sm:grid-cols-2">{field("title", "text", true)}{field("company", "text", true)}</div>
-              {field("location")}{textarea("jdText", true)}
+              {tagField("location")}
+              <label className="grid gap-1.5 text-sm" htmlFor={`${id}-jdText`}>
+                {t("manualJob.fields.jdText")}
+                <textarea
+                  id={`${id}-jdText`} name="jdText" required rows={9} maxLength={2_000_000}
+                  value={values.jdText ?? ""}
+                  className="w-full resize-y rounded-md border border-input bg-background p-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+                  onChange={(event) => setValues({ ...values, jdText: event.target.value })}
+                />
+              </label>
             </fieldset>
             <fieldset className="grid gap-3 sm:grid-cols-2">
               <legend className="mb-3 text-sm font-semibold">{t("manualJob.links")}</legend>
@@ -155,8 +168,8 @@ export default function ManualJobForm({ onClose, onBusyChange }: { onClose: () =
               {select("seniority", ["junior", "mid", "senior", "staff", "principal"])}
               {select("sponsorshipSignal", ["offered", "denied", "silent"])}
               {field("remoteRestrictions")}{field("attendance")}{field("industry")}{field("companySize")}{field("yoeMin", "number")}
-              <p className="text-sm text-muted-foreground sm:col-span-2" id={`${id}-list-help`}>{t("manualJob.listHelp")}</p>
-              {textarea("techStack")}{textarea("mustHaveSkills")}{textarea("niceToHaveSkills")}
+              <p className="text-sm text-muted-foreground sm:col-span-2">{t("manualJob.listHelp")}</p>
+              {tagField("techStack")}{tagField("mustHaveSkills")}{tagField("niceToHaveSkills")}
             </fieldset>
             <fieldset className="grid gap-3 sm:grid-cols-2">
               <legend className="mb-3 text-sm font-semibold">{t("manualJob.salary")}</legend>

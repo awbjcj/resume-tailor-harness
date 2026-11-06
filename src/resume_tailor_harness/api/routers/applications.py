@@ -28,6 +28,7 @@ def _pivot_out(table: PivotTable) -> PivotTableOut:
         rows=[
             PivotRowOut(
                 job_id=row.job_id,
+                application_id=row.application_id,
                 company=row.company,
                 title=row.title,
                 status=row.status,

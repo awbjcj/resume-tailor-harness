@@ -25,6 +25,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ListSearch } from "@/components/ui/list-search";
+import { ListSection } from "@/components/ui/list-section";
+import { listSearch } from "@/lib/list-search";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -76,6 +79,7 @@ export function SourceManager({ disabled = false, onRefresh, refreshDisabled = f
   const [uploadAnchor, setUploadAnchor] = useState("");
   const [replaceTargetId, setReplaceTargetId] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<ProfileSource | null>(null);
+  const [search, setSearch] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadErrors, setUploadErrors] = useState<[string, string][]>([]);
   const busy =
@@ -120,6 +124,20 @@ export function SourceManager({ disabled = false, onRefresh, refreshDisabled = f
     (source) =>
       source.fileExists !== false && source.incorporated === true,
   ).length;
+  const matches = listSearch(search);
+  const sourceSections = [
+    { id: "resume", label: t("longLists.primaryResume"), belongs: (source: ProfileSource) => source.primary },
+    { id: "project", label: t("longLists.projectDossiers"), belongs: (source: ProfileSource) => !source.primary && source.mode === "project" },
+    { id: "supporting", label: t("longLists.supportingDocuments"), belongs: (source: ProfileSource) => !source.primary && source.mode !== "project" },
+  ].map(({ id, label, belongs }) => ({
+    id,
+    label,
+    rows: sources.filter((source) => belongs(source) && matches(
+      source.filename, source.repoUrl, source.origin, label,
+      localizeSourceMode(source.mode, i18n.resolvedLanguage),
+    )),
+  }));
+  const shown = sourceSections.reduce((count, section) => count + section.rows.length, 0);
   return (
     <section
       aria-label="Source documents"
@@ -277,28 +295,38 @@ export function SourceManager({ disabled = false, onRefresh, refreshDisabled = f
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-border @3xl/sources:grid @3xl/sources:grid-cols-[minmax(0,1fr)_auto] @3xl/sources:gap-x-4 @6xl/sources:grid-cols-[minmax(0,1fr)_repeat(2,minmax(10rem,14rem))_auto]">
-          {sources.map((source) => (
-            <SourceCard
-              key={source.id}
-              source={source}
-              skeleton={skeleton ?? []}
-              language={i18n.resolvedLanguage}
-              busy={busy}
-              downloading={download.isPending}
-              replacing={
-                replace.isPending && replace.variables?.oldId === source.id
-              }
-              onDownload={() => download.mutate(source)}
-              onReplace={() => {
-                setReplaceTargetId(source.id);
-                replaceInput.current?.click();
-              }}
-              onRemove={() => setRemoveTarget(source)}
-              onPatch={patch.mutate}
-            />
-          ))}
-        </ul>
+        <div className="space-y-2 p-3 sm:p-4">
+          <ListSearch value={search} onChange={setSearch} aria-label={t("longLists.searchSources")} placeholder={t("longLists.searchSources")} />
+          <p role="status" className="text-sm text-muted-foreground empty:sr-only">
+            {search.trim() ? shown ? t("longLists.results", { shown, total: sources.length }) : t("longLists.noMatches") : null}
+          </p>
+          {sourceSections.map(({ id, label, rows }) => rows.length ? (
+            <ListSection key={id} aria-label={label} label={label} count={rows.length} query={search.trim()} defaultOpen={sources.length <= 12 || id === "resume"} className="rounded-lg border bg-muted/20">
+              <ul className="divide-y divide-border @3xl/sources:grid @3xl/sources:grid-cols-[minmax(0,1fr)_auto] @3xl/sources:gap-x-4 @6xl/sources:grid-cols-[minmax(0,1fr)_repeat(2,minmax(10rem,14rem))_auto]">
+                {rows.map((source) => (
+                  <SourceCard
+                    key={source.id}
+                    source={source}
+                    skeleton={skeleton ?? []}
+                    language={i18n.resolvedLanguage}
+                    busy={busy}
+                    downloading={download.isPending}
+                    replacing={
+                      replace.isPending && replace.variables?.oldId === source.id
+                    }
+                    onDownload={() => download.mutate(source)}
+                    onReplace={() => {
+                      setReplaceTargetId(source.id);
+                      replaceInput.current?.click();
+                    }}
+                    onRemove={() => setRemoveTarget(source)}
+                    onPatch={patch.mutate}
+                  />
+                ))}
+              </ul>
+            </ListSection>
+          ) : null)}
+        </div>
       )}
       {exclusions.length ? (
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-4 py-3 sm:px-5">
@@ -423,20 +451,10 @@ function SourceCard({
             )}
           </div>
           <div className="min-w-0 flex-1 space-y-1.5">
-            <h3 className="font-medium [overflow-wrap:anywhere]">
+            <h4 className="font-medium [overflow-wrap:anywhere]">
               {source.filename}
-            </h3>
+            </h4>
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-sm text-muted-foreground">
-              <Badge
-                variant="outline"
-                className="h-auto min-h-5 max-w-full whitespace-normal text-left"
-              >
-                {source.primary
-                  ? "Primary resume"
-                  : source.mode === "project"
-                    ? "Project dossier"
-                    : "Supporting document"}
-              </Badge>
               {source.origin === "github" ? (
                 <Badge
                   variant="outline"

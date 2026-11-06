@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mockEmptyRuns } from "./support";
+import { mockEmptyRuns, PROVIDER_SETUP } from "./support";
 
 const INCOMPLETE_STATUS = {
   secrets: { anthropicKey: false, anyLlmKey: false },
@@ -8,19 +8,6 @@ const INCOMPLETE_STATUS = {
   search: { configured: false },
   sources: { enabledCount: 0 },
   complete: false,
-};
-
-const PROVIDER_SETUP = {
-  providers: [
-    { id: "openai", label: "OpenAI", available: false },
-    { id: "anthropic", label: "Anthropic", available: false },
-    { id: "gemini", label: "Gemini", available: false },
-    { id: "deepseek", label: "DeepSeek", available: false },
-  ],
-  selectedProvider: "openai",
-  modelTiersReady: false,
-  customEndpointAllowed: true,
-  customEndpoint: null,
 };
 
 // Hermetic smoke: intercept the API so no backend is required, matching the
@@ -65,7 +52,7 @@ test("first run gates to the wizard; exit reaches the app; settings nav works", 
   await page.getByRole("link", { name: "Settings" }).click();
   await expect(page).toHaveURL(/\/settings\/search$/);
   await page.getByRole("link", { name: "Search" }).click();
-  await expect(page.getByLabel("Keywords")).toBeVisible();
+  await expect(page.getByLabel("Keywords", { exact: true })).toBeVisible();
 });
 
 test("a named provider can be set up with a single key", async ({ page }) => {

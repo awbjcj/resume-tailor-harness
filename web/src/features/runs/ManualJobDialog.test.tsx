@@ -58,7 +58,8 @@ it("validates fields, preserves drafts through server failures, and refreshes bo
   await user.type(screen.getByLabelText("Maximum salary"), "160000");
   await user.type(screen.getByLabelText("Currency (3-letter code)"), "usd");
   await user.selectOptions(screen.getByLabelText("Pay period"), "year");
-  await user.type(screen.getByLabelText("Required skills"), "Python\nSQL");
+  await user.click(screen.getByLabelText("Required skills"));
+  await user.paste("Python\nSQL");
   for (const [failure, message] of [
     [409, /already exists/i],
     [429, /limit|quota/i],

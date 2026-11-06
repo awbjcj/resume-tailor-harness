@@ -81,6 +81,18 @@ describe("AgentPromptsPage", () => {
     expect(screen.getByText("Additional quality rules.")).toBeInTheDocument();
   });
 
+  it("keeps draft guidance when prompt search hides and reveals the editor", async () => {
+    const user = userEvent.setup();
+    render(<AgentPromptsPage />, { wrapper: withQueryClient });
+    await user.click(screen.getByText("Resume writer"));
+    await user.type(screen.getByLabelText("Your guidance for Resume writer"), "Keep examples short.");
+    await user.type(screen.getByRole("textbox", { name: "Search agent prompts" }), "email writer");
+    expect(screen.queryByRole("heading", { name: "Tailoring" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Email" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(screen.getByLabelText("Your guidance for Resume writer")).toHaveValue("Keep examples short.");
+  });
+
   it("saves guidance for writers", async () => {
     render(<AgentPromptsPage />, { wrapper: withQueryClient });
     await userEvent.click(screen.getByText("Resume writer"));

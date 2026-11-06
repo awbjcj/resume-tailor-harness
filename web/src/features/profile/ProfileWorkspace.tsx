@@ -1,5 +1,5 @@
 import { Button, buttonVariants } from "@/components/ui/button";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "@/i18n/profile-publication";
 import { useIsMutating } from "@tanstack/react-query";
@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { TagListInput } from "@/components/ui/tag-list-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BuildReportPanel } from "@/features/profile-sources/BuildReportPanel";
 import { SourceManager } from "@/features/profile-sources/SourceManager";
@@ -31,6 +32,7 @@ import { GithubRepositoryPicker } from "@/features/profile-sources/GithubReposit
 import { GithubSyncReport } from "@/features/profile-sources/GithubSyncReport";
 import {
   SOURCE_MUTATION_KEY,
+  useGithubRepositories,
   useSyncGithub,
 } from "@/features/profile-sources/use-sources";
 import { useActiveRun } from "@/features/runs/use-active-run";
@@ -43,15 +45,11 @@ import { useDraft } from "@/features/settings/use-draft";
 import { useSetupStatus } from "@/features/settings/use-setup-status";
 import type { paths } from "@/lib/api/schema";
 import { formatUserDateTime } from "@/lib/date-time";
+import { validateTagDrafts } from "@/lib/tag-list-drafts";
 
 type ProfileDoc =
   paths["/api/config/profile"]["get"]["responses"][200]["content"]["application/json"];
-type ProfileDraft = Omit<
-  ProfileDoc,
-  "githubRepoAllow" | "githubRepoDeny" | "githubRepoLimit"
-> & {
-  allowText: string;
-  denyText: string;
+type ProfileDraft = Omit<ProfileDoc, "githubRepoLimit"> & {
   limitText: string;
 };
 
@@ -59,30 +57,21 @@ function editableProfile(
   data: ProfileDoc | undefined,
 ): ProfileDraft | undefined {
   if (!data) return undefined;
-  const { githubRepoAllow, githubRepoDeny, githubRepoLimit, ...rest } = data;
+  const { githubRepoLimit, ...rest } = data;
   return {
     ...rest,
-    allowText: (githubRepoAllow ?? []).join(", "),
-    denyText: (githubRepoDeny ?? []).join(", "),
+    githubRepoAllow: rest.githubRepoAllow ?? [],
+    githubRepoDeny: rest.githubRepoDeny ?? [],
     limitText: String(githubRepoLimit ?? 20),
   };
 }
 
 function savedProfile(draft: ProfileDraft): ProfileDoc {
-  const { allowText, denyText, limitText, ...rest } = draft;
+  const { limitText, ...rest } = draft;
   return {
     ...rest,
-    githubRepoAllow: parseRepoList(allowText),
-    githubRepoDeny: parseRepoList(denyText),
     githubRepoLimit: Number(limitText),
   };
-}
-
-function parseRepoList(value: string): string[] {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 /**
@@ -94,10 +83,22 @@ function parseRepoList(value: string): string[] {
 export function ProfileWorkspace() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "skills" ? "skills" : "documents";
   const { data, isError, refetch } = useConfig("/api/config/profile");
   const save = useSaveConfig("/api/config/profile");
   const { draft, setDraft, dirty, reset } = useDraft(
     editableProfile(data as ProfileDoc | undefined),
+  );
+  const [importPreferencesOpen, setImportPreferencesOpen] = useState(false);
+  const [preferencesVersion, setPreferencesVersion] = useState(0);
+  const preferences = useRef<HTMLDetailsElement>(null);
+  const githubUsername = data?.githubUsername ?? null;
+  const settingsKey = JSON.stringify(data);
+  const canSuggestRepositories = !!githubUsername && draft?.githubUsername === githubUsername;
+  const repositories = useGithubRepositories(
+    githubUsername,
+    settingsKey,
+    activeTab === "documents" && importPreferencesOpen && canSuggestRepositories,
   );
   const setupStatus = useSetupStatus();
   const { launch } = useLaunchRun();
@@ -111,8 +112,6 @@ export function ProfileWorkspace() {
   const skillRun = useActiveRun("profile-skills-rebuild");
   const skillMutations = useIsMutating({ mutationKey: SKILL_MUTATION_KEY });
   const sourceMutations = useIsMutating({ mutationKey: SOURCE_MUTATION_KEY });
-  const activeTab =
-    searchParams.get("tab") === "skills" ? "skills" : "documents";
 
   const setActiveTab = (value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -135,7 +134,19 @@ export function ProfileWorkspace() {
     );
   if (!draft) return <Skeleton className="h-64 w-full" />;
 
-  const { allowText, denyText, limitText } = draft;
+  const { githubRepoAllow, githubRepoDeny, limitText } = draft;
+  const repositoryOwner = draft.githubUsername?.trim().toLowerCase();
+  const repositoryKey = (tag: string) => {
+    const name = tag.trim().toLowerCase();
+    return repositoryOwner && !name.includes("/") ? `${repositoryOwner}/${name}` : name;
+  };
+  const repositorySuggestions = canSuggestRepositories
+    ? (repositories.data ?? []).map((repo) => ({ value: repo.fullName, label: repo.fullName }))
+    : undefined;
+  const repositorySearchMessage = repositories.isFetching
+    ? t("tagList.repositories.loading")
+    : repositories.isError ? t("tagList.repositories.unavailable") : undefined;
+  const repositoryPlaceholder = t(canSuggestRepositories ? "tagList.repositories.search" : "tagList.repositories.name");
   const parsedLimit = Number(limitText);
   const limitValid =
     Number.isInteger(parsedLimit) && parsedLimit >= 1 && parsedLimit <= 100;
@@ -289,56 +300,51 @@ export function ProfileWorkspace() {
               </Field>
             </FieldGroup>
             <GithubRepositoryPicker
-              username={data?.githubUsername ?? null}
+              username={githubUsername}
               branches={draft.githubRepoBranches ?? {}}
-              settingsKey={JSON.stringify(data)}
+              settingsKey={settingsKey}
               disabled={busy || draft.githubUsername !== data?.githubUsername}
               onChange={(branches) =>
                 setDraft({ ...draft, githubRepoBranches: branches })
               }
             />
-            <details className="rounded-lg border border-border px-4">
+            <details
+              ref={preferences}
+              className="rounded-lg border border-border px-4"
+              open={importPreferencesOpen}
+              onToggle={(event) => setImportPreferencesOpen(event.currentTarget.open)}
+            >
               <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                Import preferences
+                {t("tagList.repositories.preferences")}
               </summary>
-              <FieldGroup className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4 pb-4 pt-2">
-                <Field className="min-w-0">
-                  <FieldLabel htmlFor="githubRepoAllow">
-                    Always include repositories
-                  </FieldLabel>
-                  <Input
-                    id="githubRepoAllow"
-                    disabled={busy}
-                    value={allowText}
-                    placeholder="portfolio, flagship-project"
-                    onChange={(event) => {
-                      setDraft({ ...draft, allowText: event.target.value });
-                    }}
-                  />
-                  <FieldDescription>
-                    Comma-separated repository names that bypass ranking.
-                  </FieldDescription>
-                </Field>
-                <Field className="min-w-0">
-                  <FieldLabel htmlFor="githubRepoDeny">
-                    Exclude repositories
-                  </FieldLabel>
-                  <Input
-                    id="githubRepoDeny"
-                    disabled={busy}
-                    value={denyText}
-                    placeholder="archive, experiments"
-                    onChange={(event) => {
-                      setDraft({ ...draft, denyText: event.target.value });
-                    }}
-                  />
-                  <FieldDescription>
-                    Comma-separated repository names that are never harvested.
-                  </FieldDescription>
-                </Field>
+              <FieldGroup key={preferencesVersion} className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] gap-4 pb-4 pt-2">
+                <TagListInput
+                  id="githubRepoAllow"
+                  label={t("tagList.repositories.include")}
+                  disabled={busy}
+                  value={githubRepoAllow ?? []}
+                  placeholder={repositoryPlaceholder}
+                  description={t("tagList.repositories.includeHelp")}
+                  suggestions={repositorySuggestions}
+                  getKey={repositoryKey}
+                  emptySuggestions={repositorySearchMessage}
+                  onChange={(values) => setDraft({ ...draft, githubRepoAllow: values })}
+                />
+                <TagListInput
+                  id="githubRepoDeny"
+                  label={t("tagList.repositories.exclude")}
+                  disabled={busy}
+                  value={githubRepoDeny ?? []}
+                  placeholder={repositoryPlaceholder}
+                  description={t("tagList.repositories.excludeHelp")}
+                  suggestions={repositorySuggestions}
+                  getKey={repositoryKey}
+                  emptySuggestions={repositorySearchMessage}
+                  onChange={(values) => setDraft({ ...draft, githubRepoDeny: values })}
+                />
                 <Field className="min-w-0">
                   <FieldLabel htmlFor="githubRepoLimit">
-                    Repository limit
+                    {t("tagList.repositories.limit")}
                   </FieldLabel>
                   <Input
                     id="githubRepoLimit"
@@ -355,8 +361,8 @@ export function ProfileWorkspace() {
                   />
                   <FieldDescription id="githubRepoLimit-help">
                     {limitValid
-                      ? "Maximum ranked repositories to import, from 1 to 100."
-                      : "Enter a whole number from 1 to 100 to save."}
+                      ? t("tagList.repositories.limitHelp")
+                      : t("tagList.repositories.invalidLimit")}
                   </FieldDescription>
                 </Field>
               </FieldGroup>
@@ -366,13 +372,17 @@ export function ProfileWorkspace() {
               saving={save.isPending}
               canSave={limitValid && !busy}
               sticky={false}
-              onSave={() =>
-                save.mutate(savedProfile(draft), {
-                  onSuccess: (saved) =>
-                    setDraft(editableProfile(saved) ?? null),
-                })
-              }
-              onDiscard={reset}
+              onSave={() => {
+                if (validateTagDrafts(preferences.current)) {
+                  save.mutate(savedProfile(draft), {
+                    onSuccess: (saved) => setDraft(editableProfile(saved) ?? null),
+                  });
+                }
+              }}
+              onDiscard={() => {
+                reset();
+                setPreferencesVersion((version) => version + 1);
+              }}
             />
             <GithubSyncReport />
           </section>
