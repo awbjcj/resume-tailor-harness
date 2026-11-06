@@ -34,6 +34,7 @@ export function ArtifactSelectionBar({
       <label className="flex items-center gap-2 text-sm text-muted-foreground">
         <Checkbox
           checked={allSelected}
+          disabled={disabled}
           onCheckedChange={onToggleAll}
           aria-label={t(version ? "interactionCopy.selection.selectVersions" : "interactionCopy.selection.selectLetters")}
         />

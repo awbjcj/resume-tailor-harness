@@ -12,7 +12,7 @@ export type TemplateListItem =
 
 const TEMPLATES_KEY = ["render-templates"] as const;
 
-export function useRenderTemplates() {
+export function useRenderTemplates(enabled = true) {
   const { i18n } = useTranslation();
   const language = i18n.resolvedLanguage;
   const select = useCallback(
@@ -21,6 +21,7 @@ export function useRenderTemplates() {
   );
   return useQuery({
     queryKey: TEMPLATES_KEY,
+    enabled,
     queryFn: () =>
       unwrap(api.GET("/api/config/render/templates")) as Promise<TemplateListItem[]>,
     select,

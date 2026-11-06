@@ -3,12 +3,8 @@ import { useCallback, useMemo, useState } from "react";
 /**
  * Checkbox selection for a list of deletable artifacts.
  *
- * The selection is stored raw and intersected with `deletableIds` on read
- * rather than being pruned by an effect. That matters because the deletable
- * set changes underneath this list — applying a version disables its checkbox,
- * and a background revision run adds rows — and a selection that outlived its
- * row would be submitted to a bulk delete that then fails on the whole batch.
- * Deriving it makes that state unrepresentable instead of merely unlikely.
+ * Drop a selection when its row becomes unavailable. If the row becomes
+ * deletable again, the user can explicitly select it again.
  */
 export function useArtifactSelection(deletableIds: readonly number[]) {
   const [raw, setRaw] = useState<ReadonlySet<number>>(() => new Set());
@@ -17,6 +13,7 @@ export function useArtifactSelection(deletableIds: readonly number[]) {
     () => deletableIds.filter((id) => raw.has(id)),
     [deletableIds, raw],
   );
+  if (selectedIds.length !== raw.size) setRaw(new Set(selectedIds));
 
   const toggle = useCallback((id: number) => {
     setRaw((current) => {

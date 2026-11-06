@@ -260,8 +260,23 @@ describe("JobModal", () => {
     await user.click(await screen.findByRole("button", { name: /^redo/i }));
 
     expect(
-      screen.getByRole("button", { name: /re-tailor 1 job/i }),
+      screen.getByRole("button", { name: "Redo 1 job" }),
     ).toBeEnabled();
+  });
+
+  it("keeps job detail open when Escape closes its Redo dialog", async () => {
+    server.use(http.get("/api/jobs/42", () => HttpResponse.json(jobPayload())));
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    wrap(<JobModal jobId={42} onClose={onClose} />);
+
+    await user.click(await screen.findByRole("button", { name: "Redo…" }));
+    expect(screen.getByRole("dialog", { name: "Redo pipeline stages" })).toBeVisible();
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Redo pipeline stages" })).toBeNull());
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("heading", { name: "Staff Engineer" })).toBeVisible();
   });
 
   it("exposes each major section as a top-level full-canvas tab", async () => {

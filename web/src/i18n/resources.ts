@@ -182,6 +182,15 @@ const en = {
     retry: "Try again",
     elapsedSeconds: "{{count}}s",
   },
+  resumeVersions: {
+    version: "Version {{id}}",
+    deleteTarget: "version {{id}}",
+    selectForDeletion: "Select version {{id}} for deletion",
+    round: "Review round {{round}}",
+    parent: "From version {{id}}",
+    renderTitle: "Render version {{id}}",
+    previewTitle: "Version {{id}} preview",
+  },
   filters: {
     sortBy: "Sort by",
     sortOptions: {
@@ -775,6 +784,12 @@ const en = {
       coverLetter_one: "{{count}} cover letter", coverLetter_other: "{{count}} cover letters",
       stage_one: "{{count}} stage", stage_other: "{{count}} stages",
     },
+    redo: {
+      removed_one: "{{count}} older version removed.",
+      removed_other: "{{count}} older versions removed.",
+      issues_one: "{{count}} stage needs attention.",
+      issues_other: "{{count}} stages need attention.",
+    },
     openResult: "Open result",
     openWorkspace: "Open workspace",
     resultUnavailable: "The original result is unavailable. Opening the current workspace.",
@@ -1028,6 +1043,15 @@ const zhCN = {
     close: "关闭",
     retry: "重试",
     elapsedSeconds: "{{count}} 秒",
+  },
+  resumeVersions: {
+    version: "第 {{id}} 版",
+    deleteTarget: "第 {{id}} 版",
+    selectForDeletion: "选择第 {{id}} 版以删除",
+    round: "第 {{round}} 轮评审",
+    parent: "来自第 {{id}} 版",
+    renderTitle: "为第 {{id}} 版生成 PDF",
+    previewTitle: "第 {{id}} 版预览",
   },
   filters: {
     sortBy: "排序方式",
@@ -1600,6 +1624,12 @@ const zhCN = {
       resumeVersion_one: "{{count}} 个简历版本", resumeVersion_other: "{{count}} 个简历版本",
       coverLetter_one: "{{count}} 封求职信", coverLetter_other: "{{count}} 封求职信",
       stage_one: "{{count}} 个阶段", stage_other: "{{count}} 个阶段",
+    },
+    redo: {
+      removed_one: "已移除 {{count}} 个旧版本。",
+      removed_other: "已移除 {{count}} 个旧版本。",
+      issues_one: "{{count}} 个阶段需要处理。",
+      issues_other: "{{count}} 个阶段需要处理。",
     },
     openResult: "查看结果",
     openWorkspace: "打开工作区",
