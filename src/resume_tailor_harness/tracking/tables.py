@@ -236,7 +236,9 @@ class CoverLetter(SQLModel, table=True):
 @event.listens_for(CoverLetter, "before_insert")
 @event.listens_for(CoverLetter, "before_update")
 def _update_pdf_file_key(_mapper, _connection, row: ResumeVersion | CoverLetter) -> None:
-    if not inspect(row).attrs.pdf_path.history.has_changes():
+    state = inspect(row)
+    assert state is not None
+    if not state.attrs.pdf_path.history.has_changes():
         return
     from resume_tailor_harness.tenancy.storage import artifact_pdf_identity
 
