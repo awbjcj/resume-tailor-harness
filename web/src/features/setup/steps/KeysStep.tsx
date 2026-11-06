@@ -25,6 +25,7 @@ const issues = {
   INVALID_MODEL_ID: ["model", "invalidModel"],
   API_KEY_REQUIRED: ["key", "requiredKey"],
   INVALID_API_KEY: ["key", "invalidKey"],
+  CUSTOM_ENDPOINT_UNAVAILABLE: ["error", "customUnavailable"],
   SAVE_FAILED: ["error", "saveError"],
 } as const;
 
@@ -193,7 +194,7 @@ function ProviderForm({ config, next }: { config: SetupProvider; next: () => voi
               </Field>
             )}
           </FieldSet>
-          {invalid("error") && <FieldError id="initial-provider-error" tabIndex={-1} className="mt-4">{t("providerSetup.saveError")}</FieldError>}
+          {issue?.[0] === "error" && <FieldError id="initial-provider-error" tabIndex={-1} className="mt-4">{t(`providerSetup.${issue[1]}`)}</FieldError>}
         </form>
         {optionalCredentials.length > 0 && (
           <Accordion>

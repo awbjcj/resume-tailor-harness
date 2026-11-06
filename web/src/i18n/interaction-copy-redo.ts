@@ -4,11 +4,11 @@ export const redoCopyEn = {
   jobCount_one: "{{count}} job",
   jobCount_other: "{{count}} jobs",
   button: "Redo {{jobs}}",
-  cleanupButton: "Redo and remove versions",
-  description: "Re-run stages for {{jobs}}. Existing resume versions are kept by default.",
-  renderNew: "Render the final resume from this run.",
-  removePrevious: "Remove superseded generated versions",
-  removePreviousHint: "After the new resume passes fact-lock, permanently delete unused generated versions. Application selections and versions linked to revisions or cover letters are kept. Include Re-render PDF to remove older rendered versions once the new PDF is ready.",
+  cleanupButton: "Redo and delete older versions",
+  description: "Choose which stages to rerun for {{jobs}}. Existing resume versions are kept by default.",
+  renderNew: "Create a PDF from the final resume in this run.",
+  removePrevious: "Delete older generated versions",
+  removePreviousHint: "Once the new resume passes fact-lock, Redo permanently deletes unused versions from earlier tailoring runs. It keeps versions selected for an application or linked to a revision or cover letter. To delete older versions with a PDF, select Re-render PDF so the new PDF is ready first.",
 };
 
 function register() {

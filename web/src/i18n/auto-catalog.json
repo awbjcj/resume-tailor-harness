@@ -2019,11 +2019,6 @@
     "en": "Choose a stage",
     "zh-CN": "选择阶段"
   },
-  "Choose a style for the PDF.": {
-    "key": "ui_8ba218372ae7",
-    "en": "Choose a style for the PDF.",
-    "zh-CN": "为此 PDF 选择一种样式。"
-  },
   "Choose a tailored job. Jobs with an interview in progress are hidden so you can resume them from the sessions list.": {
     "key": "ui_8542b6ed56ae",
     "en": "Choose a tailored job. Jobs with an interview in progress are hidden so you can resume them from the sessions list.",
@@ -2119,15 +2114,15 @@
     "en": "Clear selection",
     "zh-CN": "清除选择"
   },
-  "Clear the application selection before deleting this item.": {
-    "key": "ui_bb51bb9679eb",
-    "en": "Clear the application selection before deleting this item.",
-    "zh-CN": "请先取消选用此申请材料，再删除。"
-  },
   "Clear the override and inherit the selected tier’s allowance.": {
     "key": "ui_e5630b9e1ab4",
     "en": "Clear the override and inherit the selected tier’s allowance.",
     "zh-CN": "清除自定义额度，改用所选档位的默认额度。"
+  },
+  "Clear this document's application selection before deleting it.": {
+    "key": "ui_a951b0fa1636",
+    "en": "Clear this document's application selection before deleting it.",
+    "zh-CN": "请先取消在申请中选用这份文件，再删除。"
   },
   "Clear this workspace's data. Configuration, API keys, and sources are kept until you reset them explicitly. Hand-written profile overrides are always kept.": {
     "key": "ui_02cc43545354",
@@ -2848,6 +2843,11 @@
     "key": "ui_f9f5074fc20c",
     "en": "Crawl limits",
     "zh-CN": "抓取限制"
+  },
+  "Create a new resume version.": {
+    "key": "ui_96484eb188e2",
+    "en": "Create a new resume version.",
+    "zh-CN": "生成一个新的简历版本。"
   },
   "Create a single-use invite code for a new member.": {
     "key": "ui_69769c7b1f5f",
@@ -4429,10 +4429,10 @@
     "en": "Generate a brief when you are ready. Saved briefs stay unchanged until you regenerate them.",
     "zh-CN": "准备好后即可生成提纲。已保存的提纲会保持不变，直到你重新生成。"
   },
-  "Generate again": {
-    "key": "ui_b93b72246a76",
-    "en": "Generate again",
-    "zh-CN": "重新生成"
+  "Generate a new version": {
+    "key": "ui_f371b3073326",
+    "en": "Generate a new version",
+    "zh-CN": "生成新版本"
   },
   "Generate all": {
     "key": "ui_c8c06ff72dd3",
@@ -5273,11 +5273,6 @@
     "key": "ui_2cfbd61fa436",
     "en": "Keep your primary email above. Use an alternate only with explicit permission and when its employer, requisition, and country limits match the application.",
     "zh-CN": "上方保留主邮箱。只有明确允许，且雇主、招聘编号和适用国家与当前申请相符时，才可使用备用邮箱。"
-  },
-  "Keys": {
-    "key": "ui_f0d66a79c138",
-    "en": "Keys",
-    "zh-CN": "密钥"
   },
   "Keys are write-only; saved credentials display only their final four characters.": {
     "key": "ui_c6278470b731",
@@ -6469,6 +6464,11 @@
     "en": "No resume version",
     "zh-CN": "无简历版本"
   },
+  "No resume versions yet.": {
+    "key": "ui_787ccd1cb245",
+    "en": "No resume versions yet.",
+    "zh-CN": "还没有保存的简历版本。"
+  },
   "No role brief yet": {
     "key": "ui_edd95fc2c30e",
     "en": "No role brief yet",
@@ -6478,11 +6478,6 @@
     "key": "ui_2a0fbe4496f5",
     "en": "No saved research",
     "zh-CN": "暂无已保存的调研结果"
-  },
-  "No saved resumes for this job.": {
-    "key": "ui_851a164ffa1a",
-    "en": "No saved resumes for this job.",
-    "zh-CN": "此职位暂无已保存的简历。"
   },
   "No saved sessions.": {
     "key": "ui_c2f8eeef9739",
@@ -6969,15 +6964,15 @@
     "en": "Pay period",
     "zh-CN": "计薪周期"
   },
+  "PDF is ready": {
+    "key": "ui_bfa368f0f3fb",
+    "en": "PDF is ready",
+    "zh-CN": "PDF 已生成"
+  },
   "PDF ready": {
     "key": "ui_4faf57abacc3",
     "en": "PDF ready",
     "zh-CN": "PDF 已就绪"
-  },
-  "PDF rendered": {
-    "key": "ui_84c5b733145b",
-    "en": "PDF rendered",
-    "zh-CN": "PDF 已生成"
   },
   "PDFs to create": {
     "key": "ui_b11233551925",
@@ -7053,16 +7048,6 @@
     "key": "ui_43957afa3b99",
     "en": "Pipeline redo",
     "zh-CN": "流程重做"
-  },
-  "Pipeline redo complete: {{v0}} processed.": {
-    "key": "ui_5d734bc92042",
-    "en": "Pipeline redo complete: {{v0}} processed.",
-    "zh-CN": "流程重做完成：已处理 {{v0}}。"
-  },
-  "Pipeline redo complete.": {
-    "key": "ui_b6dd704ee4c1",
-    "en": "Pipeline redo complete.",
-    "zh-CN": "流程重做完成。"
   },
   "Pipeline stage": {
     "key": "ui_8e0c5db4d64f",
@@ -7714,11 +7699,6 @@
     "en": "Re-render PDF",
     "zh-CN": "重新生成 PDF"
   },
-  "Re-review": {
-    "key": "ui_ab7a727ae768",
-    "en": "Re-review",
-    "zh-CN": "重新审核"
-  },
   "Re-run the full funnel for one scope. Fit scores and statuses may change. Jobs with progress are not changed.": {
     "key": "ui_78c2163b0df8",
     "en": "Re-run the full funnel for one scope. Fit scores and statuses may change. Jobs with progress are not changed.",
@@ -7904,10 +7884,10 @@
     "en": "Recurring shared-key allowance",
     "zh-CN": "共享密钥周期额度"
   },
-  "Redo pipeline stages": {
-    "key": "ui_c4e7d3c1e985",
-    "en": "Redo pipeline stages",
-    "zh-CN": "重做流程阶段"
+  "Redo job stages": {
+    "key": "ui_186ea4420016",
+    "en": "Redo job stages",
+    "zh-CN": "重新处理职位"
   },
   "Redo…": {
     "key": "ui_d352bdd2d814",
@@ -7988,6 +7968,11 @@
     "key": "ui_e35d689dd330",
     "en": "Regenerate brief",
     "zh-CN": "重新生成提纲"
+  },
+  "Regenerate the PDF for the resume selected for the application. If none is selected, use the latest version.": {
+    "key": "ui_bc7c60afb2f1",
+    "en": "Regenerate the PDF for the resume selected for the application. If none is selected, use the latest version.",
+    "zh-CN": "为申请选用的简历重新生成 PDF。未选用时，使用最新版本。"
   },
   "Region": {
     "key": "ui_d3a008ef1335",
@@ -8183,11 +8168,6 @@
     "key": "ui_84bf2494960c",
     "en": "Render PDF",
     "zh-CN": "生成 PDF"
-  },
-  "Render the selected resume, or the latest version.": {
-    "key": "ui_d28170e89c94",
-    "en": "Render the selected resume, or the latest version.",
-    "zh-CN": "为所选简历生成 PDF。未选择时使用最新版本。"
   },
   "Rendered": {
     "key": "ui_331e25aab7ff",
@@ -8584,11 +8564,6 @@
     "en": "Resume revision",
     "zh-CN": "简历修订"
   },
-  "Resume revision instruction": {
-    "key": "ui_2a673d2889e1",
-    "en": "Resume revision instruction",
-    "zh-CN": "简历修订说明"
-  },
   "Resume shape": {
     "key": "ui_fd350dbf812a",
     "en": "Resume shape",
@@ -8622,6 +8597,11 @@
   "Resume version": {
     "key": "ui_fa0c026dd829",
     "en": "Resume version",
+    "zh-CN": "简历版本"
+  },
+  "Resume versions": {
+    "key": "ui_cba4d2d76c8b",
+    "en": "Resume versions",
     "zh-CN": "简历版本"
   },
   "Resumes": {
@@ -8683,6 +8663,11 @@
     "key": "ui_aff0766a5290",
     "en": "Review",
     "zh-CN": "审核"
+  },
+  "Review again": {
+    "key": "ui_d4ea61c79c9b",
+    "en": "Review again",
+    "zh-CN": "重新评审"
   },
   "Review degrees, years of experience, and other requirements that are not skills. Discarded entries no longer appear in the skill map or participate in future regrouping. Original job descriptions stay intact, and entries can be restored.": {
     "key": "ui_0431c35adfcd",
@@ -8773,11 +8758,6 @@
     "key": "ui_718718bd434e",
     "en": "Revise this cover letter",
     "zh-CN": "修改此求职信"
-  },
-  "Revise this version": {
-    "key": "ui_50f24e425a98",
-    "en": "Revise this version",
-    "zh-CN": "修改此版本"
   },
   "Revision": {
     "key": "ui_2e516d68f42f",
@@ -9064,20 +9044,10 @@
     "en": "Saved public boards",
     "zh-CN": "已保存的公开招聘列表"
   },
-  "Saved resume versions": {
-    "key": "ui_afd1a2352213",
-    "en": "Saved resume versions",
-    "zh-CN": "已保存的简历版本"
-  },
   "Saved revision": {
     "key": "ui_6694ccd98f12",
     "en": "Saved revision",
     "zh-CN": "已保存的版本"
-  },
-  "Saved style": {
-    "key": "ui_c9dcbfcceded",
-    "en": "Saved style",
-    "zh-CN": "已保存的样式"
   },
   "Saved to Gmail": {
     "key": "ui_bd25bb7a6cbc",
@@ -10454,6 +10424,11 @@
     "en": "That invitation code is invalid, expired, or already used. Ask your administrator for a new one.",
     "zh-CN": "该邀请码无效、已过期或已被使用，请向管理员索取新的邀请码。"
   },
+  "That style is no longer available. Choose another.": {
+    "key": "ui_183330f962d2",
+    "en": "That style is no longer available. Choose another.",
+    "zh-CN": "此样式已不可用，请选择其他样式。"
+  },
   "The account segment used on apply.workable.com.": {
     "key": "ui_30453a9719d4",
     "en": "The account segment used on apply.workable.com.",
@@ -10568,6 +10543,16 @@
     "key": "ui_39529d58d3c6",
     "en": "The manual H-1B check failed.",
     "zh-CN": "手动 H-1B 检查失败。"
+  },
+  "The new PDF will replace the current one for this version.": {
+    "key": "ui_5c2b66433b56",
+    "en": "The new PDF will replace the current one for this version.",
+    "zh-CN": "新的 PDF 会替换这个版本现有的文件。"
+  },
+  "The new PDF will replace the one selected for your application.": {
+    "key": "ui_15d40446171e",
+    "en": "The new PDF will replace the one selected for your application.",
+    "zh-CN": "新的 PDF 会替换当前申请选用的文件。"
   },
   "The organization segment after jobs.ashbyhq.com/.": {
     "key": "ui_5b047ba2af1c",
@@ -10799,16 +10784,6 @@
     "en": "This replaces the current data. Export a backup first. Select a tar.gz archive and type REPLACE to continue.",
     "zh-CN": "这将替换当前数据，请先导出备份。选择一个 tar.gz 压缩包，并输入 REPLACE 以继续。"
   },
-  "This replaces the PDF for this version.": {
-    "key": "ui_546694f3248e",
-    "en": "This replaces the PDF for this version.",
-    "zh-CN": "此操作会替换此版本的 PDF。"
-  },
-  "This replaces the PDF selected for your application.": {
-    "key": "ui_e4a2633cfef0",
-    "en": "This replaces the PDF selected for your application.",
-    "zh-CN": "此操作会替换当前选用于申请的 PDF。"
-  },
   "This replaces your": {
     "key": "ui_e0046b13926b",
     "en": "This replaces your",
@@ -10818,6 +10793,11 @@
     "key": "ui_b4aaebe2738b",
     "en": "This research is past its freshness window and may be out of date. Saved results stay visible until you refresh them.",
     "zh-CN": "这份调研已超过更新期限，内容可能过时。你主动刷新前，仍会显示已保存的结果。"
+  },
+  "This resume exceeds the page limit. Try a different style, shorten the content, or change the page limit in Rendering settings.": {
+    "key": "ui_c3e866845079",
+    "en": "This resume exceeds the page limit. Try a different style, shorten the content, or change the page limit in Rendering settings.",
+    "zh-CN": "这份简历超出了页数限制。可以更换样式、精简内容，或在渲染设置中调整页数上限。"
   },
   "This resume failed fact-lock. Choose another resume or clear your selection before applying.": {
     "key": "ui_5fccf8407be5",
@@ -10853,16 +10833,6 @@
     "key": "ui_a06ce9882180",
     "en": "This source could not be verified.",
     "zh-CN": "无法验证此来源。"
-  },
-  "This style could not fit the current page limit. Try another style, revise the content, or adjust the page limit in Rendering settings.": {
-    "key": "ui_0a6654c5e6d9",
-    "en": "This style could not fit the current page limit. Try another style, revise the content, or adjust the page limit in Rendering settings.",
-    "zh-CN": "使用此样式时，内容超出了当前页数限制。请尝试其他样式、修改内容，或在渲染设置中调整页数限制。"
-  },
-  "This style is no longer available. Choose another style.": {
-    "key": "ui_5472eba4a6d4",
-    "en": "This style is no longer available. Choose another style.",
-    "zh-CN": "此样式已不可用。请选择其他样式。"
   },
   "This version is no longer available.": {
     "key": "ui_4107a7eaf027",
@@ -11339,10 +11309,20 @@
     "en": "Use source value",
     "zh-CN": "使用来源中的值"
   },
+  "Use the full review panel. This usually takes 3–6 times as long.": {
+    "key": "ui_906bef23a36b",
+    "en": "Use the full review panel. This usually takes 3–6 times as long.",
+    "zh-CN": "使用完整的评审组，耗时通常是常规评审的 3 至 6 倍。"
+  },
   "Use the private invite code from your administrator.": {
     "key": "ui_dbb8cb2f2afb",
     "en": "Use the private invite code from your administrator.",
     "zh-CN": "使用管理员提供的专属邀请码。"
+  },
+  "Use the workspace default or choose a style for this PDF.": {
+    "key": "ui_3dd32de9782b",
+    "en": "Use the workspace default or choose a style for this PDF.",
+    "zh-CN": "可使用工作区的默认样式，也可为此 PDF 选择其他样式。"
   },
   "Use these when no named person is verified or when a general recruiting channel is more appropriate.": {
     "key": "ui_df3eecdc5f71",
@@ -11574,6 +11554,11 @@
     "en": "What should change in the next revision?",
     "zh-CN": "下一版需要修改哪些内容？"
   },
+  "What should change?": {
+    "key": "ui_e6cbf7faa1b8",
+    "en": "What should change?",
+    "zh-CN": "想修改哪些内容？"
+  },
   "What the job asks for": {
     "key": "ui_47f74084f94f",
     "en": "What the job asks for",
@@ -11748,11 +11733,6 @@
     "key": "ui_514b2a98ae15",
     "en": "Write {{v0}} cover letter{{v1}}",
     "zh-CN": "撰写 {{v0}} 封求职信"
-  },
-  "Write a new resume version.": {
-    "key": "ui_72663ead1954",
-    "en": "Write a new resume version.",
-    "zh-CN": "生成一个新的简历版本。"
   },
   "Write cover letters": {
     "key": "ui_9b09d39d21fd",

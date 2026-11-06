@@ -17,7 +17,7 @@ from resume_tailor_harness.llm_runner import (
     refresh_agent_api_key,
     split_provider,
 )
-from resume_tailor_harness.services.provider_setup import tier_models
+from resume_tailor_harness.services.provider_setup import STARTER_MODELS, tier_models
 from resume_tailor_harness.tenancy.context import use_context
 from resume_tailor_harness.tenancy.spend import SpendGate
 
@@ -125,6 +125,25 @@ def test_local_endpoint_is_bound_to_its_model_and_credential(local_app):
         assert "custom-endpoint-key" not in context.paths.secrets_env.read_text(
             encoding="utf-8"
         )
+
+
+def test_switching_from_custom_endpoint_restores_native_starter_models(local_app):
+    with TestClient(local_app) as client:
+        setup = "/api/setup/provider"
+        response = client.put(setup, json={"provider": "openai", "apiKey": "native-key"})
+        assert response.status_code == 204
+        custom = {
+            "provider": "openai",
+            "baseUrl": "http://127.0.0.1:9001/v1",
+            "modelId": "gpt-6-luna",
+            "apiKey": "endpoint-key",
+        }
+        assert client.put(setup, json=custom).status_code == 204
+        assert client.put(setup, json={"provider": "openai"}).status_code == 204
+        context = local_app.state.default_context
+        assert tier_models(context.settings) == STARTER_MODELS["openai"]
+        with use_context(context):
+            assert SpendGate().open("openai:gpt-6-luna").api_key == "native-key"
 
 
 @pytest.mark.parametrize("refresh", [False, True])

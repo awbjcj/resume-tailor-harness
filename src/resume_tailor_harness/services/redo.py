@@ -350,7 +350,9 @@ def _render_job(
         return StageOutcome(job.id, "render", "skipped", "resume version unavailable")
     ref = VersionRef.from_row(version)
     try:
-        path = render_resume_version(session, version_id)
+        path = render_resume_version(
+            session, version_id, template_id=version.pdf_template_id
+        )
     except Exception as exc:
         session.rollback()
         logger.warning("render job=%s failed", job.id, exc_info=exc)

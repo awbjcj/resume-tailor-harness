@@ -197,8 +197,8 @@ describe("ResumeVersionsTab", () => {
     wrap(<ResumeVersionsTab jobId={3} versions={[current, sibling]} appliedVersionId={9} />, client);
 
     await user.click(screen.getByRole("button", { name: "Change style" }));
-    const dialog = await screen.findByRole("dialog", { name: "Render version 9" });
-    expect(within(dialog).getByText("This replaces the PDF selected for your application.")).toBeVisible();
+    const dialog = await screen.findByRole("dialog", { name: "PDF for version 9" });
+    expect(within(dialog).getByText("The new PDF will replace the one selected for your application.")).toBeVisible();
     await within(dialog).findByRole("option", { name: "Modern" });
     const styles = within(dialog).getByLabelText("Resume style");
     expect(styles).toHaveValue("classic");
@@ -209,7 +209,7 @@ describe("ResumeVersionsTab", () => {
       params: { path: { version_id: 9 } },
       body: { templateId: "modern" },
     });
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Render version 9" })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "PDF for version 9" })).not.toBeInTheDocument());
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["pipeline"] });
     expect(client.getQueryData(["job", 3])).toEqual({ ...job, resumeVersions: [updated, sibling] });
   });
@@ -219,8 +219,8 @@ describe("ResumeVersionsTab", () => {
     wrap(<ResumeVersionsTab jobId={3} versions={[version(9, 1, { pdfAvailable: true, pdfTemplateId: "custom:missing" })]} appliedVersionId={9} />);
 
     await user.click(screen.getByRole("button", { name: "Change style" }));
-    const dialog = await screen.findByRole("dialog", { name: "Render version 9" });
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Choose another style");
+    const dialog = await screen.findByRole("dialog", { name: "PDF for version 9" });
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("Choose another");
     const styles = within(dialog).getByRole("combobox", { name: "Resume style" });
     const replace = within(dialog).getByRole("button", { name: "Replace PDF" });
     expect(styles).toHaveValue("custom:missing");
@@ -242,7 +242,7 @@ describe("ResumeVersionsTab", () => {
     await user.click(screen.getByRole("button", { name: "Change style" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Replace PDF" }));
-    expect(await within(dialog).findByRole("alert")).toHaveTextContent("could not fit the current page limit");
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("exceeds the page limit");
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(await screen.findByRole("button", { name: "Preview" })).toBeEnabled();
   });
@@ -253,11 +253,13 @@ describe("ResumeVersionsTab", () => {
     wrap(<ResumeVersionsTab jobId={3} versions={[version(9, 1, { pdfAvailable: true, pdfTemplateId: "classic" })]} appliedVersionId={null} />);
 
     expect(screen.getByRole("heading", { name: "第 9 版" })).toBeInTheDocument();
+    expect(screen.getByText("已保存的样式")).toBeInTheDocument();
     const deleteButton = screen.getByRole("button", { name: "删除第 9 版" });
     expect(deleteButton).toBeEnabled();
     expect(deleteButton).toHaveTextContent("删除");
     await user.click(screen.getByRole("button", { name: "更换样式" }));
-    const dialog = await screen.findByRole("dialog", { name: "为第 9 版生成 PDF" });
+    const dialog = await screen.findByRole("dialog", { name: "第 9 版 PDF" });
     expect(await within(dialog).findByRole("option", { name: "经典" })).toBeInTheDocument();
+    expect(within(dialog).getByText("新的 PDF 会替换这个版本现有的文件。")).toBeInTheDocument();
   });
 });

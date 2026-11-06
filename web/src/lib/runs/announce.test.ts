@@ -94,7 +94,7 @@ it("uses Chinese counts for cover letters and redo stages after a language chang
     run({ kind: "redo", result: { outcomes: [{}] } }),
   ]);
   expect(toast.success).toHaveBeenNthCalledWith(1, "求职信生成完成：已创建 2 封求职信。");
-  expect(toast.success).toHaveBeenNthCalledWith(2, "流程重做完成：已处理 1 个阶段。");
+  expect(toast.success).toHaveBeenNthCalledWith(2, "重做结束，已处理 1 个阶段。");
 });
 
 it("reports removals and stages needing attention after a partial redo", async () => {
@@ -104,12 +104,12 @@ it("reports removals and stages needing attention after a partial redo", async (
     { status: "failed" },
   ] } })]);
 
-  expect(toast.info).toHaveBeenCalledWith("流程重做完成：已处理 2 个阶段。 已移除 2 个旧版本。 1 个阶段需要处理。");
+  expect(toast.info).toHaveBeenCalledWith("重做结束，已处理 2 个阶段。已删除 2 个旧版本。1 个阶段需要处理。");
 });
 
 it.each<["en" | "zh-CN", string]>([
-  ["en", "1 older version removed."],
-  ["zh-CN", "已移除 1 个旧版本。"],
+  ["en", "Deleted 1 older version."],
+  ["zh-CN", "已删除 1 个旧版本。"],
 ])("reports committed removals after cancellation in %s", async (language, summary) => {
   await changeLanguage(language);
   announceCompletions([run({ kind: "redo", status: "cancelled", result: { outcomes: [
@@ -117,6 +117,14 @@ it.each<["en" | "zh-CN", string]>([
   ] } })]);
   expect(toast.info).toHaveBeenCalledWith(expect.stringContaining(summary));
   expect(toast.success).not.toHaveBeenCalled();
+});
+
+it("reports committed removals when redo fails after deleting older versions", () => {
+  announceCompletions([run({ kind: "redo", status: "failed", error: "Worker stopped", result: { outcomes: [
+    { status: "ok", removedVersionIds: [11, 12] },
+  ] } })]);
+
+  expect(toast.error).toHaveBeenCalledWith(expect.stringContaining("Deleted 2 older versions."));
 });
 
 it("counts tailored jobs from the jobs array even when nested version counts are absent", () => {
@@ -157,7 +165,7 @@ it("renders accurate cover-letter and redo completion summaries", () => {
   );
   expect(toast.success).toHaveBeenNthCalledWith(
     2,
-    "Pipeline redo complete: 1 stage processed.",
+    "Redo finished. 1 stage processed.",
   );
 });
 

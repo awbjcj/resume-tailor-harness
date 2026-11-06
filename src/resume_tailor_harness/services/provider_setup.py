@@ -1,6 +1,8 @@
 """Configure the initial credential and model tiers in one workspace write."""
 
 from collections.abc import Iterator
+from contextlib import nullcontext
+from dataclasses import replace
 from pathlib import Path
 
 from resume_tailor_harness.config import Settings
@@ -12,7 +14,6 @@ from resume_tailor_harness.llm_routing import (
 from resume_tailor_harness.llm_runner import (
     MODEL_CATALOG,
     model_access_available,
-    split_provider,
 )
 from resume_tailor_harness.local_provider import (
     LocalProviderEndpoint,
@@ -21,6 +22,7 @@ from resume_tailor_harness.local_provider import (
 )
 from resume_tailor_harness.provider_registry import provider_spec
 from resume_tailor_harness.services.env_config import write_env_updates
+from resume_tailor_harness.tenancy.context import current_context, use_context
 
 TIERS = ("cheap", "mid", "premium")
 STARTER_MODELS = {
@@ -56,18 +58,27 @@ def setup_model_available(model_id: str, settings: Settings) -> bool:
         return False
 
 
-def available_native_models(
-    provider: str, settings: Settings, endpoint: LocalProviderEndpoint | None
-) -> Iterator[str]:
-    return (
-        entry.id
-        for entry in MODEL_CATALOG[provider]
-        if (
-            endpoint is None
-            or split_provider(entry.id) != (endpoint.provider, endpoint.model)
+def available_native_models(provider: str, settings: Settings) -> Iterator[str]:
+    context = current_context()
+    native = None
+    if (
+        context is not None
+        and context.local_provider_endpoint is not None
+        and context.local_provider_endpoint.provider == provider
+    ):
+        # A custom endpoint can use a catalogued model ID. Check its native
+        # route separately so the custom key cannot count as native access.
+        native = replace(
+            context,
+            local_provider_endpoint=None,
+            spend_decisions={},
+            selected_own_key_providers={},
         )
-        and setup_model_available(entry.id, settings)
-    )
+    for entry in MODEL_CATALOG[provider]:
+        with use_context(native) if native else nullcontext():
+            available = setup_model_available(entry.id, settings)
+        if available:
+            yield entry.id
 
 
 def save_initial_provider(
@@ -79,7 +90,6 @@ def save_initial_provider(
     base_url: str | None,
     model_id: str | None,
     allow_local_endpoint: bool,
-    current_endpoint: LocalProviderEndpoint | None,
 ) -> Settings:
     spec = provider_spec(provider)
     if spec is None:
@@ -148,7 +158,7 @@ def save_initial_provider(
         ) from None
     starters = STARTER_MODELS[provider]
     if not key or mode == "subscription":
-        available = list(available_native_models(provider, settings, current_endpoint))
+        available = list(available_native_models(provider, settings))
         if not available:
             if mode == "subscription":
                 raise ProviderSetupError(
