@@ -54,7 +54,7 @@ export function ListSection({
           >
             <ChevronRight aria-hidden className={cn("size-4 shrink-0 text-muted-foreground", open && "rotate-90")} />
             <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{label}</span>{" "}
-            <span className="shrink-0 text-xs font-normal tabular-nums text-muted-foreground">{count}</span>
+            <span className="shrink-0 font-normal tabular-nums text-muted-foreground">{count}</span>
           </CollapsibleTrigger>
         </Heading>
         {actions}

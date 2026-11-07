@@ -97,7 +97,7 @@ export function SearchableSelect({
               {(group: SearchGroup) => (
                 <Combobox.Group key={group.id} items={group.items} className="border-b pb-1 last:border-b-0 last:pb-0">
                   {group.label ? (
-                    <Combobox.GroupLabel className="flex flex-wrap items-center justify-between gap-1 px-2 pt-2 pb-1 text-xs font-medium text-muted-foreground">
+                    <Combobox.GroupLabel className="flex flex-wrap items-center justify-between gap-1 px-2 py-1.5 text-sm font-medium text-muted-foreground">
                       <span className="min-w-0 [overflow-wrap:anywhere]">{group.label}</span>{" "}{group.detail}
                     </Combobox.GroupLabel>
                   ) : null}

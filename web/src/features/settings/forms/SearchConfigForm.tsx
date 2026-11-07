@@ -1,10 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
+import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel, FieldSet, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { TagListInput } from "@/components/ui/tag-list-input";
@@ -22,6 +23,8 @@ const REMOTE_OPTIONS = [
   { value: "onsite", label: "On-site" },
 ];
 
+const FIELD_LABEL_CLASS = "text-[0.95rem] leading-5 [overflow-wrap:anywhere]";
+
 function numOrNull(raw: string): number | null {
   return raw === "" ? null : Number(raw);
 }
@@ -34,6 +37,7 @@ export function SearchConfigForm({
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
+  const remotePolicyLabelId = useId();
   const normalizing = useSearchLocationNormalizationPending();
   const set = <K extends keyof SearchDoc>(key: K, v: SearchDoc[K]) =>
     onChange((current) => ({ ...current, [key]: v }));
@@ -64,7 +68,7 @@ export function SearchConfigForm({
   };
 
   return (
-    <FieldSet disabled={disabled} className="gap-5">
+    <FieldSet disabled={disabled} className="@container/search-config gap-5">
       <TagListInput id="keywords" label={t("tagList.search.keywords")} value={value.keywords ?? []}
         disabled={disabled} onChange={(v) => set("keywords", v)} placeholder={t("tagList.search.keywordExample")} />
       <TagListInput id="titles" label={t("tagList.search.titles")} value={value.titles ?? []}
@@ -74,43 +78,50 @@ export function SearchConfigForm({
         onChange={handleLocationsChange} placeholder={t("tagList.search.location")}
         description={normalizing ? t("tagList.search.normalizing") : undefined} />
       <Field>
-        <FieldLabel>Remote policy</FieldLabel>
+        <FieldTitle id={remotePolicyLabelId} className={FIELD_LABEL_CLASS}>Remote policy</FieldTitle>
         <ToggleGroup
+          aria-labelledby={remotePolicyLabelId}
           value={value.remotePolicy ?? []}
           onValueChange={(next) => set("remotePolicy", next)}
         >
           {REMOTE_OPTIONS.map((o) => (
-            <ToggleGroupItem key={o.value} value={o.value}>{o.label}</ToggleGroupItem>
+            <ToggleGroupItem
+              key={o.value}
+              value={o.value}
+              className="h-auto min-h-11 max-w-full px-3.5 py-2 text-[0.95rem] leading-5 whitespace-normal [overflow-wrap:anywhere]"
+            >
+              {o.label}
+            </ToggleGroupItem>
           ))}
         </ToggleGroup>
       </Field>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 items-end gap-4 @lg/search-config:grid-cols-3">
         <Field>
-          <FieldLabel htmlFor="minSalary">Minimum salary</FieldLabel>
-          <Input id="minSalary" type="number" value={value.minSalary ?? ""}
+          <FieldLabel htmlFor="minSalary" className={FIELD_LABEL_CLASS}>Minimum salary</FieldLabel>
+          <Input id="minSalary" type="number" className="h-11" value={value.minSalary ?? ""}
             onChange={(e) => set("minSalary", numOrNull(e.target.value))} />
         </Field>
         <Field>
-          <FieldLabel htmlFor="yoeMin">Years of experience, min</FieldLabel>
-          <Input id="yoeMin" type="number" value={value.yoeMin ?? ""}
+          <FieldLabel htmlFor="yoeMin" className={FIELD_LABEL_CLASS}>Years of experience, min</FieldLabel>
+          <Input id="yoeMin" type="number" className="h-11" value={value.yoeMin ?? ""}
             onChange={(e) => set("yoeMin", numOrNull(e.target.value))} />
         </Field>
         <Field>
-          <FieldLabel htmlFor="yoeMax">Years of experience, max</FieldLabel>
-          <Input id="yoeMax" type="number" value={value.yoeMax ?? ""}
+          <FieldLabel htmlFor="yoeMax" className={FIELD_LABEL_CLASS}>Years of experience, max</FieldLabel>
+          <Input id="yoeMax" type="number" className="h-11" value={value.yoeMax ?? ""}
             onChange={(e) => set("yoeMax", numOrNull(e.target.value))} />
         </Field>
       </div>
       <Field>
-        <div className="flex items-center gap-3">
+        <div className="flex min-h-11 items-center gap-3">
           <Switch id="sponsorship" checked={value.sponsorshipRequired ?? false}
             onCheckedChange={(v: boolean) => set("sponsorshipRequired", v)} />
-          <FieldLabel htmlFor="sponsorship">I need visa sponsorship</FieldLabel>
+          <FieldLabel htmlFor="sponsorship" className={FIELD_LABEL_CLASS}>I need visa sponsorship</FieldLabel>
         </div>
       </Field>
       <Accordion>
         <AccordionItem value="tuning">
-          <AccordionTrigger>Relevance tuning</AccordionTrigger>
+          <AccordionTrigger className="min-h-11 min-w-0 items-center gap-2 text-[0.95rem] leading-5 [overflow-wrap:anywhere]">Relevance tuning</AccordionTrigger>
           <AccordionContent>
             <FieldGroup>
               <TagListInput id="roleAnchors" label={t("tagList.search.roleAnchors")} value={value.roleAnchors ?? []}
@@ -118,8 +129,8 @@ export function SearchConfigForm({
               <TagListInput id="excludeTerms" label={t("tagList.search.excludeTerms")} value={value.excludeTerms ?? []}
                 disabled={disabled} onChange={(v) => set("excludeTerms", v)} />
               <Field>
-                <FieldLabel htmlFor="targetRole">Target role</FieldLabel>
-                <Input id="targetRole" value={value.targetRole ?? ""}
+                <FieldLabel htmlFor="targetRole" className={FIELD_LABEL_CLASS}>Target role</FieldLabel>
+                <Input id="targetRole" className="h-11" value={value.targetRole ?? ""}
                   onChange={(e) => set("targetRole", e.target.value || null)} />
               </Field>
             </FieldGroup>

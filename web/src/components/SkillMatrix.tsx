@@ -19,7 +19,7 @@ function Chip({
 }) {
   return (
     <span
-      className="skill-chip max-w-full"
+      className="skill-chip pointer-coarse:min-h-11"
       data-covered={tag.covered}
       data-active={active}
       title={
@@ -31,7 +31,7 @@ function Chip({
       </span>
       <span className="min-w-0 [overflow-wrap:anywhere]">{tag.name}</span>
       {!tag.covered && (
-        <span className="-mr-1 inline-flex size-4 shrink-0 items-center justify-center">
+        <span className="-mr-1 inline-flex shrink-0 items-center justify-center">
           <AddJobSkillButton skillName={tag.name} />
         </span>
       )}
@@ -101,7 +101,7 @@ export function SkillMatrix({
       </p>
       <Group label={mustLabel} tags={must} activeSkills={activeSkills} query={search.trim()} defaultOpen />
       <Group label={niceLabel} tags={nice} activeSkills={activeSkills} query={search.trim()} defaultOpen={skills.length <= 12 || must.length === 0} />
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-sm text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span aria-hidden className="text-primary">●</span> you have
         </span>
