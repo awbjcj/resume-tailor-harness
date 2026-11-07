@@ -21,11 +21,11 @@ export function SetupWizard() {
 
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-2xl flex-col gap-8 px-5 py-10">
-      <header className="flex items-center gap-3">
-        <div className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-primary">
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="min-w-0 flex-1 basis-36 text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-primary [overflow-wrap:anywhere]">
           Résumé Tailor Harness · First-run setup
         </div>
-        <Button variant="ghost" size="sm" className="ml-auto"
+        <Button variant="ghost" size="sm" className="ml-auto h-auto min-h-9 max-w-full py-2 whitespace-normal [overflow-wrap:anywhere]"
           onClick={() => {
             localStorage.setItem("resume-tailor-harness-setup-dismissed", "1");
             consumeTaskDestination();

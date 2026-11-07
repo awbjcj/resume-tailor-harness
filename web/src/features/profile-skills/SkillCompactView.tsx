@@ -181,14 +181,14 @@ export function SkillCompactView({
                             data-drag-skill={row.key}
                             title={copy.dragHandleTitle}
                             className={cn(
-                              "flex min-h-8 w-6 shrink-0 touch-none select-none items-center justify-center text-muted-foreground",
+                              "flex min-h-8 w-6 shrink-0 touch-none select-none items-center justify-center text-muted-foreground pointer-coarse:min-h-11",
                               disabled
                                 ? "opacity-40"
                                 : "cursor-grab active:cursor-grabbing",
                             )}
                             {...handleProps(row)}
                           >
-                            <GripVertical className="size-3" />
+                            <GripVertical className="size-3.5" />
                           </span>
                           {selected.has(row.key) ? (
                             <Check
@@ -209,7 +209,7 @@ export function SkillCompactView({
                               onSelect={onSelect}
                             />
                             {showAliases && row.aliases?.length ? (
-                              <span className="block px-2 pb-1.5 text-xs text-muted-foreground [overflow-wrap:anywhere]">{row.aliases.join(", ")}</span>
+                              <span className="block px-2 pb-1.5 text-sm leading-5 text-muted-foreground [overflow-wrap:anywhere]">{row.aliases.join(", ")}</span>
                             ) : null}
                           </div>
                           {row.inferred ? (

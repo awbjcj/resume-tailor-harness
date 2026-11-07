@@ -94,11 +94,11 @@ export function JobCard({
                     data-active={activeSkills.has(t.name.toLowerCase())}
                   >
                     {!t.required && <span aria-hidden className="opacity-50">+</span>}
-                    {t.name}
+                    <span className="min-w-0 [overflow-wrap:anywhere]">{t.name}</span>
                   </span>
                 ))}
                 {overflow > 0 && (
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <span className="text-sm font-medium text-muted-foreground">
                     +{overflow} more
                   </span>
                 )}
