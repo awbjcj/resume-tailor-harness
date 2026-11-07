@@ -1,6 +1,5 @@
-import { PageHeader } from "@/components/PageHeader";
 import { useState } from "react";
-import { CircleAlert, LockKeyhole } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -9,18 +8,19 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { ListSearch } from "@/components/ui/list-search";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import promptLabelsZh from "@/i18n/agent-prompt-zh-CN.json";
 import { listSearch } from "@/lib/list-search";
 
 import { ResetSectionButton } from "../ResetSectionButton";
+import { SettingsPage } from "../SettingsPage";
+import { useDraft } from "../use-draft";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import {
   type AgentPromptItem,
   usePrompts,
@@ -47,7 +47,9 @@ function instructionsForDisplay(item: AgentPromptItem): string[] {
 
 function PromptRow({ item, visible }: { item: AgentPromptItem; visible: boolean }) {
   const save = useSaveGuidance();
-  const [guidance, setGuidance] = useState(item.guidance ?? "");
+  const { draft, setDraft: setGuidance, dirty } = useDraft(item.guidance ?? "");
+  const guidance = draft ?? "";
+  useUnsavedChanges(dirty, save.isPending);
   const { i18n } = useTranslation();
   const labels = promptLabelsZh as Record<string, string>;
   const chinese = i18n.resolvedLanguage?.startsWith("zh") ?? false;
@@ -82,6 +84,7 @@ function PromptRow({ item, visible }: { item: AgentPromptItem; visible: boolean 
               maxLength={4000}
               rows={4}
               value={guidance}
+              disabled={save.isPending}
               onChange={(event) => setGuidance(event.target.value)}
               placeholder="Steer tone, emphasis, or process without changing facts."
             />
@@ -92,14 +95,14 @@ function PromptRow({ item, visible }: { item: AgentPromptItem; visible: boolean 
                   variant="ghost"
                   size="sm"
                   disabled={!item.guidance || save.isPending}
-                  onClick={() => save.mutate({ key: item.key, guidance: "" })}
+                  onClick={() => save.mutate({ key: item.key, guidance: "" }, { onSuccess: () => setGuidance("") })}
                 >
                   Reset this agent
                 </Button>
                 <Button
                   size="sm"
                   disabled={save.isPending || guidance === (item.guidance ?? "")}
-                  onClick={() => save.mutate({ key: item.key, guidance })}
+                  onClick={() => save.mutate({ key: item.key, guidance }, { onSuccess: () => setGuidance(guidance) })}
                 >
                   {save.isPending ? <Spinner data-icon="inline-start" /> : null}
                   Save guidance
@@ -123,25 +126,16 @@ export function AgentPromptsPage() {
   const { t, i18n } = useTranslation();
   const [search, setSearch] = useState("");
 
-  if (prompts.isPending) {
-    return <Skeleton className="h-80 w-full" aria-label="Loading agent prompts" />;
-  }
-  if (prompts.isError) {
-    return (
-      <Alert variant="destructive">
-        <CircleAlert aria-hidden="true" />
-        <AlertTitle>Couldn&apos;t load agent prompts</AlertTitle>
-        <AlertDescription>{prompts.error.message}</AlertDescription>
-      </Alert>
-    );
-  }
+  if (prompts.isPending || (!prompts.data && prompts.isError)) return <SettingsPage title="Agent prompts" loading={prompts.isPending} error={prompts.error} onRetry={prompts.refetch} />;
+
+  const items = prompts.data ?? [];
 
   const matches = listSearch(search);
   const labels: Record<string, string> = i18n.resolvedLanguage?.startsWith("zh") ? promptLabelsZh : {};
   const sections = STAGES.map(([stage, label]) => ({
     stage,
     label,
-    items: prompts.data.filter((item) => item.stage === stage).map((item) => ({
+    items: items.filter((item) => item.stage === stage).map((item) => ({
       item,
       visible: matches(stage, label, item.key, item.title, item.description, labels[item.title], labels[item.description]),
     })),
@@ -149,13 +143,12 @@ export function AgentPromptsPage() {
   const shown = sections.reduce((total, section) => total + section.items.filter(({ visible }) => visible).length, 0);
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Agent prompts" actions={<ResetSectionButton sectionId="agent_guidance" label="Agent prompts" />} />
+    <SettingsPage title="Agent prompts" error={prompts.error} onRetry={prompts.refetch} description="Customize guidance for each agent. Each agent saves separately; integrity rules remain read-only." actions={<ResetSectionButton sectionId="agent_guidance" label="Agent prompts" />}>
       <p className="text-sm text-muted-foreground">{t("agentPrompts.originalLanguage")}</p>
       <div className="space-y-2">
         <ListSearch value={search} onChange={setSearch} aria-label={t("longLists.searchAgentPrompts")} placeholder={t("longLists.searchAgentPrompts")} className="max-w-lg" />
         <p role="status" className="text-sm text-muted-foreground empty:sr-only">
-          {search.trim() ? shown ? t("longLists.results", { shown, total: prompts.data.length }) : t("longLists.noMatches") : null}
+          {search.trim() ? shown ? t("longLists.results", { shown, total: items.length }) : t("longLists.noMatches") : null}
         </p>
       </div>
       {sections.map(({ stage, label, items }) => {
@@ -168,7 +161,7 @@ export function AgentPromptsPage() {
             <Accordion multiple className="mt-2 rounded-lg border px-3">
               {items.map(({ item, visible }) => (
                 <PromptRow
-                  key={`${item.key}:${item.guidance ?? ""}`}
+                  key={item.key}
                   item={item}
                   visible={visible}
                 />
@@ -177,6 +170,6 @@ export function AgentPromptsPage() {
           </section>
         );
       })}
-    </div>
+    </SettingsPage>
   );
 }

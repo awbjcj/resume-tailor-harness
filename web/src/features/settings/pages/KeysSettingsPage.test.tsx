@@ -26,7 +26,7 @@ describe("KeysSettingsPage", () => {
   it("shows provider keys and models while keeping Gmail credentials on the email page", async () => {
     render(<MemoryRouter><KeysSettingsPage /></MemoryRouter>, { wrapper: withQueryClient });
     expect(await screen.findByRole("heading", { name: "API keys & models" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add OpenAI API key" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Add OpenAI API key" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Model tiers" })).toBeInTheDocument();
     expect(screen.queryByText("Google OAuth client ID")).not.toBeInTheDocument();
     expect(screen.queryByText("Google OAuth client secret")).not.toBeInTheDocument();

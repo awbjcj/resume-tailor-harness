@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/PageHeader";
 import { useTranslation } from "react-i18next";
-import { BoardSkeleton } from "@/components/skeletons";
+import { PageFeedback } from "@/components/QueryFeedback";
 import { JourneyRail } from "@/features/journey/JourneyRail";
 import { formatUserDate } from "@/lib/date-time";
 
@@ -22,8 +22,8 @@ export function heroTitle(waiting: number): string {
 
 export function DashboardPage() {
   const { t, i18n } = useTranslation();
-  const { data: summary, isPending } = useDashboardSummary();
-  if (isPending || !summary) return <BoardSkeleton />;
+  const { data: summary, isPending, error, refetch } = useDashboardSummary();
+  if (error || isPending || !summary) return <PageFeedback title={t("nav.dashboard")} error={error} onRetry={refetch} />;
 
   const waiting = Object.values(summary.queues).reduce((a, b) => a + b, 0);
   // rejected is terminal-negative and never appears on the rail/queues (see

@@ -7,6 +7,7 @@ import { withQueryClient } from "@/test/utils";
 import { AgentPromptsPage } from "./AgentPromptsPage";
 
 const save = vi.fn();
+const queryState = vi.hoisted(() => ({ failed: false }));
 const items = [
   {
     key: "tailor-writer",
@@ -47,12 +48,12 @@ const items = [
 ];
 
 vi.mock("../use-prompts", () => ({
-  usePrompts: () => ({ data: items, isPending: false, isError: false }),
+  usePrompts: () => ({ data: items, isPending: false, isError: queryState.failed, error: queryState.failed ? new Error("Refresh failed") : null }),
   useSaveGuidance: () => ({ mutate: save, isPending: false }),
 }));
 
 describe("AgentPromptsPage", () => {
-  beforeEach(() => save.mockClear());
+  beforeEach(() => { save.mockClear(); queryState.failed = false; });
   afterEach(async () => { await changeLanguage("en"); });
 
   it("groups agents and reveals immutable base instructions", async () => {
@@ -101,7 +102,18 @@ describe("AgentPromptsPage", () => {
     expect(save).toHaveBeenCalledWith({
       key: "tailor-writer",
       guidance: "Punchy verbs.",
-    });
+    }, expect.objectContaining({ onSuccess: expect.any(Function) }));
+  });
+
+  it("keeps unsaved guidance when a background refresh fails", async () => {
+    const user = userEvent.setup();
+    const view = render(<AgentPromptsPage />, { wrapper: withQueryClient });
+    await user.click(screen.getByText("Resume writer"));
+    await user.type(screen.getByLabelText("Your guidance for Resume writer"), "Keep this draft.");
+    queryState.failed = true;
+    view.rerender(<AgentPromptsPage />);
+    expect(screen.getByRole("alert")).toHaveTextContent("Refresh failed");
+    expect(screen.getByLabelText("Your guidance for Resume writer")).toHaveValue("Keep this draft.");
   });
 
   it("saves the fact-check procedure while showing its evidence rules", async () => {
@@ -115,7 +127,7 @@ describe("AgentPromptsPage", () => {
     expect(save).toHaveBeenLastCalledWith({
       key: "reviewer-fact-check",
       guidance: "Check metrics first.",
-    });
+    }, expect.objectContaining({ onSuccess: expect.any(Function) }));
   });
 
   it("resetting one agent clears just its guidance", async () => {
@@ -126,7 +138,7 @@ describe("AgentPromptsPage", () => {
     await user.click(screen.getByRole("button", { name: /reset this agent/i }));
 
     await waitFor(() =>
-      expect(save).toHaveBeenCalledWith({ key: "tailor-reviser", guidance: "" }),
+      expect(save).toHaveBeenCalledWith({ key: "tailor-reviser", guidance: "" }, expect.objectContaining({ onSuccess: expect.any(Function) })),
     );
   });
 
@@ -136,6 +148,6 @@ describe("AgentPromptsPage", () => {
 
     await user.click(screen.getByText("Fact-check gate"));
     await user.click(screen.getByRole("button", { name: /reset this agent/i }));
-    expect(save).toHaveBeenCalledWith({ key: "reviewer-fact-check", guidance: "" });
+    expect(save).toHaveBeenCalledWith({ key: "reviewer-fact-check", guidance: "" }, expect.objectContaining({ onSuccess: expect.any(Function) }));
   });
 });

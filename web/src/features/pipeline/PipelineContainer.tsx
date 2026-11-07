@@ -8,7 +8,7 @@ import { BulkPreviewButton } from "@/components/BulkPreviewButton";
 import { EmptyState } from "@/components/EmptyState";
 import { FilterDesk } from "@/components/FilterDesk";
 import { PageHeader } from "@/components/PageHeader";
-import { BoardSkeleton } from "@/components/skeletons";
+import { PageFeedback } from "@/components/QueryFeedback";
 import { StaleQuickFilters } from "@/components/StaleQuickFilters";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -61,7 +61,7 @@ export function PipelineContainer() {
   // A lightweight overview query drives the facets (which stages exist and how
   // many jobs each holds) and the overall matching total. Rows come from the
   // per-stage sections, so this query only needs a single row.
-  const { facets, total, isLoading } = useBoardQuery<PipelineItem>("pipeline", filter, {
+  const { facets, total, isLoading, error, refetch } = useBoardQuery<PipelineItem>("pipeline", filter, {
     pageSize: 1,
   });
   const selection = useSelection();
@@ -138,7 +138,7 @@ export function PipelineContainer() {
 
   const nav = useJobNavigation(loadedIds, openId ? Number(openId) : null, openJob);
 
-  if (isLoading) return <BoardSkeleton />;
+  if (error || isLoading) return <PageFeedback title={t("nav.pipeline")} error={error} onRetry={refetch} />;
 
   const bulkSelection = { mode: selection.mode, ids: selection.ids };
   const bulkArgs = { selection: bulkSelection, filter };

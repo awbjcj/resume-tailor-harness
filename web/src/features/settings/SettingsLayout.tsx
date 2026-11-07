@@ -83,9 +83,9 @@ export function SettingsLayout() {
   const navigate = useNavigate();
   const selected = nav.find((item) => item.to === pathname.replace(/\/+$/, ""))?.to ?? nav[0].to;
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-      <aside className="min-w-0 lg:sticky lg:top-24 lg:w-64 lg:shrink-0">
-        <Card size="sm" className="lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
+    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
+      <aside className="min-w-0 lg:sticky lg:top-[calc(var(--app-chrome-height,3.5rem)+1rem)] lg:w-52 lg:shrink-0">
+        <Card size="sm" className="lg:max-h-[calc(100dvh-var(--app-chrome-height,3.5rem)-2rem)] lg:overflow-y-auto">
           <CardHeader className="border-b">
             <CardTitle>Settings</CardTitle>
           </CardHeader>
@@ -147,7 +147,7 @@ export function SettingsLayout() {
       </aside>
       <section
         aria-label="Settings panel"
-        className="min-w-0 flex-1 rounded-xl bg-card px-4 py-5 ring-1 ring-foreground/10 sm:px-7 sm:py-8 xl:px-9"
+        className="min-w-0 flex-1 rounded-xl bg-card px-4 py-5 ring-1 ring-foreground/10 sm:px-6 sm:py-7 xl:px-8"
       >
         <Outlet />
       </section>

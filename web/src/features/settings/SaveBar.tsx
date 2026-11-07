@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 
 export function SaveBar({
   dirty,
@@ -16,19 +17,21 @@ export function SaveBar({
   onDiscard: () => void;
   sticky?: boolean;
 }) {
+  useUnsavedChanges(dirty, saving);
   if (!dirty) return null;
   return (
     <div
-      className={`${sticky ? "sticky bottom-0 z-10" : "relative"} mt-6 flex flex-wrap items-center gap-3 rounded-lg border bg-background/95 p-3 backdrop-blur`}
+      aria-label="Unsaved changes"
+      className={`${sticky ? "sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-10" : "relative"} mt-2 flex flex-wrap items-center gap-3 rounded-lg border bg-background p-3 shadow-sm`}
     >
-      <span className="text-sm text-muted-foreground">
+      <span role="status" className="text-sm text-muted-foreground">
         You have unsaved changes
       </span>
-      <div className="ml-auto flex gap-2">
-        <Button variant="outline" onClick={onDiscard} disabled={saving}>
+      <div className="ml-auto flex max-w-full flex-wrap gap-2">
+        <Button type="button" variant="outline" onClick={onDiscard} disabled={saving}>
           Discard
         </Button>
-        <Button onClick={onSave} disabled={saving || !canSave}>
+        <Button type="button" onClick={onSave} disabled={saving || !canSave}>
           {saving ? <Spinner data-icon="inline-start" /> : null}
           Save changes
         </Button>

@@ -1,5 +1,6 @@
 import "@/i18n/interaction-copy-sources";
-import { PageHeader } from "@/components/PageHeader";
+import { QueryFeedback } from "@/components/QueryFeedback";
+import { SettingsPage } from "@/features/settings/SettingsPage";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, Sparkles, Trash2 } from "lucide-react";
@@ -45,7 +46,7 @@ function LimitInput({ source }: { source: Source }) {
       type="number"
       min={1}
       inputMode="numeric"
-      className="h-7 w-16 rounded border bg-transparent px-1.5 text-right text-xs"
+      className="min-h-11 w-20 rounded-md border border-input bg-background px-2 text-right text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
       placeholder="—"
       aria-label={`Per-pull job limit for ${source.displayName}`}
       value={value}
@@ -241,7 +242,7 @@ function SourceSection({
 
 export function SourcesManager() {
   const { t } = useTranslation();
-  const { data = [], isLoading } = useSources();
+  const { data = [], isLoading, error, refetch } = useSources();
   const { launch } = useLaunchRun();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -309,8 +310,8 @@ export function SourcesManager() {
         </Button>
       </div>
 
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading sources...</p>
+      {isLoading || error ? (
+        <QueryFeedback error={error} onRetry={refetch} loadingLabel="Loading sources..." />
       ) : (
         <div className="grid gap-5">
           <SourceSection
@@ -336,10 +337,9 @@ export function SourcesManager() {
 
 export function SourcesPage() {
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Sources" actions={<ResetSectionButton sectionId="sources" label="Company sources" />} />
+    <SettingsPage title="Sources" description="Manage recurring job sources. Source changes save immediately; pull jobs when you are ready." actions={<ResetSectionButton sectionId="sources" label="Company sources" />}>
       <ScrapeSources />
       <SourcesManager />
-    </div>
+    </SettingsPage>
   );
 }

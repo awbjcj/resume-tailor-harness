@@ -1,19 +1,13 @@
-import { PageHeader } from "@/components/PageHeader";
 import { Fragment, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
   Field,
-  FieldDescription,
-  FieldGroup,
   FieldLabel,
   FieldLegend,
-  FieldSeparator,
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import type { components } from "@/lib/api/schema";
 import { ResetSectionButton } from "../ResetSectionButton";
@@ -21,6 +15,8 @@ import { SaveBar } from "../SaveBar";
 import { useConfig, useSaveConfig } from "../use-config";
 import { useDraft } from "../use-draft";
 import { StructuredApplicationProfile } from "./StructuredApplicationProfile";
+import { SettingsDisclosure } from "../SettingsDisclosure";
+import { SettingsPage } from "../SettingsPage";
 
 type Profile = components["schemas"]["ApplicationProfileDoc"];
 type TextKey = { [K in keyof Profile]-?: Profile[K] extends string | undefined ? K : never }[keyof Profile];
@@ -121,30 +117,28 @@ export function ApplicationProfilePage() {
   const save = useSaveConfig("/api/config/application-profile");
   const { draft, setDraft, dirty, reset } = useDraft(data);
 
-  if (error) return (
-    <Alert variant="destructive">
-      <AlertDescription>Could not load application profile.</AlertDescription>
-      <Button variant="outline" className="mt-2 w-fit" onClick={() => void refetch()}>Retry</Button>
-    </Alert>
-  );
-  if (!draft) return <Skeleton className="h-64 w-full" />;
+  if (!draft) return <SettingsPage title="Application profile" loading={!error} error={error} onRetry={refetch} />;
 
   return (
-    <form ref={form} className="flex flex-col gap-6" onSubmit={(event) => event.preventDefault()}>
-      <PageHeader title="Application profile" actions={<ResetSectionButton sectionId="application_profile" label="Application profile" onReset={() => setDraft(null)} />} />
+    <SettingsPage title="Application profile" error={error} onRetry={refetch} description="Save reusable application answers. Open a section when you need it; blank answers remain unknown."
+      actions={<ResetSectionButton sectionId="application_profile" label="Application profile" onReset={() => setDraft(null)} />}>
+    <form ref={form} className="flex flex-col gap-6" onSubmit={(event) => event.preventDefault()} onInvalidCapture={(event) => {
+      // Native validation must reveal a required field inside a closed section.
+      let section = (event.target as HTMLElement).closest("details");
+      while (section) { section.open = true; section = section.parentElement?.closest("details") ?? null; }
+    }}>
       <Alert role="note">
         <AlertDescription>
           These details are included when you copy an application prompt and in settings exports. Only save information you want to share with your application assistant.
         </AlertDescription>
       </Alert>
-      <FieldGroup>
+      <FieldSet disabled={save.isPending}>
         {getGroups().map((group, index) => (
           <Fragment key={group.title}>
-            {index > 0 && <FieldSeparator />}
-            <FieldSet>
-              <FieldLegend>{group.title}</FieldLegend>
-              {group.description && <FieldDescription>{group.description}</FieldDescription>}
-              <div className="grid gap-4 sm:grid-cols-2">
+            <SettingsDisclosure title={group.title} description={group.description} defaultOpen={index === 0}>
+            <FieldSet disabled={save.isPending}>
+              <FieldLegend className="sr-only">{group.title}</FieldLegend>
+              <div className="grid gap-4 @lg/settings:grid-cols-2">
                 {group.fields.map((field) => {
                   const id = `application-${field.key}`;
                   const props = {
@@ -158,7 +152,7 @@ export function ApplicationProfilePage() {
                     },
                   };
                   return (
-                    <Field key={field.key} className={field.multiline ? "min-w-0 sm:col-span-2" : "min-w-0"}>
+                    <Field key={field.key} className={field.multiline ? "min-w-0 @lg/settings:col-span-2" : "min-w-0"}>
                       <FieldLabel htmlFor={id}>{field.label}</FieldLabel>
                       {field.multiline ? <Textarea {...props} rows={3} /> : <Input {...props} />}
                     </Field>
@@ -166,11 +160,12 @@ export function ApplicationProfilePage() {
                 })}
               </div>
             </FieldSet>
+            </SettingsDisclosure>
             {index === 0 && <StructuredApplicationProfile profile={draft}
               onChange={(changes) => setDraft((current) => current ? { ...current, ...changes } : current)} />}
           </Fragment>
         ))}
-      </FieldGroup>
+      </FieldSet>
       <SaveBar
         dirty={dirty}
         saving={save.isPending}
@@ -180,5 +175,6 @@ export function ApplicationProfilePage() {
         onDiscard={reset}
       />
     </form>
+    </SettingsPage>
   );
 }

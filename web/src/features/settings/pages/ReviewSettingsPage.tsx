@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/PageHeader";
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -32,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { QueryFeedback } from "@/components/QueryFeedback";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -45,6 +44,7 @@ import { ResetSectionButton } from "../ResetSectionButton";
 import { SaveBar } from "../SaveBar";
 import { useConfig, useSaveConfig, type ConfigPath } from "../use-config";
 import { useDraft } from "../use-draft";
+import { SettingsPage } from "../SettingsPage";
 
 type ReviewDoc = paths["/api/config/review"]["get"]["responses"][200]["content"]["application/json"];
 type ReviewerEntry = NonNullable<ReviewDoc["reviewers"]>[number];
@@ -106,8 +106,7 @@ export function ReviewSettingsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Review panel" actions={<ResetSectionButton sectionId="review" label="Review panel" onReset={() => setResetVersion((version) => version + 1)} />} />
+    <SettingsPage title="Review panel" description="Choose how tailored resumes are reviewed, scored, and revised. Fast and Deep each have their own saved settings." actions={<ResetSectionButton sectionId="review" label="Review panel" onReset={() => setResetVersion((version) => version + 1)} />}>
 
       {/* Fast/Deep is the SCOPE of this page, not a setting on it — every
           control below belongs to the selected roster. Rendering it as a
@@ -189,7 +188,7 @@ export function ReviewSettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </SettingsPage>
   );
 }
 
@@ -284,7 +283,7 @@ function SwitchField({
   );
 }
 
-const GRID = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3";
+const GRID = "grid grid-cols-1 gap-4 @lg/settings:grid-cols-2 @3xl/settings:grid-cols-3";
 
 function ReviewRosterForm({
   endpoint, onDirtyChange,
@@ -293,7 +292,7 @@ function ReviewRosterForm({
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const { data } = useConfig(endpoint);
+  const { data, error, refetch } = useConfig(endpoint);
   const save = useSaveConfig(endpoint);
   const { draft, setDraft, dirty, reset } = useDraft(data as ReviewDoc | undefined);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -303,7 +302,7 @@ function ReviewRosterForm({
     return () => onDirtyChange(false);
   }, [dirty, onDirtyChange]);
 
-  if (!draft) return <Skeleton className="h-64 w-full" />;
+  if (!draft) return <QueryFeedback error={error} onRetry={refetch} />;
   const reviewers = draft.reviewers ?? [];
   const budget = draft.lengthBudget;
 
@@ -330,9 +329,11 @@ function ReviewRosterForm({
 
   return (
     <>
+      {error && <QueryFeedback error={error} onRetry={refetch} />}
+      <fieldset disabled={save.isPending} className="flex min-w-0 flex-col gap-7">
       <FieldSet>
         <FieldLegend>Rounds</FieldLegend>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 @lg/settings:grid-cols-2">
           <NumberField
             id="maxRounds"
             label="Max rounds"
@@ -367,7 +368,7 @@ function ReviewRosterForm({
           checked={draft.evidencePortfolioEnabled}
           onChange={(v) => setDraft({ ...draft, evidencePortfolioEnabled: v })}
         />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 @lg/settings:grid-cols-2">
           <TierToggle
             label={t("model.tierNames.writer")}
             nameKey="model.tierNames.writer"
@@ -388,7 +389,7 @@ function ReviewRosterForm({
         <FieldDescription>
           If a gated reviewer fails, the round fails regardless of its score. Gate reviewers do not contribute a score, so their weight and score bands are disabled.
         </FieldDescription>
-        <Table>
+        <Table containerLabel="Reviewer settings table">
           <TableHeader>
             <TableRow>
               <TableHead>Reviewer</TableHead>
@@ -609,6 +610,7 @@ function ReviewRosterForm({
         </CollapsibleContent>
       </Collapsible>
 
+      </fieldset>
       <SaveBar
         dirty={dirty}
         saving={save.isPending}

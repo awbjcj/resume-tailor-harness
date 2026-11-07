@@ -201,7 +201,7 @@ function ProviderForm({ config, next }: { config: SetupProvider; next: () => voi
             <AccordionItem value="more">
               <AccordionTrigger>{t("providerSetup.optionalCredentials")}</AccordionTrigger>
               <AccordionContent>
-                <SecretsForm statuses={optionalCredentials} saving={busy} onSave={(patch) => saveSecrets.mutate(patch)} />
+                <SecretsForm statuses={optionalCredentials} saving={busy} onSave={(patch) => saveSecrets.mutateAsync(patch)} />
               </AccordionContent>
             </AccordionItem>
           </Accordion>

@@ -1,5 +1,4 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +9,7 @@ import { SecretsForm } from "../forms/SecretsForm";
 import { useGmailConnectOutcome } from "../use-gmail";
 import { useSaveSecrets, useSecrets } from "../use-secrets";
 import { EmailNotificationsPage } from "./EmailNotificationsPage";
+import { SettingsPage } from "../SettingsPage";
 
 export function EmailSettingsPage() {
   const secrets = useSecrets();
@@ -17,8 +17,7 @@ export function EmailSettingsPage() {
   useGmailConnectOutcome();
 
   return (
-    <div className="flex min-w-0 flex-col gap-8">
-      <PageHeader title="Email & notifications" />
+    <SettingsPage title="Email & notifications" description="Connect mailboxes for application tracking, and choose where to receive workspace updates.">
       <div className="flex min-w-0 flex-col gap-4">
         <GmailCard />
         <MailboxConnections />
@@ -43,7 +42,7 @@ export function EmailSettingsPage() {
                   secret.key === "googleOauthClientId" || secret.key === "googleOauthClientSecret",
                 )}
                 saving={saveSecrets.isPending}
-                onSave={(patch) => saveSecrets.mutate(patch)}
+                onSave={(patch) => saveSecrets.mutateAsync(patch)}
               />
             ) : (
               <Skeleton className="h-24 w-full" aria-label="Loading Gmail client settings" />
@@ -55,6 +54,6 @@ export function EmailSettingsPage() {
       <section aria-label="Email notifications">
         <EmailNotificationsPage embedded />
       </section>
-    </div>
+    </SettingsPage>
   );
 }

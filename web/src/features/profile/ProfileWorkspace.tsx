@@ -22,7 +22,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageFeedback } from "@/components/QueryFeedback";
 import { Spinner } from "@/components/ui/spinner";
 import { TagListInput } from "@/components/ui/tag-list-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -84,7 +84,7 @@ export function ProfileWorkspace() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") === "skills" ? "skills" : "documents";
-  const { data, isError, refetch } = useConfig("/api/config/profile");
+  const { data, error, refetch } = useConfig("/api/config/profile");
   const save = useSaveConfig("/api/config/profile");
   const { draft, setDraft, dirty, reset } = useDraft(
     editableProfile(data as ProfileDoc | undefined),
@@ -120,19 +120,7 @@ export function ProfileWorkspace() {
     setSearchParams(next, { replace: true });
   };
 
-  if (isError && !draft)
-    return (
-      <div
-        role="alert"
-        className="space-y-3 rounded-xl border border-destructive/30 p-4"
-      >
-        <p>Profile settings could not be loaded. Try again.</p>
-        <Button variant="outline" onClick={() => void refetch()}>
-          Try again
-        </Button>
-      </div>
-    );
-  if (!draft) return <Skeleton className="h-64 w-full" />;
+  if (!draft) return <PageFeedback title={t("nav.profile")} error={error} onRetry={refetch} />;
 
   const { githubRepoAllow, githubRepoDeny, limitText } = draft;
   const repositoryOwner = draft.githubUsername?.trim().toLowerCase();

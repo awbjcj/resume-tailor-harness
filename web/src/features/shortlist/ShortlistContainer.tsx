@@ -12,7 +12,7 @@ import { JobTable } from "@/components/JobTable";
 import { JobModal } from "@/components/JobModal";
 import { MetricRow } from "@/components/MetricRow";
 import { PageHeader } from "@/components/PageHeader";
-import { BoardSkeleton } from "@/components/skeletons";
+import { PageFeedback } from "@/components/QueryFeedback";
 import { StaleQuickFilters } from "@/components/StaleQuickFilters";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +32,7 @@ import { ShortlistDetails } from "./ShortlistDetails";
 export function ShortlistContainer() {
   const { t } = useTranslation();
   const [filters, setFilters] = useBoardFilters();
-  const { rows, facets, total, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error } =
+  const { rows, facets, total, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } =
     useBoardQuery<ShortlistItem>("shortlist", filters);
   const selection = useSelection();
   const { reconcile } = selection;
@@ -72,8 +72,7 @@ export function ShortlistContainer() {
     { hasNextPage, isFetchingNextPage, fetchNextPage },
   );
 
-  if (isLoading) return <BoardSkeleton />;
-  if (error) return <EmptyState title="Failed to load" body={(error as Error).message} />;
+  if (error || isLoading) return <PageFeedback title={t("nav.shortlist")} error={error} onRetry={refetch} />;
 
   const avg = rows.length
     ? Math.round(rows.reduce((sum, row) => sum + (row.fitScore ?? 0), 0) / rows.length)
