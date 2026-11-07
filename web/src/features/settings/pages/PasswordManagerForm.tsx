@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { accountErrorKey, type AccountErrorKey, type ApplicationAccount } from "./password-manager-api";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 
 export type AccountFields = { company: string; loginUrl: string; username: string; password: string };
 
@@ -20,6 +21,8 @@ export function PasswordManagerForm({ account, disabled, onSave, onCancel }: {
   const errorRef = useRef<HTMLDivElement>(null);
   const submitting = useRef(false);
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  useUnsavedChanges(dirty, saving);
   const [error, setError] = useState<AccountErrorKey | "">("");
   const [showPassword, setShowPassword] = useState(false);
   const accountId = account?.id;
@@ -46,11 +49,13 @@ export function PasswordManagerForm({ account, disabled, onSave, onCancel }: {
         password: passwordRef.current?.value ?? "",
       });
       form.reset();
+      setDirty(false);
     } catch (cause) {
       setError(accountErrorKey(cause));
     } finally {
       // Passwords stay in the input/request only, never React or query state.
       if (passwordRef.current) passwordRef.current.value = "";
+      if (account) setDirty(false);
       setShowPassword(false);
       submitting.current = false;
       setSaving(false);
@@ -58,7 +63,9 @@ export function PasswordManagerForm({ account, disabled, onSave, onCancel }: {
   }
 
   return (
-    <form onSubmit={(event) => void submit(event)} aria-labelledby="account-form-title" className="space-y-4 border-t pt-6">
+    <form onSubmit={(event) => void submit(event)} onChange={(event) => {
+      setDirty(Boolean(passwordRef.current?.value) || [...new FormData(event.currentTarget).values()].some((value) => String(value).trim() !== ""));
+    }} aria-labelledby="account-form-title" className="space-y-4 border-t pt-6">
       <h2 id="account-form-title" className="font-semibold [overflow-wrap:anywhere]">
         {account ? t("passwordManager.editTitle", { company: account.company }) : t("passwordManager.add")}
       </h2>

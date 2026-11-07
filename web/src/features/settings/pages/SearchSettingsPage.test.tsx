@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 
 import { server } from "@/test/server";
 import { withQueryClient } from "@/test/utils";
@@ -25,7 +26,7 @@ it("saves the normalized locations after the slowest response completes", async 
     }),
   );
   const user = userEvent.setup();
-  render(<SearchSettingsPage />, { wrapper: withQueryClient });
+  render(<MemoryRouter><SearchSettingsPage /></MemoryRouter>, { wrapper: withQueryClient });
   const location = await screen.findByLabelText("Locations");
   await user.type(location, "austin tx{Enter}seattle wa{Enter}");
   await screen.findByRole("button", { name: "Remove Seattle, WA" });
@@ -41,4 +42,21 @@ it("saves the normalized locations after the slowest response completes", async 
   await waitFor(() => expect(saved).toHaveBeenCalledWith(
     expect.objectContaining({ locations: ["Austin, TX", "Seattle, WA"] }),
   ));
+});
+
+it("shows an initial failure and recovers through Retry", async () => {
+  let attempts = 0;
+  server.use(http.get("/api/config/search", () => {
+    attempts += 1;
+    return attempts === 1
+      ? HttpResponse.json({ error: { message: "Search settings unavailable" } }, { status: 503 })
+      : HttpResponse.json({ locations: [], keywords: [] });
+  }));
+  const user = userEvent.setup();
+  render(<MemoryRouter><SearchSettingsPage /></MemoryRouter>, { wrapper: withQueryClient });
+  expect(await screen.findByRole("alert")).toHaveTextContent("Search settings unavailable");
+  expect(screen.getByRole("heading", { level: 1, name: "Search" })).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Retry" }));
+  expect(await screen.findByLabelText("Locations")).toBeVisible();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });

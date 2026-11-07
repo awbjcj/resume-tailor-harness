@@ -934,6 +934,11 @@
     "en": "AI provider",
     "zh-CN": "AI 服务商"
   },
+  "AI provider keys": {
+    "key": "ui_134ebcb1013a",
+    "en": "AI provider keys",
+    "zh-CN": "AI 服务商密钥"
+  },
   "AI-assisted candidate matching": {
     "key": "ui_3752884b75a1",
     "en": "AI-assisted candidate matching",
@@ -1349,6 +1354,11 @@
     "en": "Archive rejected jobs",
     "zh-CN": "归档已拒绝的职位"
   },
+  "Archive rules": {
+    "key": "ui_a7bc79c448fc",
+    "en": "Archive rules",
+    "zh-CN": "归档规则"
+  },
   "Archive scored jobs below this fit score": {
     "key": "ui_dee6ef92430b",
     "en": "Archive scored jobs below this fit score",
@@ -1363,6 +1373,11 @@
     "key": "ui_0b2b32868a1a",
     "en": "Archive tier",
     "zh-CN": "归档档位"
+  },
+  "Archived job retention": {
+    "key": "ui_d197ddb1eaca",
+    "en": "Archived job retention",
+    "zh-CN": "已归档职位的保留策略"
   },
   "Archiving…": {
     "key": "ui_af9e1c99f193",
@@ -1954,6 +1969,11 @@
     "en": "Choose a member",
     "zh-CN": "选择成员"
   },
+  "Choose a model for each tier. Save these changes together below.": {
+    "key": "ui_d43eee5a038a",
+    "en": "Choose a model for each tier. Save these changes together below.",
+    "zh-CN": "为每个层级选择模型，然后在下方统一保存更改。"
+  },
   "Choose a new password": {
     "key": "ui_833b8512168f",
     "en": "Choose a new password",
@@ -1963,6 +1983,11 @@
     "key": "ui_49c157b8154a",
     "en": "Choose a rehearsal to continue",
     "zh-CN": "选择要继续的面试练习"
+  },
+  "Choose a resume layout and page length. Template uploads apply immediately; save layout options together below.": {
+    "key": "ui_467a46a59bde",
+    "en": "Choose a resume layout and page length. Template uploads apply immediately; save layout options together below.",
+    "zh-CN": "选择简历版式和页数。上传模板后会立即生效；版式选项请在下方统一保存。"
   },
   "Choose a short name that will be easy to recognize in your history.": {
     "key": "ui_97be9d694271",
@@ -2004,6 +2029,11 @@
     "en": "Choose file",
     "zh-CN": "选择文件"
   },
+  "Choose how tailored resumes are reviewed, scored, and revised. Fast and Deep each have their own saved settings.": {
+    "key": "ui_2909bed69d64",
+    "en": "Choose how tailored resumes are reviewed, scored, and revised. Fast and Deep each have their own saved settings.",
+    "zh-CN": "设置定制简历的评审、评分和修改方式。快速评审与深度评审分别保存设置。"
+  },
   "Choose jobs that have passed approval, including tailored or rendered jobs. All jobs start selected.": {
     "key": "ui_ff68713e36d5",
     "en": "Choose jobs that have passed approval, including tailored or rendered jobs. All jobs start selected.",
@@ -2023,6 +2053,16 @@
     "key": "ui_4034d9b4230c",
     "en": "Choose the hiring platform, verify the live board, then add it to discovery.",
     "zh-CN": "选择招聘平台，验证招聘列表后，将其添加为职位来源。"
+  },
+  "Choose the roles and work preferences used to find and filter jobs.": {
+    "key": "ui_fbc41f7563ae",
+    "en": "Choose the roles and work preferences used to find and filter jobs.",
+    "zh-CN": "设置用于发现和筛选职位的目标岗位与工作偏好。"
+  },
+  "Choose where and how you want to work.": {
+    "key": "ui_5ae0f4d784f1",
+    "en": "Choose where and how you want to work.",
+    "zh-CN": "选择期望的工作地点和工作方式。"
   },
   "Choose which approved jobs to process. All jobs start selected.": {
     "key": "ui_7dac70c32cd3",
@@ -2424,10 +2464,20 @@
     "en": "Connect Gmail",
     "zh-CN": "连接 Gmail"
   },
+  "Connect mailboxes for application tracking, and choose where to receive workspace updates.": {
+    "key": "ui_87f543e23a55",
+    "en": "Connect mailboxes for application tracking, and choose where to receive workspace updates.",
+    "zh-CN": "连接用于跟踪申请的邮箱，并选择接收工作区动态的邮箱。"
+  },
   "Connect model providers": {
     "key": "ui_62ad7274de08",
     "en": "Connect model providers",
     "zh-CN": "连接模型服务商"
+  },
+  "Connect your AI providers, then choose the models used by each tier.": {
+    "key": "ui_915dba66780c",
+    "en": "Connect your AI providers, then choose the models used by each tier.",
+    "zh-CN": "连接 AI 服务商，然后选择各层级使用的模型。"
   },
   "Connected ({{v0}} client). Reconnect to enable drafts.": {
     "key": "ui_d9c917b31abd",
@@ -2579,11 +2629,6 @@
     "en": "Could not end the session",
     "zh-CN": "无法结束该会话"
   },
-  "Could not load application profile.": {
-    "key": "ui_1faa1e62a73a",
-    "en": "Could not load application profile.",
-    "zh-CN": "申请资料加载失败。"
-  },
   "Could not load application prompt. Please try again.": {
     "key": "ui_2c5ddd01ef74",
     "en": "Could not load application prompt. Please try again.",
@@ -2624,10 +2669,20 @@
     "en": "Could not load the evidence explanation.",
     "zh-CN": "无法加载证据说明。"
   },
+  "Could not load this section": {
+    "key": "ui_1f79566ee3a7",
+    "en": "Could not load this section",
+    "zh-CN": "无法加载此分区"
+  },
   "Could not render the PDF. Try again or choose another style.": {
     "key": "ui_6ae844248905",
     "en": "Could not render the PDF. Try again or choose another style.",
     "zh-CN": "无法生成 PDF。请重试或选择其他样式。"
+  },
+  "Could not save this key. Try again.": {
+    "key": "ui_c4bc3197c867",
+    "en": "Could not save this key. Try again.",
+    "zh-CN": "无法保存此密钥，请重试。"
   },
   "Could not select this resume.": {
     "key": "ui_8be52e60aeb3",
@@ -2663,11 +2718,6 @@
     "key": "ui_0767d878d184",
     "en": "Couldn’t connect Gmail. The sign-in didn’t complete. Please try again.",
     "zh-CN": "无法连接 Gmail。登录未完成，请重试。"
-  },
-  "Couldn't load agent prompts": {
-    "key": "ui_111d706f331c",
-    "en": "Couldn't load agent prompts",
-    "zh-CN": "无法加载助手提示词"
   },
   "Couldn't load cached advice.": {
     "key": "ui_09181144e681",
@@ -2939,6 +2989,11 @@
     "en": "Customizable settings",
     "zh-CN": "可自定义的设置"
   },
+  "Customize guidance for each agent. Each agent saves separately; integrity rules remain read-only.": {
+    "key": "ui_a8e58f3b71ce",
+    "en": "Customize guidance for each agent. Each agent saves separately; integrity rules remain read-only.",
+    "zh-CN": "自定义各个助手的指导。每个助手的设置单独保存，事实完整性规则为只读。"
+  },
   "Customized": {
     "key": "ui_5987219128d4",
     "en": "Customized",
@@ -3169,6 +3224,11 @@
     "en": "Discard {{v0}}",
     "zh-CN": "排除 {{v0}}"
   },
+  "Discard and leave": {
+    "key": "ui_07e5b9156de3",
+    "en": "Discard and leave",
+    "zh-CN": "放弃更改并离开"
+  },
   "Discard and switch": {
     "key": "ui_2c900860e86c",
     "en": "Discard and switch",
@@ -3208,6 +3268,11 @@
     "key": "ui_80fc40213320",
     "en": "Discovery",
     "zh-CN": "发现"
+  },
+  "Discovery & service access": {
+    "key": "ui_74ab3466d715",
+    "en": "Discovery & service access",
+    "zh-CN": "职位发现与服务访问"
   },
   "Discovery goal": {
     "key": "ui_6920b3df3868",
@@ -3949,6 +4014,11 @@
     "en": "Export settings",
     "zh-CN": "导出设置"
   },
+  "Export your settings, preview an import, or reset an individual section.": {
+    "key": "ui_130c5eed0316",
+    "en": "Export your settings, preview an import, or reset an individual section.",
+    "zh-CN": "导出设置、预览导入内容，或重置单个分区。"
+  },
   "Export-control citizenship / dual citizenship": {
     "key": "ui_df3b19be957f",
     "en": "Export-control citizenship / dual citizenship",
@@ -4008,11 +4078,6 @@
     "key": "ui_b01c71b894ea",
     "en": "Failed to approve job",
     "zh-CN": "批准职位失败"
-  },
-  "Failed to load": {
-    "key": "ui_3d2301d732a7",
-    "en": "Failed to load",
-    "zh-CN": "加载失败"
   },
   "Failed to start {{v0}}: {{v1}}": {
     "key": "ui_10cda168190e",
@@ -5169,6 +5234,11 @@
     "en": "Keep working",
     "zh-CN": "继续工作"
   },
+  "Keep your job list focused with archive rules and a separate retention policy.": {
+    "key": "ui_e74b1970d45f",
+    "en": "Keep your job list focused with archive rules and a separate retention policy.",
+    "zh-CN": "通过归档规则和单独的保留策略整理职位列表。"
+  },
   "Keep your primary email above. Use an alternate only with explicit permission and when its employer, requisition, and country limits match the application.": {
     "key": "ui_2cfbd61fa436",
     "en": "Keep your primary email above. Use an alternate only with explicit permission and when its employer, requisition, and country limits match the application.",
@@ -5178,6 +5248,11 @@
     "key": "ui_c6278470b731",
     "en": "Keys are write-only; saved credentials display only their final four characters.",
     "zh-CN": "密钥保存后只显示末四位，无法查看完整内容。"
+  },
+  "Keys save individually. Saved keys show only their last four characters.": {
+    "key": "ui_d30b83d6fff9",
+    "en": "Keys save individually. Saved keys show only their last four characters.",
+    "zh-CN": "每个密钥单独保存。已保存的密钥仅显示末四位字符。"
   },
   "Keys updated": {
     "key": "ui_d9b593f88f17",
@@ -5224,6 +5299,11 @@
     "en": "Learning resources",
     "zh-CN": "学习资源"
   },
+  "Leave a limit blank when you do not want to filter by it.": {
+    "key": "ui_3ab63c70a8ca",
+    "en": "Leave a limit blank when you do not want to filter by it.",
+    "zh-CN": "不需要按某项条件筛选时，请将其留空。"
+  },
   "Leave blank to keep the saved key unchanged.": {
     "key": "ui_48ee9b0f13f5",
     "en": "Leave blank to keep the saved key unchanged.",
@@ -5248,6 +5328,11 @@
     "key": "ui_3e02e86dbe32",
     "en": "Leave unknown answers blank. For voluntary questions, enter your exact answer or “Prefer not to disclose”. Blank answers are never inferred.",
     "zh-CN": "不确定的内容可以留空。自愿填写的问题，请如实回答，也可以填写“不愿透露”。留空的项目不会自动补全。"
+  },
+  "Leave with unsaved changes?": {
+    "key": "ui_44e4660b5596",
+    "en": "Leave with unsaved changes?",
+    "zh-CN": "放弃未保存的更改并离开？"
   },
   "Legal name": {
     "key": "ui_07f883c3b610",
@@ -5364,11 +5449,6 @@
     "en": "Loading",
     "zh-CN": "加载中"
   },
-  "Loading agent prompts": {
-    "key": "ui_1116ae56973b",
-    "en": "Loading agent prompts",
-    "zh-CN": "正在加载助手提示词"
-  },
   "Loading approved jobs": {
     "key": "ui_402ea9f88cd3",
     "en": "Loading approved jobs",
@@ -5454,6 +5534,11 @@
     "en": "Loading sessions",
     "zh-CN": "正在加载会话"
   },
+  "Loading settings": {
+    "key": "ui_509c3e500d38",
+    "en": "Loading settings",
+    "zh-CN": "正在加载设置"
+  },
   "Loading sources...": {
     "key": "ui_d9c4e3ec76dd",
     "en": "Loading sources...",
@@ -5504,6 +5589,11 @@
     "en": "Location",
     "zh-CN": "地点"
   },
+  "Location & work preferences": {
+    "key": "ui_a1ba672e0774",
+    "en": "Location & work preferences",
+    "zh-CN": "地点与工作方式"
+  },
   "location n/a": {
     "key": "ui_21f33c1a08d5",
     "en": "location n/a",
@@ -5553,6 +5643,11 @@
     "key": "ui_16753a9a8726",
     "en": "Manage non-financial workspace limits here. Manage cost allowances in Cost quotas.",
     "zh-CN": "设置工作区的职位数、并发数等限制。费用额度请在“费用配额”中管理。"
+  },
+  "Manage recurring job sources. Source changes save immediately; pull jobs when you are ready.": {
+    "key": "ui_15ea545d09ea",
+    "en": "Manage recurring job sources. Source changes save immediately; pull jobs when you are ready.",
+    "zh-CN": "管理定期采集的职位来源。来源更改会立即保存；准备好后即可拉取职位。"
   },
   "Map": {
     "key": "ui_be176b0015c4",
@@ -7199,11 +7294,6 @@
     "en": "Profile ready",
     "zh-CN": "个人档案已就绪"
   },
-  "Profile settings could not be loaded. Try again.": {
-    "key": "ui_74c07399ab0d",
-    "en": "Profile settings could not be loaded. Try again.",
-    "zh-CN": "无法加载档案设置，请重试。"
-  },
   "Profile skill rebuild": {
     "key": "ui_26338a0ef19e",
     "en": "Profile skill rebuild",
@@ -7568,6 +7658,11 @@
     "key": "ui_6f7316fbcd74",
     "en": "Read web page",
     "zh-CN": "读取网页"
+  },
+  "Reading settings bundle…": {
+    "key": "ui_ec2eb1b71216",
+    "en": "Reading settings bundle…",
+    "zh-CN": "正在读取设置包…"
   },
   "Ready": {
     "key": "ui_5fa7aac5375c",
@@ -8549,6 +8644,11 @@
     "en": "Reviewer",
     "zh-CN": "评审助手"
   },
+  "Reviewer settings table": {
+    "key": "ui_1fb014c27cb4",
+    "en": "Reviewer settings table",
+    "zh-CN": "评审助手设置表"
+  },
   "Reviewers": {
     "key": "ui_06499a309e35",
     "en": "Reviewers",
@@ -8644,6 +8744,11 @@
     "en": "Roles (",
     "zh-CN": "职位 ("
   },
+  "Roles to look for": {
+    "key": "ui_fbcb8f139c05",
+    "en": "Roles to look for",
+    "zh-CN": "目标职位"
+  },
   "Roster": {
     "key": "ui_cd4795809e32",
     "en": "Roster",
@@ -8729,6 +8834,11 @@
     "en": "Salary",
     "zh-CN": "薪资"
   },
+  "Salary & experience": {
+    "key": "ui_2ced520f9761",
+    "en": "Salary & experience",
+    "zh-CN": "薪资与经验"
+  },
   "Salary >= {{v0}}": {
     "key": "ui_f617917a6beb",
     "en": "Salary >= {{v0}}",
@@ -8799,6 +8909,11 @@
     "en": "Save note",
     "zh-CN": "保存备注"
   },
+  "Save reusable application answers. Open a section when you need it; blank answers remain unknown.": {
+    "key": "ui_c5774a246052",
+    "en": "Save reusable application answers. Open a section when you need it; blank answers remain unknown.",
+    "zh-CN": "保存可重复使用的申请答案。需要时展开相应分区；留空的答案仍表示未知。"
+  },
   "Save the exact wording and where each answer applies, including degree dropdown choices and role-specific answers. Leave the requisition blank to cover all roles at that employer. Keep your actual degree unchanged. Existing employer notes are below.": {
     "key": "ui_c50859590876",
     "en": "Save the exact wording and where each answer applies, including degree dropdown choices and role-specific answers. Leave the requisition blank to cover all roles at that employer. Keep your actual degree unchanged. Existing employer notes are below.",
@@ -8838,11 +8953,6 @@
     "key": "ui_02bce86c21e8",
     "en": "Saved correction:",
     "zh-CN": "已保存的更正："
-  },
-  "Saved keys show only their last four characters.": {
-    "key": "ui_661c4eef93cd",
-    "en": "Saved keys show only their last four characters.",
-    "zh-CN": "已保存的密钥仅显示末四位字符。"
   },
   "Saved public boards": {
     "key": "ui_752ddfe07a76",
@@ -9233,6 +9343,11 @@
     "key": "ui_4457cb180676",
     "en": "Set status",
     "zh-CN": "设置状态"
+  },
+  "Set the writing rules used when tailoring your resume. Use Markdown for headings and lists.": {
+    "key": "ui_fb551a6f1282",
+    "en": "Set the writing rules used when tailoring your resume. Use Markdown for headings and lists.",
+    "zh-CN": "设置定制简历时使用的写作规则。可以用 Markdown 编写标题和列表。"
   },
   "Set up your mock interview": {
     "key": "ui_6d6cf8e7d0ea",
@@ -10434,6 +10549,11 @@
     "en": "There is not enough history yet. Log a few stages to see where applications go.",
     "zh-CN": "历史记录不足。记录几个阶段后即可查看申请的进展。"
   },
+  "These credentials connect job sources and supporting services. Each key saves individually.": {
+    "key": "ui_2675020a1ac3",
+    "en": "These credentials connect job sources and supporting services. Each key saves individually.",
+    "zh-CN": "这些凭据用于连接职位来源和辅助服务。每个密钥单独保存。"
+  },
   "These details are included when you copy an application prompt and in settings exports. Only save information you want to share with your application assistant.": {
     "key": "ui_44a91e42a510",
     "en": "These details are included when you copy an application prompt and in settings exports. Only save information you want to share with your application assistant.",
@@ -10483,6 +10603,11 @@
     "key": "ui_b545dd165128",
     "en": "This cannot be undone.",
     "zh-CN": "此操作无法撤销。"
+  },
+  "This controls permanent deletion after archiving. Deleted jobs cannot be restored.": {
+    "key": "ui_be2bdb8f24b5",
+    "en": "This controls permanent deletion after archiving. Deleted jobs cannot be restored.",
+    "zh-CN": "此项控制归档后何时永久删除职位。删除后无法恢复。"
   },
   "This conversation has ended. Pending proposals remain available to review.": {
     "key": "ui_dd22a36379fc",
@@ -10949,6 +11074,11 @@
     "en": "Unpriced calls",
     "zh-CN": "未定价调用"
   },
+  "Unsaved changes": {
+    "key": "ui_a710c2b90913",
+    "en": "Unsaved changes",
+    "zh-CN": "未保存的更改"
+  },
   "Unselect this {{v0}} to delete it": {
     "key": "ui_e32017165a37",
     "en": "Unselect this {{v0}} to delete it",
@@ -11073,6 +11203,11 @@
     "key": "ui_d26348eba5f6",
     "en": "Use for application",
     "zh-CN": "用于此申请"
+  },
+  "Use keywords for skills or topics, and job titles for the positions you want.": {
+    "key": "ui_8476798835fe",
+    "en": "Use keywords for skills or topics, and job titles for the positions you want.",
+    "zh-CN": "用关键词描述技能或领域，用职位名称指定你希望申请的岗位。"
   },
   "Use selected content": {
     "key": "ui_e11534b38e04",
@@ -11583,6 +11718,11 @@
     "key": "ui_815d29e89aa6",
     "en": "Your browser blocked autoplay. Press play to listen.",
     "zh-CN": "浏览器阻止了自动播放。请点击播放以收听。"
+  },
+  "Your edits have not been saved. Keep editing to save them, or discard them and leave this page.": {
+    "key": "ui_4823ffa13df4",
+    "en": "Your edits have not been saved. Keep editing to save them, or discard them and leave this page.",
+    "zh-CN": "你的修改尚未保存。你可以继续编辑并保存，或放弃更改后离开此页面。"
   },
   "Your edits to the": {
     "key": "ui_73825fa60094",

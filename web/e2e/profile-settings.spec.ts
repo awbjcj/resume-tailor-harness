@@ -730,17 +730,7 @@ test("profile controls remain usable with enlarged text in English and Chinese",
       const toolbar = page.getByRole("group", {
         name: language === "en" ? "Job discovery actions" : "职位发现操作",
       });
-      const actions = await toolbar.boundingBox();
-      const notifications = await page
-        .locator(".app-chrome")
-        .locator("button")
-        .filter({ has: page.locator("svg.lucide-bell") })
-        .boundingBox();
-      expect(actions).not.toBeNull();
-      expect(notifications).not.toBeNull();
-      expect(actions!.y).toBeGreaterThanOrEqual(
-        notifications!.y + notifications!.height,
-      );
+      await expect(toolbar).toHaveCount(0);
     }
     await page.screenshot({
       path: testInfo.outputPath(`profile-${language}-large-text.png`),

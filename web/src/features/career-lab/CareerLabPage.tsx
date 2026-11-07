@@ -327,7 +327,7 @@ export function CareerLabPage() {
         </div>
 
         {active ? (
-          <aside className="min-w-0 space-y-4 xl:sticky xl:top-4" aria-label="Career Lab controls">
+          <aside className="min-w-0 space-y-4 xl:sticky xl:top-[calc(var(--app-chrome-height,3.5rem)+1rem)]" aria-label="Career Lab controls">
             <div id="career-draft-workspace">
               <CareerLabArtifactWorkspace key={active.sessionId} turns={active.turns ?? []} selectedId={selectedDraftId} onSelect={setSelectedDraftId} busy={busy || active.status !== "active"} liveText={runId && !durableAdvanced ? stream.parts.filter((part) => part.kind === "text").map((part) => part.text).join("") : ""} onRevise={(turnId, message) => { setContext({ ...context, artifact: { sessionId: active.sessionId, turnId } }); setComposer(message); }} />
             </div>

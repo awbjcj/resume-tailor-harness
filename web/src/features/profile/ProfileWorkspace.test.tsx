@@ -174,9 +174,7 @@ describe("ProfileWorkspace", () => {
       screen.getByRole("button", { name: "Build profile" }),
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "Sync GitHub" })).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Save your GitHub changes",
-    );
+    expect(screen.getByText(/Save your GitHub changes before syncing/)).toBeInTheDocument();
   });
 
   it("keeps invalid limits dirty and lets the user discard them", async () => {

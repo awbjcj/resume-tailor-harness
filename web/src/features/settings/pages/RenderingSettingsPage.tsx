@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/PageHeader";
 import { Eye, Trash2, Upload } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +21,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Skeleton } from "@/components/ui/skeleton";
+import { QueryFeedback } from "@/components/QueryFeedback";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import type { paths } from "@/lib/api/schema";
@@ -31,6 +30,7 @@ import { ResetSectionButton } from "../ResetSectionButton";
 import { SaveBar } from "../SaveBar";
 import { useConfig, useSaveConfig } from "../use-config";
 import { useDraft } from "../use-draft";
+import { SettingsPage } from "../SettingsPage";
 import {
   openTemplatePreview,
   useDeleteTemplate,
@@ -42,20 +42,17 @@ type RenderDoc =
   paths["/api/config/render"]["get"]["responses"][200]["content"]["application/json"];
 
 export function RenderingSettingsPage() {
-  const { data } = useConfig("/api/config/render");
+  const { data, error, refetch } = useConfig("/api/config/render");
   const save = useSaveConfig("/api/config/render");
   const templates = useRenderTemplates();
   const upload = useUploadTemplate();
   const remove = useDeleteTemplate();
   const { draft, setDraft, dirty, reset } = useDraft(data as RenderDoc | undefined);
 
-  if (!draft || templates.isPending) {
-    return <Skeleton className="h-80 w-full" aria-label="Loading rendering settings" />;
-  }
+  if (!draft) return <SettingsPage title="Rendering" loading={!error} error={error} onRetry={refetch} />;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Rendering" actions={
+    <SettingsPage title="Rendering" error={error} onRetry={refetch} description="Choose a resume layout and page length. Template uploads apply immediately; save layout options together below." actions={
         <ResetSectionButton
           sectionId="render"
           onReset={() => setDraft(null)}
@@ -63,19 +60,18 @@ export function RenderingSettingsPage() {
           buttonLabel="Reset options"
           note="Custom uploaded templates are kept. Reset them separately below."
         />
-      } />
+      }>
 
       <FieldSet>
         <FieldLegend>Resume template</FieldLegend>
-        {templates.isError ? (
-          <p role="alert" className="text-sm text-destructive">
-            {templates.error.message}
-          </p>
+        {templates.isError || templates.isPending ? (
+          <QueryFeedback error={templates.error} onRetry={templates.refetch} loadingLabel="Loading rendering settings" />
         ) : (
           <RadioGroup
             value={draft.template}
+            disabled={save.isPending}
             onValueChange={(template) => setDraft({ ...draft, template })}
-            className="grid grid-cols-1 gap-3 xl:grid-cols-2"
+            className="grid grid-cols-1 gap-3 @2xl/settings:grid-cols-2"
           >
             {templates.data.map((item) => {
               const selected = draft.template === item.id;
@@ -84,6 +80,7 @@ export function RenderingSettingsPage() {
                   key={item.id}
                   className={cn("cursor-pointer", selected && "ring-2 ring-primary")}
                   onClick={(event) => {
+                    if (save.isPending) return;
                     if (event.target instanceof Element && event.target.closest("button")) {
                       return;
                     }
@@ -176,6 +173,7 @@ export function RenderingSettingsPage() {
         <Field orientation="horizontal">
           <Switch
             id="fit-one-page"
+            disabled={save.isPending}
             aria-label="Fit resume to one page"
             checked={draft.fitOnePage}
             onCheckedChange={(fitOnePage: boolean) =>
@@ -202,6 +200,6 @@ export function RenderingSettingsPage() {
         onSave={() => save.mutate(draft)}
         onDiscard={reset}
       />
-    </div>
+    </SettingsPage>
   );
 }

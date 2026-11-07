@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useTranslation } from "react-i18next";
-import { BoardSkeleton } from "@/components/skeletons";
+import { PageFeedback } from "@/components/QueryFeedback";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricRow } from "@/components/MetricRow";
 import { PageHeader } from "@/components/PageHeader";
@@ -72,9 +72,10 @@ function CohortTable({
 
 export function AnalyticsContainer() {
   const { t } = useTranslation();
-  const { data, isLoading } = useAnalytics();
+  const { data, isLoading, error, refetch } = useAnalytics();
   const timeline = useTimelineAnalytics();
-  if (isLoading || timeline.isLoading) return <BoardSkeleton />;
+  if (error || timeline.error || isLoading || timeline.isLoading) return <PageFeedback title={t("analytics.header.title")}
+    error={error ?? timeline.error} onRetry={() => Promise.all([refetch(), timeline.refetch()])} />;
 
   const totalApps = data?.bySource.reduce((a, c) => a + c.applications, 0) ?? 0;
   const totalOffers = data?.bySource.reduce((a, c) => a + c.offers, 0) ?? 0;

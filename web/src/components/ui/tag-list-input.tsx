@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import "@/i18n/tag-list-input";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 
 export type TagOption = { value: string; label: string };
 
@@ -57,6 +58,7 @@ export function TagListInput({
   const available = suggestions?.filter((option) => !selected.has(getKey(option.value)));
   const searchable = suggestions !== undefined;
   const hasDraft = draft.trim().length > 0;
+  useUnsavedChanges(hasDraft);
   const pendingMessage = t("tagList.pending");
   const error = problem === "limit"
     ? t("tagList.limit", { count: maxTags })

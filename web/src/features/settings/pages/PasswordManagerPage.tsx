@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/PageHeader";
+import { SettingsPage } from "../SettingsPage";
 import "@/i18n/password-manager";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -97,8 +97,7 @@ export function PasswordManagerPage() {
   }
 
   return (
-    <div className="flex min-w-0 max-w-3xl flex-col gap-7">
-      <PageHeader title={t("passwordManager.title")} />
+    <SettingsPage title={t("passwordManager.title")}>
       {vault.isPending && <p role="status">{t("passwordManager.loading")}</p>}
       {vault.isError && (
         <Alert variant="destructive"><AlertDescription>
@@ -137,6 +136,6 @@ export function PasswordManagerPage() {
           editTrigger.current?.focus();
         }} />
       </>}
-    </div>
+    </SettingsPage>
   );
 }

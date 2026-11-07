@@ -140,6 +140,7 @@ for (const { language, width, theme } of [
         await expect(page.locator("h1")).toHaveCount(1);
         await expect(page.locator("h1")).toBeVisible();
         await expect(page.getByRole("main")).toHaveCount(1);
+        await expect(page.locator('[role="status"][aria-busy="true"]')).toHaveCount(0);
         await expect(page.locator("header.app-chrome h1")).toHaveCount(0);
         await page.evaluate(() => document.fonts.ready);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

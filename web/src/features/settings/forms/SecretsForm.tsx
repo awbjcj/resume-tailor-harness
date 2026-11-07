@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import type { SecretsPatch, SecretStatus } from "../use-secrets";
 
 export const SECRET_LABELS: Record<string, string> = {
@@ -35,18 +36,43 @@ const SECRET_PLAIN_TEXT_KEYS = new Set(["googleOauthClientId"]);
 export function SecretsForm({
   statuses, saving, onSave,
 }: {
-  statuses: SecretStatus[]; saving: boolean; onSave: (patch: SecretsPatch) => void;
+  statuses: SecretStatus[]; saving: boolean; onSave: (patch: SecretsPatch) => void | Promise<unknown>;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const busy = saving || pending;
+  useUnsavedChanges(editing !== null && draft !== "", busy);
+  useEffect(() => { if (editing) input.current?.focus(); }, [editing]);
 
   const startEdit = (key: string) => {
     setEditing(key);
     setDraft("");
+    setError(null);
+  };
+
+  const commit = async (patch: SecretsPatch, closeEditor = false) => {
+    if (busy) return;
+    setPending(true);
+    setError(null);
+    try {
+      await onSave(patch);
+      if (closeEditor) {
+        setEditing(null);
+        setDraft("");
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save this key. Try again.");
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
     <FieldGroup>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {statuses.map((s, index) => {
         const label = SECRET_LABELS[s.key] ?? s.key;
         const description = SECRET_DESCRIPTIONS[s.key];
@@ -65,14 +91,14 @@ export function SecretsForm({
                 )}
                 <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
                   {editing !== s.key && (
-                    <Button className="min-w-0 flex-1 sm:flex-none" variant="outline" size="sm" onClick={() => startEdit(s.key)}>
+                    <Button type="button" disabled={busy || editing !== null} className="min-w-0 flex-1 sm:flex-none" variant="outline" size="sm" onClick={() => startEdit(s.key)}>
                       {s.isSet ? `Replace ${label}` : `Add ${label}`}
                     </Button>
                   )}
                   {s.isSet && (
-                    <Button className="min-w-0 flex-1 sm:flex-none" variant="outline" size="sm" disabled={saving}
+                    <Button type="button" className="min-w-0 flex-1 sm:flex-none" variant="outline" size="sm" disabled={busy || editing !== null}
                       aria-label={`Clear ${label}`}
-                      onClick={() => onSave({ [s.key]: null })}>
+                      onClick={() => void commit({ [s.key]: null })}>
                       Clear {label}
                     </Button>
                   )}
@@ -82,17 +108,21 @@ export function SecretsForm({
               {editing === s.key && (
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                   <Input
+                    ref={input}
                     type={SECRET_PLAIN_TEXT_KEYS.has(s.key) ? "text" : "password"}
                     aria-label={`${label} new value`}
                     value={draft}
+                    disabled={busy}
                     onChange={(e) => setDraft(e.target.value)}
                     autoComplete="off"
                   />
-                  <Button className="w-full sm:w-auto" disabled={saving || draft === ""}
-                    onClick={() => { onSave({ [s.key]: draft }); setEditing(null); }}>
+                  <Button type="button" className="w-full sm:w-auto" disabled={busy || draft.trim() === ""}
+                    onClick={() => void commit({ [s.key]: draft }, true)}>
                     Save key
                   </Button>
-                  <Button className="w-full sm:w-auto" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+                  <Button type="button" disabled={busy} className="w-full sm:w-auto" variant="ghost" onClick={() => {
+                    setEditing(null); setDraft(""); setError(null);
+                  }}>Cancel</Button>
                 </div>
               )}
             </Field>

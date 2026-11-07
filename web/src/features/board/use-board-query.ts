@@ -65,5 +65,6 @@ export function useBoardQuery<T>(
     isFetchingNextPage: query.isFetchingNextPage,
     isLoading: query.isLoading,
     error: query.error,
+    refetch: query.refetch,
   };
 }

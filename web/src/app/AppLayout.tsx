@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
@@ -48,6 +49,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationsBell } from "@/features/notifications/NotificationsBell";
 import { LogoutButton } from "@/features/auth/LogoutButton";
 import { useMe } from "@/features/auth/AuthGate";
+import { UnsavedChangesProvider } from "@/components/UnsavedChangesProvider";
 
 type NavLabelKey =
   | "nav.dashboard"
@@ -155,6 +157,24 @@ export function AppLayout() {
   useRunCompletionEffects();
   useRehydrateRuns();
   const me = useMe();
+  const { pathname, hash } = useLocation();
+  const showDiscoveryActions = ["/", "/scout", "/triage", "/shortlist", "/pipeline", "/match-gap", "/applications"].includes(pathname);
+  const chrome = useRef<HTMLElement>(null);
+  const main = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (hash) return;
+    window.scrollTo(0, 0);
+    main.current?.focus({ preventScroll: true });
+  }, [pathname, hash]);
+  useLayoutEffect(() => {
+    const header = chrome.current;
+    if (!header) return;
+    const measure = () => header.parentElement?.style.setProperty("--app-chrome-height", `${header.getBoundingClientRect().height}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
   // Shares the cached query the interview banner already runs, so the nav count
   // costs no extra request.
   const interviewSessions = useInterviewSessions();
@@ -164,6 +184,7 @@ export function AppLayout() {
     ).length,
   };
   return (
+    <UnsavedChangesProvider>
     <SidebarProvider className="command-shell">
       <a
         href="#main-content"
@@ -220,7 +241,7 @@ export function AppLayout() {
         {/* `app-chrome` is the hook that makes this translucent layer become an
             opaque surface under prefers-reduced-transparency / prefers-contrast
             (see index.css) — blur is a material here, not decoration. */}
-        <header className="app-chrome sticky top-0 z-10 grid min-w-0 border-b bg-background/95 backdrop-blur-md @4xl/shell:grid-cols-[minmax(0,1fr)_auto] @4xl/shell:items-center">
+        <header ref={chrome} className="app-chrome sticky top-0 z-10 grid min-w-0 border-b bg-background/95 backdrop-blur-md @4xl/shell:grid-cols-[minmax(0,1fr)_auto] @4xl/shell:items-center">
           <div className="flex min-h-14 min-w-0 flex-wrap items-center gap-3 px-[clamp(1rem,3vw,2.5rem)] py-2 @4xl/shell:col-start-2 @4xl/shell:row-start-1 @4xl/shell:pl-2">
             <SidebarTrigger className="md:hidden" />
             <div className="ml-auto flex max-w-full flex-wrap items-center gap-1">
@@ -230,13 +251,14 @@ export function AppLayout() {
               <LogoutButton />
             </div>
           </div>
-          <div className="shell-action-rail min-w-0 border-t border-border/70 px-[clamp(1rem,3vw,2.5rem)] py-2 @4xl/shell:col-start-1 @4xl/shell:row-start-1 @4xl/shell:border-0 @4xl/shell:pr-2">
+          {showDiscoveryActions && <div className="shell-action-rail min-w-0 border-t border-border/70 px-[clamp(1rem,3vw,2.5rem)] py-2 @4xl/shell:col-start-1 @4xl/shell:row-start-1 @4xl/shell:border-0 @4xl/shell:pr-2">
             <RunActions className="w-max flex-nowrap justify-start" />
-          </div>
+          </div>}
         </header>
         <RunPanel />
         <ActiveInterviewBanner />
         <main
+          ref={main}
           id="main-content"
           tabIndex={-1}
           className="flex-1 scroll-mt-28 px-[clamp(1rem,3vw,2.5rem)] py-5 outline-none sm:py-6"
@@ -247,5 +269,6 @@ export function AppLayout() {
         </main>
       </SidebarInset>
     </SidebarProvider>
+    </UnsavedChangesProvider>
   );
 }
