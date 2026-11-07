@@ -62,7 +62,7 @@ export function SkillMoveForm({
   }
   return (
     <form ref={form} className="grid min-w-0 gap-3" onSubmit={submit}>
-      <label htmlFor={id} className="text-xs font-medium">
+      <label htmlFor={id} className="text-sm font-medium">
         {copy.moveTo}
       </label>
       <SearchableSelect
@@ -151,7 +151,7 @@ export function SkillContextPopover({
             type="button"
             className={
               compact
-                ? "min-w-0 max-w-full px-2 py-1.5 text-left text-xs font-medium outline-none [overflow-wrap:anywhere] focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring"
+                ? "min-h-8 min-w-0 max-w-full px-2 py-1.5 text-left text-sm leading-5 font-medium outline-none [overflow-wrap:anywhere] focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
                 : "min-w-0 max-w-full text-left text-sm font-medium underline-offset-4 outline-none [overflow-wrap:anywhere] hover:underline focus-visible:rounded focus-visible:ring-2 focus-visible:ring-ring"
             }
           />

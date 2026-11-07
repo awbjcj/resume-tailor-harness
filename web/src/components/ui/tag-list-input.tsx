@@ -182,7 +182,7 @@ export function TagListInput({
 
   return (
     <Field className="min-w-0" data-slot="tag-list-input">
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <FieldLabel htmlFor={id} className="text-[0.95rem] leading-5 [overflow-wrap:anywhere]">{label}</FieldLabel>
       {available ? (
         <Autocomplete.Root<TagOption>
           items={available}
@@ -238,14 +238,14 @@ export function TagListInput({
             const text = tagLabels.get(getKey(tag)) ?? tag;
             return (
               <li key={`${tag}-${index}`} className="min-w-0 max-w-full">
-                <Badge variant="secondary" className="h-auto min-h-7 max-w-full gap-1 overflow-visible py-0 pl-2.5 pr-0.5 whitespace-normal">
+                <Badge variant="secondary" className="h-auto min-h-8 max-w-full gap-1.5 overflow-visible py-0.5 pl-2.5 pr-1 text-sm leading-5 whitespace-normal">
                   <span className="min-w-0 [overflow-wrap:anywhere]">{text}</span>
                   <Button
                     type="button"
                     size="icon-xs"
                     variant="ghost"
                     aria-label={t("tagList.remove", { value: text })}
-                    className="cursor-pointer rounded-full hover:bg-background/70 hover:text-destructive pointer-coarse:size-11 motion-reduce:transition-none"
+                    className="size-7 cursor-pointer rounded-full hover:bg-background/70 hover:text-destructive pointer-coarse:size-11 motion-reduce:transition-none"
                     disabled={disabled}
                     onClick={(event) => {
                       inputRef.current?.focus({ preventScroll: event.detail > 0 });
@@ -254,7 +254,7 @@ export function TagListInput({
                       setAnnouncement(t("tagList.removed", { value: text }));
                     }}
                   >
-                    <X aria-hidden="true" />
+                    <X aria-hidden="true" className="size-3.5" />
                   </Button>
                 </Badge>
               </li>

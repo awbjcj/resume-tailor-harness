@@ -1181,7 +1181,7 @@ test("search reveals a matching skill in its category and group on mobile", asyn
   await expect(category).toHaveAttribute("aria-expanded", "true");
   await expect(library.getByRole("button", { name: /Programming Languages/ })).toHaveAttribute("aria-expanded", "true");
   await expect(library.getByRole("button", { name: "Python", exact: true })).toBeVisible();
-  await expect(library.getByRole("status")).toHaveText("1 of 92 results");
+  await expect(library.getByRole("status")).toHaveText("Matches: 1 of 92");
   const row = library.getByRole("listitem").filter({ has: page.getByRole("button", { name: "Python", exact: true }) });
   const centers = await row.locator("button, [role=checkbox]").evaluateAll((controls) =>
     controls.map((control) => {

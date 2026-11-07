@@ -27,7 +27,7 @@ export function AddJobSkillButton({ skillName }: { skillName: string }) {
         type="button"
         variant="ghost"
         size="icon-xs"
-        className="size-4 [&_svg]:size-3"
+        className="rounded-full pointer-coarse:size-9"
         aria-label={`Add "${skillName}" to your profile`}
         aria-haspopup="dialog"
         onClick={(event) => {
@@ -36,7 +36,7 @@ export function AddJobSkillButton({ skillName }: { skillName: string }) {
           setOpen(true);
         }}
       >
-        <Plus aria-hidden />
+        <Plus aria-hidden className="size-3.5" />
       </Button>
       {open ? Editor ? (
         <Editor

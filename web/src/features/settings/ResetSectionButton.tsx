@@ -41,7 +41,7 @@ export function ResetSectionButton({
   const [open, setOpen] = useState(false);
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<Button variant="outline" size="sm" />}>
+      <AlertDialogTrigger render={<Button variant="outline" size="sm" className="h-auto min-h-9 max-w-full py-2 whitespace-normal [overflow-wrap:anywhere]" />}>
         <RotateCcw data-icon="inline-start" />
         {buttonLabel}
       </AlertDialogTrigger>
