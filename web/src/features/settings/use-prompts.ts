@@ -27,7 +27,10 @@ export function useSaveGuidance() {
           body: { guidance },
         }),
       ) as Promise<AgentPromptItem>,
-    onSuccess: () => {
+    onSuccess: (saved) => {
+      queryClient.setQueryData<AgentPromptItem[]>(PROMPTS_KEY, (current) =>
+        current?.map((item) => item.key === saved.key ? saved : item),
+      );
       queryClient.invalidateQueries({ queryKey: PROMPTS_KEY });
       toast.success("Guidance saved");
     },

@@ -1,9 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { PageHeader } from "@/components/PageHeader";
 
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import {
   findCatalogModel,
   ModelPicker,
@@ -15,6 +12,9 @@ import { useConfig, useSaveConfig } from "../use-config";
 import { useDraft } from "../use-draft";
 import { useModelCatalog } from "../use-model-catalog";
 import { useSaveSecrets, useSecrets } from "../use-secrets";
+import { SettingsPage, SettingsSection } from "../SettingsPage";
+
+const AI_KEYS = new Set(["anthropicApiKey", "openaiApiKey", "geminiApiKey", "deepseekApiKey"]);
 
 type ModelsDoc = {
   cheapModel: string;
@@ -51,20 +51,21 @@ export function KeysSettingsPage() {
     return <Navigate to={`/settings/notifications${location.search}${location.hash}`} replace />;
   }
 
-  if (!secrets.data || !draft) return <Skeleton className="h-64 w-full" />;
+  const error = secrets.error ?? models.error;
+  if (!secrets.data || !draft) return <SettingsPage title="API keys & models" loading={!error} error={error}
+    onRetry={() => Promise.all([secrets.refetch(), models.refetch()])} />;
+  const serviceKeys = secrets.data.filter((secret) => !AI_KEYS.has(secret.key) &&
+    secret.key !== "googleOauthClientId" && secret.key !== "googleOauthClientSecret");
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="API keys & models" />
-      <p className="text-sm text-muted-foreground">Saved keys show only their last four characters.</p>
-      <SecretsForm statuses={secrets.data.filter((secret) =>
-        secret.key !== "googleOauthClientId" && secret.key !== "googleOauthClientSecret",
-      )} saving={saveSecrets.isPending}
-        onSave={(patch) => saveSecrets.mutate(patch)} />
-      <Separator />
-      <section className="flex flex-col gap-4">
-        <h2 className="text-sm font-medium">Model tiers</h2>
-        <FieldGroup>
+    <SettingsPage title="API keys & models" error={error} onRetry={() => Promise.all([secrets.refetch(), models.refetch()])} description="Connect your AI providers, then choose the models used by each tier.">
+      <SettingsSection title="AI provider keys" description="Keys save individually. Saved keys show only their last four characters.">
+        <SecretsForm statuses={secrets.data.filter((secret) => AI_KEYS.has(secret.key))} saving={saveSecrets.isPending}
+          onSave={(patch) => saveSecrets.mutateAsync(patch)} />
+      </SettingsSection>
+      <SettingsSection title="Model tiers" description="Choose a model for each tier. Save these changes together below.">
+        <FieldSet disabled={saveModels.isPending}>
+        <FieldGroup className="gap-6">
           {MODEL_FIELDS.map((f) => {
             const model = findCatalogModel(catalog.data, draft[f.key]);
             return (
@@ -101,10 +102,14 @@ export function KeysSettingsPage() {
             );
           })}
         </FieldGroup>
-        <SaveBar dirty={dirty} saving={saveModels.isPending}
-          onSave={() => saveModels.mutate(draft as never)}
-          onDiscard={reset} />
-      </section>
-    </div>
+        </FieldSet>
+      </SettingsSection>
+      {serviceKeys.length > 0 && <SettingsSection title="Discovery & service access" description="These credentials connect job sources and supporting services. Each key saves individually.">
+        <SecretsForm statuses={serviceKeys} saving={saveSecrets.isPending} onSave={(patch) => saveSecrets.mutateAsync(patch)} />
+      </SettingsSection>}
+      <SaveBar dirty={dirty} saving={saveModels.isPending} canSave={MODEL_FIELDS.every((field) => draft[field.key].trim().length > 0)}
+        onSave={() => saveModels.mutate(draft as never, { onSuccess: (saved) => setDraft(saved as ModelsDoc) })}
+        onDiscard={reset} />
+    </SettingsPage>
   );
 }

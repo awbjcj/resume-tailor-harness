@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
+import { Field, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { components } from "@/lib/api/schema";
+import { SettingsDisclosure } from "../SettingsDisclosure";
 
 type Profile = components["schemas"]["ApplicationProfileDoc"];
 type Name = components["schemas"]["ApplicationName"];
@@ -24,7 +25,7 @@ type AnswerField<T> = {
 function AnswerFields<T extends object>({ value, fields, prefix, onChange }: {
   value: T; fields: AnswerField<T>[]; prefix: string; onChange: (next: T) => void;
 }) {
-  return <div className="grid gap-4 sm:grid-cols-2">
+  return <div className="grid gap-4 @lg/settings:grid-cols-2">
     {fields.map((field) => {
       const id = `${prefix}-${field.key}`;
       const raw = value[field.key];
@@ -37,11 +38,11 @@ function AnswerFields<T extends object>({ value, fields, prefix, onChange }: {
             : field.type === "date" && !next ? null : next);
         },
       };
-      return <Field key={field.key} className={field.type === "textarea" ? "min-w-0 sm:col-span-2" : "min-w-0"}>
+      return <Field key={field.key} className={field.type === "textarea" ? "min-w-0 @lg/settings:col-span-2" : "min-w-0"}>
         <FieldLabel htmlFor={id}>{field.label}{field.required ? " *" : ""}</FieldLabel>
         {field.type === "boolean" || field.type === "select" ? (
           <select id={id} required={field.required}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-ring"
+            className="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
             value={field.type === "boolean" ? (raw == null ? "unknown" : raw ? "yes" : "no") : String(raw ?? "unknown")}
             onChange={(event) => update(field.type === "boolean"
               ? event.target.value === "unknown" ? null : event.target.value === "yes"
@@ -61,11 +62,12 @@ function AnswerFields<T extends object>({ value, fields, prefix, onChange }: {
 }
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
-  return <FieldSet className="border-t pt-6">
-    <FieldLegend>{title}</FieldLegend>
-    {description && <FieldDescription>{description}</FieldDescription>}
+  return <SettingsDisclosure title={title} description={description}>
+    <FieldSet>
+    <FieldLegend className="sr-only">{title}</FieldLegend>
     {children}
-  </FieldSet>;
+    </FieldSet>
+  </SettingsDisclosure>;
 }
 
 function Records<T extends object>({ title, description, items, fields, create, addLabel, removeLabel, onChange, prefix }: {

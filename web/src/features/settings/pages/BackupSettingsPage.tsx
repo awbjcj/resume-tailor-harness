@@ -4,7 +4,7 @@ import { Archive, Download } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
-import { PageHeader } from "@/components/PageHeader";
+import { QueryFeedback } from "@/components/QueryFeedback";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,6 +19,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { apiUrl, authHeaders, openDownload } from "@/lib/api/client";
 
 import { ResetSectionButton } from "../ResetSectionButton";
+import { SettingsPage } from "../SettingsPage";
 import {
   type SettingsSection,
   useSettingsSections,
@@ -51,7 +52,7 @@ async function post(path: string, file: File): Promise<unknown> {
 export function BackupSettingsPage() {
   const fileId = useId();
   const queryClient = useQueryClient();
-  const { data: sections = [], isLoading } = useSettingsSections();
+  const { data: sections = [], isLoading, error, refetch } = useSettingsSections();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,8 +93,7 @@ export function BackupSettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Backup" />
+    <SettingsPage title="Backup" description="Export your settings, preview an import, or reset an individual section.">
       <Card>
         <CardHeader className="border-b">
           <CardTitle>
@@ -123,6 +123,7 @@ export function BackupSettingsPage() {
               onChange={(event) => void choose(event.target.files?.[0] ?? null)}
             />
           </Field>
+          {busy && !preview && <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner />Reading settings bundle…</p>}
           {preview ? (
             <div className="rounded-lg border p-4 text-sm">
               <p>
@@ -164,7 +165,7 @@ export function BackupSettingsPage() {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col divide-y">
-          {isLoading ? <Spinner /> : null}
+          {isLoading || error ? <QueryFeedback error={error} onRetry={refetch} /> : null}
           {sections.map((section) => (
             <div
               key={section.id}
@@ -189,6 +190,6 @@ export function BackupSettingsPage() {
           ))}
         </CardContent>
       </Card>
-    </div>
+    </SettingsPage>
   );
 }

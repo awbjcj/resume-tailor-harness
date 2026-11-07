@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { JobModal } from "@/components/JobModal";
 import { JobTable } from "@/components/JobTable";
 import { PageHeader } from "@/components/PageHeader";
-import { BoardSkeleton } from "@/components/skeletons";
+import { PageFeedback } from "@/components/QueryFeedback";
 import { StaleQuickFilters } from "@/components/StaleQuickFilters";
 import { Button } from "@/components/ui/button";
 import { useBoardQuery, type TriageItem } from "@/features/board/use-board-query";
@@ -67,7 +67,7 @@ export function TriageContainer() {
   const filter: FilterState = { ...rawFilter, fitMin: null, maxFit: null };
   const setFilter = (next: FilterState) =>
     setRawFilter({ ...next, fitMin: null, maxFit: null });
-  const { rows, facets, total, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+  const { rows, facets, total, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } =
     useBoardQuery<TriageItem>("triage", filter, { archived });
   const selection = useSelection();
   const { reconcile } = selection;
@@ -105,7 +105,7 @@ export function TriageContainer() {
     { hasNextPage, isFetchingNextPage, fetchNextPage },
   );
 
-  if (isLoading) return <BoardSkeleton />;
+  if (error || isLoading) return <PageFeedback title={t("nav.triage")} error={error} onRetry={refetch} />;
 
   const allLoadedSelected =
     rows.length > 0 && rows.every((row) => selection.isSelected(row.jobId));

@@ -7,12 +7,16 @@ import { cn } from "@/lib/utils"
 function Table({
   className,
   containerClassName,
+  containerLabel,
   ...props
-}: React.ComponentProps<"table"> & { containerClassName?: string }) {
+}: React.ComponentProps<"table"> & { containerClassName?: string; containerLabel?: string }) {
   return (
     <div
       data-slot="table-container"
-      className={cn("relative w-full max-w-full overflow-x-auto", containerClassName)}
+      role={containerLabel ? "region" : undefined}
+      aria-label={containerLabel}
+      tabIndex={containerLabel ? 0 : undefined}
+      className={cn("relative w-full max-w-full overflow-x-auto outline-none focus-visible:ring-2 focus-visible:ring-ring", containerClassName)}
     >
       <table
         data-slot="table"

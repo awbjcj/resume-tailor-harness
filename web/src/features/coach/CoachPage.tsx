@@ -478,7 +478,7 @@ export function CoachPage() {
               ) : null}
             </CardContent>
           </Card>
-          <aside className="min-w-0 xl:sticky xl:top-4">
+          <aside className="min-w-0 xl:sticky xl:top-[calc(var(--app-chrome-height,3.5rem)+1rem)]">
             <AgendaRail
               topics={active.topics ?? []}
               currentTopicId={currentQuestion?.topicId}
