@@ -14,6 +14,7 @@ from urllib.parse import urlsplit, urlunsplit
 from sqlmodel import Session, select
 
 from resume_tailor_harness.github.repos import RepoMeta, parse_github_url
+from resume_tailor_harness.llm_runner import expect_schema, expect_text
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.suggestions.agents import SuggestionDraft
 from resume_tailor_harness.tracking.match_gap import DemandGraph, profile_skill_tokens
@@ -299,12 +300,16 @@ def generate_suggestion(
     reporter=None,
 ) -> SkillSuggestion:
     coverage = profile_skill_tokens(facts)
-    research = str(search_agent.run(_search_prompt(context)).content)
+    research = expect_text(
+        search_agent.run(_search_prompt(context)), source="suggestions-research"
+    )
     if reporter is not None:
         reporter.checkpoint()
-    formatted = formatter.run(_format_prompt(research, coverage)).content
-    if not isinstance(formatted, SuggestionDraft):
-        raise ValueError("advisor formatter did not return SuggestionDraft")
+    formatted = expect_schema(
+        formatter.run(_format_prompt(research, coverage)),
+        SuggestionDraft,
+        source="suggestions-formatter",
+    )
     if reporter is not None:
         reporter.checkpoint()
 
