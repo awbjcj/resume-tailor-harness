@@ -45,8 +45,8 @@ export function SuggestionPanel({
   if (isError) {
     return (
       <div role="alert" className="border-l-2 border-destructive pl-3 text-sm">
-        <p className="font-medium">Couldn't load cached advice.</p>
-        <p className="mt-1 text-muted-foreground">Retry the request without closing this panel.</p>
+        <p className="font-medium">Couldn't load saved advice.</p>
+        <p className="mt-1 text-muted-foreground">Try again without closing this panel.</p>
         <Button className="mt-3" size="sm" variant="outline" onClick={onRetry}>
           Retry
         </Button>
@@ -58,9 +58,9 @@ export function SuggestionPanel({
   if (!suggestion) {
     return (
       <div className="border-l-2 border-primary/45 pl-4">
-        <p className="text-sm font-medium">No advice cached yet</p>
+        <p className="text-sm font-medium">No learning advice yet</p>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          Find verified repositories, learning resources, and a portfolio project when you need them.
+          Generate learning advice that may include repositories, resources, or a project idea.
         </p>
         <Button className="mt-3" size="sm" disabled={generating} onClick={onGenerate}>
           <Lightbulb data-icon="inline-start" />
@@ -85,7 +85,7 @@ export function SuggestionPanel({
       {suggestion.bridge && (
         <div className="border-l-2 border-primary pl-4">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-            Your bridge
+            Build on what you know
           </p>
           <p className="mt-2 leading-6 text-muted-foreground">{suggestion.bridge}</p>
         </div>
@@ -156,7 +156,7 @@ export function SuggestionPanel({
         <section aria-labelledby="advisor-project" className="border-y bg-accent/35 px-4 py-4">
           <h3 id="advisor-project" className="flex items-center gap-2 font-semibold">
             <Hammer className="size-4 text-primary" />
-            Build this
+            Project idea
           </h3>
           <p className="mt-3 font-medium">{suggestion.project.title}</p>
           <p className="mt-1 leading-6 text-muted-foreground">{suggestion.project.summary}</p>

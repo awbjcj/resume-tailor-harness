@@ -27,6 +27,11 @@ for (const [width, language, theme] of [[375, "en", "light"], [768, "en", "light
     const detail = page.getByRole("region", { name: "Platform engineering", exact: true });
     await expect(detail.getByText("A reliable deployment pipeline")).toBeVisible();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(language === "en" ? "Learning roadmaps" : "学习路线");
+    const filter = page.getByRole("combobox", { name: language === "en" ? "Filter by progress" : "按学习进度筛选" });
+    await expect(filter.locator('option[value="active"]')).toHaveText(language === "en" ? "Not archived" : "未归档");
+    await expect(detail.getByText(language === "en" ? "Build on what you know" : "从已有经验入手")).toBeVisible();
+    await expect(detail.getByText(language === "en" ? "Project idea" : "项目构想")).toBeVisible();
+    await expect(detail.getByText(language === "en" ? "Documentation" : "文档", { exact: true })).toBeVisible();
     if (width < 1024) {
       await expect(detail.getByRole("heading", { name: "Platform engineering" })).toBeFocused();
       await detail.getByRole("button", { name: language === "en" ? "Back to roadmaps" : "返回学习路线列表" }).click();
@@ -38,6 +43,8 @@ for (const [width, language, theme] of [[375, "en", "light"], [768, "en", "light
     await expect(detail.getByRole("combobox")).toHaveValue("in_progress");
     await page.reload();
     await expect(detail.getByRole("combobox")).toHaveValue("in_progress");
+    await detail.getByRole("combobox").selectOption("completed");
+    await expect(page.getByRole("link", { name: /Platform engineering/ })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath("roadmaps.png"), fullPage: true });
     await detail.getByRole("combobox").selectOption("archived");
