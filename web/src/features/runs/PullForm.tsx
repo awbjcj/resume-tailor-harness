@@ -12,12 +12,12 @@ export default function PullForm({ onStarted }: { onStarted: () => void }) {
   return <DialogContent>
     <DialogHeader>
       <DialogTitle>Pull from connectors</DialogTitle>
-      <DialogDescription>Fetch fresh postings from every enabled connector and ingest them.</DialogDescription>
+      <DialogDescription>Fetch and import job postings from every enabled connector.</DialogDescription>
     </DialogHeader>
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>Limit per connector (optional)</Label>
       <Input id={id} type="number" min={1} value={limit} onChange={(event) => setLimit(event.target.value)} placeholder="no limit" />
-      <p className="text-xs text-muted-foreground">Caps postings fetched per connector this run. Leave blank to pull all.</p>
+      <p className="text-xs text-muted-foreground">Maximum postings to fetch per connector for this run. Leave blank for no limit.</p>
     </div>
     <Button onClick={async () => {
       const parsed = Number(limit);
