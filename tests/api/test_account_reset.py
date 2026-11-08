@@ -11,7 +11,11 @@ from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
 from resume_tailor_harness.tenancy.system_db import User
 from resume_tailor_harness.tenancy.workspace import provision_workspace, workspace_paths
-from resume_tailor_harness.tracking.tables import Job
+from resume_tailor_harness.tracking.tables import (
+    Job,
+    LearningRoadmapProgress,
+    SkillSuggestion,
+)
 
 
 def _login(client, username="owner", password="owner-password"):
@@ -102,6 +106,16 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
     bob_id = _add_user(mu_app, "bob")
     alice_paths, alice_engine = _seed_workspace(mu_app, alice_id)
     bob_paths, bob_engine = _seed_workspace(mu_app, bob_id)
+    for engine in (alice_engine, bob_engine):
+        with WorkspaceSession(engine) as session:
+            suggestion = SkillSuggestion(kind="skill", key="python")
+            session.add(suggestion)
+            session.flush()
+            assert suggestion.id is not None
+            session.add(
+                LearningRoadmapProgress(suggestion_id=suggestion.id, status="completed")
+            )
+            session.commit()
     assert _login(mu_client, "alice", "alice-password").status_code == 200
 
     response = mu_client.post(
@@ -133,7 +147,8 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
             "applications": 0,
             "cover_letters": 0,
             "resume_versions": 0,
-            "skill_suggestions": 0,
+            "learning_roadmap_progress": 1,
+            "skill_suggestions": 1,
             "jobs": 1,
         },
         "areasCleared": ["output", "runs", "progress", "connector_runs"],
@@ -146,10 +161,14 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
         assert session.exec(select(Job)).first() is None
         assert session.exec(select(GmailReceipt)).first() is None
         assert session.exec(select(GmailSyncState)).first() is None
+        assert session.exec(select(LearningRoadmapProgress)).first() is None
+        assert session.exec(select(SkillSuggestion)).first() is None
     with WorkspaceSession(bob_engine) as session:
         assert session.exec(select(Job)).first() is not None
         assert session.exec(select(GmailReceipt)).first() is not None
         assert session.exec(select(GmailSyncState)).first() is not None
+        assert session.exec(select(LearningRoadmapProgress)).one().status == "completed"
+        assert session.exec(select(SkillSuggestion)).one().key == "python"
 
 
 def test_reset_profile_clears_corpus_and_keeps_pipeline(mu_app, mu_client):
