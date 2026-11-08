@@ -20,6 +20,7 @@ const RUN_LABELS: Record<string, string> = {
   refresh: "Job refresh",
   reprocess: "Job reprocessing",
   revise: "Resume revision",
+  suggestion: "Learning advice",
   tailor: "Tailoring",
   undoTaxonomyMaintenance: "Taxonomy maintenance undo",
 };
@@ -46,6 +47,7 @@ const RUN_LABEL_KEYS = {
   refresh: "runHistory.kinds.jobRefresh",
   reprocess: "runHistory.kinds.jobReprocessing",
   revise: "runHistory.kinds.resumeRevision",
+  suggestion: "runHistory.kinds.learningAdvice",
   tailor: "runHistory.kinds.tailoring",
   undoTaxonomyMaintenance: "runHistory.kinds.taxonomyMaintenanceUndo",
 } as const;

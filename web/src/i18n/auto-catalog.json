@@ -1619,15 +1619,15 @@
     "en": "Browser scraping is unavailable, so an unsupported board cannot be manually added.",
     "zh-CN": "浏览器抓取功能不可用，无法手动添加不受支持的招聘列表。"
   },
+  "Build on what you know": {
+    "key": "ui_eec78b9f1c13",
+    "en": "Build on what you know",
+    "zh-CN": "从已有经验入手"
+  },
   "Build profile": {
     "key": "ui_ea5d7c851f03",
     "en": "Build profile",
     "zh-CN": "生成个人资料"
-  },
-  "Build this": {
-    "key": "ui_37a5faee938f",
-    "en": "Build this",
-    "zh-CN": "生成这一项"
   },
   "Build your profile": {
     "key": "ui_10404bd6193b",
@@ -1728,11 +1728,6 @@
     "key": "ui_3458bfccaef3",
     "en": "Canonical skill",
     "zh-CN": "标准技能名称"
-  },
-  "Caps postings fetched per connector this run. Leave blank to pull all.": {
-    "key": "ui_d2a6705cf485",
-    "en": "Caps postings fetched per connector this run. Leave blank to pull all.",
-    "zh-CN": "设置本次每个连接器最多获取多少个职位。留空则获取全部。"
   },
   "Card view": {
     "key": "ui_c1477c8c3455",
@@ -2719,10 +2714,10 @@
     "en": "Couldn’t connect Gmail. The sign-in didn’t complete. Please try again.",
     "zh-CN": "无法连接 Gmail。登录未完成，请重试。"
   },
-  "Couldn't load cached advice.": {
-    "key": "ui_09181144e681",
-    "en": "Couldn't load cached advice.",
-    "zh-CN": "无法加载缓存的建议。"
+  "Couldn't load saved advice.": {
+    "key": "ui_f4f7259a32b2",
+    "en": "Couldn't load saved advice.",
+    "zh-CN": "无法加载已保存的建议。"
   },
   "Couldn't load skill demand": {
     "key": "ui_6712f11427f1",
@@ -4119,10 +4114,10 @@
     "en": "Feishu",
     "zh-CN": "飞书"
   },
-  "Fetch fresh postings from every enabled connector and ingest them.": {
-    "key": "ui_f054c9d31ca7",
-    "en": "Fetch fresh postings from every enabled connector and ingest them.",
-    "zh-CN": "从所有已启用的连接器获取最新职位并导入。"
+  "Fetch and import job postings from every enabled connector.": {
+    "key": "ui_4c3d36aafa2a",
+    "en": "Fetch and import job postings from every enabled connector.",
+    "zh-CN": "从所有已启用的连接器获取并导入职位。"
   },
   "Fetching preview count...": {
     "key": "ui_a209a758b216",
@@ -4213,11 +4208,6 @@
     "key": "ui_3022a8ed9628",
     "en": "Find the evidence your profile is missing",
     "zh-CN": "补充个人资料中缺少的经历依据"
-  },
-  "Find verified repositories, learning resources, and a portfolio project when you need them.": {
-    "key": "ui_2d5824760f85",
-    "en": "Find verified repositories, learning resources, and a portfolio project when you need them.",
-    "zh-CN": "按需查找经过验证的代码仓库、学习资源和作品集项目。"
   },
   "Finish setup": {
     "key": "ui_bc01ae77f37c",
@@ -4438,6 +4428,11 @@
     "key": "ui_12696858926c",
     "en": "Generate draft",
     "zh-CN": "生成草稿"
+  },
+  "Generate learning advice that may include repositories, resources, or a project idea.": {
+    "key": "ui_f10778acb41c",
+    "en": "Generate learning advice that may include repositories, resources, or a project idea.",
+    "zh-CN": "生成学习建议，其中可能包含代码仓库、学习资源或项目构想。"
   },
   "Generate resume": {
     "key": "ui_c15c00af65d0",
@@ -5294,6 +5289,11 @@
     "en": "Latest source:",
     "zh-CN": "最新来源："
   },
+  "Learning advice": {
+    "key": "ui_1a7870be81e7",
+    "en": "Learning advice",
+    "zh-CN": "学习建议"
+  },
   "Learning resources": {
     "key": "ui_b2a7b53ba105",
     "en": "Learning resources",
@@ -5723,6 +5723,11 @@
     "key": "ui_44e46588aba0",
     "en": "Maximum number of writing and review rounds. The best version is kept.",
     "zh-CN": "最多进行多少轮写作和评审，最后保留效果最好的一版。"
+  },
+  "Maximum postings to fetch per connector for this run. Leave blank for no limit.": {
+    "key": "ui_86dbfcb38052",
+    "en": "Maximum postings to fetch per connector for this run. Leave blank for no limit.",
+    "zh-CN": "本次从每个连接器获取的职位数量上限。留空表示不限制。"
   },
   "Maximum years": {
     "key": "ui_bf1920efaffe",
@@ -6229,11 +6234,6 @@
     "en": "No active applications with dated events yet.",
     "zh-CN": "进行中的申请还没有带日期的事件记录。"
   },
-  "No advice cached yet": {
-    "key": "ui_7133dd8e67d7",
-    "en": "No advice cached yet",
-    "zh-CN": "尚未缓存任何建议"
-  },
   "No aggregators configured.": {
     "key": "ui_e47a1ee9abef",
     "en": "No aggregators configured.",
@@ -6323,6 +6323,11 @@
     "key": "ui_735c43b33bab",
     "en": "No jobs match these filters.",
     "zh-CN": "没有职位符合这些筛选条件。"
+  },
+  "No learning advice yet": {
+    "key": "ui_fb8af85bfa7c",
+    "en": "No learning advice yet",
+    "zh-CN": "暂无学习建议"
   },
   "no limit": {
     "key": "ui_b53557b24e11",
@@ -7304,6 +7309,11 @@
     "en": "Profile skills",
     "zh-CN": "个人技能"
   },
+  "Project idea": {
+    "key": "ui_268e7621c54f",
+    "en": "Project idea",
+    "zh-CN": "项目构想"
+  },
   "projects": {
     "key": "ui_2577c0f557b2",
     "en": "projects",
@@ -7618,11 +7628,6 @@
     "key": "ui_a34d8629df38",
     "en": "Re-render PDF",
     "zh-CN": "重新生成 PDF"
-  },
-  "Re-run the full funnel for one scope. Fit scores and statuses may change. Jobs with progress are not changed.": {
-    "key": "ui_78c2163b0df8",
-    "en": "Re-run the full funnel for one scope. Fit scores and statuses may change. Jobs with progress are not changed.",
-    "zh-CN": "在所选范围内重新运行完整筛选流程，匹配分数和状态可能会变化。已有进展的职位会保留原样。"
   },
   "Re-score shortlist": {
     "key": "ui_cd8c0a69258a",
@@ -8549,11 +8554,6 @@
     "en": "Retry loading",
     "zh-CN": "重新加载"
   },
-  "Retry the request without closing this panel.": {
-    "key": "ui_9628536f4c04",
-    "en": "Retry the request without closing this panel.",
-    "zh-CN": "重试请求，无需关闭此面板。"
-  },
   "Retry transcription": {
     "key": "ui_e55fde7c9f4d",
     "en": "Retry transcription",
@@ -8813,6 +8813,11 @@
     "key": "ui_a162d837970e",
     "en": "Run research to build a cited company brief.",
     "zh-CN": "开始公司调研，生成附有来源引用的公司简报。"
+  },
+  "Run the full screening process again for the selected scope. Fit scores and statuses may change. Jobs with progress are not changed.": {
+    "key": "ui_69af1e25126b",
+    "en": "Run the full screening process again for the selected scope. Fit scores and statuses may change. Jobs with progress are not changed.",
+    "zh-CN": "重新对选定范围内的职位执行完整筛选。匹配分数和状态可能发生变化，已有进度的职位不会更改。"
   },
   "Runs": {
     "key": "ui_848f54e89660",
@@ -9909,9 +9914,9 @@
     "en": "Start pull",
     "zh-CN": "开始获取"
   },
-  "Start reprocess": {
-    "key": "ui_94e4107c69a7",
-    "en": "Start reprocess",
+  "Start reprocessing": {
+    "key": "ui_21d85511f95d",
+    "en": "Start reprocessing",
     "zh-CN": "开始重新处理"
   },
   "Start research": {
@@ -10939,6 +10944,11 @@
     "en": "Try again",
     "zh-CN": "重试"
   },
+  "Try again without closing this panel.": {
+    "key": "ui_53a4cffc4351",
+    "en": "Try again without closing this panel.",
+    "zh-CN": "无需关闭此面板，请重试。"
+  },
   "Try another URL": {
     "key": "ui_f92bc5b3edb6",
     "en": "Try another URL",
@@ -11708,11 +11718,6 @@
     "key": "ui_69e4b4d2448f",
     "en": "Your answers stay in this workspace",
     "zh-CN": "你的回答将保留在此工作区中"
-  },
-  "Your bridge": {
-    "key": "ui_a5deb0c53abd",
-    "en": "Your bridge",
-    "zh-CN": "弥补差距的思路"
   },
   "Your browser blocked autoplay. Press play to listen.": {
     "key": "ui_815d29e89aa6",
