@@ -3,6 +3,7 @@
 from typing import cast
 
 from sqlmodel import Session, col, select
+from resume_tailor_harness.db import workspace_write
 
 from resume_tailor_harness.api.schemas.suggestions import (
     LearningRoadmapOut,
@@ -69,13 +70,14 @@ def list_roadmaps(
 def update_roadmap(
     session: Session, suggestion_id: int, status: LearningStatus
 ) -> bool:
-    row = session.get(SkillSuggestion, suggestion_id)
-    if row is None or row.kind not in ("skill", "domain"):
-        return False
-    progress = session.get(LearningRoadmapProgress, suggestion_id)
-    if progress is None:
-        progress = LearningRoadmapProgress(suggestion_id=suggestion_id)
-    progress.status = status
-    session.add(progress)
-    session.commit()
+    with workspace_write(session):
+        row = session.get(SkillSuggestion, suggestion_id)
+        if row is None or row.kind not in ("skill", "domain"):
+            return False
+        progress = session.get(LearningRoadmapProgress, suggestion_id)
+        if progress is None:
+            progress = LearningRoadmapProgress(suggestion_id=suggestion_id)
+        progress.status = status
+        session.add(progress)
+        session.commit()
     return True
