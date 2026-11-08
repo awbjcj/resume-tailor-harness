@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
 
 import { useLaunchRun } from "@/features/runs/use-launch-run";
 import { api, unwrap } from "@/lib/api/client";
@@ -32,24 +33,35 @@ export function useSuggestion(
 
 export function useGenerateSuggestion() {
   const { launch } = useLaunchRun();
-  const generating = useRunStore((state) =>
+  const pending = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+  const running = useRunStore((state) =>
     Object.values(state.runs).some(
       (run) =>
         run.kind === "suggestion" &&
         (run.status === "queued" || run.status === "running" || run.status === "cancelling"),
     ),
   );
-  const generate = (kind: SuggestionKind, key: string) =>
-    launch(
-      "suggestion",
-      () =>
-        unwrap(
-          api.POST("/api/suggestions/generate", {
-            body: { kind, key },
-          }),
-        ),
-      [suggestionQueryKey(kind, key)],
-    );
+  const generate = async (kind: SuggestionKind, key: string) => {
+    if (pending.current) return false;
+    pending.current = true;
+    setSubmitting(true);
+    try {
+      return await launch(
+        "suggestion",
+        () =>
+          unwrap(
+            api.POST("/api/suggestions/generate", {
+              body: { kind, key },
+            }),
+          ),
+        [suggestionQueryKey(kind, key)],
+      );
+    } finally {
+      pending.current = false;
+      setSubmitting(false);
+    }
+  };
 
-  return { generate, generating };
+  return { generate, generating: submitting || running };
 }

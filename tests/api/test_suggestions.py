@@ -350,3 +350,104 @@ def test_learning_library_keeps_orphaned_advice_and_progress(tmp_path, monkeypat
         )
         assert saved["status"] == "completed"
         assert saved["envelope"]["suggestion"]["bridge"] == "Updated advice"
+
+
+def test_roadmap_generation_returns_quota_error_envelope(monkeypatch, tmp_path):
+    from resume_tailor_harness.api.runs.manager import RunManager, RunQuotaError
+
+    _configure(monkeypatch, tmp_path)
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+
+    def reject(*args, **kwargs):
+        raise RunQuotaError("Concurrent run limit reached")
+
+    monkeypatch.setattr(RunManager, "submit", reject)
+    with TestClient(app, raise_server_exceptions=False) as client:
+        _seed_job(app.state.engine)
+        response = client.post(
+            "/api/suggestions/generate",
+            json={"kind": "domain", "key": "infra"},
+        )
+    assert response.status_code == 429
+    assert response.json()["error"]["code"] == "QUOTA_EXCEEDED"
+
+
+def test_concurrent_first_progress_updates_both_succeed(tmp_path, monkeypatch):
+    from threading import Barrier
+
+    from sqlmodel import Session, select
+
+    from resume_tailor_harness.db import init_db, make_engine
+    from resume_tailor_harness.services.learning_roadmaps import update_roadmap
+    from resume_tailor_harness.tracking.tables import (
+        LearningRoadmapProgress,
+        SkillSuggestion,
+    )
+
+    engine = make_engine(f"sqlite:///{tmp_path / 'progress.db'}")
+    init_db(engine)
+    with Session(engine) as session:
+        row = SkillSuggestion(kind="skill", key="python")
+        session.add(row)
+        session.commit()
+        row_id = row.id
+    assert row_id is not None
+    original_get = Session.get
+
+    def slow_get(self, entity, ident, **kwargs):
+        result = original_get(self, entity, ident, **kwargs)
+        if entity is LearningRoadmapProgress and result is None:
+            # Widen the first-save race: both requests used to observe no row.
+            time.sleep(0.1)
+        return result
+
+    monkeypatch.setattr(Session, "get", slow_get)
+    start = Barrier(2)
+
+    def save():
+        with Session(engine) as session:
+            start.wait(timeout=5)
+            return update_roadmap(session, row_id, "in_progress")
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = [executor.submit(save) for _ in range(2)]
+        assert all(result.result(timeout=5) for result in results)
+    with Session(engine) as session:
+        rows = session.exec(select(LearningRoadmapProgress)).all()
+        assert len(rows) == 1
+        assert rows[0].status == "in_progress"
+    engine.dispose()
+
+
+def test_duplicate_roadmap_generation_joins_active_run(monkeypatch, tmp_path):
+    from threading import Event
+
+    _configure(monkeypatch, tmp_path)
+    release = Event()
+
+    class SlowAgent(_Agent):
+        def run(self, prompt):
+            assert release.wait(timeout=5)
+            return super().run(prompt)
+
+    monkeypatch.setattr(run_module, "build_search_agent", lambda: SlowAgent("Research"))
+    monkeypatch.setattr(
+        run_module,
+        "build_formatter_agent",
+        lambda: _Agent(SuggestionDraft(bridge="Bridge")),
+    )
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        try:
+            first = client.post(
+                "/api/suggestions/generate", json={"kind": "domain", "key": "infra"}
+            )
+            second = client.post(
+                "/api/suggestions/generate", json={"kind": "domain", "key": "infra"}
+            )
+            assert first.status_code == second.status_code == 202
+            assert first.json()["runId"] == second.json()["runId"]
+        finally:
+            release.set()
+        assert _wait_for_run(client, first.json()["runId"])["state"] == "done"

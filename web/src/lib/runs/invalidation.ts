@@ -58,7 +58,10 @@ export function invalidationKeys(runId: string, kind: string): string[] {
   // Copied, not shared: callers merge these into sets and a leaked reference
   // to BY_KIND would let one completion rewrite the table for every later one.
   // Callers may add consumers, but cannot hide the kind's shared refresh rules.
-  return [...new Set([...(BY_KIND[kind] ?? DEFAULT_INVALIDATE), ...(overrides.get(runId) ?? [])])];
+  const keys = new Set([...(BY_KIND[kind] ?? DEFAULT_INVALIDATE), ...(overrides.get(runId) ?? [])]);
+  // Saved advice derives availability and freshness from the same graph.
+  if (keys.has("match-gap")) keys.add("learning-roadmaps");
+  return [...keys];
 }
 
 export function resetInvalidationForTests(): void {
