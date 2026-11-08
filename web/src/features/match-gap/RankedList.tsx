@@ -1,3 +1,4 @@
+import "@/i18n/roadmap-copy";
 import { isProvisionalSkill } from "./aggregate";
 import { useId, useState } from "react";
 import { ChevronRightIcon, ExternalLinkIcon } from "lucide-react";
@@ -97,6 +98,7 @@ export function RankedList({
   selected,
   onToggleSelect,
   onOpenSkill,
+  onOpenDomain,
 }: {
   domainRows: DomainRow[];
   categoryRows: CategoryRow[];
@@ -105,6 +107,7 @@ export function RankedList({
   selected: Set<string>;
   onToggleSelect: (target: SuggestionTarget) => void;
   onOpenSkill: (skill: SkillRow) => void;
+  onOpenDomain?: (target: SuggestionTarget) => void;
 }) {
   const { t } = useTranslation();
   // Categories expose the taxonomy and domains open on demand.
@@ -218,6 +221,7 @@ export function RankedList({
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere]">{domain.label}</span>
                               <StatusBadge state={stateOf("domain", domain.id)} />
+                              {domain.id !== UNASSIGNED_ID && onOpenDomain && <Button size="sm" variant="outline" onClick={() => onOpenDomain(domainTarget)}>{t("roadmaps.viewDomain")}</Button>}
                             </div>
                             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                               <ScoreBar score={domain.score} maximum={maximum} />

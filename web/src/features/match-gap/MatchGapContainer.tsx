@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import "@/i18n/roadmap-copy";
+import { DomainRoadmapDialog } from "./DomainRoadmapDialog";
 import { useCallback, useMemo, useState } from "react";
 import { AlertCircleIcon, NetworkIcon, Rows3Icon } from "lucide-react";
 
@@ -51,6 +54,7 @@ const DEFAULT_FILTERS: FilterValue = {
 };
 
 export function MatchGapContainer() {
+  const { t } = useTranslation();
   const { data, isLoading, isError, refetch } = useMatchGap();
   const { refresh } = useRefreshClusters();
   const { maintain } = useMaintainTaxonomy();
@@ -58,6 +62,7 @@ export function MatchGapContainer() {
   const [filters, setFilters] = useState<FilterValue>(DEFAULT_FILTERS);
   const [activeView, setActiveView] = useState("map");
   const [selection, setSelection] = useState<SuggestionTarget[]>([]);
+  const [openDomain, setOpenDomain] = useState<SuggestionTarget | null>(null);
   const [openSkill, setOpenSkill] = useState<SkillRow | null>(null);
   const view = useMemo(
     () => (data ? deriveView(data, filters) : null),
@@ -143,6 +148,7 @@ export function MatchGapContainer() {
     <>
       <PageHeader
         title="Match / Gap"
+        actions={<Button variant="outline" nativeButton={false} render={<a href="/learning-roadmaps" />}>{t("roadmaps.title")}</Button>}
       />
 
       {data && data.targetTotal === 0 && (
@@ -258,6 +264,7 @@ export function MatchGapContainer() {
                     selected={selectedIds}
                     onToggleSelect={toggleSelection}
                     onOpenSkill={setOpenSkill}
+                    onOpenDomain={setOpenDomain}
                   />
                 </TabsContent>
                 <TabsContent value="outline">
@@ -269,6 +276,7 @@ export function MatchGapContainer() {
                     selected={selectedIds}
                     onToggleSelect={toggleSelection}
                     onOpenSkill={setOpenSkill}
+                    onOpenDomain={setOpenDomain}
                   />
                 </TabsContent>
               </Tabs>
@@ -290,6 +298,7 @@ export function MatchGapContainer() {
         </div>
       )}
 
+      <DomainRoadmapDialog target={openDomain} onClose={() => setOpenDomain(null)} />
       <SkillModal
         skill={openSkill}
         domainLabel={

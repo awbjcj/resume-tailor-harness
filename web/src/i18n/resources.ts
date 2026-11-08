@@ -1,3 +1,4 @@
+import type { roadmapEn } from "./roadmap-copy";
 import { emailNotificationsEn, emailNotificationsZh } from "./email-notifications";
 import type { workflowEn } from "./workflow";
 import type { providerSetupEn } from "./provider-setup";
@@ -85,6 +86,7 @@ const en = {
     documentTitle: "Résumé Tailor Harness",
   },
   longLists: {} as typeof longListEn,
+  roadmaps: {} as typeof roadmapEn,
   model: {
     select: "Select a model",
     customModelId: "Custom model ID…",
@@ -234,6 +236,7 @@ const en = {
     pipeline: "Pipeline",
     insight: "Insight",
     matchGap: "Match Gap",
+    learningRoadmaps: "Learning roadmaps",
     applications: "Applications",
     analytics: "Analytics",
     workspace: "Workspace",
@@ -910,6 +913,7 @@ const zhCN = {
     documentTitle: "求职助手",
   },
   longLists: {} as typeof longListEn,
+  roadmaps: {} as typeof roadmapEn,
   model: {
     select: "选择模型",
     customModelId: "自定义模型 ID…",
@@ -1052,6 +1056,7 @@ const zhCN = {
     pipeline: "求职看板",
     insight: "分析",
     matchGap: "匹配差距",
+    learningRoadmaps: "学习路线",
     applications: "申请记录",
     analytics: "数据分析",
     workspace: "工作区",

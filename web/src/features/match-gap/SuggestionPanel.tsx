@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import "@/i18n/roadmap-copy";
 import {
   BookOpen,
   ExternalLink,
@@ -19,6 +21,7 @@ export function SuggestionPanel({
   onRetry = () => {},
   onGenerate,
   generating,
+  canGenerate = true,
 }: {
   envelope: SuggestionEnvelope | undefined;
   isLoading: boolean;
@@ -26,7 +29,9 @@ export function SuggestionPanel({
   onRetry?: () => void;
   onGenerate: () => void;
   generating: boolean;
+  canGenerate?: boolean;
 }) {
+  const { t } = useTranslation();
   if (isLoading) {
     return (
       <div role="status" aria-busy="true" aria-label="Loading gap-closing advice" className="space-y-3">
@@ -70,11 +75,11 @@ export function SuggestionPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold">How to close this gap</h2>
-          {envelope.stale && <Badge variant="outline">Stale</Badge>}
+          {envelope.stale && <Badge variant="outline">{t("roadmaps.stale")}</Badge>}
         </div>
-        <Button size="sm" variant="outline" disabled={generating} onClick={onGenerate}>
+        {canGenerate && <Button size="sm" variant="outline" disabled={generating} onClick={onGenerate}>
           {generating ? "Researching…" : "Regenerate"}
-        </Button>
+        </Button>}
       </div>
 
       {suggestion.bridge && (
@@ -140,7 +145,7 @@ export function SuggestionPanel({
                   {resource.title}
                   <ExternalLink className="size-3" />
                 </a>
-                <Badge variant="secondary">{resource.kind}</Badge>
+                <Badge variant="secondary">{t(`roadmaps.resource_${resource.kind}`)}</Badge>
               </li>
             ))}
           </ul>
@@ -158,7 +163,7 @@ export function SuggestionPanel({
           {suggestion.project.skillsDemonstrated.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {suggestion.project.skillsDemonstrated.map((skill) => (
-                <Badge key={skill} variant="outline">
+                <Badge key={skill} variant="outline" className="h-auto min-h-5 max-w-full whitespace-normal [overflow-wrap:anywhere]">
                   {skill}
                 </Badge>
               ))}

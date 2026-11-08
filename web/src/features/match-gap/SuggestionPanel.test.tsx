@@ -75,7 +75,7 @@ describe("SuggestionPanel", () => {
       />,
     );
 
-    expect(screen.getByText(/stale/i)).toBeInTheDocument();
+    expect(screen.getByText("Needs review")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /regenerate/i })).toBeInTheDocument();
   });
 

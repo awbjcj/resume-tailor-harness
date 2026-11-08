@@ -18,6 +18,7 @@ export const DEFAULT_INVALIDATE = [
 ] as const;
 
 const BY_KIND: Record<string, readonly string[]> = {
+  suggestion: ["match-gap", "learning-roadmaps"],
   refreshClusters: ["match-gap"],
   maintainTaxonomy: ["match-gap"],
   undoTaxonomyMaintenance: ["match-gap"],
