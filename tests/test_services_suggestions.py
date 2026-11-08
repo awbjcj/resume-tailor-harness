@@ -1,8 +1,16 @@
+from types import SimpleNamespace
+
 import pytest
 from sqlmodel import Session, select
 
+from resume_tailor_harness.config import Settings
 from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.github.repos import RepoMeta
+from resume_tailor_harness.llm_runner import (
+    AgentRunner,
+    INCOMPLETE_KEY,
+    UnparsedAgentOutput,
+)
 from resume_tailor_harness.models.profile import Contact, ProfileFacts, Skill
 from resume_tailor_harness.services.suggestions import (
     SuggestionContext,
@@ -215,6 +223,82 @@ def test_generation_failure_preserves_last_good_cache():
 
     assert cached is not None
     assert cached.payload_json["bridge"] == "Keep me"
+
+
+@pytest.mark.parametrize("stage", ["research", "formatter"])
+@pytest.mark.parametrize("failure", ["error", "truncated", "invalid"])
+def test_generation_rejects_failed_stages_with_diagnostics(stage, failure):
+    result = SimpleNamespace(
+        content="provider rejected request"
+        if stage == "research"
+        else SuggestionDraft(bridge="Incomplete"),
+        status="error" if failure == "error" else "completed",
+        model="test-model",
+        model_provider_data=(
+            {INCOMPLETE_KEY: {"reason": "max_tokens", "ceiling": 100}}
+            if failure == "truncated"
+            else {}
+        ),
+    )
+    if failure == "invalid":
+        result.content = None if stage == "research" else '{"bridge":'
+        result.model_provider_data = {"structured_output_error": "invalid JSON"}
+    failed = SimpleNamespace(run=lambda _prompt: result)
+    calls = []
+    formatter = SimpleNamespace(run=lambda prompt: calls.append(prompt))
+    engine = _engine()
+    with Session(engine) as session:
+        original = SkillSuggestion(
+            kind="skill", key="kubernetes", payload_json={"bridge": "Keep me"}
+        )
+        session.add(original)
+        session.commit()
+        with pytest.raises(UnparsedAgentOutput, match="suggestions-" + stage) as error:
+            generate_suggestion(
+                session,
+                context=resolve_suggestion_context(
+                    _graph(), kind="skill", key="kubernetes"
+                ),
+                search_agent=failed
+                if stage == "research"
+                else _Agent("Grounded prose"),
+                formatter=failed if stage == "formatter" else formatter,
+                verify=lambda _owner, _name: None,
+                facts=_facts(),
+            )
+        assert "test-model" in str(error.value)
+        if failure == "truncated":
+            assert "max_tokens" in str(error.value)
+        session.refresh(original)
+        assert original.payload_json == {"bridge": "Keep me"}
+    assert calls == []
+
+
+def test_generation_recovers_formatter_json_with_shared_runner():
+    outputs = iter(['{"bridge":', '```json\n{"bridge":"Start with Docker",}\n```'])
+    prompts = []
+
+    def run(prompt):
+        prompts.append(prompt)
+        return SimpleNamespace(content=next(outputs), status="COMPLETED")
+
+    formatter = AgentRunner(
+        SimpleNamespace(output_schema=SuggestionDraft, run=run),
+        settings=Settings(_env_file=None, llm_retries=1, llm_retry_delay=0),  # type: ignore[call-arg]
+    )
+    with Session(_engine()) as session:
+        row = generate_suggestion(
+            session,
+            context=resolve_suggestion_context(_graph(), kind="domain", key="infra"),
+            search_agent=_Agent("Grounded prose"),
+            formatter=formatter,
+            verify=lambda _owner, _name: None,
+            facts=_facts(),
+        )
+        assert row.payload_json["bridge"] == "Start with Docker"
+        assert row.kind == "domain"
+    assert len(prompts) == 2
+    assert "OUTPUT CORRECTION" in prompts[1]
 
 
 def test_generate_suggestion_reuses_and_canonicalizes_legacy_cache_row():
