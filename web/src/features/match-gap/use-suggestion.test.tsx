@@ -93,3 +93,29 @@ describe("suggestion hooks", () => {
     expect(gets).toBe(2);
   });
 });
+
+it("does not launch duplicate paid research while admission is pending", async () => {
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  let posts = 0;
+  server.use(http.post("/api/suggestions/generate", async () => {
+    posts += 1;
+    await pending;
+    return HttpResponse.json({ runId: "pending-run", kind: "suggestion" });
+  }));
+  useRunStore.setState({ runs: {} });
+  const { result } = renderHook(() => useGenerateSuggestion());
+  let first!: Promise<boolean>;
+  let second!: Promise<boolean>;
+  act(() => {
+    first = result.current.generate("domain", "infra");
+    second = result.current.generate("domain", "infra");
+  });
+  try {
+    await waitFor(() => expect(posts).toBeGreaterThan(0));
+    expect(result.current.generating).toBe(true);
+  } finally {
+    await act(async () => { release(); await Promise.all([first, second]); });
+  }
+  expect(posts).toBe(1);
+});
