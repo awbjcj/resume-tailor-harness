@@ -59,3 +59,19 @@ it("registers every accepted target and watches its run", async () => {
   );
   expect(watchRun).toHaveBeenCalledWith("r1", "suggestion", expect.any(Function));
 });
+
+
+it("refreshes an open domain reader and the roadmap library after batch completion", async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const invalidate = vi.spyOn(client, "invalidateQueries");
+  server.use(http.post("/api/suggestion-runs", () => HttpResponse.json({ results: [
+    { outcome: "accepted", kind: "domain", key: "infra", runId: "r2" },
+  ] })));
+  const { result } = renderHook(() => useSuggestionRuns(() => undefined), {
+    wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+  });
+  await act(() => result.current.generateAll([{ kind: "domain", key: "infra" }]));
+  await act(async () => { watchRun.mock.calls[0][2]({ status: "succeeded" }); });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["suggestion:domain:infra"] });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["learning-roadmaps"] });
+});

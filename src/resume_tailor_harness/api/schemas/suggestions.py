@@ -85,3 +85,19 @@ SuggestionRunResultOut = Annotated[
 
 class SuggestionRunsOut(CamelModel):
     results: list[SuggestionRunResultOut]
+
+
+LearningStatus = Literal["planned", "in_progress", "completed", "archived"]
+
+
+class LearningRoadmapOut(CamelModel):
+    id: int
+    label: str
+    status: LearningStatus = "planned"
+    available: bool
+    envelope: SuggestionEnvelope
+
+
+class LearningRoadmapUpdate(CamelModel):
+    model_config = ConfigDict(extra="forbid")
+    status: LearningStatus

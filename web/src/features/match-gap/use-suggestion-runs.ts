@@ -77,6 +77,8 @@ export function useSuggestionRuns(
               return;
             }
             registry.syncing(target);
+            void queryClient.invalidateQueries({ queryKey: [`suggestion:${target.kind}:${target.key}`] });
+            void queryClient.invalidateQueries({ queryKey: ["learning-roadmaps"] });
             void queryClient
               .invalidateQueries(
                 { queryKey: ["match-gap"] },

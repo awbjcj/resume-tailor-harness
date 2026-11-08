@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
+  BookOpen,
   Briefcase,
   Inbox,
   Kanban,
@@ -62,6 +63,7 @@ type NavLabelKey =
   | "nav.shortlist"
   | "nav.pipeline"
   | "nav.matchGap"
+  | "nav.learningRoadmaps"
   | "nav.applications"
   | "nav.analytics"
   | "nav.settings"
@@ -101,6 +103,7 @@ const NAV_GROUPS: { labelKey?: NavGroupKey; items: NavItem[] }[] = [
     labelKey: "nav.insight",
     items: [
       { to: "/match-gap", labelKey: "nav.matchGap", icon: Target },
+      { to: "/learning-roadmaps", labelKey: "nav.learningRoadmaps", icon: BookOpen },
       { to: "/applications", labelKey: "nav.applications", icon: Rows3 },
       { to: "/analytics", labelKey: "nav.analytics", icon: BarChart3 },
     ],

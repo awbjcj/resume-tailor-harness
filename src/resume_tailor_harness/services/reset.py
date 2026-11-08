@@ -29,6 +29,7 @@ from resume_tailor_harness.tracking.tables import (
     RunCompletionTarget,
     RunOperationLog,
     SavedBoardView,
+    LearningRoadmapProgress,
     SkillSuggestion,
 )
 
@@ -54,10 +55,14 @@ _PIPELINE_TABLES: tuple[type[SQLModel], ...] = (
     Application,
     CoverLetter,
     ResumeVersion,
+    LearningRoadmapProgress,
     SkillSuggestion,
     Job,
 )
-_PROFILE_TABLES: tuple[type[SQLModel], ...] = (SkillSuggestion,)
+_PROFILE_TABLES: tuple[type[SQLModel], ...] = (
+    LearningRoadmapProgress,
+    SkillSuggestion,
+)
 _PROFILE_DIRECTORIES = ("fragments",)
 # The source manifest and its documents are user-owned intake, not derived
 # profile output. Account-level resets preserve both; users remove/reset sources

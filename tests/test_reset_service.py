@@ -24,6 +24,7 @@ from resume_tailor_harness.tracking.tables import (
     RunOperationLog,
     SavedBoardView,
     SkillSuggestion,
+    LearningRoadmapProgress,
 )
 
 
@@ -94,7 +95,13 @@ def _seed_pipeline(session: Session) -> None:
             message_id="m1",
         )
     )
-    session.add(SkillSuggestion(kind="cluster", key="python"))
+    suggestion = SkillSuggestion(kind="skill", key="python")
+    session.add(suggestion)
+    session.flush()
+    assert suggestion.id is not None
+    session.add(
+        LearningRoadmapProgress(suggestion_id=suggestion.id, status="completed")
+    )
     session.add(
         RunOperationLog(run_id="run-1", entries=[{"message": "private operation"}])
     )
@@ -172,6 +179,7 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
         "cover_letters": 1,
         "resume_versions": 1,
         "skill_suggestions": 1,
+        "learning_roadmap_progress": 1,
         "jobs": 1,
     }
     assert report.areas_cleared == [
@@ -195,7 +203,10 @@ def test_profile_scope_clears_current_corpus_layout_only(session, paths):
 
     report = reset_workspace(session, paths, ResetScope.profile)
 
-    assert report.rows_deleted == {"skill_suggestions": 1}
+    assert report.rows_deleted == {
+        "learning_roadmap_progress": 1,
+        "skill_suggestions": 1,
+    }
     assert report.areas_cleared == ["profile", "taxonomy"]
     assert session.exec(select(Job)).first() is not None
     assert session.exec(select(Application)).first() is not None
@@ -226,7 +237,7 @@ def test_all_scope_preserves_config_secrets_and_overrides(session, paths):
 
     report = reset_workspace(session, paths, ResetScope.all)
 
-    assert sum(report.rows_deleted.values()) == 11
+    assert sum(report.rows_deleted.values()) == 12
     assert report.areas_cleared == [
         "output",
         "runs",
