@@ -36,7 +36,7 @@ export function useGenerateSuggestion() {
     Object.values(state.runs).some(
       (run) =>
         run.kind === "suggestion" &&
-        (run.status === "running" || run.status === "cancelling"),
+        (run.status === "queued" || run.status === "running" || run.status === "cancelling"),
     ),
   );
   const generate = (kind: SuggestionKind, key: string) =>

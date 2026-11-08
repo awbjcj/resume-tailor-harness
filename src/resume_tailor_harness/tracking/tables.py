@@ -340,6 +340,14 @@ class SkillSuggestion(SQLModel, table=True):
     schema_version: int = 1
 
 
+class LearningRoadmapProgress(SQLModel, table=True):
+    """User-owned learning state, independent of regenerated advisor content."""
+
+    __tablename__ = cast(Any, "learning_roadmap_progress")
+    suggestion_id: int = Field(primary_key=True, foreign_key="skill_suggestions.id")
+    status: str = "planned"
+
+
 class H1BCompanyEvidence(SQLModel, table=True):
     __tablename__ = cast(Any, "h1b_company_evidence")
     __table_args__ = (UniqueConstraint("normalized_company"),)

@@ -108,3 +108,23 @@ test("wraps long taxonomy labels and statistics in the mobile outline", async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole("region", { name: "Skill outline" }).screenshot({ path: testInfo.outputPath("taxonomy-outline-320.png") });
 });
+
+
+test("reads generated second-level domain suggestions", async ({ page }, testInfo) => {
+  await mockMatchGap(page);
+  await page.route("**/api/suggestions?*", (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    expect(params.get("kind")).toBe("domain");
+    expect(params.get("key")).toBe("platform");
+    return route.fulfill({ json: { stale: false, suggestion: {
+      kind: "domain", key: "platform", bridge: "Practice reliable infrastructure delivery.",
+      repos: [], resources: [], citations: [], project: null, generatedAt: "2026-11-08T12:00:00Z",
+    } } });
+  });
+  await page.goto("/match-gap");
+  await page.getByRole("button", { name: "Explore Cloud & Infrastructure" }).click();
+  await page.getByRole("button", { name: "Explore Platform engineering" }).click();
+  await page.getByRole("button", { name: "View domain roadmap" }).click();
+  await expect(page.getByRole("dialog").getByText("Practice reliable infrastructure delivery.")).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("domain-advice.png"), fullPage: true });
+});

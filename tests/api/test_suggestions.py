@@ -202,9 +202,7 @@ def test_theme_cache_becomes_stale_when_demanding_jobs_change(monkeypatch, tmp_p
     )
 
     with ThreadPoolExecutor(max_workers=1) as executor:
-        app = create_app(
-            db_url="sqlite://", runs_root=tmp_path, run_executor=executor
-        )
+        app = create_app(db_url="sqlite://", runs_root=tmp_path, run_executor=executor)
         with TestClient(app) as client:
             _seed_job(app.state.engine)
             launched = client.post(
@@ -263,3 +261,92 @@ def test_suggestion_runs_dedupe_and_report_not_found_per_target(monkeypatch, tmp
         for item in results[:2]:
             record = _wait_for_run(client, item["runId"])
             assert record["state"] == "done", record
+
+
+def test_learning_library_keeps_orphaned_advice_and_progress(tmp_path, monkeypatch):
+    from resume_tailor_harness.tracking.tables import SkillSuggestion
+
+    _configure(monkeypatch, tmp_path)
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        with get_session(app.state.engine) as session:
+            row = SkillSuggestion(
+                kind="domain",
+                key="infra",
+                payload_json={
+                    "repos": [],
+                    "resources": [],
+                    "bridge": "Learn infrastructure",
+                    "citations": [],
+                    "project": None,
+                },
+            )
+            orphan = SkillSuggestion(
+                kind="skill",
+                key="retired-skill",
+                payload_json={
+                    "repos": [],
+                    "resources": [],
+                    "bridge": "Keep this plan",
+                    "citations": [],
+                    "project": None,
+                },
+            )
+            session.add(row)
+            session.add(orphan)
+            session.commit()
+            session.refresh(row)
+            row_id = row.id
+        response = client.get("/api/learning-roadmaps")
+        assert response.status_code == 200
+        plans = {item["label"]: item for item in response.json()}
+        assert plans["Cloud / Infrastructure"]["available"] is True
+        assert plans["retired-skill"]["available"] is False
+        assert (
+            plans["retired-skill"]["envelope"]["suggestion"]["bridge"]
+            == "Keep this plan"
+        )
+        for status in ["in_progress", "completed", "archived", "planned"]:
+            assert (
+                client.patch(
+                    f"/api/learning-roadmaps/{row_id}", json={"status": status}
+                ).status_code
+                == 204
+            )
+            saved = next(
+                item
+                for item in client.get("/api/learning-roadmaps").json()
+                if item["id"] == row_id
+            )
+            assert saved["status"] == status
+        assert (
+            client.patch(
+                f"/api/learning-roadmaps/{row_id}", json={"status": "unknown"}
+            ).status_code
+            == 422
+        )
+        assert (
+            client.patch(
+                "/api/learning-roadmaps/99999", json={"status": "planned"}
+            ).status_code
+            == 404
+        )
+        # Replacing generated content does not reset user-owned learning state.
+        client.patch(f"/api/learning-roadmaps/{row_id}", json={"status": "completed"})
+        with get_session(app.state.engine) as session:
+            saved_row = session.get(SkillSuggestion, row_id)
+            assert saved_row is not None
+            saved_row.payload_json = {
+                **saved_row.payload_json,
+                "bridge": "Updated advice",
+            }
+            session.add(saved_row)
+            session.commit()
+        saved = next(
+            item
+            for item in client.get("/api/learning-roadmaps").json()
+            if item["id"] == row_id
+        )
+        assert saved["status"] == "completed"
+        assert saved["envelope"]["suggestion"]["bridge"] == "Updated advice"
