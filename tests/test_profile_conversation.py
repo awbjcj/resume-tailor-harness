@@ -521,15 +521,17 @@ def test_coach_note_can_be_approved_and_rebuilt_without_a_resume(tmp_path, monke
     )
     from resume_tailor_harness.services.profile_build import run_corpus_build
     from resume_tailor_harness.services.profile_coach import approve_draft
+    from resume_tailor_harness.services.profile_skills import add_alias, delete_skill, update_skill
 
     _apply(tmp_path, _stage(tmp_path, [_change(entity="profile", operation="create", values={"contact": {"name": "Ada"}})]))
+    quote = "I built the platform using Python and Rust."
     apply_turn_delta(
-        tmp_path, "s1", user_text="I built the platform.",
+        tmp_path, "s1", user_text=quote,
         coach_turn=CoachTurnRecord(role="coach", kind="draft_note", text="Draft", topic_id="t1"),
         new_topics=[], skipped_topic_ids=[],
-        draft=CoachDraftNote(topic_id="t1", title="Platform", summary="Built the platform.", quotes=["I built the platform."]),
+        draft=CoachDraftNote(topic_id="t1", title="Platform", summary="Built the platform.", quotes=[quote]),
     )
-    doc_id = approve_draft(tmp_path, "s1", "t1", title="Platform", summary="Built the platform.", quotes=["I built the platform."])
+    doc_id = approve_draft(tmp_path, "s1", "t1", title="Platform", summary="Built the platform.", quotes=[quote])
     doc = next(doc for doc in load_manifest(tmp_path).docs if doc.id == doc_id)
     assert doc.mode == "synthesis" and not doc.primary
     class FakeAgent:
@@ -540,14 +542,22 @@ def test_coach_note_can_be_approved_and_rebuilt_without_a_resume(tmp_path, monke
             return SimpleNamespace(content=self.content)
 
     fragment = SynthesizedFragment(
-        entries=[SynthesizedEntry(kind="project", title="Platform", claims=[
-            SynthesizedClaim(text="Built the platform.", support=["I built the platform."]),
-            SynthesizedClaim(text="Founded the company.", support=["I built the platform."]),
-        ])],
+        entries=[
+            SynthesizedEntry(kind="project", title="Platform", claims=[
+                SynthesizedClaim(text="Built the platform.", support=[quote]),
+                SynthesizedClaim(text="Founded the company.", support=[quote]),
+            ]),
+            SynthesizedEntry(kind="skills", category="hard", claims=[
+                SynthesizedClaim(text="Python", support=[quote]),
+                SynthesizedClaim(text="Rust", support=[quote]),
+            ]),
+        ],
     )
     verdicts = ClaimVerdicts(verdicts=[
         ClaimVerdict(index=0, verdict="supported"),
         ClaimVerdict(index=1, verdict="unsupported"),
+        ClaimVerdict(index=2, verdict="supported"),
+        ClaimVerdict(index=3, verdict="supported"),
     ])
     monkeypatch.setattr("resume_tailor_harness.profile.synthesis.build_synthesis_agent", lambda: FakeAgent(fragment))
     monkeypatch.setattr("resume_tailor_harness.profile.synthesis.build_entailment_agent", lambda: FakeAgent(verdicts))
@@ -558,6 +568,16 @@ def test_coach_note_can_be_approved_and_rebuilt_without_a_resume(tmp_path, monke
     assert any("Founded the company" in drop for drop in result["verificationDrops"])
     assert "Founded the company" not in (tmp_path / "facts.json").read_text(encoding="utf-8")
     assert publication_status(tmp_path).freshness == "current"
+
+    delete_skill(tmp_path, "python")
+    update_skill(tmp_path, "rust", "Rust Systems", [], "hard")
+    renamed = next(skill for bucket in _facts(tmp_path).skills.values() for skill in bucket if skill.name == "Rust Systems")
+    add_alias(tmp_path, renamed.id, "Rustlang")
+    rebuilt = run_corpus_build(profile_dir=tmp_path, facts_out=tmp_path / "facts.json", github_username=None)
+    skills = [skill for bucket in _facts(tmp_path).skills.values() for skill in bucket]
+    assert {skill.name for skill in skills} == {"Rust Systems"}
+    assert "Rustlang" in skills[0].aliases
+    assert not any("could not be reattached" in warning for warning in rebuilt["warnings"])
 
     before = (tmp_path / "facts.json").read_bytes()
     publication_before = (tmp_path / "publication.json").read_bytes()

@@ -330,6 +330,10 @@ def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -
         verification_drops = [
             f"{doc_id}: {drop}" for doc_id, drops in extracted.drops.items() for drop in drops
         ]
+        # The first replay prepared the conversation skeleton, before source
+        # skills existed. Replay again so edits and suppressions also apply to
+        # the verified skills just merged from notes.
+        facts, manual_warnings = apply_manual_skills(facts, manual_ledger)
         facts, replay_warnings = replay_edits(facts, edits)
         warnings.extend(replay_warnings)
 
