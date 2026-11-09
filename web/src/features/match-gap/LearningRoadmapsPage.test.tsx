@@ -2,10 +2,13 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { http, HttpResponse } from "msw";
-import { it, expect } from "vitest";
+import { it, expect, vi } from "vitest";
 import { server } from "@/test/server";
 import { withQueryClient } from "@/test/utils";
 import { LearningRoadmapsPage } from "./LearningRoadmapsPage";
+
+const { generate } = vi.hoisted(() => ({ generate: vi.fn() }));
+vi.mock("./use-suggestion", () => ({ useGenerateSuggestion: () => ({ generate, generating: false }) }));
 
 const plan = { id: 7, label: "Infrastructure", status: "planned", available: true, envelope: { stale: false, suggestion: {
   kind: "domain", key: "infra", bridge: "Practice deployment", repos: [], resources: [], citations: [], project: null, generatedAt: "2026-11-08T12:00:00Z",
@@ -34,6 +37,21 @@ it("keeps unavailable targets readable without offering regeneration", async () 
   show();
   expect(await screen.findByText("Practice deployment")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Regenerate" })).not.toBeInTheDocument();
+});
+it("keeps superseded advice and progress while linking to the current roadmap", async () => {
+  const old = { ...plan, label: "K8s", status: "completed", available: false, supersededById: 8 };
+  const current = { ...plan, id: 8, label: "Kubernetes", envelope: { ...plan.envelope, suggestion: { ...plan.envelope.suggestion, bridge: "Current advice" } } };
+  server.use(http.get("/api/learning-roadmaps", () => HttpResponse.json([old, current])));
+  show();
+  expect(await screen.findByText("Practice deployment")).toBeInTheDocument();
+  expect(screen.getByRole("combobox", { name: "Progress" })).toHaveValue("completed");
+  expect(screen.getByText(/Another roadmap now represents this skill/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Regenerate" })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole("link", { name: "Open current roadmap" }));
+  expect(await screen.findByText("Current advice")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Regenerate" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Regenerate" }));
+  expect(generate).toHaveBeenCalledWith("domain", "infra", 8);
 });
 it("shows recoverable read and write errors", async () => {
   server.use(http.get("/api/learning-roadmaps", () => HttpResponse.json({ error: { code: "TEST_ERROR", message: "Unavailable" } }, { status: 500 })));

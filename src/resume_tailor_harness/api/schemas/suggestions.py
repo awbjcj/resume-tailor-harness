@@ -58,6 +58,10 @@ class SuggestionTarget(CamelModel):
         return value.strip() if isinstance(value, str) else value
 
 
+class SuggestionGenerateRequest(SuggestionTarget):
+    expected_roadmap_id: int | None = Field(default=None, gt=0)
+
+
 class SuggestionRunsRequest(CamelModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -95,6 +99,7 @@ class LearningRoadmapOut(CamelModel):
     label: str
     status: LearningStatus = "planned"
     available: bool
+    superseded_by_id: int | None = None
     envelope: SuggestionEnvelope
 
 

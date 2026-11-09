@@ -10766,6 +10766,17 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "supersededById": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersededbyid"
           }
         },
         "required": [
@@ -19832,6 +19843,43 @@
           }
         },
         "title": "SuggestionEnvelope",
+        "type": "object"
+      },
+      "SuggestionGenerateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedRoadmapId": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectedroadmapid"
+          },
+          "key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "skill",
+              "domain"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "key"
+        ],
+        "title": "SuggestionGenerateRequest",
         "type": "object"
       },
       "SuggestionOut": {
@@ -42147,7 +42195,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SuggestionTarget"
+                "$ref": "#/components/schemas/SuggestionGenerateRequest"
               }
             }
           },

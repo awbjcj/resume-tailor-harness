@@ -42,7 +42,7 @@ export function useGenerateSuggestion() {
         (run.status === "queued" || run.status === "running" || run.status === "cancelling"),
     ),
   );
-  const generate = async (kind: SuggestionKind, key: string) => {
+  const generate = async (kind: SuggestionKind, key: string, expectedRoadmapId?: number) => {
     if (pending.current) return false;
     pending.current = true;
     setSubmitting(true);
@@ -52,7 +52,7 @@ export function useGenerateSuggestion() {
         () =>
           unwrap(
             api.POST("/api/suggestions/generate", {
-              body: { kind, key },
+              body: { kind, key, expectedRoadmapId },
             }),
           ),
         [suggestionQueryKey(kind, key)],
