@@ -155,6 +155,7 @@
     "cancelled": "已取消"
   },
   "runErrors": {
+    "A run is already active for this item": "此项目已有任务正在运行。",
     "This roadmap has changed. Reload the learning library before regenerating.": "此学习路线已更改。请刷新学习路线库后再重新生成。",
     "SuggestionTargetChanged: This roadmap has changed. Reload the learning library before regenerating.": "此学习路线已更改。请刷新学习路线库后再重新生成。",
     "GmailApiError: A Gmail sync is already running for this workspace.": "此工作区已有 Gmail 同步正在运行。",
