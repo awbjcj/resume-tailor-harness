@@ -8842,6 +8842,8 @@ export interface components {
              * @enum {string}
              */
             status: "planned" | "in_progress" | "completed" | "archived";
+            /** Supersededbyid */
+            supersededById?: number | null;
         };
         /** LearningRoadmapUpdate */
         LearningRoadmapUpdate: {
@@ -12068,6 +12070,18 @@ export interface components {
              */
             stale: boolean;
             suggestion?: components["schemas"]["SuggestionOut"] | null;
+        };
+        /** SuggestionGenerateRequest */
+        SuggestionGenerateRequest: {
+            /** Expectedroadmapid */
+            expectedRoadmapId?: number | null;
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "skill" | "domain";
         };
         /** SuggestionOut */
         SuggestionOut: {
@@ -24640,7 +24654,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SuggestionTarget"];
+                "application/json": components["schemas"]["SuggestionGenerateRequest"];
             };
         };
         responses: {

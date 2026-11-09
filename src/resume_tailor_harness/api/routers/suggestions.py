@@ -17,12 +17,12 @@ from resume_tailor_harness.api.schemas.suggestions import (
     LearningRoadmapOut,
     LearningRoadmapUpdate,
     SuggestionEnvelope,
+    SuggestionGenerateRequest,
     SuggestionOut,
     SuggestionRunAcceptedOut,
     SuggestionRunNotFoundOut,
     SuggestionRunsOut,
     SuggestionRunsRequest,
-    SuggestionTarget,
 )
 from resume_tailor_harness.models.profile import ProfileFacts
 from resume_tailor_harness.services.suggestion_runs import (
@@ -31,8 +31,10 @@ from resume_tailor_harness.services.suggestion_runs import (
 )
 from resume_tailor_harness.services.suggestions import (
     SuggestionContext,
+    SuggestionTargetChanged,
     SuggestionTargetNotFound,
     find_suggestion_row,
+    require_roadmap_target,
     resolve_suggestion_context,
     suggestion_fingerprint,
 )
@@ -106,12 +108,17 @@ def get_suggestion(
 
 @router.post("/suggestions/generate", response_model=RunOut, status_code=202)
 def launch_generate(
-    params: SuggestionTarget,
+    params: SuggestionGenerateRequest,
     request: Request,
     session: Session = Depends(get_session),
     mgr: RunManager = Depends(get_run_manager),
 ):
     context, _facts = _resolve_context(session, kind=params.kind, key=params.key)
+    if params.expected_roadmap_id is not None:
+        try:
+            require_roadmap_target(session, context, params.expected_roadmap_id)
+        except SuggestionTargetChanged as exc:
+            raise ApiException(409, "ROADMAP_CHANGED", str(exc)) from exc
     facts_path, cluster_path = _artifact_paths()
     run_id = submit_suggestion_run(
         mgr,
@@ -120,6 +127,7 @@ def launch_generate(
         context=context,
         facts_path=facts_path,
         cluster_path=cluster_path,
+        expected_roadmap_id=params.expected_roadmap_id,
     )
     record = mgr.get(run_id)
     assert record is not None

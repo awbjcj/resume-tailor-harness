@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from threading import Lock
@@ -28,6 +29,13 @@ _SQLITE_SUGGESTION_WRITE_LOCK = Lock()
 class SuggestionTargetNotFound(ValueError):
     def __init__(self, kind: str, key: str) -> None:
         super().__init__(f"unknown {kind} suggestion target: {key}")
+
+
+class SuggestionTargetChanged(ValueError):
+    def __init__(self) -> None:
+        super().__init__(
+            "This roadmap has changed. Reload the learning library before regenerating."
+        )
 
 
 @dataclass(frozen=True)
@@ -110,11 +118,33 @@ def find_suggestion_row(
     rows = session.exec(
         select(SkillSuggestion).where(SkillSuggestion.kind == context.kind)
     ).all()
-    canonical = next((row for row in rows if row.key == context.key), None)
+    return select_suggestion_row({(row.kind, row.key): row for row in rows}, context)
+
+
+def select_suggestion_row(
+    rows: Mapping[tuple[str, str], SkillSuggestion], context: SuggestionContext
+) -> SkillSuggestion | None:
+    """Choose the same persisted roadmap for reads, generation, and the library."""
+    canonical = rows.get((context.kind, context.key))
     if canonical is not None or context.kind == "domain":
         return canonical
     legacy_keys = {context.label, *context.members}
-    return next((row for row in rows if row.key in legacy_keys), None)
+    return next(
+        (
+            rows[(context.kind, key)]
+            for key in sorted(legacy_keys)
+            if (context.kind, key) in rows
+        ),
+        None,
+    )
+
+
+def require_roadmap_target(
+    session: Session, context: SuggestionContext, expected_roadmap_id: int
+) -> None:
+    row = find_suggestion_row(session, context)
+    if row is None or row.id != expected_roadmap_id:
+        raise SuggestionTargetChanged()
 
 
 def suggestion_statuses(
@@ -123,10 +153,10 @@ def suggestion_statuses(
     coverage: set[str],
 ) -> list[SuggestionStatus]:
     purge_legacy_theme_suggestions(session)
-    selected: dict[
-        tuple[SuggestionKind, str], tuple[SkillSuggestion, SuggestionContext]
-    ] = {}
-    for row in session.exec(select(SkillSuggestion)).all():
+    contexts: dict[tuple[SuggestionKind, str], SuggestionContext] = {}
+    rows = session.exec(select(SkillSuggestion)).all()
+    rows_by_key = {(row.kind, row.key): row for row in rows}
+    for row in rows:
         if row.kind not in ("skill", "domain"):
             continue
         kind: SuggestionKind = row.kind
@@ -134,10 +164,13 @@ def suggestion_statuses(
             context = resolve_suggestion_context(graph, kind=kind, key=row.key)
         except SuggestionTargetNotFound:
             continue
-        identity = (kind, context.key)
-        existing = selected.get(identity)
-        if existing is None or row.key == context.key:
-            selected[identity] = (row, context)
+        contexts[(kind, context.key)] = context
+
+    selected = {
+        identity: (row, context)
+        for identity, context in contexts.items()
+        if (row := select_suggestion_row(rows_by_key, context)) is not None
+    }
 
     return [
         SuggestionStatus(
@@ -298,6 +331,7 @@ def generate_suggestion(
     verify: RepoVerifier,
     facts: ProfileFacts,
     reporter=None,
+    expected_roadmap_id: int | None = None,
 ) -> SkillSuggestion:
     coverage = profile_skill_tokens(facts)
     research = expect_text(
@@ -319,6 +353,10 @@ def generate_suggestion(
     # Keep the lock around the short persistence phase, never the network/LLM work.
     with _SQLITE_SUGGESTION_WRITE_LOCK:
         row = find_suggestion_row(session, context)
+        if expected_roadmap_id is not None and (
+            row is None or row.id != expected_roadmap_id
+        ):
+            raise SuggestionTargetChanged()
         if row is None:
             row = SkillSuggestion(kind=context.kind, key=context.key)
             session.add(row)

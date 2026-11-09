@@ -95,9 +95,12 @@ export function LearningRoadmapsPage() {
               {PROGRESS_VALUES.map((value) => <option key={value} value={value}>{t(`roadmaps.${value}`)}</option>)}
             </select></label>
             {update.isError && <p role="alert" className="mb-4 text-sm text-destructive">{t("roadmaps.saveError")}</p>}
-            {!selected.available && <p className="mb-5 text-sm text-muted-foreground">{t("roadmaps.unavailable")}</p>}
+            {!selected.available && <div className="mb-5 space-y-2 text-sm text-muted-foreground">
+              <p>{t(selected.supersededById ? "roadmaps.superseded" : "roadmaps.unavailable")}</p>
+              {selected.supersededById && <Link className="text-primary underline underline-offset-2" to={`?${new URLSearchParams({ ...Object.fromEntries(params), status: "all", plan: String(selected.supersededById) })}`}>{t("roadmaps.openCurrent")}</Link>}
+            </div>}
             <SuggestionPanel envelope={selected.envelope} isLoading={false} generating={generating} canGenerate={selected.available}
-              onGenerate={() => { const suggestion = selected.envelope.suggestion!; void generate(suggestion.kind, suggestion.key); }} />
+              onGenerate={() => { const suggestion = selected.envelope.suggestion!; void generate(suggestion.kind, suggestion.key, selected.id); }} />
           </> : <p className="py-8 text-sm text-muted-foreground">{t(params.has("plan") ? "roadmaps.missing" : "roadmaps.choose")}</p>}
         </section>
       </div>

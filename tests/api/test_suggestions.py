@@ -372,6 +372,72 @@ def test_roadmap_generation_returns_quota_error_envelope(monkeypatch, tmp_path):
     assert response.json()["error"]["code"] == "QUOTA_EXCEEDED"
 
 
+def test_roadmap_generation_rejects_a_superseded_selection_before_research(
+    monkeypatch, tmp_path
+):
+    from resume_tailor_harness.tracking.tables import SkillSuggestion
+
+    _configure(monkeypatch, tmp_path)
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        with get_session(app.state.engine) as session:
+            legacy = SkillSuggestion(kind="skill", key="K8s")
+            canonical = SkillSuggestion(kind="skill", key="kubernetes")
+            session.add_all([legacy, canonical])
+            session.commit()
+            legacy_id = legacy.id
+        response = client.post(
+            "/api/suggestions/generate",
+            json={"kind": "skill", "key": "kubernetes", "expectedRoadmapId": legacy_id},
+        )
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "ROADMAP_CHANGED"
+
+
+def test_roadmap_generation_reuses_legacy_row_and_keeps_its_progress(
+    monkeypatch, tmp_path
+):
+    from resume_tailor_harness.tracking.tables import (
+        LearningRoadmapProgress,
+        SkillSuggestion,
+    )
+
+    _configure(monkeypatch, tmp_path)
+    monkeypatch.setattr(run_module, "build_search_agent", lambda: _Agent("Research"))
+    monkeypatch.setattr(
+        run_module,
+        "build_formatter_agent",
+        lambda: _Agent(SuggestionDraft(bridge="New advice")),
+    )
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        with get_session(app.state.engine) as session:
+            row = SkillSuggestion(kind="skill", key="Kubernetes")
+            session.add(row)
+            session.commit()
+            assert row.id is not None
+            row_id = row.id
+            session.add(
+                LearningRoadmapProgress(suggestion_id=row_id, status="completed")
+            )
+            session.commit()
+
+        response = client.post(
+            "/api/suggestions/generate",
+            json={"kind": "skill", "key": "kubernetes", "expectedRoadmapId": row_id},
+        )
+        assert response.status_code == 202, response.json()
+        assert _wait_for_run(client, response.json()["runId"])["state"] == "done"
+        with get_session(app.state.engine) as session:
+            saved = session.get(SkillSuggestion, row_id)
+            progress = session.get(LearningRoadmapProgress, row_id)
+            assert saved is not None and saved.key == "kubernetes"
+            assert saved.payload_json["bridge"] == "New advice"
+            assert progress is not None and progress.status == "completed"
+
+
 def test_concurrent_first_progress_updates_both_succeed(tmp_path, monkeypatch):
     from threading import Barrier
 
@@ -448,6 +514,49 @@ def test_duplicate_roadmap_generation_joins_active_run(monkeypatch, tmp_path):
             )
             assert first.status_code == second.status_code == 202
             assert first.json()["runId"] == second.json()["runId"]
+        finally:
+            release.set()
+        assert _wait_for_run(client, first.json()["runId"])["state"] == "done"
+
+
+def test_roadmap_generation_does_not_join_an_unchecked_run(monkeypatch, tmp_path):
+    from threading import Event
+
+    from resume_tailor_harness.tracking.tables import SkillSuggestion
+
+    _configure(monkeypatch, tmp_path)
+    release = Event()
+
+    class SlowAgent(_Agent):
+        def run(self, prompt):
+            assert release.wait(timeout=5)
+            return super().run(prompt)
+
+    monkeypatch.setattr(run_module, "build_search_agent", lambda: SlowAgent("Research"))
+    monkeypatch.setattr(
+        run_module,
+        "build_formatter_agent",
+        lambda: _Agent(SuggestionDraft(bridge="Bridge")),
+    )
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        with get_session(app.state.engine) as session:
+            row = SkillSuggestion(kind="domain", key="infra")
+            session.add(row)
+            session.commit()
+            row_id = row.id
+        try:
+            first = client.post(
+                "/api/suggestions/generate", json={"kind": "domain", "key": "infra"}
+            )
+            second = client.post(
+                "/api/suggestions/generate",
+                json={"kind": "domain", "key": "infra", "expectedRoadmapId": row_id},
+            )
+            assert first.status_code == 202
+            assert second.status_code == 409
+            assert second.json()["error"]["code"] == "CONFLICT"
         finally:
             release.set()
         assert _wait_for_run(client, first.json()["runId"])["state"] == "done"
