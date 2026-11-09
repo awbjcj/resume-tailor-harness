@@ -5,6 +5,7 @@ import { http, HttpResponse } from "msw";
 import { it, expect, vi } from "vitest";
 import { server } from "@/test/server";
 import { withQueryClient } from "@/test/utils";
+import i18n from "@/i18n";
 import { LearningRoadmapsPage } from "./LearningRoadmapsPage";
 
 const { generate } = vi.hoisted(() => ({ generate: vi.fn() }));
@@ -52,6 +53,17 @@ it("keeps superseded advice and progress while linking to the current roadmap", 
   expect(screen.getByRole("button", { name: "Regenerate" })).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Regenerate" }));
   expect(generate).toHaveBeenCalledWith("domain", "infra", 8);
+});
+it("explains superseded plans in Chinese", async () => {
+  await i18n.changeLanguage("zh-CN");
+  try {
+    server.use(http.get("/api/learning-roadmaps", () => HttpResponse.json([{ ...plan, available: false, supersededById: 8 }])));
+    show();
+    expect(await screen.findByText(/此技能现在对应另一条学习路线/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "打开当前学习路线" })).toBeInTheDocument();
+  } finally {
+    await i18n.changeLanguage("en");
+  }
 });
 it("shows recoverable read and write errors", async () => {
   server.use(http.get("/api/learning-roadmaps", () => HttpResponse.json({ error: { code: "TEST_ERROR", message: "Unavailable" } }, { status: 500 })));
