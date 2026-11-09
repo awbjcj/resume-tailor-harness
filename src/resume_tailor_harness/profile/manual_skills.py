@@ -211,6 +211,8 @@ def apply_manual_skill_entry(
         return updated, None
 
     if isinstance(entry, ManualSkillEntry):
+        if any(skill.id == entry.id for skills in updated.skills.values() for skill in skills):
+            return updated, None
         token = normalize_skill(entry.name)
         existing = {
             normalize_skill(alias)

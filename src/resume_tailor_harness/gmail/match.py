@@ -4,6 +4,7 @@ from urllib.parse import unquote, parse_qs, urlsplit
 from typing import Protocol
 
 from resume_tailor_harness.gmail.client import EmailMessage, authored_text
+from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.tracking.tables import Job
 
 
@@ -18,6 +19,8 @@ class MatchableJob(Protocol):
     def url(self) -> str | None: ...
     @property
     def source_identity(self) -> str | None: ...
+    @property
+    def criteria_json(self) -> dict | None: ...
 
 
 def _text(value: str) -> str:
@@ -51,16 +54,15 @@ def _requisitions(text: str) -> set[str]:
 
 
 def _job_requisitions(job: MatchableJob) -> set[str]:
-    refs = _requisitions(f"{job.url or ''} {job.source_identity or ''}")
-    url = urlsplit(job.url or "")
-    for key, values in parse_qs(url.query).items():
-        if key.lower() in {"gh_jid", "jobid", "job_id", "requisitionid"}:
-            refs.update(value for value in values if value.isdigit())
-    refs.update(
-        re.findall(
-            r"(?:/|:)(\d{4,})(?:/|$)", f"{url.path} {job.source_identity or ''}".strip()
-        )
-    )
+    urls = {job.url or "", application_link(job.url, job.criteria_json) or ""}
+    refs = _requisitions(f"{' '.join(urls)} {job.source_identity or ''}")
+    for value in urls:
+        url = urlsplit(value)
+        for key, values in parse_qs(url.query).items():
+            if key.lower() in {"gh_jid", "jobid", "job_id", "requisitionid"}:
+                refs.update(value for value in values if value.isdigit())
+        refs.update(re.findall(r"(?:/|:)(\d{4,})(?:/|$)", url.path))
+    refs.update(re.findall(r"(?:/|:)(\d{4,})(?:/|$)", job.source_identity or ""))
     return refs
 
 

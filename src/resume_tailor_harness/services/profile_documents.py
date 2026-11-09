@@ -55,6 +55,10 @@ class DocumentStore:
     def _document_path(self, doc_id: str, filename: str) -> Path:
         return confined_path(self._document_dir(doc_id), filename)
 
+    def path_for(self, record: DocumentRecord) -> Path:
+        """Return the confined file path for an uploaded document record."""
+        return self._document_path(record.id, record.filename)
+
     def _read_manifest(self) -> list[dict]:
         if not self._manifest_path.exists():
             return []

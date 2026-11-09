@@ -113,7 +113,10 @@ builder imports a concrete agno model class directly.
   unlike Sol, its non-reasoning effort is `none`. Its 5% cache-read rate and
   >272K full-request context pricing are effective from October 26, 2026.
 - **Dependency note.** Agno is on 3.1.3 or newer within major version 3.
-  The Gemini SDK range stays at `>=2.5.0,<2.30.0` during this upgrade.
+  The Gemini SDK range is `>=2.5.0,<2.35.0`, as declared in `pyproject.toml`
+  and the lockfile (currently 2.28.0). The `test_llm_runner` suites cover
+  offline model construction and request configuration; they do not establish
+  live provider compatibility. Dependency changes require further validation.
   DeepSeek and OpenAI both ride the `openai` SDK. The Responses compatibility
   override forwards Agno 3's `run_response` argument to its parent; omitting
   it breaks actual provider requests even when model-construction tests pass.

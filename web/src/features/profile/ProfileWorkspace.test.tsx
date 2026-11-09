@@ -1,11 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { MemoryRouter } from "react-router-dom";
+import { createMemoryRouter, Link, MemoryRouter, Outlet, RouterProvider } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { withQueryClient } from "@/test/utils";
 import { server } from "@/test/server";
+import { UnsavedChangesProvider } from "@/components/UnsavedChangesProvider";
 import { ProfileWorkspace } from "./ProfileWorkspace";
 
 const mocks = vi.hoisted(() => ({
@@ -136,7 +137,7 @@ describe("ProfileWorkspace", () => {
     );
 
     // Skills live behind their own tab — no longer stacked on one page
-    expect(screen.queryByTestId("skill-groups")).not.toBeInTheDocument();
+    expect(screen.getByTestId("skill-groups")).not.toBeVisible();
     await user.click(screen.getByRole("tab", { name: /skills/i }));
     expect(await screen.findByTestId("skill-groups")).toBeInTheDocument();
   });
@@ -175,6 +176,28 @@ describe("ProfileWorkspace", () => {
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "Sync GitHub" })).toBeDisabled();
     expect(screen.getByText(/Save your GitHub changes before syncing/)).toBeInTheDocument();
+  });
+
+  it("retains committed and unfinished GitHub edits across profile tabs and guards leaving", async () => {
+    const user = userEvent.setup();
+    const router = createMemoryRouter([{
+      element: <UnsavedChangesProvider><Link to="/other">Other page</Link><Outlet /></UnsavedChangesProvider>,
+      children: [
+        { path: "/profile", element: <ProfileWorkspace /> },
+        { path: "/other", element: <h1>Other page</h1> },
+      ],
+    }], { initialEntries: ["/profile"] });
+    render(<RouterProvider router={router} />, { wrapper: withQueryClient });
+    await user.type(screen.getByLabelText("GitHub username"), "ada");
+    await user.click(screen.getByText("Import preferences"));
+    await user.type(screen.getByLabelText("Always include repositories"), "unfinished");
+    await user.click(screen.getByRole("tab", { name: /skills/i }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /documents/i }));
+    expect(screen.getByLabelText("GitHub username")).toHaveValue("ada");
+    expect(screen.getByLabelText("Always include repositories")).toHaveValue("unfinished");
+    await user.click(screen.getByRole("link", { name: "Other page" }));
+    expect(await screen.findByRole("alertdialog")).toBeVisible();
   });
 
   it("keeps invalid limits dirty and lets the user discard them", async () => {

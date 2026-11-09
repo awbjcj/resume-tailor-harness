@@ -106,10 +106,22 @@ async def upload_document(
         content = await read_upload_async(file, max_bytes=_MAX_SOURCE_BYTES)
     except UploadTooLargeError as exc:
         raise ApiException(422, "VALIDATION_ERROR", str(exc)) from exc
+    store = _docs(request)
     try:
-        record = _docs(request).add(file.filename or "upload", content, doc_type)
+        record = store.add(file.filename or "upload", content, doc_type)
     except DocumentError as exc:
         raise ApiException(422, "VALIDATION_ERROR", str(exc)) from exc
+    profile_dir = _profile_dir(request)
+    if record.doc_type == "resume":
+        try:
+            with source_lock(profile_dir):
+                if (profile_dir / MANIFEST_NAME).exists() and not any(
+                    doc.primary for doc in load_manifest(profile_dir).docs
+                ):
+                    add_source(profile_dir, store.path_for(record), primary=True, mode="literal")
+        except Exception:
+            store.delete(record.id)
+            raise
     return DocumentOut.model_validate(record)
 
 
@@ -128,8 +140,12 @@ def launch_profile_build(request: Request, mgr: RunManager = Depends(get_run_man
         doc.primary and doc.mode == "literal" for doc in load_manifest(profile_dir).docs
     )
     settings = get_settings_dep(request)
-    if not conversation_only and not model_access_available(
-        settings.mid_model, settings=settings
+    needs_synthesis = conversation_only and any(
+        doc.mode == "synthesis" for doc in load_manifest(profile_dir).docs
+    )
+    if (not conversation_only or needs_synthesis) and (
+        not model_access_available(settings.mid_model, settings=settings)
+        or needs_synthesis and not model_access_available(settings.cheap_model, settings=settings)
     ):
         raise ApiException(
             400,
