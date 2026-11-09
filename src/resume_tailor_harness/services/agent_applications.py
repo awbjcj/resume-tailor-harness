@@ -27,6 +27,7 @@ from resume_tailor_harness.api.schemas.config import (
     ApplicationProfileDoc,
     SearchConfigDoc,
 )
+from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.services.application_prompt import build_application_prompt
 from resume_tailor_harness.services.application_materials import (
     application_materials,
@@ -87,7 +88,7 @@ def _job_data(job: Job) -> ApplicationJobOut:
         title=job.title,
         company=job.company,
         location=job.location,
-        url=job.url,
+        url=application_link(job.url, job.criteria_json),
         status=job.status,
     )
 

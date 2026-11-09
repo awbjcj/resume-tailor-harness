@@ -38,7 +38,9 @@ export function WorkspaceProposalCard({ proposal }: { proposal: Proposal }) {
   const [selection, setSelection] = useState(() => pending.filter((action) => !isRemovalAction(action)).map((action) => action.id));
   const selected = selection.filter((id) => pending.some((action) => action.id === id));
   const deletions = pending.filter((action) => selected.includes(action.id) && isRemovalAction(action));
-  const unconfirmed = proposal.actions.some((action) => action.receipt?.state === "unconfirmed");
+  const unconfirmed = proposal.actions.some((action) =>
+    action.receipt?.state === "outcome_unknown" || action.receipt?.state === "unconfirmed",
+  );
   const review = useMutation({
     mutationFn: ({ decision, actionIds }: { decision: "apply" | "discard"; actionIds: string[] }) => unwrap(api.POST("/api/workspace-agent/proposals/{proposal_id}/review", {
       params: { path: { proposal_id: proposal.id } },

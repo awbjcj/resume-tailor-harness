@@ -1,4 +1,4 @@
-name: Require dev as PR source
+name: Require dev or hotfix as PR source
 
 # main only accepts merges from dev, or from a hotfix/* branch for urgent
 # out-of-band fixes (see CLAUDE.md > Branching). This check fails any pull

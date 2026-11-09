@@ -36,6 +36,18 @@ def posting_url(value: str | None) -> str | None:
     return value
 
 
+def application_link(url: str | None, criteria: dict | None) -> str | None:
+    """Return a manually supplied application link, falling back to the posting."""
+    details = (criteria or {}).get("manual_details")
+    candidate = details.get("application_url") if isinstance(details, dict) else None
+    if isinstance(candidate, str):
+        try:
+            return posting_url(candidate) or url
+        except ValueError:
+            pass
+    return url
+
+
 class ManualJobDetails(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
@@ -93,11 +105,29 @@ class ManualJobDetails(BaseModel):
             if name in supplied:
                 values[name] = supplied[name]
         if self.salary_min is not None or self.salary_max is not None:
+            currency = self.salary_currency or "USD"
+            period = self.salary_period or "year"
+            extracted = criteria.salary_range
+            compatible = extracted is not None and (
+                extracted.currency.upper() == currency.upper() and extracted.period == period
+            )
+            minimum = self.salary_min if self.salary_min is not None else (
+                extracted.minimum if compatible and extracted is not None else None
+            )
+            maximum = self.salary_max if self.salary_max is not None else (
+                extracted.maximum if compatible and extracted is not None else None
+            )
+            # An explicit bound wins when the extracted opposite bound conflicts.
+            if minimum is not None and maximum is not None and minimum > maximum:
+                if self.salary_min is None:
+                    minimum = None
+                else:
+                    maximum = None
             values["salary_range"] = SalaryRange(
-                minimum=self.salary_min,
-                maximum=self.salary_max,
-                currency=self.salary_currency or "USD",
-                period=self.salary_period or "year",
+                minimum=minimum,
+                maximum=maximum,
+                currency=currency,
+                period=period,
             ).model_dump(mode="json")
         values["manual_details"] = supplied
         return JobCriteria.model_validate(values)

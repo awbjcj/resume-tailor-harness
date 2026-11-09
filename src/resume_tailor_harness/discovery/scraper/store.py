@@ -31,6 +31,10 @@ from .tables import (
 )
 
 
+SAVED_CORRECTION_CONFLICT = "The source changed beneath your saved correction; review the new evidence"
+CORRECTION_REVISION_MARKER = " [correction revision:"
+
+
 class RevisionConflict(ValueError):
     pass
 
@@ -143,6 +147,7 @@ class ScrapeStore:
 
     def save_observation(self, value: Observation) -> None:
         if self.session.get(ScrapeObservationRow, value.id) is None:
+            conflict_revisions: dict[int, int] = {}
             previous = None
             if value.job_key:
                 previous = self.session.exec(
@@ -167,16 +172,22 @@ class ScrapeStore:
                             FieldIssue(
                                 field=cast(FieldName, override.field),
                                 kind="conflict",
-                                message="The source changed beneath your saved correction; review the new evidence",
+                                message=SAVED_CORRECTION_CONFLICT,
                             )
                         )
+                        conflict_revisions[len(value.issues) - 1] = override.revision
+            stored = value.model_copy(deep=True)
+            for index, revision in conflict_revisions.items():
+                # Persist the correction revision without changing the public
+                # issue contract or the in-memory pull report.
+                stored.issues[index].message += f"{CORRECTION_REVISION_MARKER}{revision}]"
             self.session.add(
                 ScrapeObservationRow(
                     id=value.id,
                     job_key=value.job_key,
                     source_id=value.source_id,
                     job_id=previous.job_id if previous else None,
-                    payload=value.model_dump_json(),
+                    payload=stored.model_dump_json(),
                 )
             )
             self.session.flush()

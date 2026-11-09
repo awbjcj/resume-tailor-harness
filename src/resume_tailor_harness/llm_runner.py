@@ -2131,6 +2131,10 @@ def _anthropic_max_tokens(model: str, *, reasoning: bool) -> int:
     the SDK enforces (Opus 4/4.1 only) so a custom id cannot raise ValueError.
     """
     want = 32000 if reasoning else 16000
+    if anthropic_version(model) is None:
+        # Pre-4 and unrecognized custom IDs may have much smaller model output
+        # limits than the SDK's non-streaming guidance. Keep a conservative cap.
+        want = min(want, 4096)
     try:
         from anthropic._constants import MODEL_NONSTREAMING_TOKENS
     except ImportError:  # pragma: no cover - private SDK constant
@@ -2408,7 +2412,7 @@ def _build_model_from_route(
         # INVALID_ARGUMENT before any generation, which agno then surfaces as a
         # plain str (the error body) rather than the output_schema. Bound it
         # with thinking_level="low" instead; that reports no thought tokens.
-        # Pre-3 ids have no thinking_level, so there 0 is still the way off.
+        # Older ids require model-specific budgets where supported.
         if model.casefold().startswith(("gemini-3", "gemini-4")):
             if model.casefold() == "gemini-4-argon":
                 # This adapter uses generateContent, whose non-streaming hop
@@ -2427,14 +2431,19 @@ def _build_model_from_route(
                 include_thoughts=reasoning,
                 **options,
             )
-        # Pre-3 ids have no thinking_level at all -- sending one is the mirror
-        # image of the thinking_budget-on-Gemini-3 failure, and agno forwards any
-        # non-None value straight into ThinkingConfig -- so 0 is the only way off
-        # here, and reasoning is left to the provider's own budget.
+        # Pre-3 ids have no thinking_level. Only the documented 2.5 Flash
+        # family supports disabling thinking; 2.5 Pro has a minimum of 128.
+        # Leave unknown/older custom models to their provider's defaults.
+        family = model.casefold()
+        minimum = (
+            128 if family.startswith("gemini-2.5-pro")
+            else 0 if family.startswith("gemini-2.5-flash")
+            else None
+        )
         return Gemini(
             id=model,
             api_key=key,
-            thinking_budget=None if reasoning else 0,
+            thinking_budget=None if reasoning else minimum,
             include_thoughts=reasoning,
             **options,
         )

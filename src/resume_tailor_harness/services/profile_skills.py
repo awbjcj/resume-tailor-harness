@@ -68,7 +68,7 @@ def _ledger_path(profile_dir: str | Path) -> Path:
 
 def _load_facts_or_raise(profile_dir: str | Path) -> ProfileFacts:
     try:
-        return load_facts(_facts_path(profile_dir))
+        return load_facts(_facts_path(profile_dir)).model_copy(deep=True)
     except FileNotFoundError as exc:
         raise ProfileNotBuiltError("Build your profile before adding skills") from exc
 
@@ -111,17 +111,23 @@ def _publish(
         )
     ):
         if group is not None:
+            from resume_tailor_harness.profile.effective import build_effective_taxonomy
+            from resume_tailor_harness.profile.matrix import build_decorated_matrix
+            from resume_tailor_harness.services.profile_groups import _resolve_row
+
             organization = load_group_corrections(organization_path, strict=True)
+            row = _resolve_row(build_decorated_matrix(directory, facts), skill_key)
+            aliases = build_effective_taxonomy(directory).cluster_map.aliases
+            tokens = {row.key, normalize_skill(row.display), *(normalize_skill(a) for a in row.aliases)}
+            tokens.update(aliases.get(token, token) for token in list(tokens))
+            for token in tokens:
+                organization.corrections.pop(token, None)
             if group:
                 if group not in organization.group_catalog():
                     raise ValueError("Choose an existing skill group")
-                organization.corrections[normalize_skill(skill_key)] = GroupCorrection(
+                organization.corrections[row.key] = GroupCorrection(
                     group=group, corrected_at=_utcnow()
                 )
-            else:
-                for skill in _resolve_skills(directory, facts, skill_key):
-                    for name in (skill.name, *skill.aliases):
-                        organization.corrections.pop(normalize_skill(name), None)
             save_group_corrections(organization, organization_path)
         save_facts(facts, directory / "facts.json")
         save_manual_skills(ledger, directory / "manual_skills.json")
@@ -184,6 +190,7 @@ def update_skill(
         if category is None and any(s.inferred for s in selected):
             raise ValueError("Choose a skill type for an inferred skill")
         ledger = load_manual_skills(_ledger_path(profile_dir))
+        first_new_entry = len(ledger.entries)
         if len(selected) > 1:
             ledger.entries.append(
                 ManualMergeEntry(
@@ -214,7 +221,7 @@ def update_skill(
                 added_at=_utcnow(),
             )
         )
-        updated, _ = apply_manual_skills(facts, ledger)
+        updated, _ = apply_manual_skills(facts, ManualSkillsLedger(entries=ledger.entries[first_new_entry:]))
         _publish(profile_dir, updated, ledger, group=group, skill_key=name)
 
 
@@ -237,7 +244,7 @@ def merge_skills(profile_dir: str | Path, keys: list[str], into: str) -> None:
                 added_at=_utcnow(),
             )
         )
-        updated, _ = apply_manual_skills(facts, ledger)
+        updated, _ = apply_manual_skills(facts, ManualSkillsLedger(entries=ledger.entries[-1:]))
         _publish(profile_dir, updated, ledger)
 
 
@@ -317,7 +324,7 @@ def add_skill(
             added_at=_utcnow(),
         )
         ledger.entries.append(entry)
-        updated_facts, _warnings = apply_manual_skills(facts, ledger)
+        updated_facts, _warnings = apply_manual_skills(facts, ManualSkillsLedger(entries=[entry]))
         _publish(profile_dir, updated_facts, ledger, group=group, skill_key=name)
         return entry
 
@@ -350,7 +357,7 @@ def add_alias(profile_dir: str | Path, skill_id: str, alias: str) -> ManualAlias
         )
         ledger = load_manual_skills(_ledger_path(profile_dir))
         ledger.entries.append(entry)
-        updated_facts, _warnings = apply_manual_skills(facts, ledger)
+        updated_facts, _warnings = apply_manual_skills(facts, ManualSkillsLedger(entries=[entry]))
         _publish(profile_dir, updated_facts, ledger)
         return entry
 
@@ -388,7 +395,9 @@ def delete_skill(profile_dir: str | Path, key: str) -> None:
                     token=token, display=match.name, skills=matches, added_at=_utcnow()
                 )
             )
-        updated_facts, _warnings = apply_manual_skills(facts, ledger)
+        updated_facts, _warnings = apply_manual_skills(
+            facts, ManualSkillsLedger(entries=[ManualSuppressEntry(token=token, display=match.name, skills=matches, added_at=_utcnow())])
+        )
         _publish(profile_dir, updated_facts, ledger)
 
 
@@ -416,5 +425,4 @@ def restore_skill(profile_dir: str | Path, token: str) -> None:
                     )
         ledger.cleanup_exempt = list(dict.fromkeys([*ledger.cleanup_exempt, norm]))
         ledger.entries = [e for e in ledger.entries if e not in removed]
-        updated_facts, _warnings = apply_manual_skills(facts, ledger)
-        _publish(profile_dir, updated_facts, ledger)
+        _publish(profile_dir, facts, ledger)

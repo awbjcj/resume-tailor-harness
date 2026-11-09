@@ -37,6 +37,7 @@ from resume_tailor_harness.api.schemas.application_accounts import (
     AccountVaultOut,
 )
 from resume_tailor_harness.services.agent_applications import require_application_job
+from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.tracking.tables import Job
 
 _MAX_VAULT_BYTES = 4 * 1024 * 1024
@@ -373,7 +374,8 @@ class AccountVault:
                     "REGISTRATION_DISABLED",
                     "Enable automatic account creation in Password manager or save an existing account",
                 )
-            if not job.url or login_origin(job.url) != origin:
+            apply_url = application_link(job.url, job.criteria_json)
+            if not apply_url or login_origin(apply_url) != origin:
                 raise AccountVaultError(
                     "LOGIN_SITE_UNTRUSTED",
                     "The login site differs from the job site; confirm it with the user and save the account in settings",

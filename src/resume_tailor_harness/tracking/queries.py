@@ -14,6 +14,7 @@ from resume_tailor_harness.job_description import (
 from resume_tailor_harness.h1b.cache import load_company_evidence
 from resume_tailor_harness.h1b.models import H1BSponsorshipEvidence
 from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.taxonomy.company_size import snap as snap_size
 from resume_tailor_harness.taxonomy.industries import normalize_company
 from resume_tailor_harness.taxonomy.location import location_instances_from_criteria
@@ -268,7 +269,7 @@ def _shortlist_row(
         location_region=loc.get("region"),
         location_city=loc.get("city"),
         is_us=bool(loc.get("is_us")),
-        url=job.url,
+        url=application_link(job.url, job.criteria_json),
         h1b_sponsorship_status=_h1b_sponsorship_status(job, evidence_by_company),
     )
 
@@ -443,7 +444,7 @@ def project_pipeline_jobs(
                 has_progress=job_has_progress(job, progressed),
                 needs_attention=best.no_clean_round,
                 regressed=best.regressed,
-                url=job.url,
+                url=application_link(job.url, job.criteria_json),
                 h1b_sponsorship_status=_h1b_sponsorship_status(
                     job, evidence_by_company
                 ),
@@ -573,7 +574,7 @@ def _triage_row(
         has_progress=job_has_progress(job, progressed),
         reject_reason=job.reject_reason,
         reject_category=job.reject_category,
-        url=job.url,
+        url=application_link(job.url, job.criteria_json),
         h1b_sponsorship_status=_h1b_sponsorship_status(job, evidence_by_company),
         locations=locations,
     )

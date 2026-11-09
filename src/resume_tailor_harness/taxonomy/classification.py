@@ -670,9 +670,9 @@ async def classify_incrementally(
                     )
                 )
             reconciled_aliases.update(reconciled.aliases)
-            # Every head in this shard is now a canonical the next chunk may
-            # reuse — whether the model merged it or it stayed itself.
-            running_stable |= set(shard)
+            # Later shards must see resolved canonicals, not a head that was
+            # just merged into another canonical.
+            running_stable.update(reconciled.aliases.get(head, head) for head in shard)
             if reconciled.failed_tokens:
                 failures.append(
                     ClassificationFailure(

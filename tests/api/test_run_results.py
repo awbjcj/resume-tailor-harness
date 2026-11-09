@@ -106,6 +106,27 @@ def test_job_result_uses_current_submission_and_preserves_read_state(app_client)
         assert len(session.exec(select(Application)).all()) == 1
 
 
+@pytest.mark.parametrize(
+    "kind", ["companyIntelligence", "hiringContactIntelligence", "rolePreparation"]
+)
+def test_research_result_opens_research_tab(app_client, kind):
+    app, client, job_id = app_client
+    with Session(app.state.engine) as session:
+        record_run_completion(
+            session,
+            run_id="research",
+            kind=kind,
+            label="Done",
+            status="succeeded",
+            error=None,
+            completed_at=datetime.now(timezone.utc),
+            meta={"jobId": job_id},
+        )
+    result = client.get("/api/run-completions/by-run/research").json()
+    assert result["resultHref"] == f"/pipeline?job={job_id}&tab=research"
+    assert result["resultAvailable"] is True
+
+
 def test_revision_uses_created_artifact_and_deleted_result_has_safe_fallback(
     app_client,
 ):
