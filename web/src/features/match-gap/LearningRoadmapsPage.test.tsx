@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { http, HttpResponse } from "msw";
@@ -21,17 +21,30 @@ it("opens a deep-linked domain roadmap, persists progress, archives and restores
     http.patch("/api/learning-roadmaps/7", async ({ request }) => { status = (await request.json() as { status: string }).status; return new HttpResponse(null, { status: 204 }); }));
   show();
   expect(await screen.findByText("Practice deployment")).toBeInTheDocument();
-  const detail = screen.getByRole("region", { name: "Infrastructure" });
-  await userEvent.selectOptions(within(detail).getByRole("combobox"), "archived");
-  expect(await screen.findByText("No roadmaps match these filters.")).toBeInTheDocument();
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Progress" }), "archived");
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "Progress" })).toBeEnabled());
   expect(status).toBe("archived");
-  await userEvent.selectOptions(within(detail).getByRole("combobox"), "in_progress");
-  expect(await screen.findByRole("link", { name: /Infrastructure/ })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("link", { name: "Back to roadmaps" }));
+  expect(await screen.findByText("All your roadmaps are archived")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "View archived roadmaps" }));
+  await userEvent.click(await screen.findByRole("link", { name: "Infrastructure" }));
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Progress" }), "in_progress");
+  await waitFor(() => expect(screen.getByRole("combobox", { name: "Progress" })).toBeEnabled());
+  await userEvent.click(screen.getByRole("link", { name: "Back to roadmaps" }));
+  expect(screen.getByRole("combobox", { name: "Filter by progress" })).toHaveValue("archived");
+  await userEvent.click(screen.getByRole("button", { name: "Reset filters" }));
+  expect(await screen.findByRole("link", { name: "Infrastructure" })).toBeInTheDocument();
   await userEvent.type(screen.getByRole("textbox", { name: "Search roadmaps" }), "missing");
   expect(screen.getByText("No roadmaps match these filters.")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
   expect(screen.getByRole("textbox", { name: "Search roadmaps" })).toHaveFocus();
   expect(screen.getByRole("link", { name: /Infrastructure/ })).toBeInTheDocument();
+});
+it("offers a route into Match Gap from an empty library", async () => {
+  server.use(http.get("/api/learning-roadmaps", () => HttpResponse.json([])));
+  show("/learning-roadmaps");
+  expect(await screen.findByRole("heading", { name: "No roadmaps yet" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Explore skill gaps" })).toHaveAttribute("href", "/match-gap");
 });
 it("keeps unavailable targets readable without offering regeneration", async () => {
   server.use(http.get("/api/learning-roadmaps", () => HttpResponse.json([{ ...plan, available: false }])));
