@@ -42,7 +42,7 @@ describe("SuggestionPanel", () => {
     );
 
     expect(screen.getByText("foo/bar")).toBeInTheDocument();
-    expect(screen.getByText(/42/)).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "42 stars" })).toBeInTheDocument();
     expect(screen.getByText("Kubernetes docs")).toBeInTheDocument();
     expect(screen.getByText("Mini scheduler")).toBeInTheDocument();
     expect(screen.getByText(/short jump/)).toBeInTheDocument();
