@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { expect, it, vi } from "vitest";
 
 import { server } from "@/test/server";
+import { changeLanguage } from "@/i18n";
 import type { SkillRow } from "./aggregate";
 import { SkillModal } from "./SkillModal";
 
@@ -47,4 +48,6 @@ it("shows evidence and loads suggestions by stable key", async () => {
   expect(screen.getByText("python3")).toBeInTheDocument();
   expect(screen.getByText("2 jobs", { exact: false })).toBeInTheDocument();
   await waitFor(() => expect(requestedKey).toBe("python"));
+  await changeLanguage("zh-CN");
+  expect(await screen.findByText("未生成")).toBeInTheDocument();
 });

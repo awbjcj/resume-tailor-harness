@@ -103,6 +103,7 @@
     "none": "未生成",
     "not_found": "暂不可用",
     "ready": "已就绪",
+    "stale": "待复查",
     "queued": "已排队",
     "researching": "调研中",
     "failed": "失败",

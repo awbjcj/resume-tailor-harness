@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import "@/i18n/roadmap-copy";
+import { localizeGroupingStatus } from "@/i18n/dynamic-labels";
 import { isProvisionalSkill } from "./aggregate";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { select } from "d3-selection";
@@ -63,7 +64,7 @@ export function SkillMap({
   onOpenSkill: (skill: SkillRow) => void;
   onOpenDomain?: (target: SuggestionTarget) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const editRows = editCategoryRows ?? categoryRows;
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -275,7 +276,7 @@ export function SkillMap({
                         ? isProvisionalSkill(node.skill)
                           ? "Provisional category placement; the specific domain still needs confirmation."
                           : node.skill.groupingStatus
-                            ? `Grouping ${node.skill.groupingStatus.state}: ${node.skill.groupingStatus.reason}`
+                            ? localizeGroupingStatus(node.skill.groupingStatus, i18n.resolvedLanguage)
                             : undefined
                         : undefined
                     }

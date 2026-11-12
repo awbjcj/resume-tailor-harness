@@ -859,11 +859,6 @@
     "en": "Administration",
     "zh-CN": "管理"
   },
-  "Administrator usage is recorded for visibility and still counts toward the platform cap, but has no user-level allowance ceiling.": {
-    "key": "ui_370c624cd912",
-    "en": "Administrator usage is recorded for visibility and still counts toward the platform cap, but has no user-level allowance ceiling.",
-    "zh-CN": "管理员的用量也会记录，并计入平台总额度，但不受个人额度限制。"
-  },
   "Administrators are exempt from individual limits": {
     "key": "ui_18618715e2e2",
     "en": "Administrators are exempt from individual limits",
@@ -4658,11 +4653,6 @@
     "key": "ui_d5150bb6c5de",
     "en": "Greenhouse",
     "zh-CN": "Greenhouse"
-  },
-  "Grouping {{v0}}: {{v1}}": {
-    "key": "ui_15e221e640ef",
-    "en": "Grouping {{v0}}: {{v1}}",
-    "zh-CN": "分组 {{v0}}：{{v1}}"
   },
   "Guidance saved": {
     "key": "ui_ca200e69f8bf",
@@ -11273,11 +11263,6 @@
     "key": "ui_dd333618e89e",
     "en": "Used when \"Deep review\" is selected while tailoring. It has a separate saved roster.",
     "zh-CN": "定制简历时选择“深度评审”，就会使用这套单独保存的评审配置。"
-  },
-  "user": {
-    "key": "ui_04f8996da763",
-    "en": "user",
-    "zh-CN": "用户"
   },
   "User": {
     "key": "ui_b512d97e7cbf",

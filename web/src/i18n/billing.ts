@@ -5,6 +5,8 @@ export const billingEn = {
   balanceLabel: "Credit balance",
   allowanceLabel: "Allowance per cycle",
   unlimitedLabel: "Unlimited",
+  usageStatus: { active: "Active", exhausted: "Exhausted", overage: "Overage", shadow: "Monitoring only" },
+  noCeilingDescription: "Shared-key usage is recorded and counts toward the platform cap. This account has no individual allowance limit.",
   creditSection: "Add credits",
   creditSectionHelp: "A flexible balance for work beyond your plan allowance.",
   planSection: "Choose a plan",
@@ -51,13 +53,15 @@ export const billingEn = {
   status: { active: "Active", past_due: "Payment overdue", canceled: "Canceled", unpaid: "Unpaid", incomplete: "Payment pending", incomplete_expired: "Payment expired", trialing: "Trial", paused: "Paused" },
 };
 
-export const billingZh = {
+export const billingZh: typeof billingEn = {
   kicker: "账户额度",
   loading: "正在加载套餐与余额",
   planLabel: "当前套餐",
   balanceLabel: "账户余额",
   allowanceLabel: "每周期额度",
   unlimitedLabel: "无限额度",
+  usageStatus: { active: "正常", exhausted: "已用尽", overage: "超额", shadow: "仅监测" },
+  noCeilingDescription: "共享密钥用量会被记录并计入平台总额度。此账户没有个人额度上限。",
   creditSection: "充值",
   creditSectionHelp: "套餐额度用完后，可继续使用充值余额。",
   planSection: "选择套餐",
@@ -78,7 +82,7 @@ export const billingZh = {
   expiredHelp: "请在下方重新发起购买。",
   title: "套餐与余额",
   ledger: { purchase: "余额充值", refund: "余额退款", disputed: "付款争议" },
-  description: "可以充值余额，也可以订阅套餐。充值余额不会过期，支付由 Stripe 安全处理。",
+  description: "可以充值，也可以订阅按周期提供额度的套餐。支付由 Stripe 安全处理。",
   manage: "管理账单",
   credits: "余额充值",
   addCredit: "充值",
