@@ -45,6 +45,7 @@ const en = {
     discussJob: "Discuss {{job}}",
   },
   billing: billingEn,
+  accountRoles: { admin: "Administrator", user: "User" },
   emailNotifications: emailNotificationsEn,
   passwordManager: {} as typeof passwordManagerEn,
   manualJob: manualJobEn,
@@ -621,18 +622,19 @@ const en = {
     },
   },
   dashboard: {
-    waiting_zero: "Nothing is waiting on you",
+    waiting_zero: "No jobs need your attention",
     waiting_one: "{{count}} job is waiting on you",
     waiting_other: "{{count}} jobs are waiting on you",
     operations: "Operations",
     subtitle:
       "Fetch new job listings, review them, and create tailored resumes.",
     systemStatus: "System status",
+    failureStages: { pull: "Job retrieval", extract: "Criteria extraction", tailor: "Resume tailoring", render: "PDF generation" },
     queue: {
       triage: "Triage",
       triageDetail: "new jobs to sort",
       approve: "Approve",
-      approveDetail: "shortlisted picks",
+      approveDetail: "shortlisted jobs",
       tailor: "Tailor",
       tailorDetail: "approved and ready",
       apply: "Apply",
@@ -643,7 +645,7 @@ const en = {
       renderDetail: "PDFs to create",
     },
     quickAccess: "Quick access",
-    quickAccessHint: "Open workspace settings in one click",
+    quickAccessHint: "Open workspace settings",
     shortcutsLabel: "Workspace shortcuts",
     openShortcut: "Open {{label}}: {{detail}}",
     shortcuts: {
@@ -899,6 +901,7 @@ const zhCN = {
     }
   },
   billing: billingZh,
+  accountRoles: { admin: "管理员", user: "用户" },
   emailNotifications: emailNotificationsZh,
   passwordManager: {} as typeof passwordManagerEn,
   manualJob: manualJobZh,
@@ -1424,12 +1427,13 @@ const zhCN = {
     },
   },
   dashboard: {
-    waiting_zero: "目前没有待处理事项",
+    waiting_zero: "没有待处理的职位",
     waiting_one: "有 {{count}} 个职位等待你处理",
     waiting_other: "有 {{count}} 个职位等待你处理",
     operations: "求职概览",
     subtitle: "获取最新职位，完成初筛，再生成定制简历。",
     systemStatus: "系统状态",
+    failureStages: { pull: "职位获取", extract: "条件提取", tailor: "简历定制", render: "PDF 生成" },
     queue: {
       triage: "初筛",
       triageDetail: "待整理的新职位",
@@ -1445,7 +1449,7 @@ const zhCN = {
       renderDetail: "待生成的 PDF",
     },
     quickAccess: "快捷入口",
-    quickAccessHint: "一键进入工作区设置",
+    quickAccessHint: "打开工作区设置",
     shortcutsLabel: "工作区快捷入口",
     openShortcut: "打开{{label}}：{{detail}}",
     shortcuts: {

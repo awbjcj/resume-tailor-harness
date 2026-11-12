@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { Link, MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { CareerLabPage } from "./CareerLabPage";
 
 const mocks = vi.hoisted(() => ({
@@ -429,6 +430,13 @@ describe("CareerLabPage", () => {
     expect(screen.queryByRole("option", { name: "tailored" })).not.toBeInTheDocument();
     expect(screen.getByRole("option", { name: "indeed" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "linkedin" })).not.toBeInTheDocument();
+
+    await changeLanguage("zh-CN");
+    const status = await screen.findByLabelText("职位状态");
+    expect(screen.getByRole("option", { name: "已申请" })).toHaveValue("applied");
+    expect(screen.getByRole("option", { name: /Globex · Product Lead · 已申请/ })).toHaveValue("8");
+    await userEvent.selectOptions(status, "applied");
+    expect(status).toHaveValue("applied");
   });
 
   it("labels persisted responses as drafts and keeps the action surface draft-only", () => {

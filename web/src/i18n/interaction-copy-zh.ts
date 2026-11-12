@@ -49,7 +49,7 @@ export const interactionCopyZh: InteractionCopy = {
     jobCount_other: "{{count}} 个职位",
     button: "重做（{{jobs}}）",
     cleanupButton: "重做并删除旧版本",
-    description: "选择要为这 {{jobs}}重做的步骤。默认保留已有的简历版本。",
+    description: "选择要重新执行的步骤，适用于 {{jobs}}。默认保留现有简历版本。",
     renderNew: "为本次定制的最终版本生成 PDF。",
     removePrevious: "删除较早生成的版本",
     removePreviousHint: "新简历通过真实性校验后，永久删除之前定制且未使用的版本。申请已选用的版本，以及关联修改稿或求职信的版本会保留。如需删除已有 PDF 的旧版本，请勾选“重新生成 PDF”，系统会在新 PDF 生成后再删除。",

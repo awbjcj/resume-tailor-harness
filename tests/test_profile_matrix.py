@@ -184,6 +184,21 @@ def test_load_matrix_rebuilds_a_legacy_matrix_with_no_revision(tmp_path):
     assert load_matrix(path, taxonomy=taxonomy) is None
 
 
+def test_legacy_matrix_is_rebuilt_in_memory_when_current_facts_are_available(tmp_path):
+    facts = ProfileFacts(contact=Contact(name="A"), skills={"hard": [Skill(name="py")]})
+    taxonomy = EffectiveTaxonomy.from_parts(ClusterMap(aliases={"py": "python"}))
+    legacy = build_matrix(facts, taxonomy)
+    legacy.taxonomy_revision = ""
+    path = tmp_path / "matrix.json"
+    save_matrix(legacy, path)
+    before = path.read_bytes()
+    recovered = load_matrix(path, facts=facts, taxonomy=taxonomy)
+    assert recovered is not None
+    assert recovered.taxonomy_revision == taxonomy.semantic_revision
+    assert [row.key for row in recovered.rows] == ["python"]
+    assert path.read_bytes() == before
+
+
 def test_load_matrix_accepts_a_matching_revision(tmp_path):
     facts = ProfileFacts(contact=Contact(name="A"), skills={"hard": [Skill(name="py")]})
     taxonomy = EffectiveTaxonomy.from_parts(ClusterMap(aliases={"py": "python"}))

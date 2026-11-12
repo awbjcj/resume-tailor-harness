@@ -36,10 +36,17 @@ export function AccountUsageCard({
     : Math.min(100, (quota.spendMicros / quota.recurringAllowanceMicros) * 100);
   const money = (micros: number | null | undefined) =>
     micros == null
-      ? "Unlimited"
+      ? t("billing.unlimitedLabel")
       : new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(
           micros / 1_000_000,
         );
+  const quotaStatus = quota?.enforcementStatus;
+  const quotaStatusLabels: Record<string, string> = {
+    ACTIVE: t("billing.usageStatus.active"),
+    EXHAUSTED: t("billing.usageStatus.exhausted"),
+    OVERAGE: t("billing.usageStatus.overage"),
+    SHADOW: t("billing.usageStatus.shadow"),
+  };
 
   return (
     <Card className="h-full">
@@ -59,7 +66,9 @@ export function AccountUsageCard({
         </div>
         <CardAction>
           <Badge variant={unlimited ? "default" : "outline"}>
-            {isAdmin ? "Quota exempt" : quota?.enforcementStatus ?? "Unavailable"}
+            {isAdmin ? "Quota exempt" : quotaStatus
+              ? quotaStatusLabels[quotaStatus] ?? quotaStatus
+              : "Unavailable"}
           </Badge>
         </CardAction>
       </CardHeader>
@@ -75,8 +84,7 @@ export function AccountUsageCard({
             <InfinityIcon aria-hidden="true" />
             <AlertTitle>No usage ceiling</AlertTitle>
             <AlertDescription>
-              Administrator usage is recorded for visibility and still counts toward the
-              platform cap, but has no user-level allowance ceiling.
+              {t("billing.noCeilingDescription")}
             </AlertDescription>
           </Alert>
         ) : (

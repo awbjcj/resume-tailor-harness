@@ -4,6 +4,8 @@ import { useId, useState } from "react";
 import { ChevronRightIcon, ExternalLinkIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import "@/i18n/long-list-copy";
+import { useSkillTypeLabels } from "@/i18n/skill-types";
+import { localizeGroupingStatus } from "@/i18n/dynamic-labels";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,23 +30,13 @@ import {
 const INITIAL_DOMAINS = 8;
 const INITIAL_SKILLS = 8;
 
-const STATUS_LABEL: Record<SuggestionState, string> = {
-  none: "Not generated",
-  ready: "Ready",
-  stale: "Stale",
-  queued: "Queued",
-  researching: "Researching",
-  failed: "Failed",
-  cancelled: "Cancelled",
-  not_found: "Unavailable",
-};
-
 function StatusBadge({ state }: { state: SuggestionState }) {
+  const { t } = useTranslation();
   if (state === "none") return null;
   const variant = state === "failed" || state === "not_found" ? "destructive" : "outline";
   return (
     <Badge variant={variant} className={cn(state === "ready" && "border-ready text-ready")}>
-      {STATUS_LABEL[state]}
+      {t(`roadmaps.suggestionStatus.${state}`)}
     </Badge>
   );
 }
@@ -109,8 +101,9 @@ export function RankedList({
   onOpenSkill: (skill: SkillRow) => void;
   onOpenDomain?: (target: SuggestionTarget) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Categories expose the taxonomy and domains open on demand.
+  const skillTypeLabels = useSkillTypeLabels();
   const statsId = useId();
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
   const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
@@ -181,7 +174,7 @@ export function RankedList({
                 <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="min-w-0 text-xs font-semibold uppercase tracking-wide [overflow-wrap:anywhere]">{category.label}</span>
                   <Badge variant={category.kind === "hard" ? "default" : "outline"}>
-                    {category.kind}
+                    {skillTypeLabels[category.kind]}
                   </Badge>
                 </span>
                 <span id={categoryStatsId} className="col-start-2 min-w-0 @lg/outline:col-start-3 @lg/outline:max-w-48 @lg/outline:text-right">
@@ -293,7 +286,7 @@ export function RankedList({
                                       <p className="mt-1 text-xs text-muted-foreground">
                                         {isProvisionalSkill(skill)
                                           ? "Provisional category placement; the specific domain still needs confirmation."
-                                          : `Grouping ${skill.groupingStatus?.state}: ${skill.groupingStatus?.reason}`}
+                                          : skill.groupingStatus && localizeGroupingStatus(skill.groupingStatus, i18n.resolvedLanguage)}
                                       </p>
                                     )}
                                   </div>

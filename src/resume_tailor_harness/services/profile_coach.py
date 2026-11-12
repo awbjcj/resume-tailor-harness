@@ -505,8 +505,6 @@ def approve_draft(
 ) -> str:
     root = Path(profile_dir)
     body = render_note_body(summary, quotes)
-    if not _primary_exists(root):
-        raise ValueError("upload a primary resume before saving coach notes")
     with coach_lock():
         session = load_session(root, session_id)
         draft = next(
@@ -520,7 +518,8 @@ def approve_draft(
         topic = next((row for row in session["topics"] if row["id"] == topic_id), None)
         anchor = (topic or {}).get("owner_id") or None
         doc = add_note_source(
-            root, f"Coach: {title.strip() or topic_id}", body, anchor=anchor
+            root, f"Coach: {title.strip() or topic_id}", body, anchor=anchor,
+            synthesis_only=not _primary_exists(root),
         )
         set_draft_status(root, session_id, topic_id, "saved", note_doc_id=doc.id)
         # A late approval remains actionable in this same session, including

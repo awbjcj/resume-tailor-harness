@@ -103,6 +103,7 @@
     "none": "未生成",
     "not_found": "暂不可用",
     "ready": "已就绪",
+    "stale": "待复查",
     "queued": "已排队",
     "researching": "调研中",
     "failed": "失败",
@@ -155,6 +156,9 @@
     "cancelled": "已取消"
   },
   "runErrors": {
+    "A run is already active for this item": "此项目已有任务正在运行。",
+    "This roadmap has changed. Reload the learning library before regenerating.": "此学习路线已更改。请刷新学习路线库后再重新生成。",
+    "SuggestionTargetChanged: This roadmap has changed. Reload the learning library before regenerating.": "此学习路线已更改。请刷新学习路线库后再重新生成。",
     "GmailApiError: A Gmail sync is already running for this workspace.": "此工作区已有 Gmail 同步正在运行。",
     "GmailApiError: Gmail did not return a mailbox identity and sync cursor.": "Gmail 未返回邮箱标识和同步标记，请稍后重试。",
     "GmailApiError: Gmail repeated a page cursor. Saved progress is retained; try again later.": "Gmail 返回了重复的分页标记。已保存的进度将保留，请稍后重试。",

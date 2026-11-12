@@ -16,7 +16,7 @@ export const applicationUpdatesEn = {
   changed: "This update has changed. Close this draft and review the latest application update.",
 };
 
-export const applicationUpdatesZh = {
+export const applicationUpdatesZh: typeof applicationUpdatesEn = {
   addToTimeline: "添加到时间线",
   reviewTitle: "审核申请状态更新",
   reviewDescription: "接受此状态更新，并将已确认的事件添加到时间线。",

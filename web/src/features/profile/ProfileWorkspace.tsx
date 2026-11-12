@@ -242,7 +242,7 @@ export function ProfileWorkspace() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="documents" className="flex flex-col gap-4 pt-2">
+        <TabsContent value="documents" keepMounted className="flex flex-col gap-4 pt-2">
           <SourceManager disabled={busy} onRefresh={rebuild} refreshDisabled={buildDisabled} />
           <section
             aria-label="GitHub projects"
@@ -377,7 +377,7 @@ export function ProfileWorkspace() {
           <BuildReportPanel />
         </TabsContent>
 
-        <TabsContent value="skills" className="flex flex-col gap-6 pt-2">
+        <TabsContent value="skills" keepMounted className="flex flex-col gap-6 pt-2">
           <SkillGroupsPanel disabled={busy} />
         </TabsContent>
       </Tabs>

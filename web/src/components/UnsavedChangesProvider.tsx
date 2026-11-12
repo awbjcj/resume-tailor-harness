@@ -7,6 +7,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { UnsavedChangesContext, type PendingEdit } from "@/hooks/use-unsaved-changes";
 
+function profileTabOnly(currentPath: string, nextPath: string, currentSearch: string, nextSearch: string) {
+  if (currentPath !== "/profile" || nextPath !== currentPath) return false;
+  const current = new URLSearchParams(currentSearch);
+  const next = new URLSearchParams(nextSearch);
+  if (current.get("tab") === next.get("tab")) return false;
+  current.delete("tab");
+  next.delete("tab");
+  return current.toString() === next.toString();
+}
+
 /** One blocker for the workspace, including pages with several independent editors. */
 export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   const [edits, setEdits] = useState<Record<string, PendingEdit>>({});
@@ -22,7 +32,11 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   const dirty = Object.values(edits).some((edit) => edit.dirty);
   const saving = Object.values(edits).some((edit) => edit.saving);
   const blocker = useBlocker(({ currentLocation, nextLocation }) => dirty && (
-    currentLocation.pathname !== nextLocation.pathname || currentLocation.search !== nextLocation.search
+    currentLocation.pathname !== nextLocation.pathname || (
+      currentLocation.search !== nextLocation.search && !profileTabOnly(
+        currentLocation.pathname, nextLocation.pathname, currentLocation.search, nextLocation.search,
+      )
+    )
   ));
   useBeforeUnload(useCallback((event) => {
     if (!dirty) return;

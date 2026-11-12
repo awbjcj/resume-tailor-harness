@@ -276,7 +276,7 @@ def add_job_from_text(
         session,
         source="manual",
         jd_text=jd_text,
-        url=(details.application_url if details else None) or url,
+        url=url or (details.source_url if details else None),
         company=company,
         title=title,
         location=location,

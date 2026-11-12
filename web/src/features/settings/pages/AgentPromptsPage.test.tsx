@@ -48,6 +48,7 @@ const items = [
 ];
 
 vi.mock("../use-prompts", () => ({
+  PROMPTS_KEY: ["agent-prompts"],
   usePrompts: () => ({ data: items, isPending: false, isError: queryState.failed, error: queryState.failed ? new Error("Refresh failed") : null }),
   useSaveGuidance: () => ({ mutate: save, isPending: false }),
 }));

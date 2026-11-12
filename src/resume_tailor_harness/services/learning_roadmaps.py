@@ -15,6 +15,7 @@ from resume_tailor_harness.services.suggestions import (
     SuggestionKind,
     SuggestionTargetNotFound,
     resolve_suggestion_context,
+    select_suggestion_row,
     suggestion_fingerprint,
 )
 from resume_tailor_harness.tracking.match_gap import DemandGraph
@@ -32,18 +33,27 @@ def list_roadmaps(
         for row in session.exec(select(LearningRoadmapProgress)).all()
     }
     results = []
-    for row in session.exec(
-        select(SkillSuggestion).order_by(
-            col(SkillSuggestion.generated_at).desc(), col(SkillSuggestion.id).desc()
-        )
-    ).all():
+    rows = list(
+        session.exec(
+            select(SkillSuggestion).order_by(
+                col(SkillSuggestion.generated_at).desc(), col(SkillSuggestion.id).desc()
+            )
+        ).all()
+    )
+    rows_by_key = {(row.kind, row.key): row for row in rows}
+    for row in rows:
         if row.kind not in ("skill", "domain") or row.id is None:
             continue
         kind = cast(SuggestionKind, row.kind)
         label, key, available, stale = row.key, row.key, False, True
+        superseded_by_id = None
         try:
             context = resolve_suggestion_context(graph, kind=kind, key=row.key)
-            label, key, available = context.label, context.key, True
+            selected = select_suggestion_row(rows_by_key, context)
+            if selected is not None and selected.id != row.id:
+                superseded_by_id = selected.id
+            else:
+                label, key, available = context.label, context.key, True
             stale = row.fingerprint != suggestion_fingerprint(context, coverage)
         except SuggestionTargetNotFound:
             pass
@@ -52,6 +62,7 @@ def list_roadmaps(
                 id=row.id,
                 label=label,
                 available=available,
+                superseded_by_id=superseded_by_id,
                 status=cast(LearningStatus, progress.get(row.id, "planned")),
                 envelope=SuggestionEnvelope(
                     stale=stale,

@@ -66,8 +66,9 @@ produce a warning rather than attaching a correction to a guessed record.
 Explicit skill overrides also reconcile later direct skill edits with chat edits,
 so an older proposal cannot undo a newer alias, removal or restoration on rebuild.
 Removing a fact also removes inferred skills whose evidence no longer exists.
-Profiles created only through conversation rebuild deterministically without
-calling extraction models or requiring a primary resume.
+Profiles created only through conversation can rebuild without a primary
+resume. Rebuilding approved conversational edits is deterministic; saved coach
+notes are synthesized and evidence-checked during an explicit refresh.
 
 Skill display categories use the same catalog as the Profile skill library.
 `inspect_profile` pages `skill_categories` and `skill_groups`; a category move
