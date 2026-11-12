@@ -45,7 +45,7 @@ export function JobFailureRow({
         ) : (
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{heading}</span>
         )}
-        {details && <Badge variant="secondary">{details.stage}</Badge>}
+        {details && <Badge variant="secondary">{t(`dashboard.failureStages.${details.stage}`)}</Badge>}
         {record.count > 1 && (
           <span className="text-xs text-muted-foreground">×{record.count}</span>
         )}

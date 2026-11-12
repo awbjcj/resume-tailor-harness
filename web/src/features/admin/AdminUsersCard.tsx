@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Shield, Trash2, UserCog } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import {
 import { api, unwrap } from "@/lib/api/client";
 import { formatUserDate } from "@/lib/date-time";
 export function AdminUsersCard({ currentUsername }: { currentUsername: string }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const users = useQuery({
     queryKey: ["admin", "users"],
@@ -111,7 +113,7 @@ export function AdminUsersCard({ currentUsername }: { currentUsername: string })
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1.5">
-                      <Badge variant={isAdmin ? "default" : "outline"}>{user.role}</Badge>
+                      <Badge variant={isAdmin ? "default" : "outline"}>{isAdmin ? t("accountRoles.admin") : user.role === "user" ? t("accountRoles.user") : user.role}</Badge>
                       {user.disabledAt ? <Badge variant="destructive">Disabled</Badge> : null}
                       {!isAdmin ? (
                         <Badge variant={user.sharedKeyAccess ? "secondary" : "outline"}>

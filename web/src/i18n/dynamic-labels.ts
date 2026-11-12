@@ -19,6 +19,28 @@ export function localizeDisplayValue(value: string, language: string | null | un
   return value.replaceAll("_", " ");
 }
 
+const GROUPING_REASONS_ZH: Record<string, string> = {
+  "Deferred by taxonomy usage limits; explicitly retry selected skills": "因技能分类用量限制而延后，请手动重试所选技能",
+  "no high-confidence existing or coherent new domain": "没有足够把握将其归入现有领域或新建一致的领域",
+  "Provisional category placement; a specific domain still needs confirmation": "暂时归入此类别，具体领域仍需确认",
+  "canonicalization incomplete; kept as its own canonical": "技能名称归一化尚未完成，暂时保留为独立名称",
+  "reconcile left new canonicals unmerged; kept as-is": "部分新技能名称尚未合并，暂时保持原样",
+  "invalid or incomplete model output": "模型输出无效或不完整",
+  "new-domain proposal did not meet the deterministic coherence gate": "建议的新领域未通过一致性检查",
+  "model call failed": "模型调用失败",
+};
+
+/** Preserve unrecognized diagnostic details while translating known grouping outcomes. */
+export function localizeGroupingStatus(
+  status: { state: string; reason: string },
+  language: string | null | undefined,
+): string {
+  if (!isChinese(language)) return `Grouping ${status.state}: ${status.reason}`;
+  const state = status.state === "uncertain" ? "待确认" : localizeDisplayValue(status.state, language);
+  const reason = GROUPING_REASONS_ZH[status.reason] ?? status.reason;
+  return `分组${state}：${reason}`;
+}
+
 function translateTemplate(table: Record<string, string>, value: string): string | null {
   if (table[value]) return table[value];
 

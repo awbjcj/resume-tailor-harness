@@ -11,7 +11,7 @@ export const workflowEn = {
   renderHint: "Review the resume and create its PDF.", applyHint: "Prepare the application, then record submission only after it is confirmed.",
 };
 
-export const workflowZh = {
+export const workflowZh: typeof workflowEn = {
   profileReady: "个人资料已就绪，可用于定制简历。",
   dashboard: "前往概览", returnToTask: "返回原来的任务", nextStep: "下一步",
   setup: "继续设置", running: "任务正在进行", openResult: "打开结果", openResults: "查看结果",

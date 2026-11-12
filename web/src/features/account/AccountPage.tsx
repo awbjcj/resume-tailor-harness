@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import { PersonalTokensCard } from "./PersonalTokensCard";
 import { SecurityCard } from "./SecurityCard";
 
 export function AccountPage() {
+  const { t } = useTranslation();
   const me = useMe();
   const usage = useQuery({
     queryKey: ["account", "usage"],
@@ -31,11 +33,18 @@ export function AccountPage() {
     );
   }
 
+  const role = me.data.role;
+  const roleLabel = role === "admin"
+    ? t("accountRoles.admin")
+    : role == null || role === "user"
+      ? t("accountRoles.user")
+      : role;
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Account"
-        meta={<>{me.data.username ? <span>{me.data.username}</span> : null}<Badge variant="outline">{me.data.role ?? "user"}</Badge></>}
+        meta={<>{me.data.username ? <span>{me.data.username}</span> : null}<Badge variant="outline">{roleLabel}</Badge></>}
       />
 
       {me.data.authRequired && me.data.role !== "admin" ? <BillingCard quota={usage.data.quota} /> : null}
