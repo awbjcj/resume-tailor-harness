@@ -15,6 +15,24 @@ permissions:
   contents: read
 
 jobs:
+  railway-iac:
+    name: railway-iac
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .railway
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: .railway/package-lock.json
+      - name: Install Railway SDK
+        run: npm ci --ignore-scripts
+      - name: Check deployment invariants
+        run: npm test
+
   python-quality:
     name: python-quality
     runs-on: ubuntu-latest

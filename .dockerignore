@@ -12,6 +12,7 @@ tests
 evals
 docs
 node_modules
+.railway/node_modules
 __pycache__
 *.pyc
 services/h1b-job-search-mcp/.git

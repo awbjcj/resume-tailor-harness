@@ -11,9 +11,10 @@ tenant isolation independent from the auth-free local container default.
 
 ## One-time setup
 
-1. Create a Railway project from this GitHub repository. `railway.json` selects
-   the Dockerfile and `/api/health` healthcheck.
-2. Add one volume to the service at `/app/data`. Railway does not support
+1. Create a Railway project and service from this GitHub repository. Review
+   `.railway/railway.ts` and adjust the project, service, repository, volume,
+   and region names if your deployment differs from the one recorded there.
+2. Attach one volume to the service at `/app/data`. Railway does not support
    replicas on services with volumes, which matches this SQLite deployment.
 3. Generate credentials locally:
 
@@ -54,6 +55,35 @@ tenant isolation independent from the auth-free local container default.
    automatically after the account or platform shared allowance is exhausted.
 
 5. Deploy and sign in at the Railway-provided domain.
+
+## Railway infrastructure configuration
+
+The named partial in `.railway/railway.ts` owns this service and its attached
+volume. It selects the Dockerfile, healthcheck, restart policy, and single
+replica. Environment variables and credentials remain managed in Railway;
+the H-1B service in the same project is outside this partial.
+
+To review and apply a change, install the pinned SDK with Node 22 or newer and
+link the Railway CLI to the intended project, environment, and service:
+
+```sh
+npm ci --prefix .railway
+railway link
+railway config plan
+railway config apply
+```
+
+Inspect the plan before applying. In particular, do not apply a plan that
+detaches, recreates, or resizes the existing `/app/data` volume unless that
+change is intentional. A Git push does not apply Railway IaC by itself: apply
+the reviewed configuration explicitly after the change reaches the deployment
+branch. On Windows, if the SDK cannot find the installed CLI despite reporting
+a sufficiently recent CLI version, point `_` to the native `railway.exe` for
+the plan and apply commands. For a global npm installation:
+
+```powershell
+$env:_ = Join-Path ((npm root -g).Trim()) '@railway/cli/bin/railway.exe'
+```
 
 ## Email delivery
 
