@@ -46,7 +46,7 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.5",
+    "@babel/core": "^8.1.2",
     "@babel/parser": "^8.0.8",
     "@babel/traverse": "^8.0.7",
     "@eslint/js": "^10.0.1",
