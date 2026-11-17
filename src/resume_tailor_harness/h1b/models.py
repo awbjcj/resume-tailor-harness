@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any, Literal
 from urllib.parse import urlsplit
@@ -14,6 +15,9 @@ from pydantic import (
     model_validator,
 )
 
+H1BCountBasis = Literal["fiscal_year_to_date_determinations"]
+H1B_CUMULATIVE_COUNT_BASIS: H1BCountBasis = "fiscal_year_to_date_determinations"
+_FISCAL_PERIOD = re.compile(r"FY(\d{4})[ -]Q([1-4])")
 HISTORICAL_ONLY_CAVEAT = (
     "Historical H-1B filings do not confirm current sponsorship for this role "
     "or current employer policy."
@@ -83,7 +87,7 @@ class H1BWageSummary(BaseModel):
 
 
 class H1BPeriodStat(BaseModel):
-    """One fiscal quarter of historical filing figures for a company."""
+    """One historical disclosure snapshot for a company."""
 
     period: str = Field(min_length=1, max_length=32)
     filing_count: int | None = Field(default=None, ge=0)
@@ -105,14 +109,11 @@ class H1BPeriodStat(BaseModel):
         return self
 
 
-def _rollup(periods: list[H1BPeriodStat], attribute: str) -> int | None:
-    """Sum one metric across periods, yielding None when no period reports it."""
-    present = [
-        value
-        for value in (getattr(period, attribute) for period in periods)
-        if value is not None
-    ]
-    return sum(present) if present else None
+def _period_key(period: str) -> tuple[int, int]:
+    match = _FISCAL_PERIOD.fullmatch(period)
+    if match is None:
+        raise ValueError("H1B cumulative snapshots need a reported fiscal year and quarter")
+    return int(match[1]), int(match[2])
 
 
 class H1BSponsorshipEvidence(BaseModel):
@@ -120,6 +121,7 @@ class H1BSponsorshipEvidence(BaseModel):
     normalized_company: str = Field(min_length=1)
     display_company: str | None = None
     fiscal_periods: list[str] = Field(default_factory=list)
+    count_basis: H1BCountBasis | None = None
     filing_count: int | None = Field(default=None, ge=0)
     certified_count: int | None = Field(default=None, ge=0)
     denied_count: int | None = Field(default=None, ge=0)
@@ -177,11 +179,18 @@ class H1BSponsorshipEvidence(BaseModel):
             labels = [period.period for period in self.periods]
             if len(set(labels)) != len(labels):
                 raise ValueError("H1B evidence periods must have unique labels")
-            # The rollup is derived, never trusted: a model cannot put a total on
-            # screen that disagrees with the parts shown beneath it.
-            self.filing_count = _rollup(self.periods, "filing_count")
-            self.certified_count = _rollup(self.periods, "certified_count")
-            self.denied_count = _rollup(self.periods, "denied_count")
+            if self.count_basis == H1B_CUMULATIVE_COUNT_BASIS:
+                keys = [_period_key(period.period) for period in self.periods]
+                if len(set(keys)) != len(keys):
+                    raise ValueError("H1B evidence must not repeat a disclosure snapshot")
+                self.periods.sort(key=lambda period: _period_key(period.period), reverse=True)
+                latest = self.periods[0]
+                # A snapshot already contains earlier cases from its fiscal
+                # year. Use one coherent observation, not a sum or mix of rows.
+                self.filing_count = latest.filing_count
+                self.certified_count = latest.certified_count
+                self.denied_count = latest.denied_count
+                self.wage_summary = latest.wage_summary
         if (
             self.expires_at is not None
             and self.retrieved_at is not None
@@ -206,6 +215,9 @@ class H1BSponsorshipEvidence(BaseModel):
                 "certified_count + denied_count cannot exceed filing_count"
             )
         return self
+
+    def has_supported_count_basis(self) -> bool:
+        return self.status == "unavailable" or self.count_basis == H1B_CUMULATIVE_COUNT_BASIS
 
     def is_fresh(self, now: datetime) -> bool:
         """Whether this evidence is still inside its cache TTL at ``now``.

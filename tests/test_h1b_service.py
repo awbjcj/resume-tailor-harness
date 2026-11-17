@@ -21,6 +21,7 @@ from resume_tailor_harness.tracking.tables import Job
 def _evidence(company: str) -> H1BSponsorshipEvidence:
     now = datetime.now(timezone.utc)
     return H1BSponsorshipEvidence(
+        count_basis="fiscal_year_to_date_determinations",
         status="matched",
         normalized_company=company,
         display_company=company,
@@ -413,7 +414,18 @@ def test_enrichment_closes_runner_before_mcp_context(monkeypatch):
     assert events == ["tools_enter", "runner_close", "tools_close"]
 
 
-def test_sponsorship_agent_is_instructed_to_collect_three_years():
+def test_agent_cannot_publish_numbers_when_count_basis_is_missing():
+    from resume_tailor_harness.h1b.service import _agent_output
+
+    unscoped = _evidence("acme").model_copy(update={"count_basis": None})
+    result = _agent_output(SimpleNamespace(content=unscoped), "acme")
+    assert result.status == "unavailable"
+    assert result.filing_count is None
+    assert result.periods == []
+    assert "count basis" in (result.unavailable_reason or "")
+
+
+def test_sponsorship_agent_requires_explicit_cumulative_scope():
     settings = Settings(
         _env_file=None,  # type: ignore[call-arg]
         anthropic_api_key="test-key",
@@ -429,17 +441,18 @@ def test_sponsorship_agent_is_instructed_to_collect_three_years():
     instructions = " ".join(runner._agent.instructions)
     assert "get_company_stats" in instructions
     assert "get_company_sponsorship_trend" in instructions
-    assert "three-year" in instructions
-    assert "twelve periods" in instructions
+    assert "fiscal_year_to_date_determinations" in instructions
+    assert "Never sum" in instructions
+    assert "do not infer it" in instructions
     assert "periods" in instructions
     assert runner.run_meta is not None
     assert (
         runner.run_meta.prompt_policy_version
-        == "h1b-sponsorship-research-v3+career-quality-v1"
+        == "h1b-sponsorship-research-v4+career-quality-v1"
     )
 
 
-def test_persisted_rows_are_written_at_schema_version_two():
+def test_persisted_rows_are_written_at_schema_version_three():
     from resume_tailor_harness.tracking.tables import H1BCompanyEvidence
     from sqlmodel import select as model_select
 
@@ -479,7 +492,7 @@ def test_persisted_rows_are_written_at_schema_version_two():
             )
         ).first()
     assert row is not None
-    assert row.schema_version == 2
+    assert row.schema_version == 3
 
 
 class UnparsedRunner(FakeRunner):

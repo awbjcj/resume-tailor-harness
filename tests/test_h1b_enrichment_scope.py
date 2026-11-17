@@ -18,6 +18,7 @@ from resume_tailor_harness.tracking.tables import H1BCompanyEvidence, Job, JobSt
 def _evidence(company: str) -> H1BSponsorshipEvidence:
     now = datetime.now(timezone.utc)
     return H1BSponsorshipEvidence(
+        count_basis="fiscal_year_to_date_determinations",
         status="matched",
         normalized_company=company,
         retrieved_at=now,
@@ -46,6 +47,7 @@ def _persist_cache(
 def _expired_evidence(company: str) -> H1BSponsorshipEvidence:
     now = datetime.now(timezone.utc)
     return H1BSponsorshipEvidence(
+        count_basis="fiscal_year_to_date_determinations",
         status="matched",
         normalized_company=company,
         retrieved_at=now - timedelta(days=2),

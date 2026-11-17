@@ -77,8 +77,16 @@ export const interactionCopyZh: InteractionCopy = {
     open: "查看面试",
   },
   sponsorship: {
-    filings_one: "{{period}}：{{count}} 条 H-1B 申请记录",
-    filings_other: "{{period}}：{{count}} 条 H-1B 申请记录",
+    filings_one: "{{period}}：{{count}} 条财年累计 LCA 记录",
+    filings_other: "{{period}}：{{count}} 条财年累计 LCA 记录",
+    notReported: "{{period}}：未报告案件数量",
+    cases: "累计 LCA 案件",
+    certifiedCases: "获认证的 LCA 案件",
+    deniedCases: "被拒绝的 LCA 案件",
+    snapshot: "披露快照",
+    trendTitle: "财年累计 LCA 快照",
+    trendScope: "数量为各财年内的累计记录，不是单季申请量。不要把重叠快照相加。",
+    legacy: "上次查询未核实统计口径。请重新查询以查看数据。",
   },
   notifications: {
     aria: "通知",

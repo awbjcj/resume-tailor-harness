@@ -26,6 +26,7 @@ def _evidence(*, expires_in_days: int = 30, periods=None) -> H1BSponsorshipEvide
     now = datetime.now(timezone.utc)
     retrieved_at = now - timedelta(days=2) if expires_in_days < 0 else now
     return H1BSponsorshipEvidence(
+        count_basis="fiscal_year_to_date_determinations",
         status="matched",
         normalized_company="acme",
         display_company="Acme",

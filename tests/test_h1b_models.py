@@ -67,45 +67,45 @@ def test_missing_wage_metrics_roundtrip_without_fabricated_numbers():
     assert api.periods[0].wage_summary == {"mean": 0.0}
 
 
-def test_rollup_overwrites_totals_that_disagree_with_their_parts():
+def test_cumulative_snapshots_are_sorted_and_use_latest_without_double_counting():
     evidence = _evidence(
+        count_basis="fiscal_year_to_date_determinations",
         filing_count=999,
         certified_count=999,
         denied_count=999,
         periods=[
-            H1BPeriodStat(
-                period="FY2026-Q1", filing_count=10, certified_count=9, denied_count=1
-            ),
-            H1BPeriodStat(
-                period="FY2025-Q4", filing_count=4, certified_count=3, denied_count=1
-            ),
+            H1BPeriodStat(period="FY2026 Q1", filing_count=10, certified_count=9),
+            H1BPeriodStat(period="FY2026 Q2", filing_count=18, certified_count=16, denied_count=2),
         ],
     )
-    assert evidence.filing_count == 14
-    assert evidence.certified_count == 12
+    assert [row.period for row in evidence.periods] == ["FY2026 Q2", "FY2026 Q1"]
+    assert evidence.filing_count == 18
+    assert evidence.certified_count == 16
     assert evidence.denied_count == 2
 
 
-def test_metric_no_period_reports_rolls_up_to_none_not_zero():
+def test_latest_snapshot_can_be_smaller_after_fiscal_year_rollover():
     evidence = _evidence(
+        count_basis="fiscal_year_to_date_determinations",
         periods=[
-            H1BPeriodStat(period="FY2026-Q1", filing_count=10),
-            H1BPeriodStat(period="FY2025-Q4", filing_count=4),
+            H1BPeriodStat(period="FY2025 Q4", filing_count=90, certified_count=80),
+            H1BPeriodStat(period="FY2026 Q1", filing_count=10),
         ],
     )
-    assert evidence.filing_count == 14
+    assert evidence.filing_count == 10
     assert evidence.certified_count is None
     assert evidence.denied_count is None
 
 
-def test_partially_reported_metric_sums_only_present_values():
+def test_legacy_periods_never_get_a_derived_rollup_and_are_unscoped():
     evidence = _evidence(
         periods=[
             H1BPeriodStat(period="FY2026-Q1", certified_count=9),
             H1BPeriodStat(period="FY2025-Q4"),
         ],
     )
-    assert evidence.certified_count == 9
+    assert evidence.certified_count is None
+    assert not evidence.has_supported_count_basis()
 
 
 def test_duplicate_period_labels_reject():

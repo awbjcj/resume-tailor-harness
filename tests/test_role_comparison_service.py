@@ -88,6 +88,7 @@ def test_comparison_projects_stored_evidence_sponsorship_and_latest_offer():
             )
         )
         h1b = H1BSponsorshipEvidence(
+            count_basis="fiscal_year_to_date_determinations",
             status="matched",
             normalized_company="acme",
             retrieved_at=now,

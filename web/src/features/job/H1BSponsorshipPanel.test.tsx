@@ -27,6 +27,7 @@ function wrapper({ children }: { children: ReactNode }) {
 const matchedEvidence = {
   status: "matched" as const,
   normalizedCompany: "acme",
+  countBasis: "fiscal_year_to_date_determinations" as const,
   displayCompany: "Acme",
   fiscalPeriods: ["2022", "2023"],
   filingCount: 12,
@@ -41,21 +42,21 @@ const matchedEvidence = {
     "Historical H-1B filings do not confirm current sponsorship for this role or current employer policy.",
 };
 
-const quarterlyEvidence = {
+const cumulativeEvidence = {
   ...matchedEvidence,
-  filingCount: 14,
-  certifiedCount: 12,
+  filingCount: 18,
+  certifiedCount: 16,
   deniedCount: 2,
   periods: [
     {
-      period: "FY2026-Q1",
-      filingCount: 10,
-      certifiedCount: 9,
-      deniedCount: 1,
+      period: "FY2026-Q2",
+      filingCount: 18,
+      certifiedCount: 16,
+      deniedCount: 2,
       wageSummary: { median: 160000 },
     },
     {
-      period: "FY2025-Q4",
+      period: "FY2026-Q1",
       filingCount: 4,
       certifiedCount: 3,
       deniedCount: 1,
@@ -68,6 +69,30 @@ describe("H1BSponsorshipPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useRunStore.setState({ runs: {} });
+  });
+
+  it("hides numerical evidence from a legacy unscoped response", () => {
+    render(<H1BSponsorshipPanel jobId={42} company="Acme" initialResult={{
+      capability: "available",
+      stale: false,
+      evidence: { ...cumulativeEvidence, countBasis: undefined },
+    }} />, { wrapper });
+    expect(screen.getByText(/previous check did not verify the count basis/i)).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByText("18")).not.toBeInTheDocument();
+  });
+
+  it("reports an unavailable snapshot count without charting it as zero", () => {
+    render(<H1BSponsorshipPanel jobId={42} company="Acme" initialResult={{
+      capability: "available",
+      stale: false,
+      evidence: {
+        ...cumulativeEvidence,
+        periods: [{ period: "FY2026 Q2", filingCount: null }, cumulativeEvidence.periods[1]!],
+      },
+    }} />, { wrapper });
+    expect(screen.getAllByText("FY2026 Q2: case count not reported")).toHaveLength(2);
+    expect(screen.queryByText(/0 cumulative LCA cases/)).not.toBeInTheDocument();
   });
 
   it("formats evidence carried on the persisted job detail", () => {
@@ -190,17 +215,17 @@ describe("H1BSponsorshipPanel", () => {
       <H1BSponsorshipPanel
         jobId={42}
         company="Acme"
-        initialResult={{ capability: "available", stale: false, evidence: quarterlyEvidence }}
+        initialResult={{ capability: "available", stale: false, evidence: cumulativeEvidence }}
       />,
       { wrapper },
     );
 
     expect(screen.getByRole("combobox", { name: /period/i })).toHaveTextContent(
-      "FY2026 Q1",
+      "FY2026 Q2",
     );
-    expect(screen.getByText("10")).toBeInTheDocument();
-    expect(screen.getByText("Three-year filing volume")).toBeInTheDocument();
-    expect(screen.getByText("FY2025 Q4: 4 H-1B filings")).toBeInTheDocument();
+    expect(screen.getByText("18")).toBeInTheDocument();
+    expect(screen.getByText("Fiscal-year-to-date LCA snapshots")).toBeInTheDocument();
+    expect(screen.getByText("FY2026 Q1: 4 cumulative LCA cases")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /period/i })).toHaveClass(
       "w-full",
       "sm:w-64",
@@ -213,16 +238,16 @@ describe("H1BSponsorshipPanel", () => {
       <H1BSponsorshipPanel
         jobId={42}
         company="Acme"
-        initialResult={{ capability: "available", stale: false, evidence: quarterlyEvidence }}
+        initialResult={{ capability: "available", stale: false, evidence: cumulativeEvidence }}
       />,
       { wrapper },
     );
 
     await user.click(screen.getByRole("combobox", { name: /period/i }));
-    await user.click(await screen.findByRole("option", { name: /FY2025 Q4/i }));
+    await user.click(await screen.findByRole("option", { name: /FY2026 Q1/i }));
 
     await waitFor(() => expect(screen.getByText("4")).toBeInTheDocument());
-    expect(screen.queryByText("10")).not.toBeInTheDocument();
+    expect(screen.queryByText("18")).not.toBeInTheDocument();
     expect(screen.getByText("Historical filings found")).toBeInTheDocument();
   });
 
@@ -230,13 +255,13 @@ describe("H1BSponsorshipPanel", () => {
     await changeLanguage("zh-CN");
     const user = userEvent.setup();
     render(<H1BSponsorshipPanel jobId={42} company="Acme"
-      initialResult={{ capability: "available", stale: false, evidence: quarterlyEvidence }} />, { wrapper });
+      initialResult={{ capability: "available", stale: false, evidence: cumulativeEvidence }} />, { wrapper });
     await user.click(screen.getByRole("combobox"));
-    await user.click(await screen.findByRole("option", { name: /FY2025 Q4/i }));
-    expect(screen.getAllByText("FY2025 Q4：4 条 H-1B 申请记录")).toHaveLength(2);
+    await user.click(await screen.findByRole("option", { name: /FY2026 Q1/i }));
+    expect(screen.getAllByText("FY2026 Q1：4 条财年累计 LCA 记录")).toHaveLength(2);
     await act(() => changeLanguage("en"));
-    expect(screen.getAllByText("FY2025 Q4: 4 H-1B filings")).toHaveLength(2);
-    expect(screen.getByRole("combobox")).toHaveTextContent("FY2025 Q4");
+    expect(screen.getAllByText("FY2026 Q1: 4 cumulative LCA cases")).toHaveLength(2);
+    expect(screen.getByRole("combobox")).toHaveTextContent("FY2026 Q1");
   });
 
   it("falls back to the newest quarter when a refetch replaces the selected period", async () => {
@@ -245,12 +270,12 @@ describe("H1BSponsorshipPanel", () => {
       <H1BSponsorshipPanel
         jobId={42}
         company="Acme"
-        initialResult={{ capability: "available", stale: false, evidence: quarterlyEvidence }}
+        initialResult={{ capability: "available", stale: false, evidence: cumulativeEvidence }}
       />,
       { wrapper },
     );
     await user.click(screen.getByRole("combobox", { name: /period/i }));
-    await user.click(await screen.findByRole("option", { name: /FY2026 Q1/i }));
+    await user.click(await screen.findByRole("option", { name: /FY2026 Q2/i }));
 
     rerender(
       <H1BSponsorshipPanel
@@ -260,20 +285,20 @@ describe("H1BSponsorshipPanel", () => {
           capability: "available",
           stale: false,
           evidence: {
-            ...quarterlyEvidence,
+            ...cumulativeEvidence,
             filingCount: 4,
             certifiedCount: 3,
             deniedCount: 1,
-            periods: [quarterlyEvidence.periods[1]!],
+            periods: [cumulativeEvidence.periods[1]!],
           },
         }}
       />,
     );
 
     expect(screen.getByRole("combobox", { name: /period/i })).toHaveTextContent(
-      "FY2025 Q4",
+      "FY2026 Q1",
     );
-    expect(screen.getByText("Filings").parentElement).toHaveTextContent("4");
+    expect(screen.getByText("Cumulative LCA cases").parentElement).toHaveTextContent("4");
   });
 
   it("resets the period when navigating to another job with an overlapping period", async () => {
@@ -282,12 +307,12 @@ describe("H1BSponsorshipPanel", () => {
       <H1BSponsorshipPanel
         jobId={42}
         company="Acme"
-        initialResult={{ capability: "available", stale: false, evidence: quarterlyEvidence }}
+        initialResult={{ capability: "available", stale: false, evidence: cumulativeEvidence }}
       />,
       { wrapper },
     );
     await user.click(screen.getByRole("combobox", { name: /period/i }));
-    await user.click(await screen.findByRole("option", { name: /FY2025 Q4/i }));
+    await user.click(await screen.findByRole("option", { name: /FY2026 Q1/i }));
 
     rerender(
       <H1BSponsorshipPanel
@@ -297,7 +322,7 @@ describe("H1BSponsorshipPanel", () => {
           capability: "available",
           stale: false,
           evidence: {
-            ...quarterlyEvidence,
+            ...cumulativeEvidence,
             filingCount: 20,
             certifiedCount: 17,
             deniedCount: 3,
@@ -307,9 +332,9 @@ describe("H1BSponsorshipPanel", () => {
     );
 
     expect(screen.getByRole("combobox", { name: /period/i })).toHaveTextContent(
-      "FY2026 Q1",
+      "FY2026 Q2",
     );
-    expect(screen.getByText("10")).toBeInTheDocument();
+    expect(screen.getByText("18")).toBeInTheDocument();
   });
 
   it("hides the selector when the provider had no quarterly breakdown", () => {
@@ -323,7 +348,7 @@ describe("H1BSponsorshipPanel", () => {
     );
 
     expect(screen.queryByRole("combobox", { name: /period/i })).not.toBeInTheDocument();
-    expect(screen.queryByText("Denied filings")).not.toBeInTheDocument();
+    expect(screen.queryByText("Denied LCA cases")).not.toBeInTheDocument();
     expect(screen.getByText("Historical filings found")).toBeInTheDocument();
   });
 
@@ -332,13 +357,13 @@ describe("H1BSponsorshipPanel", () => {
       <H1BSponsorshipPanel
         jobId={42}
         company="Acme"
-        initialResult={{ capability: "available", stale: true, evidence: quarterlyEvidence }}
+        initialResult={{ capability: "available", stale: true, evidence: cumulativeEvidence }}
       />,
       { wrapper },
     );
 
     expect(screen.getByText(/may be out of date/i)).toBeInTheDocument();
-    expect(screen.getByText("10")).toBeInTheDocument();
+    expect(screen.getByText("18")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /refresh/i })).toBeEnabled();
   });
 
@@ -361,7 +386,7 @@ describe("H1BSponsorshipPanel", () => {
       <H1BSponsorshipPanel
         jobId={42}
         company="Acme"
-        initialResult={{ capability: "available", stale: false, evidence: quarterlyEvidence }}
+        initialResult={{ capability: "available", stale: false, evidence: cumulativeEvidence }}
       />,
       { wrapper },
     );

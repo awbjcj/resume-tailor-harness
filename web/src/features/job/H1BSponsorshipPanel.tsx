@@ -44,13 +44,6 @@ type Evidence = NonNullable<SponsorshipResult["evidence"]>;
 type EvidenceStatus = Evidence["status"];
 type PeriodStat = NonNullable<Evidence["periods"]>[number];
 
-const filingChartConfig = {
-  filingCount: {
-    label: "H-1B filings",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig;
-
 type StatusMeta = {
   label: string;
   description: string;
@@ -133,6 +126,7 @@ function EvidenceDetails({
   >;
   activePeriodLabel?: string;
 }) {
+  const { t } = useTranslation();
   const wageSummary = Object.entries(metrics.wageSummary ?? {});
   const filingPeriods = activePeriodLabel
     ? [periodLabel(activePeriodLabel)]
@@ -142,18 +136,18 @@ function EvidenceDetails({
   const details: Array<readonly [string, string]> = [
     ["Company", evidence.displayCompany ?? evidence.normalizedCompany],
     [
-      "Filing periods",
+      t("interactionCopy.sponsorship.snapshot"),
       filingPeriods.length ? filingPeriods.join(", ") : "Not reported",
     ],
-    ["Filings", metrics.filingCount == null ? "Not reported" : String(metrics.filingCount)],
+    [t("interactionCopy.sponsorship.cases"), metrics.filingCount == null ? "Not reported" : String(metrics.filingCount)],
     [
-      "Certified filings",
+      t("interactionCopy.sponsorship.certifiedCases"),
       metrics.certifiedCount == null ? "Not reported" : String(metrics.certifiedCount),
     ],
     ...(evidence.periods?.length
       ? [
           [
-            "Denied filings",
+            t("interactionCopy.sponsorship.deniedCases"),
             metrics.deniedCount == null ? "Not reported" : String(metrics.deniedCount),
           ] as const,
         ]
@@ -226,21 +220,26 @@ function SponsorshipTrend({
       period: entry.period,
       label: periodLabel(entry.period),
       shortLabel: periodLabel(entry.period).replace(/^FY\d{2}(\d{2})\s/, "$1 "),
-      filingCount: entry.filingCount ?? 0,
+      filingCount: entry.filingCount ?? null,
     }));
   const selected = periods.find((entry) => entry.period === selectedPeriod);
+  const filingChartConfig = {
+    filingCount: { label: t("interactionCopy.sponsorship.cases"), color: "var(--chart-1)" },
+  } satisfies ChartConfig;
 
   return (
     <div className="mt-5 rounded-lg border bg-muted/10 p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h4 className="text-sm font-semibold">Three-year filing volume</h4>
+          <h4 className="text-sm font-semibold">{t("interactionCopy.sponsorship.trendTitle")}</h4>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Quarterly H-1B filings in the server cache.
+            {t("interactionCopy.sponsorship.trendScope")}
           </p>
         </div>
         <p className="text-xs font-medium text-foreground">
-          {t("interactionCopy.sponsorship.filings", { period: periodLabel(selectedPeriod), count: selected?.filingCount ?? 0 })}
+          {selected?.filingCount == null
+            ? t("interactionCopy.sponsorship.notReported", { period: periodLabel(selectedPeriod) })
+            : t("interactionCopy.sponsorship.filings", { period: periodLabel(selectedPeriod), count: selected.filingCount })}
         </p>
       </div>
       <ChartContainer
@@ -264,7 +263,9 @@ function SponsorshipTrend({
       <ul className="sr-only">
         {chartData.map((entry) => (
           <li key={entry.period}>
-            {t("interactionCopy.sponsorship.filings", { period: entry.label, count: entry.filingCount })}
+            {entry.filingCount == null
+              ? t("interactionCopy.sponsorship.notReported", { period: entry.label })
+              : t("interactionCopy.sponsorship.filings", { period: entry.label, count: entry.filingCount })}
           </li>
         ))}
       </ul>
@@ -281,13 +282,18 @@ export function H1BSponsorshipPanel({
   company: string | null;
   initialResult?: JobDetail["h1BSponsorship"];
 }) {
+  const { t } = useTranslation();
   const check = useCheckH1BSponsorship(jobId);
   const runIndex = useArtifactRunIndex();
   const h1bRun = latestArtifactRun(runIndex, "h1bSponsorship", "jobId", jobId);
   const checking = h1bRun !== undefined && ACTIVE_RUN_STATUSES.includes(h1bRun.status);
   const failed = h1bRun?.status === "failed";
   const result = initialResult ?? null;
-  const evidence = result?.evidence ?? null;
+  const rawEvidence = result?.evidence ?? null;
+  // Browser query state can briefly hold an old API response after rollout.
+  const legacyEvidence = rawEvidence !== null && rawEvidence.status !== "unavailable"
+    && rawEvidence.countBasis !== "fiscal_year_to_date_determinations";
+  const evidence = legacyEvidence ? null : rawEvidence;
   const status = evidence?.status ?? null;
   const periods = evidence?.periods ?? [];
   const latestPeriod = periods[0]?.period ?? "";
@@ -309,7 +315,9 @@ export function H1BSponsorshipPanel({
   const meta = status ? STATUS_META[status] : null;
   const disabled = !company?.trim() || checking || result?.capability === "disabled";
   const errorMessage = h1bRun?.error ?? "The manual H-1B check failed.";
-  const message = result?.message ?? evidence?.unavailableReason ?? null;
+  const message = legacyEvidence
+    ? t("interactionCopy.sponsorship.legacy")
+    : result?.message ?? evidence?.unavailableReason ?? null;
   const StatusIcon = meta?.icon ?? (result?.capability === "disabled" ? CircleAlert : ShieldCheck);
   const buttonLabel = checking
     ? "Checking…"
