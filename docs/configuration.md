@@ -54,7 +54,7 @@ CLI accounts use the deployment's provider endpoints.
 | `MID_REASONING_EFFORT` | unset | Optional provider-specific reasoning setting for the mid tier. |
 | `PREMIUM_REASONING_EFFORT` | unset | Optional provider-specific reasoning setting for the premium tier. |
 | `TRANSCRIBE_MODEL` | `gemini:gemini-3.5-flash-lite` | Model used by audio transcription. |
-| `SPEECH_MODEL` | `openai:gpt-4o-mini-tts` | Text-to-speech model used by audio-preferred mock interviews. |
+| `SPEECH_MODEL` | `openai:gpt-realtime-2.1-mini` | Text-to-speech model used by audio-preferred mock interviews; the default uses Realtime. |
 | `SPEECH_VOICE` | `marin` | Voice used for generated interviewer speech. |
 | `PROMPT_CACHE_ENABLED` | `true` | Enables supported providers' static system-prompt cache. |
 | `LLM_CONCURRENCY` | `8` | Per-operation LLM fan-out; integer at least 1. Shared provider admission below also applies. |
@@ -65,6 +65,23 @@ CLI accounts use the deployment's provider endpoints.
 | `LLM_RETRIES` | `2` | Structured/provider retry count; non-negative integer. |
 | `LLM_RETRY_DELAY` | `1` | Base retry delay in seconds; non-negative integer. |
 | `RUN_ANNOUNCE_WINDOW_SECONDS` | `3600` | How recently a background run must have finished to be announced on reconnect; integer seconds from 0 through 86400. |
+
+The default speech model connects to the direct OpenAI endpoint over WebSocket
+and encodes the returned PCM locally to the existing MP3 interview format.
+The deployment Dockerfile includes `ffmpeg` with `libmp3lame`; install it
+and ensure it is on `PATH` when running directly outside Docker. If you
+explicitly set `SPEECH_MODEL` on Railway or in a local environment, changing
+the code default does not replace that override. Set it to
+`openai:gpt-realtime-2.1-mini` (or remove the override) when promoting the
+migration, and check that `OPENAI_BASE_URL` supports WebSocket upgrades to
+`/v1/realtime`. The default voice `marin` is supported by Realtime; verify
+any explicit `SPEECH_VOICE` against the
+[Realtime voice list](https://developers.openai.com/api/docs/guides/realtime-conversations).
+An explicit legacy speech model keeps using the speech endpoint, but
+`tts-1`, `tts-1-hd`, and `gpt-4o-mini-tts` retire on January 6, 2027
+([OpenAI notice](https://developers.openai.com/api/docs/guides/text-to-speech)).
+If speech is unavailable or fails, interview text remains the source of truth
+and available to the user.
 
 Model IDs can use `openai:`, `gemini:`, or `deepseek:` prefixes. A bare model
 ID uses Anthropic. Reasoning-effort strings are provider-specific. Leave them
