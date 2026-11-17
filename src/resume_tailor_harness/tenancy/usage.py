@@ -286,7 +286,7 @@ def record_call(
                             units=line.units,
                             rate_micros=line.rate_micros,
                             cost_micros=line.cost_micros,
-                            rate_id=priced.rate_id,
+                            rate_id=line.rate_id or priced.rate_id,
                         )
                         for line in priced.lines
                     )

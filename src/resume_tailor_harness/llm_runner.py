@@ -2717,11 +2717,20 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
 def speech_available() -> bool:
     """Whether the configured speech model has a direct OpenAI credential."""
 
+    from resume_tailor_harness import realtime_speech
+
     settings = get_settings()
-    model_id = settings.speech_model
-    provider, _ = split_provider(model_id)
-    return provider in _SPEECH_PROVIDERS and bool(
-        _settings_provider_key(settings, provider).strip()
+    provider, model = split_provider(settings.speech_model)
+    return (
+        provider in _SPEECH_PROVIDERS
+        and bool(_settings_provider_key(settings, provider).strip())
+        and (
+            not model.startswith("gpt-realtime")
+            or (
+                realtime_speech.realtime_model(model)
+                and realtime_speech.encoder_available()
+            )
+        )
     )
 
 
@@ -2750,34 +2759,69 @@ def synthesize_speech(
     if not api_key:
         raise ValueError(f"no API key configured for speech provider {provider!r}")
 
+    from resume_tailor_harness import realtime_speech
+    from resume_tailor_harness.llm_routing import direct_api_base_url
     from resume_tailor_harness.tenancy.limits import (
         enforce_agent_budget,
         selected_key_is_own,
     )
     from resume_tailor_harness.tenancy.spend import SpendGate
 
+    # Speech bypasses subscription routing. Preserve the deployment's paired
+    # direct OpenAI endpoint and credential, rather than inheriting a gateway.
+    base_url = provider_sdk_base_url(
+        provider, direct_api_base_url(provider, settings)
+    )
+    selected_voice = voice or settings.speech_voice
+    if realtime_speech.realtime_model(model):
+        from resume_tailor_harness.tenancy.context import current_context
+        from resume_tailor_harness.tenancy.usage import record_direct_usage
+
+        if not realtime_speech.encoder_available():
+            raise RuntimeError("Realtime speech requires ffmpeg with libmp3lame")
+        if not base_url:
+            raise RuntimeError("OpenAI Realtime requires a direct base URL")
+        # The speech key is already bound from the per-request settings overlay.
+        # Do not infer its custody from a previous text/gateway spend decision.
+        context = current_context()
+        own_key = context is not None and provider in context.own_key_providers
+        with llm_call():
+            SpendGate().recheck(provider, model, own_key=own_key)
+            pcm, response = realtime_speech.render(
+                cleaned,
+                model=model,
+                voice=selected_voice,
+                api_key=api_key,
+                base_url=base_url,
+                instructions=_SPEECH_INSTRUCTIONS,
+            )
+        if response.get("usage") is not None or response.get("status") == "completed":
+            record_direct_usage(
+                realtime_speech.metered_usage(model, response),
+                own_key=own_key,
+                request_id=response.get("id"),
+            )
+        if response.get("status") != "completed":
+            raise RuntimeError("OpenAI Realtime speech did not complete")
+        return realtime_speech.pcm_to_mp3(pcm)
+
+    if model.startswith("gpt-realtime"):
+        raise ValueError("unsupported OpenAI Realtime speech model")
+
+    from openai import OpenAI
+
     budget_agent = SimpleNamespace(model=SimpleNamespace(id=model, provider=provider))
     enforce_agent_budget(budget_agent)
     own_key = selected_key_is_own(provider, budget_agent)
-    from openai import OpenAI
-
-    # Speech is deliberately not subscription-routed. The configured gateway
-    # implements text endpoints but not POST /v1/audio/speech. Passing the
-    # official endpoint explicitly also prevents the OpenAI SDK from silently
-    # inheriting a deployment-wide OPENAI_BASE_URL gateway override.
-    from resume_tailor_harness.llm_routing import direct_api_base_url
-
     client = OpenAI(
         api_key=api_key,
-        base_url=provider_sdk_base_url(
-            provider, direct_api_base_url(provider, settings)
-        ),
+        base_url=base_url,
     )
     with llm_call():
         SpendGate().recheck(provider, model, own_key=own_key)
         response = client.audio.speech.create(
             model=model,
-            voice=voice or settings.speech_voice,
+            voice=selected_voice,
             input=cleaned,
             instructions=_SPEECH_INSTRUCTIONS,
             response_format="mp3",

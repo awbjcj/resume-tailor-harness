@@ -186,4 +186,6 @@ def test_every_model_default_is_a_catalogued_id():
         assert catalog_entry(default) is not None, (
             f"{field}={default} is not catalogued"
         )
-    assert Settings.model_fields["speech_model"].default == "openai:gpt-4o-mini-tts"
+    assert (
+        Settings.model_fields["speech_model"].default == "openai:gpt-realtime-2.1-mini"
+    )
