@@ -23,8 +23,8 @@ def load_company_evidence(
     One query for the whole batch -- callers derive the map once per request and
     pass it down, never per row.
 
-    Expired rows are returned like any other: expiry is a display concern (the
-    caller labels them stale), not a filter. A row whose ``evidence_json`` no
+    Legacy unscoped evidence is not returned. Scoped expired rows still render;
+    the caller labels them stale. A row whose ``evidence_json`` no
     longer validates is skipped rather than raised, so a single corrupt cache
     row can never fail a whole board page.
     """
@@ -42,9 +42,9 @@ def load_company_evidence(
     loaded: dict[str, H1BSponsorshipEvidence] = {}
     for row in rows:
         try:
-            loaded[row.normalized_company] = H1BSponsorshipEvidence.model_validate(
-                row.evidence_json
-            )
+            evidence = H1BSponsorshipEvidence.model_validate(row.evidence_json)
+            if evidence.has_supported_count_basis():
+                loaded[row.normalized_company] = evidence
         except ValueError:
             logger.warning(
                 "Skipping corrupt H-1B cache row for normalized company %s",
