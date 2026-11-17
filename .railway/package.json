@@ -1,0 +1,11 @@
+{
+  "name": "resume-tailor-railway-iac",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --test railway.test.mjs"
+  },
+  "devDependencies": {
+    "railway": "3.17.0"
+  }
+}
