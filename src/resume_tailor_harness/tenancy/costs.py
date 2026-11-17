@@ -17,6 +17,10 @@ MILLION = 1_000_000
 # Internal rate-card identity, never a model ID sent to OpenAI. Decisions has
 # endpoint-specific billing even though the provider returns gpt-6-luna.
 OPENAI_DECISIONS_RATE_MODEL = "gpt-6-luna:decisions"
+OPENAI_REALTIME_TTS_MODEL = "gpt-realtime-2.1-mini"
+# The text-only synthesis request has separately priced audio output. Keep
+# those prices editable without changes to the shared rate table schema.
+OPENAI_REALTIME_TTS_AUDIO_RATE_MODEL = f"{OPENAI_REALTIME_TTS_MODEL}:audio"
 
 RATE_PERIOD_PEAK = "peak"
 RATE_PERIOD_OFF_PEAK = "off_peak"
@@ -53,6 +57,7 @@ class CostLine:
     units: int
     rate_micros: int
     cost_micros: int
+    rate_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -209,21 +214,54 @@ def calculate_cost(
             0,
             usage.input_tokens - usage.cache_read_tokens - usage.cache_write_tokens,
         )
+    audio_output = 0
+    audio_rate = None
+    if provider == "openai" and usage.model == OPENAI_REALTIME_TTS_MODEL:
+        # This adapter submits only text; an audio input count means the
+        # provider returned a usage shape this pricing path cannot settle.
+        if usage.audio_input_tokens or usage.audio_output_tokens > usage.output_tokens:
+            return PricedUsage(None, 0, "RATE_UNAVAILABLE", rate.id)
+        audio_output = usage.audio_output_tokens
+        if audio_output:
+            audio_rate = find_rate(
+                engine, provider, OPENAI_REALTIME_TTS_AUDIO_RATE_MODEL, now=now
+            )
     components = (
-        ("INPUT", ordinary_input, rate.input_micros_per_million),
-        ("CACHE_READ", usage.cache_read_tokens, rate.cache_read_micros_per_million),
-        ("CACHE_WRITE", usage.cache_write_tokens, rate.cache_write_micros_per_million),
-        ("OUTPUT", usage.output_tokens, rate.output_micros_per_million),
-        ("TOOL", usage.tool_units * MILLION, rate.tool_micros_per_unit),
+        ("INPUT", ordinary_input, rate.input_micros_per_million, rate.id),
+        (
+            "CACHE_READ",
+            usage.cache_read_tokens,
+            rate.cache_read_micros_per_million,
+            rate.id,
+        ),
+        (
+            "CACHE_WRITE",
+            usage.cache_write_tokens,
+            rate.cache_write_micros_per_million,
+            rate.id,
+        ),
+        (
+            "OUTPUT",
+            usage.output_tokens - audio_output,
+            rate.output_micros_per_million,
+            rate.id,
+        ),
+        (
+            "AUDIO_OUTPUT",
+            audio_output,
+            audio_rate.output_micros_per_million if audio_rate else None,
+            audio_rate.id if audio_rate else None,
+        ),
+        ("TOOL", usage.tool_units * MILLION, rate.tool_micros_per_unit, rate.id),
     )
     lines: list[CostLine] = []
-    for kind, units, component_rate in components:
+    for kind, units, component_rate, component_rate_id in components:
         if units and component_rate is None:
             return PricedUsage(None, 0, "RATE_UNAVAILABLE", rate.id)
         resolved_rate = component_rate or 0
         cost = _cost(units, resolved_rate)
         if units:
-            lines.append(CostLine(kind, units, resolved_rate, cost))
+            lines.append(CostLine(kind, units, resolved_rate, cost, component_rate_id))
     tool_micros = sum(line.cost_micros for line in lines if line.kind == "TOOL")
     return PricedUsage(
         sum(line.cost_micros for line in lines),
@@ -255,6 +293,7 @@ def seed_llm_rates(engine: Engine) -> None:
     catalog_refresh = datetime(2026, 9, 22, tzinfo=timezone.utc)
     openai_sol_61_release = datetime(2026, 9, 29, tzinfo=timezone.utc)
     openai_terra_61_release = datetime(2026, 10, 26, tzinfo=timezone.utc)
+    realtime_tts_rate_verified = datetime(2026, 11, 17, tzinfo=timezone.utc)
     sonnet_55_release = datetime(2026, 9, 28, tzinfo=timezone.utc)
     haiku_55_release = datetime(2026, 10, 7, tzinfo=timezone.utc)
     gemini_price_update = datetime(2026, 8, 15, tzinfo=timezone.utc)
@@ -493,6 +532,27 @@ def seed_llm_rates(engine: Engine) -> None:
             )
             if legacy_rate is not None:
                 legacy_rate.effective_to = openai_price_update
+
+        # Mixed text/audio output must not be charged at the text-only rate.
+        # The :audio row is an internal pricing identity, never sent upstream.
+        realtime_source = (
+            "https://developers.openai.com/api/docs/models/gpt-realtime-2.1-mini"
+        )
+        for model, input_rate, cache_read, output_rate in (
+            (OPENAI_REALTIME_TTS_MODEL, 0.60, 0.06, 2.40),
+            (OPENAI_REALTIME_TTS_AUDIO_RATE_MODEL, 10.00, 0.30, 20.00),
+        ):
+            upsert_rate(
+                provider="openai",
+                model=model,
+                effective_from=realtime_tts_rate_verified,
+                input_rate=input_rate,
+                cache_read=cache_read,
+                cache_write=None,
+                output_rate=output_rate,
+                tool=None,
+                source=realtime_source,
+            )
 
         # Standard (not Batch) OpenAI pricing, verified against the official pricing page
         # on 2026-08-01.  Cache writes use OpenAI's published 1.25x input

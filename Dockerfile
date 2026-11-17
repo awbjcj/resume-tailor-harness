@@ -20,6 +20,10 @@ WORKDIR /app
 # application logs do -- which reads as "the library said nothing".
 ENV PYTHONUNBUFFERED=1
 
+# Realtime returns PCM; encode the existing interview artifact format locally.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src

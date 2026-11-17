@@ -11,6 +11,7 @@ dependencies = [
     "uvicorn[standard]>=0.34.0",
     "sse-starlette>=2.1.0",
     "openai>=1.0.0",
+    "websockets>=15,<17",
     # Keep the provider SDK range stable during the Agno 3 migration.
     "google-genai>=2.5.0,<2.35.0",
     "beautifulsoup4>=4.15.0",

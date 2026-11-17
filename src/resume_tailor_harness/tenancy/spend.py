@@ -35,6 +35,8 @@ from resume_tailor_harness.llm_routing import provider_sdk_base_url
 from resume_tailor_harness.tenancy.context import UserContext, current_context
 from resume_tailor_harness.tenancy.costs import (
     OPENAI_DECISIONS_RATE_MODEL,
+    OPENAI_REALTIME_TTS_AUDIO_RATE_MODEL,
+    OPENAI_REALTIME_TTS_MODEL,
     has_active_rate,
 )
 from resume_tailor_harness.tenancy.limits import (
@@ -229,11 +231,24 @@ def _evaluate_shared(
 
     bounds: list[float] = []
     if enforcing:
-        if not model or not has_active_rate(engine, provider, model, now=now):
+        rate_model = model
+        if (
+            provider == "openai"
+            and model == OPENAI_REALTIME_TTS_MODEL
+            and not has_active_rate(
+                engine, provider, OPENAI_REALTIME_TTS_AUDIO_RATE_MODEL, now=now
+            )
+        ):
+            rate_model = OPENAI_REALTIME_TTS_AUDIO_RATE_MODEL
+        if (
+            rate_model != model
+            or not model
+            or not has_active_rate(engine, provider, model, now=now)
+        ):
             return _SharedVerdict(
                 CostRateUnavailableError(
                     f"no active cost rate for "
-                    f"{provider or 'unknown'}:{model or 'unknown'}"
+                    f"{provider or 'unknown'}:{rate_model or 'unknown'}"
                 ),
                 0.0,
                 unit,
