@@ -19,7 +19,7 @@ export default defineRailway(() => {
     volumeMounts: { "/app/data": dataVolume },
     deploy: {
       ipv6EgressEnabled: true,
-      restartPolicyType: "ON_FAILURE",
+      // Railway defaults to ON_FAILURE and omits that default from IaC state.
       restartPolicyMaxRetries: 3,
     },
   });

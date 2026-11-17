@@ -59,8 +59,9 @@ tenant isolation independent from the auth-free local container default.
 ## Railway infrastructure configuration
 
 The named partial in `.railway/railway.ts` owns this service and its attached
-volume. It selects the Dockerfile, healthcheck, restart policy, and single
-replica. Environment variables and credentials remain managed in Railway;
+volume. It selects the Dockerfile, healthcheck, and single replica, and keeps
+Railway's default on-failure restart policy at three retries. Environment
+variables and credentials remain managed in Railway;
 the H-1B service in the same project is outside this partial.
 
 To review and apply a change, install the pinned SDK with Node 22 or newer and

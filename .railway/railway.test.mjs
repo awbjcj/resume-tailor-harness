@@ -20,6 +20,7 @@ test("the production SQLite volume stays attached to one replica", async () => {
   assert.deepEqual(service.deploy.multiRegionConfig, {
     "us-west2": { numReplicas: 1 },
   });
+  assert.equal(service.deploy.restartPolicyMaxRetries, 3);
 });
 
 test("the partial leaves credentials and other services unmanaged", async () => {
