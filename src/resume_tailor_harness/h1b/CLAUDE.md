@@ -12,11 +12,13 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   `h1b_evidence_id` remains as a provenance pointer). **Expired rows still
   render**, labelled stale via `H1BSponsorshipOut.stale` — historical filings do
   not rot, and nothing auto-refreshes: an LLM call happens only on an explicit
-  manual check or a discovery run. Evidence carries a per-quarter `periods`
-  breakdown whose top-level **count** rollup is **derived by the model validator,
-  never trusted from the agent**, so count totals can never contradict the parts
-  shown beneath them; report-level wage summaries remain provider aggregates.
-  `periods: []` is valid and degrades to the flat pre-quarter view.
+  manual check or a discovery run. Legacy cache entries without explicit
+  count basis are skipped for display and refresh reuse, not deleted.
+  Company evidence from DOL is fiscal-year-to-date through each disclosure
+  snapshot, not a series of standalone quarterly counts. The top-level count
+  and wage figures come from the newest snapshot when a series is available;
+  overlapping snapshots must never be summed. Without a scoped trend,
+  `periods: []` can display only the latest scoped company stats.
   Discovery researches every surviving job's company (gated on
   `config.sponsorship_required`, bounded by
   `Settings.h1b_enrich_max_companies_per_run`), but `run_h1b_enrichment` still

@@ -1819,11 +1819,6 @@
     "en": "Category",
     "zh-CN": "分类"
   },
-  "Certified filings": {
-    "key": "ui_218cda5c8bc4",
-    "en": "Certified filings",
-    "zh-CN": "已认证申报数"
-  },
   "Challenges": {
     "key": "ui_40b9c8f44487",
     "en": "Challenges",
@@ -3149,11 +3144,6 @@
     "en": "Demeanor",
     "zh-CN": "面试官风格"
   },
-  "Denied filings": {
-    "key": "ui_c48e27b855a2",
-    "en": "Denied filings",
-    "zh-CN": "未获认证的申报数"
-  },
   "Depth": {
     "key": "ui_f1dbc33978a9",
     "en": "Depth",
@@ -4134,16 +4124,6 @@
     "en": "File missing",
     "zh-CN": "来源文件缺失"
   },
-  "Filing periods": {
-    "key": "ui_b9a731987aeb",
-    "en": "Filing periods",
-    "zh-CN": "申报期间"
-  },
-  "Filings": {
-    "key": "ui_a863d519e38f",
-    "en": "Filings",
-    "zh-CN": "申报数"
-  },
   "Filter and sort": {
     "key": "ui_06df7c654f2b",
     "en": "Filter and sort",
@@ -4663,11 +4643,6 @@
     "key": "ui_b0393b21f6fc",
     "en": "H-1B disabled",
     "zh-CN": "H-1B 已禁用"
-  },
-  "H-1B filings": {
-    "key": "ui_3f65783b8a94",
-    "en": "H-1B filings",
-    "zh-CN": "H-1B 申报数"
   },
   "H-1B sponsorship check": {
     "key": "ui_8e5c2a8edefb",
@@ -7443,11 +7418,6 @@
     "key": "ui_9b64db70252f",
     "en": "Pulled jobs, applications, tailored resumes, cover letters, rendered files, and run history.",
     "zh-CN": "已获取的职位、申请、定制简历、求职信、生成文件和运行历史记录。"
-  },
-  "Quarterly H-1B filings in the server cache.": {
-    "key": "ui_804ec9bd9fa8",
-    "en": "Quarterly H-1B filings in the server cache.",
-    "zh-CN": "服务器缓存中的季度 H-1B 申报数据。"
   },
   "Question {{v0}} of {{v1}}": {
     "key": "ui_0fa527a5f568",
@@ -10743,11 +10713,6 @@
     "key": "ui_4107a7eaf027",
     "en": "This version is no longer available.",
     "zh-CN": "此版本已不可用。"
-  },
-  "Three-year filing volume": {
-    "key": "ui_e8651fb105d9",
-    "en": "Three-year filing volume",
-    "zh-CN": "三年申报量"
   },
   "Tier": {
     "key": "ui_cb9e8664edea",

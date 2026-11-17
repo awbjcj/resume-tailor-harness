@@ -8111,6 +8111,8 @@ export interface components {
             certifiedCount: number | null;
             /** Confidence */
             confidence: number;
+            /** Countbasis */
+            countBasis?: "fiscal_year_to_date_determinations" | null;
             /** Dataversion */
             dataVersion: string | null;
             /** Deniedcount */

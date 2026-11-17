@@ -246,6 +246,7 @@ async def test_h1b_tool_evidence_reaches_cache_and_api(monkeypatch, surface):
     wages = {"min": None, "max": None, "mean": None, "median": 150000.0}
     payload = {
         "status": "matched",
+        "count_basis": "fiscal_year_to_date_determinations",
         "normalized_company": "acme",
         "display_company": "Acme",
         "fiscal_periods": ["FY2026-Q1"],
@@ -276,7 +277,13 @@ async def test_h1b_tool_evidence_reaches_cache_and_api(monkeypatch, surface):
         """Read historical filings for the named employer."""
         tool_calls.append(company)
         return json.dumps(
-            {"filings": 10, "certified": 9, "denied": 1, "wage_stats": wages}
+            {
+                "count_basis": "fiscal_year_to_date_determinations",
+                "total_applications": 10,
+                "certified": 9,
+                "denied": 1,
+                "wage_stats": wages,
+            }
         )
 
     @asynccontextmanager

@@ -95,6 +95,7 @@ def test_patch_status_approves():
 def test_manual_h1b_check_returns_evidence(monkeypatch, tmp_path):
     now = datetime.now(timezone.utc)
     evidence = H1BSponsorshipEvidence(
+        count_basis="fiscal_year_to_date_determinations",
         status="matched",
         normalized_company="acme",
         display_company="Acme",

@@ -12,6 +12,7 @@ from resume_tailor_harness.tracking.tables import H1BCompanyEvidence, Job, JobSt
 def _seed_evidence(session: Session, company: str) -> None:
     now = datetime.now(timezone.utc)
     evidence = H1BSponsorshipEvidence(
+        count_basis="fiscal_year_to_date_determinations",
         status="matched",
         normalized_company=company,
         retrieved_at=now,

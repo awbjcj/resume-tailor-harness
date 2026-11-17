@@ -8657,6 +8657,18 @@
             "title": "Confidence",
             "type": "number"
           },
+          "countBasis": {
+            "anyOf": [
+              {
+                "const": "fiscal_year_to_date_determinations",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countbasis"
+          },
           "dataVersion": {
             "anyOf": [
               {
