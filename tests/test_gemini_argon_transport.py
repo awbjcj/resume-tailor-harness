@@ -161,7 +161,8 @@ def test_transcription_preserves_beta_api_with_real_sdk(monkeypatch, api_version
         })
 
     def make_client(**kwargs):
-        options = dict(kwargs.get("http_options") or {})
+        http_options = kwargs.get("http_options")
+        options = http_options.model_dump(exclude_none=True) if http_options else {}
         options["client_args"] = {"transport": httpx.MockTransport(respond)}
         client = real_client(**{**kwargs, "http_options": options})
         clients.append(client)
@@ -169,7 +170,7 @@ def test_transcription_preserves_beta_api_with_real_sdk(monkeypatch, api_version
 
     monkeypatch.setattr(genai, "Client", make_client)
     monkeypatch.setattr(llm_runner, "get_settings", lambda: Settings(
-        _env_file=None,
+        _env_file=None,  # type: ignore[call-arg]
         gemini_api_key="offline-direct-key",
         sub2api_base_url="https://gateway.invalid",
         sub2api_gemini_key="offline-gateway-key",
