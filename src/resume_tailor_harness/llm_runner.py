@@ -2667,7 +2667,11 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
         from google.genai import types
 
         # Preserve the pre-3.x Developer API route, including latest aliases.
-        client = genai.Client(api_key=key, http_options=_gemini_api_version_options())
+        api_version = _gemini_api_version_options().get("api_version")
+        client = genai.Client(
+            api_key=key,
+            http_options=types.HttpOptions(api_version=api_version) if api_version else None,
+        )
         with llm_call():
             SpendGate().recheck(provider, model, own_key=own_key)
             response = client.models.generate_content(
