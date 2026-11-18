@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import random
 import re
 import threading
@@ -2227,6 +2228,21 @@ def _openai_max_output_tokens(*, reasoning: bool) -> int:
     return 64000 if reasoning else 32000
 
 
+def _gemini_api_version_options(*, agno: bool = False) -> dict[str, str]:
+    """Preserve Developer API defaults without overriding SDK configuration."""
+    if os.getenv("GOOGLE_GENAI_API_VERSION"):
+        return {}
+    # Agno explicitly enables Vertex for "true"; otherwise SDK 3 resolves
+    # ENTERPRISE before VERTEXAI, accepting both "true" and "1".
+    vertex = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "")
+    enterprise = os.getenv("GOOGLE_GENAI_USE_ENTERPRISE")
+    if (agno and vertex.lower() == "true") or (
+        (enterprise if enterprise is not None else vertex).lower() in {"true", "1"}
+    ):
+        return {}
+    return {"api_version": "v1beta"}
+
+
 def _endpoint_kwargs(provider: str, base_url: str | None) -> dict[str, Any]:
     """Spell "send this elsewhere" the way ``provider``'s agno class wants.
 
@@ -2399,9 +2415,12 @@ def _build_model_from_route(
     if provider == "gemini":
         Gemini = _compatible_gemini_class()
         options = _endpoint_kwargs("gemini", base_url)
-        options.setdefault("client_params", {}).setdefault("http_options", {})[
-            "retry_options"
-        ] = {"attempts": 1}
+        http_options = options.setdefault("client_params", {}).setdefault("http_options", {})
+        # google-genai 3 defaults to v1; retain our prior Developer API route
+        # for preview models/latest aliases and compatible gateways.
+        for name, value in _gemini_api_version_options(agno=True).items():
+            http_options.setdefault(name, value)
+        http_options["retry_options"] = {"attempts": 1}
 
         # Gemini treats an unset thinking config as "provider decides" (an
         # automatic, unbounded budget) rather than off, so a non-reasoning agent
@@ -2647,7 +2666,8 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=key)
+        # Preserve the pre-3.x Developer API route, including latest aliases.
+        client = genai.Client(api_key=key, http_options=_gemini_api_version_options())
         with llm_call():
             SpendGate().recheck(provider, model, own_key=own_key)
             response = client.models.generate_content(
