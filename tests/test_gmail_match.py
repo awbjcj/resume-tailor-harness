@@ -101,6 +101,23 @@ def test_requisition_selects_correct_application_regardless_of_order():
     assert match_email_to_application(email, [other]) is None
 
 
+def test_numeric_workday_requisition_disqualifies_a_same_title_posting():
+    email = EmailMessage(
+        "Acme HR <hr@workday.acme.com>",
+        "workday.acme.com",
+        "Application update",
+        "Thank you for applying to our Engineer position, 7001002.",
+    )
+    other = Job(
+        id=1,
+        source="workday",
+        company="Acme",
+        title="Engineer",
+        url="https://acme.wd1.myworkdayjobs.com/Careers/job/Engineer_7001001-2",
+    )
+    assert match_email_to_application(email, [other]) is None
+
+
 def test_same_company_without_role_evidence_is_ambiguous():
     email = EmailMessage(
         "NVIDIA HR <nvidia@myworkday.com>", "myworkday.com", "NVIDIA update", ""

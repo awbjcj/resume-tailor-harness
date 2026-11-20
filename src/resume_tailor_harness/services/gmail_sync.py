@@ -26,7 +26,7 @@ from resume_tailor_harness.gmail.classify import (
 )
 from resume_tailor_harness.gmail.errors import GmailApiError
 from resume_tailor_harness.gmail.processing import MessageProcessor
-from resume_tailor_harness.gmail.scan import LANES, MailboxScanner
+from resume_tailor_harness.gmail.scan import HISTORY_TYPES, LANES, MailboxScanner
 from resume_tailor_harness.llm_runner import Runner
 from resume_tailor_harness.tracking.tables import Notification
 
@@ -126,20 +126,20 @@ def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -
         stale = processor.stale_ids(page_size)
         for page in range(settings.gmail_sync_max_pages):
             reporter.checkpoint()
-            if page == 0 and stale:
-                processor.process(stale, recruiting=False)
-                session.commit()
+            lane = scanner.next_lane(cached=bool(stale))
+            if lane is None:
+                break
+            if lane == "cached":
+                ids, stale = stale, []
             else:
-                active = [lane for lane in LANES if scanner.has_work(lane)]
-                if not active:
-                    break
-                lane = active[page % len(active)]
                 ids = scanner.take(lane, page_size)
-                processor.process(
-                    ids, recruiting=lane != "inbox", refresh=lane == "history"
-                )
-                scanner.complete(lane, len(ids))
-                session.commit()
+            processor.process(
+                ids,
+                recruiting=lane not in ("inbox", "cached"),
+                refresh=lane in HISTORY_TYPES,
+            )
+            scanner.complete(lane, len(ids))
+            session.commit()
             reporter.step(
                 page + 1,
                 label=f"Processed {processor.stats['processed']} emails; reused {processor.stats['cached']} cached results",
