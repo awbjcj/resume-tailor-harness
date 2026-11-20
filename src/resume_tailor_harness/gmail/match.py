@@ -50,6 +50,10 @@ def _requisitions(text: str) -> set[str]:
             re.I,
         )
     )
+    # Some Workday templates put the numeric requisition after the role.
+    refs.update(
+        re.findall(r"\b(?:position|role)\s*,\s*(\d{4,})(?=\s*(?:[.!?]|$))", text, re.I)
+    )
     return refs
 
 
@@ -62,6 +66,11 @@ def _job_requisitions(job: MatchableJob) -> set[str]:
             if key.lower() in {"gh_jid", "jobid", "job_id", "requisitionid"}:
                 refs.update(value for value in values if value.isdigit())
         refs.update(re.findall(r"(?:/|:)(\d{4,})(?:/|$)", url.path))
+        if (url.hostname or "").endswith(".myworkdayjobs.com"):
+            # A posting may add a suffix like "-2" to the same requisition.
+            suffix = re.search(r"_(\d{4,})(?:-\d+)?/?$", unquote(url.path))
+            if suffix:
+                refs.add(suffix[1])
     refs.update(re.findall(r"(?:/|:)(\d{4,})(?:/|$)", job.source_identity or ""))
     return refs
 

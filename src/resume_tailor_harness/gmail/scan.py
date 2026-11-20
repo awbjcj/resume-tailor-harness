@@ -12,7 +12,12 @@ from resume_tailor_harness.gmail.errors import GmailApiError
 from resume_tailor_harness.gmail.requests import execute_read
 from resume_tailor_harness.gmail.tables import GmailSyncState
 
-LANES = ("history", "recruiting", "inbox")
+HISTORY_TYPES = {
+    "history": ("messageAdded",),
+    "label_history": ("labelAdded", "labelRemoved"),
+}
+LANES = ("history", "recruiting", "inbox", "label_history")
+WORK_LANES = (*LANES, "cached")
 
 
 def _backfills() -> dict:
@@ -46,12 +51,23 @@ class MailboxScanner:
                 account=self.account,
                 cursors={
                     "history": {"cursor": self.latest},
+                    "label_history": {"cursor": self.latest},
                     **_backfills(),
                 },
             )
         self.row: GmailSyncState = row
         self.cursors = deepcopy(row.cursors)
-        self.history_checked = False
+        if "label_history" not in self.cursors:
+            # Old tokens are for the combined filter. Replay both filters from
+            # the saved checkpoint and retain IDs already staged by that scan.
+            history = self.cursors["history"]
+            self.cursors["label_history"] = {
+                "cursor": history["cursor"],
+                "pending": history.pop("pending", []),
+            }
+            history.pop("page", None)
+        self.history_checked: set[str] = set()
+        self.restarted_backfills = False
         self.save()
 
     def save(self) -> None:
@@ -63,11 +79,20 @@ class MailboxScanner:
         cursor = self.cursors[lane]
         if cursor.get("pending"):
             return True
-        if lane == "history":
-            return not self.history_checked and (
+        if lane in HISTORY_TYPES:
+            return lane not in self.history_checked and (
                 bool(cursor.get("page")) or cursor["cursor"] != self.latest
             )
         return not cursor["done"]
+
+    def next_lane(self, *, cached: bool) -> str | None:
+        # Resume the rotation across runs, including a one-page budget.
+        start = WORK_LANES.index(self.cursors.get("next_lane", "history"))
+        for lane in WORK_LANES[start:] + WORK_LANES[:start]:
+            available = cached if lane == "cached" else self.has_work(lane)
+            if available:
+                return lane
+        return None
 
     def take(self, lane: str, limit: int) -> list[str]:
         cursor = self.cursors[lane]
@@ -76,8 +101,12 @@ class MailboxScanner:
         return self.cursors[lane].get("pending", [])[:limit]
 
     def complete(self, lane: str, count: int) -> None:
-        cursor = self.cursors[lane]
-        cursor["pending"] = cursor.get("pending", [])[count:]
+        if lane != "cached":
+            cursor = self.cursors[lane]
+            cursor["pending"] = cursor.get("pending", [])[count:]
+        self.cursors["next_lane"] = WORK_LANES[
+            (WORK_LANES.index(lane) + 1) % len(WORK_LANES)
+        ]
         # Caller commits this with message receipts and notifications.
         self.row.cursors = deepcopy(self.cursors)
         self.session.add(self.row)
@@ -86,15 +115,15 @@ class MailboxScanner:
         cursor = self.cursors[lane]
         params = {"pageToken": cursor["page"]} if cursor.get("page") else {}
         try:
-            if lane == "history":
+            if lane in HISTORY_TYPES:
                 result = execute_read(
                     self.service.users()
                     .history()
                     .list(
                         userId="me",
                         startHistoryId=cursor["cursor"],
-                        historyTypes=["messageAdded", "labelAdded", "labelRemoved"],
-                        maxResults=min(limit, 500),
+                        historyTypes=list(HISTORY_TYPES[lane]),
+                        maxResults=500,
                         **params,
                     ),
                     allow_missing=True,
@@ -126,17 +155,27 @@ class MailboxScanner:
                 return
             raise
         if result is None:
-            self.cursors = {"history": {"cursor": self.latest}, **_backfills()}
-            self.history_checked = True
+            self.cursors[lane] = {"cursor": self.latest}
+            self.history_checked.add(lane)
+            if not self.restarted_backfills:
+                for name, backfill in _backfills().items():
+                    backfill["pending"] = self.cursors[name].get("pending", [])
+                    self.cursors[name] = backfill
+                self.restarted_backfills = True
             self.warn(
                 "Gmail history expired. Resuming a full scan using cached results."
             )
             self.save()
             return
-        if lane == "history":
+        if lane in HISTORY_TYPES:
             ids = []
+            kinds = (
+                ("messagesAdded",)
+                if lane == "history"
+                else ("labelsAdded", "labelsRemoved")
+            )
             for history in result.get("history", []):
-                for kind in ("messagesAdded", "labelsAdded", "labelsRemoved"):
+                for kind in kinds:
                     for entry in history.get(kind, []):
                         labels = set(entry.get("labelIds", []))
                         if (
@@ -147,7 +186,7 @@ class MailboxScanner:
                             ids.append(entry["message"]["id"])
             if not result.get("nextPageToken"):
                 cursor["cursor"] = str(result.get("historyId") or self.latest)
-                self.history_checked = True
+                self.history_checked.add(lane)
         else:
             ids = [entry["id"] for entry in result.get("messages", [])]
             cursor["done"] = not bool(result.get("nextPageToken"))

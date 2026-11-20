@@ -14,7 +14,7 @@ from resume_tailor_harness.services.gmail_sync import _sync_lock, run_gmail_sync
 from resume_tailor_harness.services.notifications import accept_notification
 from resume_tailor_harness.tracking.tables import Application, Job, Notification
 from tests.test_gmail_client import _error
-from tests.test_services_gmail_sync import FakeGmailService, _reporter
+from tests.test_services_gmail_sync import FakeGmailService, _FakeRequest, _reporter
 
 
 @pytest.fixture(autouse=True)
@@ -147,6 +147,98 @@ def test_new_history_supersedes_old_pending_and_stale_accept_cannot_apply(tmp_pa
             select(Notification).where(Notification.state == "pending")
         ).one()
         assert current.proposed_status == "rejected"
+
+
+def test_workday_rejection_syncs_ahead_of_old_gmail_label_changes(
+    tmp_path, monkeypatch
+):
+    engine = _seed(2)
+    with Session(engine) as session:
+        for job in session.exec(select(Job)).all():
+            assert job.id is not None
+            job.company = "Acme"
+            job.title = "Software Engineer"
+            job.url = (
+                "https://acme.wd1.myworkdayjobs.com/Careers/job/"
+                f"Software-Engineer_{7001000 + job.id}-2"
+            )
+        session.commit()
+
+    service = FakeGmailService([])
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    with Session(engine) as session:
+        state = session.exec(select(GmailSyncState)).one()
+        # A pre-upgrade mixed-history token cannot be used with either new filter.
+        state.cursors = {
+            lane: cursor
+            for lane, cursor in state.cursors.items()
+            if lane in {"history", "inbox", "recruiting"}
+        }
+        state.cursors["history"]["page"] = "mixed-token"
+        state.cursors["history"]["pending"] = ["queued"]
+        session.commit()
+
+    body = (
+        "<div>Thank you for applying to our Software Engineer position, 7001002."
+        "<br>We have decided to move forward with other candidates.</div>"
+    )
+    message = {
+        **_mail("workday"),
+        "headers": [
+            {"name": "From", "value": "Acme HR <hr@workday.acme.com>"},
+            {"name": "Subject", "value": "Update from Acme on your application"},
+        ],
+        "snippet": "Thank you for applying.",
+        "payload": {
+            "mimeType": "multipart/related",
+            "parts": [
+                {
+                    "mimeType": "text/html",
+                    "body": {"data": base64.urlsafe_b64encode(body.encode()).decode()},
+                }
+            ],
+        },
+    }
+    _history(service, [message])
+    service._messages._messages.append({**_mail("queued"), "labelIds": ["SPAM"]})
+    arrival_history = service.list
+
+    def list_history(**kwargs):
+        if kwargs["historyTypes"] == ["messageAdded"]:
+            assert "pageToken" not in kwargs
+            assert kwargs["startHistoryId"] == "1"
+            return arrival_history(**kwargs)
+        # Routine label changes span more pages than one sync can read.
+        assert kwargs.get("pageToken") != "mixed-token"
+        return _FakeRequest(
+            {
+                "historyId": "2",
+                "nextPageToken": "1",
+                "history": [
+                    {"labelsRemoved": [
+                        {"message": {"id": "unrelated"}, "labelIds": ["UNREAD"]}
+                    ]}
+                ],
+            }
+        )
+
+    monkeypatch.setattr(service, "list", list_history)
+    monkeypatch.setenv("GMAIL_SYNC_MAX_PAGES", "1")
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert result["has_more"]
+    assert result["stats"]["ai_calls"] == 0
+    with Session(engine) as session:
+        notice = session.exec(select(Notification)).one()
+        assert notice.application_id == 2
+        assert notice.proposed_status == "rejected"
+        app = session.get(Application, 2)
+        assert app is not None and app.status == "submitted"
+
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert ("queued", "metadata") in service._messages.gets
+    result = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert result["has_more"] and result["stats"]["metadata_reads"] == 0
+    assert ("unrelated", "metadata") not in service._messages.gets
 
 
 @pytest.mark.parametrize("new_label", ["none", "rejection"])
@@ -293,10 +385,13 @@ def test_history_page_with_more_messages_than_budget_drops_none(tmp_path, monkey
     _history(service, [_mail(str(i), i) for i in range(7)])
     first = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
     assert first["has_more"]
-    assert first["pending"] == 4
+    assert first["pending"] == 2
     second = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
-    assert not second["has_more"]
-    assert second["pending"] == 7
+    assert second["has_more"]
+    assert second["pending"] == 6
+    third = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert not third["has_more"]
+    assert third["pending"] == 7
     assert service.history_reads == 1
 
 
@@ -418,7 +513,7 @@ def test_restored_spam_email_refreshes_cached_exclusion(tmp_path):
     assert first["stats"]["body_reads"] == 0
     message["labelIds"] = ["INBOX"]
     service.history_id = "2"
-    service.history_pages = [
+    service.label_history_pages = [
         {
             "historyId": "2",
             "history": [
@@ -572,7 +667,10 @@ def test_history_pagination_continues_across_runs_before_advancing_cursor(
             == "1"
         )
     second = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
-    assert not second["has_more"]
+    assert second["has_more"]  # The other history filter had its turn.
+    assert service.history_reads == 1
+    third = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
+    assert not third["has_more"]
     assert service.history_reads == 2
     with Session(engine) as session:
         assert (
@@ -608,6 +706,7 @@ def test_expired_backfill_page_token_restarts_without_redownloading(
         return original(**kwargs)
 
     monkeypatch.setattr(service._messages, "list", listing)
+    run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
     interrupted = run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
     assert any("page cursor expired" in warning for warning in interrupted["warnings"])
     result = interrupted
@@ -833,7 +932,7 @@ def test_unread_label_changes_do_not_trigger_message_reads(tmp_path):
     service = FakeGmailService([_mail("m1")])
     run_gmail_sync(engine, _reporter(tmp_path), service=service, llm=None)
     service.history_id = "2"
-    service.history_pages = [
+    service.label_history_pages = [
         {
             "historyId": "2",
             "history": [
