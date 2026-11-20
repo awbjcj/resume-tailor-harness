@@ -23,7 +23,8 @@ _RULES = {
         r"\b(?:not moving forward|decided not to (?:move forward|proceed|pursue)|"
         r"(?:will not|won't|not) (?:be )?(?:moving forward|proceed(?:ing)?|continu(?:e|ing))|"
         r"(?:you have |you were |you are )?not (?:been )?selected|"
-        r"(?:moving forward with|(?:have )?(?:chosen|chose|selected)) (?:other candidates|another candidate)|"
+        r"(?:moving forward with|we(?: have|'ve)? decided to move forward with|"
+        r"(?:have )?(?:chosen|chose|selected)) (?:other candidates|another candidate)|"
         r"(?:unable to|not able to|cannot|can't) (?:extend (?:you )?an offer|offer you (?:the|this) (?:role|position))|"
         r"no longer under consideration|position has been filled)\b"
     ),
@@ -41,7 +42,7 @@ _NEGATED_ACTION = re.compile(
     r"\b(?:unable to|not able to|cannot|can't|do not|don't|no longer|not invited)\b"
 )
 _NON_DECISION = re.compile(
-    r"\b(?:if (?:you are |you'?re )?(?:selected|shortlisted)|if we decide|"
+    r"\b(?:if (?:you are |you'?re )?(?:selected|shortlisted)|if we(?: have|'ve)? decided?\b|"
     r"interview tips|sample offer|newsletter|no offer has been made|offer .{0,15}not ready|"
     r"still reviewing|application (?:has been |was )?received|received your application)\b"
 )

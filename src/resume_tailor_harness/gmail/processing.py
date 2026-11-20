@@ -21,7 +21,7 @@ from resume_tailor_harness.gmail.propose import _CLASS_TO_STATUS, _is_forward
 from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
 from resume_tailor_harness.tracking.tables import Notification, utcnow
 
-PROCESSING_VERSION = "gmail-decisions-v4"
+PROCESSING_VERSION = "gmail-decisions-v5"
 
 
 class MessageProcessor:
