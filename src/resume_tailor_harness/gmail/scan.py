@@ -3,11 +3,10 @@
 from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime, timezone
-from hashlib import sha256
 
 from sqlmodel import Session
 
-from resume_tailor_harness.gmail.client import BACKFILL_QUERY
+from resume_tailor_harness.gmail.client import BACKFILL_QUERY, mailbox_profile
 from resume_tailor_harness.gmail.errors import GmailApiError
 from resume_tailor_harness.gmail.requests import execute_read
 from resume_tailor_harness.gmail.tables import GmailSyncState
@@ -34,15 +33,7 @@ def _backfills() -> dict:
 class MailboxScanner:
     def __init__(self, service, session: Session, warn: Callable[[str], None]):
         self.service, self.session, self.warn = service, session, warn
-        profile = execute_read(service.users().getProfile(userId="me")) or {}
-        if not profile.get("emailAddress") or not profile.get("historyId"):
-            raise GmailApiError(
-                "Gmail did not return a mailbox identity and sync cursor."
-            )
-        self.account = sha256(
-            profile["emailAddress"].strip().lower().encode()
-        ).hexdigest()
-        self.latest = str(profile["historyId"])
+        self.account, self.latest = mailbox_profile(service)
         row = session.get(GmailSyncState, self.account)
         if row is None:
             # Capture the history boundary BEFORE the full scan: arrivals during

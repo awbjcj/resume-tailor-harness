@@ -1,7 +1,7 @@
 """One bounded, resumable pass: discover changes → cache evidence → propose updates.
 
 Shared by the manual POST /api/gmail/sync run and the scheduler tick, so
-the two can never drift. Never auto-applies a status change.
+the two share the same proposal and opt-in automation policy.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from sqlmodel import select
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.db import get_session
 from resume_tailor_harness.gmail.auth import build_service
+from resume_tailor_harness.gmail.automation import apply_confirmed_rejections
 from resume_tailor_harness.gmail.classify import (
     build_classifier_llm,
     classifier_available,
@@ -144,6 +145,12 @@ def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -
                 page + 1,
                 label=f"Processed {processor.stats['processed']} emails; reused {processor.stats['cached']} cached results",
             )
+        auto_applied = 0
+        # Gmail lists arrivals in chronological order. Let pending arrival
+        # pages reconcile newer decisions before acting on an earlier one.
+        if not scanner.has_work("history"):
+            reporter.checkpoint()
+            auto_applied = apply_confirmed_rejections(session, scanner.account, processor.catalog)
         if review_cleared:
             reporter.checkpoint()
             processor.restore_cleared_proposals()
@@ -156,7 +163,7 @@ def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -
             .select_from(Notification)
             .where(Notification.state == "pending")
         ).one()
-        stats = {**processor.stats, "ai_calls": classifier.calls}
+        stats = {**processor.stats, "ai_calls": classifier.calls, "auto_applied": auto_applied}
     if has_more:
         reporter.step(
             1,

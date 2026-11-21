@@ -17,6 +17,11 @@ export const DEFAULT_INVALIDATE = [
   "dashboard-summary",
 ] as const;
 
+const EMAIL_UPDATE_KEYS = [
+  "notifications", "gmail-status", "applications", "job", "pipeline",
+  "dashboard-summary", "analytics-timeline", "application-events",
+] as const;
+
 const BY_KIND: Record<string, readonly string[]> = {
   suggestion: ["match-gap", "learning-roadmaps"],
   refreshClusters: ["match-gap"],
@@ -25,8 +30,8 @@ const BY_KIND: Record<string, readonly string[]> = {
   "profile-build": ["profile-sources", "match-gap", "setup-status", "profile-matrix", "profile-skills", "skill-cleanup", "suppressed-skills", "job", "shortlist", "pipeline", "triage", "coach-session", "coach-sessions", "dashboard-summary"],
   "profile-skills-rebuild": ["profile-matrix", "profile-skills", "skill-cleanup", "suppressed-skills", "match-gap", "job", "shortlist", "pipeline", "triage"],
   "github-sync": ["profile-sources", "setup-status", "profile-source-exclusions", "github-repositories"],
-  gmailSync: ["notifications", "gmail-status"],
-  mailboxSync: ["notifications", "mailboxes", "gmail-status"],
+  gmailSync: EMAIL_UPDATE_KEYS,
+  mailboxSync: [...EMAIL_UPDATE_KEYS, "mailboxes"],
   // Reload recovery has no chat mutation callback to refresh sessions.
   "career-lab-turn": ["career-lab-sessions", "career-lab-session"],
   "career-lab-end": ["career-lab-sessions", "career-lab-session"],

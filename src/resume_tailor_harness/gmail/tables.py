@@ -17,6 +17,14 @@ class GmailSyncState(SQLModel, table=True):
     cursors: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
 
 
+class GmailAutomationPreference(SQLModel, table=True):
+    __tablename__ = cast(Any, "gmail_automation_preference")
+
+    id: int = Field(default=1, primary_key=True)
+    account: str
+    enabled_at: datetime = Field(default_factory=utcnow)
+
+
 class GmailReceipt(SQLModel, table=True):
     __tablename__ = cast(Any, "gmail_receipts")
     __table_args__ = (

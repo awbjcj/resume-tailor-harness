@@ -78,6 +78,22 @@ def _rule_label(email: EmailMessage) -> str:
     return next(iter(labels)) if len(labels) == 1 else "none"
 
 
+_CONFIRMED_REJECTION = re.compile(
+    r"^(?:unfortunately,? )?we(?: have|'ve)? decided "
+    r"(?:not to (?:move forward|proceed) with your (?:application|candidacy)|"
+    r"to move forward with (?:other candidates|another candidate))\b"
+)
+_CONDITIONAL = re.compile(r"\b(?:if|unless|whether)\b")
+
+
+def confirmed_rejection(email: EmailMessage) -> bool:
+    """The narrower deterministic evidence allowed to change a status."""
+    return bool(email.body) and _rule_label(email) == "rejection" and any(
+        _CONFIRMED_REJECTION.match(sentence) and not _CONDITIONAL.search(sentence)
+        for sentence in re.split(r"[.!?]+\s+", _normalized(_content(email)))
+    )
+
+
 def _llm_label(email: EmailMessage, llm: Runner) -> str:
     raw = getattr(llm.run(_prompt(email)), "content", "")
     try:

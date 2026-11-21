@@ -3,12 +3,14 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from email.utils import parseaddr
+from hashlib import sha256
 from typing import Any
 
 from resume_tailor_harness.discovery.connectors.text import html_to_text
 from resume_tailor_harness.gmail.auth import (  # noqa: F401 — CLI compat re-export
     build_gmail_service_interactive as build_gmail_service,
 )
+from resume_tailor_harness.gmail.errors import GmailApiError
 from resume_tailor_harness.gmail.requests import execute_read
 
 BODY_CHAR_LIMIT = 4000
@@ -37,6 +39,15 @@ class EmailMessage:
     internal_date: int = 0
     recruiting_candidate: bool = False
     incoming: bool = True
+    sender_verified: bool = False
+
+
+def mailbox_profile(service) -> tuple[str, str]:
+    profile = execute_read(service.users().getProfile(userId="me")) or {}
+    if not profile.get("emailAddress") or not profile.get("historyId"):
+        raise GmailApiError("Gmail did not return a mailbox identity and sync cursor.")
+    account = sha256(profile["emailAddress"].strip().lower().encode()).hexdigest()
+    return account, str(profile["historyId"])
 
 
 def _decode(data: str) -> str:
@@ -99,6 +110,18 @@ def _domain(sender: str) -> str:
     return parseaddr(sender)[1].rpartition("@")[2].lower()
 
 
+def _gmail_verified_sender(headers: list[dict], sender_domain: str) -> bool:
+    # Store the result, not Gmail's authentication headers or relay details.
+    authserv, _, results = _header(headers, "Authentication-Results").partition(";")
+    if authserv.strip().lower() != "mx.google.com" or not sender_domain:
+        return False
+    for result in results.split(";"):
+        if re.match(r"\s*dmarc=pass\b", result, re.I):
+            domain = re.search(r'\bheader\.from="?([a-z0-9.-]+)"?(?=\s|$)', result, re.I)
+            return bool(domain and domain[1].lower() == sender_domain)
+    return False
+
+
 def authored_text(text: str) -> str:
     """Exclude quoted correspondence from role matching and decision rules."""
     text = re.split(
@@ -114,10 +137,12 @@ def email_from_payload(
 ) -> EmailMessage:
     headers = payload.get("payload", {}).get("headers", [])
     sender = _header(headers, "From")
+    sender_domain = _domain(sender)
     labels = set(payload.get("labelIds", []))
     return EmailMessage(
         sender=sender,
-        sender_domain=_domain(sender),
+        sender_domain=sender_domain,
+        sender_verified=_gmail_verified_sender(headers, sender_domain),
         subject=_header(headers, "Subject"),
         snippet=payload.get("snippet", ""),
         thread_id=payload.get("threadId"),
@@ -159,7 +184,9 @@ def batch_read_messages(
 
         batch = service.new_batch_http_request(callback=callback)
         for message_id in ids[start : start + BATCH_SIZE]:
-            params = {} if full else {"metadataHeaders": ["From", "Subject"]}
+            params = {} if full else {
+                "metadataHeaders": ["From", "Subject", "Authentication-Results"]
+            }
             request = (
                 service.users()
                 .messages()

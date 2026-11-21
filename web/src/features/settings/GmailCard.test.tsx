@@ -8,6 +8,30 @@ import { withQueryClient } from "@/test/utils";
 import { GmailCard } from "./GmailCard";
 
 describe("GmailCard", () => {
+  it("saves the opt-in and allows it to be switched back off", async () => {
+    const user = userEvent.setup();
+    let enabled = false;
+    server.use(
+      http.get("*/api/gmail/status", () => HttpResponse.json({
+        connected: true, scopes: [], draftCapable: true, clientSource: "platform",
+        autoApplyRejections: enabled,
+      })),
+      http.put("*/api/gmail/automation", async ({ request }) => {
+        const body = await request.json() as { autoApplyRejections: boolean };
+        enabled = body.autoApplyRejections;
+        return HttpResponse.json(body);
+      }),
+    );
+    render(<GmailCard />, { wrapper: withQueryClient });
+    const toggle = await screen.findByRole("switch", { name: "Auto-apply confirmed rejections" });
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    await waitFor(() => expect(toggle).toBeChecked());
+    await waitFor(() => expect(toggle).toBeEnabled());
+    await user.click(toggle);
+    await waitFor(() => expect(toggle).not.toBeChecked());
+  });
+
   it("offers reconnect even when both scopes are present", async () => {
     server.use(http.get("*/api/gmail/status", () => HttpResponse.json({
       connected: true, scopes: [], draftCapable: true, clientSource: "platform",
