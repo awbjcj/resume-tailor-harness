@@ -13,17 +13,24 @@ import secrets as pysecrets
 import time
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
+from sqlmodel import Session
 
 from resume_tailor_harness.api import auth as auth_module
-from resume_tailor_harness.api.deps import get_data_dir, get_settings_dep
+from resume_tailor_harness.api.deps import get_data_dir, get_engine, get_session, get_settings_dep
 from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.public_url import public_url
-from resume_tailor_harness.api.schemas.gmail import GmailConnectOut, GmailStatusOut
+from resume_tailor_harness.api.schemas.gmail import GmailAutomationIn, GmailConnectOut, GmailStatusOut
 from resume_tailor_harness.config import Settings, get_settings
 from resume_tailor_harness.gmail import auth as gmail_auth
-from resume_tailor_harness.gmail.errors import GmailApiError, GmailScopeMissing
+from resume_tailor_harness.gmail.automation import preference, set_automation
+from resume_tailor_harness.gmail.client import mailbox_profile
+from resume_tailor_harness.gmail.errors import (
+    GmailApiError,
+    GmailNotConnected,
+    GmailScopeMissing,
+)
 from resume_tailor_harness.tenancy.context import current_context, use_context
 
 logger = logging.getLogger(__name__)
@@ -157,6 +164,12 @@ def _account_email(request: Request) -> str:
         return user.email or "" if user is not None else ""
 
 
+def _save_connection(request: Request, token_json: str) -> None:
+    with Session(get_engine(request)) as session:
+        set_automation(session, None)
+    gmail_auth.save_token_json(token_json, get_data_dir(request))
+
+
 def _finish(outcome: str) -> RedirectResponse:
     return RedirectResponse(f"{_SETTINGS_PAGE}?gmail={outcome}")
 
@@ -195,9 +208,7 @@ def gmail_callback(request: Request, code: str = "", state: str = "", error: str
             settings = request.app.state.settings
             _require_client(settings)
             flow = _build_flow(settings, _redirect_uri(request))
-            gmail_auth.save_token_json(
-                _exchange_token(flow, code), request.app.state.data_dir
-            )
+            _save_connection(request, _exchange_token(flow, code))
         else:
             from resume_tailor_harness.tenancy.bootstrap import build_context
 
@@ -213,7 +224,7 @@ def gmail_callback(request: Request, code: str = "", state: str = "", error: str
                 settings = get_settings()  # effective: user client override wins
                 _require_client(settings)
                 flow = _build_flow(settings, _redirect_uri(request))
-                gmail_auth.save_token_json(_exchange_token(flow, code))
+                _save_connection(request, _exchange_token(flow, code))
     except ApiException as exc:
         logger.exception(
             "Gmail callback rejected (config/client): %s %s", exc.code, exc.message
@@ -230,7 +241,7 @@ def gmail_callback(request: Request, code: str = "", state: str = "", error: str
     return _finish("connected")
 
 
-def _status(request: Request) -> GmailStatusOut:
+def _status(request: Request, session: Session) -> GmailStatusOut:
     creds = gmail_auth.load_credentials(get_data_dir(request))
     context = current_context()
     base_client = request.app.state.settings.google_oauth_client_id
@@ -247,16 +258,32 @@ def _status(request: Request) -> GmailStatusOut:
         scopes=gmail_auth.granted_scopes(creds),
         draft_capable=gmail_auth.has_compose(creds),
         client_source=client_source,
+        auto_apply_rejections=preference(session) is not None,
     )
 
 
 @router.get("/gmail/status", response_model=GmailStatusOut)
-def gmail_status(request: Request):
-    return _status(request)
+def gmail_status(request: Request, session: Session = Depends(get_session)):
+    return _status(request, session)
+
+
+@router.put("/gmail/automation", response_model=GmailAutomationIn)
+def gmail_automation(
+    request: Request, body: GmailAutomationIn, session: Session = Depends(get_session)
+):
+    account = None
+    if body.auto_apply_rejections:
+        try:
+            account, _ = mailbox_profile(gmail_auth.build_service(get_data_dir(request)))
+        except (GmailNotConnected, GmailScopeMissing) as exc:
+            raise ApiException(409, exc.code, str(exc)) from exc
+    set_automation(session, account)
+    return body
 
 
 @router.delete("/gmail/token", response_model=GmailStatusOut)
-def gmail_disconnect(request: Request):
+def gmail_disconnect(request: Request, session: Session = Depends(get_session)):
+    set_automation(session, None)
     data_dir = get_data_dir(request)
     try:
         creds = gmail_auth.load_credentials(data_dir)
@@ -274,4 +301,4 @@ def gmail_disconnect(request: Request):
         except Exception:  # noqa: BLE001 — revoke is best-effort
             pass
     gmail_auth.delete_token(data_dir)
-    return _status(request)
+    return _status(request, session)

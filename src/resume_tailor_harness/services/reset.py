@@ -16,10 +16,11 @@ from resume_tailor_harness.workspace_agent.tables import (
     WorkspaceActionReceipt,
 )
 from resume_tailor_harness.tenancy.context import current_context
-from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
+from resume_tailor_harness.gmail.tables import GmailAutomationPreference, GmailReceipt, GmailSyncState
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 from resume_tailor_harness.tracking.tables import (
     Application,
+    ApplicationEvent,
     CoverLetter,
     ClearedRunHistory,
     Job,
@@ -46,12 +47,14 @@ _PIPELINE_TABLES: tuple[type[SQLModel], ...] = (
     WorkspaceNote,
     GmailReceipt,
     GmailSyncState,
+    GmailAutomationPreference,
     RunOperationLog,
     ClearedRunHistory,
     RunCompletionTarget,
     RunCompletion,
     SavedBoardView,
     Notification,
+    ApplicationEvent,
     Application,
     CoverLetter,
     ResumeVersion,

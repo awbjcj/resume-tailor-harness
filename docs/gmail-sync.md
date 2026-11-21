@@ -1,7 +1,17 @@
 # Gmail synchronization
 
 The web Sync action and scheduled sync share a durable, incremental pipeline.
-Status changes remain proposals for the user to accept.
+Status changes are proposed for review by default. In **Settings → Email &
+notifications**, you can opt in to auto-applying confirmed rejections for the
+connected Gmail account.
+
+Automation covers messages received after you enable the setting. It requires
+Gmail to authenticate the employer's sender domain, an exact requisition for a
+single application, an explicit rule-based rejection, and a current status of
+Submitted. Other decisions and messages that do not meet these criteria remain
+available for review. Each automated rejection records the email on the
+application timeline. Reconnecting Gmail or resetting tracked applications clears
+the opt-in.
 
 ## Large mailboxes
 

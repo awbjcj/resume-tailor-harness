@@ -14,6 +14,7 @@ from resume_tailor_harness.services.reset import (
 )
 from resume_tailor_harness.tracking.tables import (
     Application,
+    ApplicationEvent,
     CoverLetter,
     ClearedRunHistory,
     Job,
@@ -155,6 +156,10 @@ def _seed_files(paths: ResetPaths) -> None:
 
 def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
     _seed_pipeline(session)
+    application = session.exec(select(Application)).one()
+    assert application.id is not None
+    session.add(ApplicationEvent(application_id=application.id, kind="rejected", source="mailbox"))
+    session.commit()
     _seed_files(paths)
 
     report = reset_workspace(session, paths, ResetScope.jobs)
@@ -169,12 +174,14 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
         "workspace_notes": 0,
         "gmail_receipts": 0,
         "gmail_sync_state": 0,
+        "gmail_automation_preference": 0,
         "runoperationlog": 1,
         "clearedrunhistory": 1,
         "run_completions": 1,
         "run_completion_targets": 1,
         "saved_board_views": 1,
         "notifications": 1,
+        "application_events": 1,
         "applications": 1,
         "cover_letters": 1,
         "resume_versions": 1,
@@ -189,6 +196,7 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
         "connector_runs",
     ]
     assert report.failures == {}
+    assert session.exec(select(ApplicationEvent)).first() is None
     assert session.exec(select(Job)).first() is None
     assert list(paths.output_dir.iterdir()) == []
     assert list(paths.runs_dir.iterdir()) == []
