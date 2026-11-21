@@ -32,13 +32,13 @@ _LEGAL_SUFFIXES = frozenset(
 _WORD = re.compile(r"[^\w]+", re.UNICODE)
 
 
-def registrable_domain(url: str) -> str:
+def registrable_domain(url: str, *, include_private: bool = False) -> str:
     """Return a network-free registrable domain, or an empty string."""
     try:
         host = (urlsplit(url).hostname or "").casefold().rstrip(".")
     except ValueError:
         return ""
-    parsed = _TLD(host)
+    parsed = _TLD(host, include_psl_private_domains=include_private)
     return ".".join(part for part in (parsed.domain, parsed.suffix) if part)
 
 

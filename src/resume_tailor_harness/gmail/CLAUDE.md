@@ -96,7 +96,8 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   Ambiguous or explicitly different requisitions must not update an arbitrary
   application. With explicit opt-in, only a future authenticated Gmail rejection
   with an exact employer and requisition can advance a Submitted application.
-  Wait for the arrival cursor to catch up and record the decision as a timeline
+  Match the full registered sender domain against the tracked job links. Wait
+  for all discovery lanes to catch up and record the decision as a timeline
   event in the same transaction that accepts its proposal.
 - **Precision precedes a guessed decision.** Rules require decision phrases,
   discard quoted history, and avoid receipt/marketing/conditional messages.
