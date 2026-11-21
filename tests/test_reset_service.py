@@ -169,6 +169,7 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
         "workspace_notes": 0,
         "gmail_receipts": 0,
         "gmail_sync_state": 0,
+        "gmail_automation_preference": 0,
         "runoperationlog": 1,
         "clearedrunhistory": 1,
         "run_completions": 1,

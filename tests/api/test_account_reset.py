@@ -8,7 +8,7 @@ from sqlmodel import select
 from resume_tailor_harness.api.app import create_app
 from resume_tailor_harness.api.auth import hash_password
 from resume_tailor_harness.db import init_db, make_engine
-from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
+from resume_tailor_harness.gmail.tables import GmailAutomationPreference, GmailReceipt, GmailSyncState
 from resume_tailor_harness.tenancy.system_db import User
 from resume_tailor_harness.tenancy.workspace import provision_workspace, workspace_paths
 from resume_tailor_harness.tracking.tables import (
@@ -53,6 +53,7 @@ def _seed_workspace(app, user_id):
             Job(source="manual", company="Acme", title="Engineer", dedup_key="a|e")
         )
         session.add(GmailReceipt(account="mailbox", message_id="m1"))
+        session.add(GmailAutomationPreference(account="mailbox"))
         session.add(
             GmailSyncState(account="mailbox", cursors={"history": {"cursor": "1"}})
         )
@@ -138,6 +139,7 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
             "workspace_notes": 0,
             "gmail_receipts": 1,
             "gmail_sync_state": 1,
+            "gmail_automation_preference": 1,
             "runoperationlog": 0,
             "clearedrunhistory": 0,
             "run_completions": 0,
@@ -161,12 +163,14 @@ def test_reset_jobs_wipes_only_authenticated_workspace(mu_app, mu_client):
         assert session.exec(select(Job)).first() is None
         assert session.exec(select(GmailReceipt)).first() is None
         assert session.exec(select(GmailSyncState)).first() is None
+        assert session.exec(select(GmailAutomationPreference)).first() is None
         assert session.exec(select(LearningRoadmapProgress)).first() is None
         assert session.exec(select(SkillSuggestion)).first() is None
     with WorkspaceSession(bob_engine) as session:
         assert session.exec(select(Job)).first() is not None
         assert session.exec(select(GmailReceipt)).first() is not None
         assert session.exec(select(GmailSyncState)).first() is not None
+        assert session.exec(select(GmailAutomationPreference)).first() is not None
         assert session.exec(select(LearningRoadmapProgress)).one().status == "completed"
         assert session.exec(select(SkillSuggestion)).one().key == "python"
 
