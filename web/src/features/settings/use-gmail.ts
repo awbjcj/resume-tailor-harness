@@ -66,6 +66,22 @@ export function useGmailConnect() {
   });
 }
 
+export function useGmailAutomation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => unwrap(api.PUT("/api/gmail/automation", {
+      body: { autoApplyRejections: enabled },
+    })),
+    onSuccess: (result) => {
+      qc.setQueryData<GmailStatus>(KEY, (current) => current && {
+        ...current,
+        autoApplyRejections: result.autoApplyRejections,
+      });
+      return qc.invalidateQueries({ queryKey: KEY });
+    },
+  });
+}
+
 export function useGmailDisconnect() {
   const qc = useQueryClient();
   return useMutation({

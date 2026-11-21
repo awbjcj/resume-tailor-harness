@@ -1519,6 +1519,11 @@
     "en": "Auto-anchor",
     "zh-CN": "自动关联经历"
   },
+  "Auto-apply confirmed rejections": {
+    "key": "ui_9dd19af59c80",
+    "en": "Auto-apply confirmed rejections",
+    "zh-CN": "自动应用已确认的拒绝结果"
+  },
   "Auto-detect": {
     "key": "ui_89ebfb7a88ca",
     "en": "Auto-detect",
@@ -4308,6 +4313,11 @@
     "key": "ui_1df732a1e025",
     "en": "Full review panel; roughly 3–6× slower.",
     "zh-CN": "使用完整评审小组，耗时约为原来的 3–6 倍。"
+  },
+  "Future emails with an authenticated employer, an exact requisition, and a clear rejection can move a Submitted application to Rejected. Each change appears on the application timeline.": {
+    "key": "ui_1615ea03f274",
+    "en": "Future emails with an authenticated employer, an exact requisition, and a clear rejection can move a Submitted application to Rejected. Each change appears on the application timeline.",
+    "zh-CN": "开启后，来自已验证雇主的邮件若包含准确的招聘职位编号并明确拒绝，系统可将已提交的申请更新为已拒绝。每次更新都会记录在申请时间线中。"
   },
   "gap": {
     "key": "ui_54d5dbf0124e",
@@ -10034,10 +10044,10 @@
     "en": "Sync Gmail",
     "zh-CN": "同步 Gmail"
   },
-  "Sync recruiting emails to suggest application updates. Review changes in Notifications before applying them.": {
-    "key": "ui_4a869ad1cd5d",
-    "en": "Sync recruiting emails to suggest application updates. Review changes in Notifications before applying them.",
-    "zh-CN": "同步招聘邮件，获取申请状态更新建议。在“通知”中审核后再应用更改。"
+  "Sync recruiting emails and review suggested changes in Notifications.": {
+    "key": "ui_1cc7207ccbd7",
+    "en": "Sync recruiting emails and review suggested changes in Notifications.",
+    "zh-CN": "同步招聘邮件，并在通知中审核建议的更新。"
   },
   "Syncing…": {
     "key": "ui_8a046cc90ab0",

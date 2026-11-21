@@ -1757,6 +1757,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/gmail/automation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Gmail Automation */
+        put: operations["gmail_automation_api_gmail_automation_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/gmail/connect": {
         parameters: {
             query?: never;
@@ -8022,6 +8039,11 @@ export interface components {
              */
             uploadedOverride: boolean;
         };
+        /** GmailAutomationIn */
+        GmailAutomationIn: {
+            /** Autoapplyrejections */
+            autoApplyRejections: boolean;
+        };
         /** GmailConnectOut */
         GmailConnectOut: {
             /** Authurl */
@@ -8029,6 +8051,11 @@ export interface components {
         };
         /** GmailStatusOut */
         GmailStatusOut: {
+            /**
+             * Autoapplyrejections
+             * @default false
+             */
+            autoApplyRejections: boolean;
             /**
              * Clientsource
              * @default platform
@@ -17707,6 +17734,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorRecordOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gmail_automation_api_gmail_automation_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GmailAutomationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GmailAutomationIn"];
                 };
             };
             /** @description Validation Error */

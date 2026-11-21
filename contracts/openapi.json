@@ -8448,6 +8448,19 @@
         "title": "GithubRepositoryOut",
         "type": "object"
       },
+      "GmailAutomationIn": {
+        "properties": {
+          "autoApplyRejections": {
+            "title": "Autoapplyrejections",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoApplyRejections"
+        ],
+        "title": "GmailAutomationIn",
+        "type": "object"
+      },
       "GmailConnectOut": {
         "properties": {
           "authUrl": {
@@ -8463,6 +8476,11 @@
       },
       "GmailStatusOut": {
         "properties": {
+          "autoApplyRejections": {
+            "default": false,
+            "title": "Autoapplyrejections",
+            "type": "boolean"
+          },
           "clientSource": {
             "default": "platform",
             "title": "Clientsource",
@@ -29935,6 +29953,62 @@
           }
         },
         "summary": "Resolve Error"
+      }
+    },
+    "/api/gmail/automation": {
+      "put": {
+        "operationId": "gmail_automation_api_gmail_automation_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GmailAutomationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GmailAutomationIn"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gmail Automation"
       }
     },
     "/api/gmail/connect": {

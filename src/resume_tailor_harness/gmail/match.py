@@ -3,6 +3,7 @@ from html import unescape
 from urllib.parse import unquote, parse_qs, urlsplit
 from typing import Protocol
 
+from resume_tailor_harness.discovery.source_resolution.identity import registrable_domain
 from resume_tailor_harness.gmail.client import EmailMessage, authored_text
 from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.tracking.tables import Job
@@ -129,6 +130,17 @@ class ApplicationMatcher[JobT: MatchableJob]:
                 if words[pos : pos + len(name)] == name:
                     found.add(index)
         return found
+
+    def confirms_requisition(self, email: EmailMessage, job_id: int) -> bool:
+        if not email.sender_verified:
+            return False
+        employer, dot, _ = registrable_domain(f"https://{email.sender_domain}").partition(".")
+        refs = _requisitions(_message_text(email))
+        if not dot or len(refs) != 1:
+            return False
+        reference = next(iter(refs))
+        matches = self.refs.get(reference, set()) & self.domains.get(employer, set())
+        return len(matches) == 1 and self.jobs[next(iter(matches))].id == job_id
 
     def match(self, email: EmailMessage) -> JobT | None:
         candidates = self._companies(email)
