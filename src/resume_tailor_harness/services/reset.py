@@ -20,6 +20,7 @@ from resume_tailor_harness.gmail.tables import GmailAutomationPreference, GmailR
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 from resume_tailor_harness.tracking.tables import (
     Application,
+    ApplicationEvent,
     CoverLetter,
     ClearedRunHistory,
     Job,
@@ -53,6 +54,7 @@ _PIPELINE_TABLES: tuple[type[SQLModel], ...] = (
     RunCompletion,
     SavedBoardView,
     Notification,
+    ApplicationEvent,
     Application,
     CoverLetter,
     ResumeVersion,
