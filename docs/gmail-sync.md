@@ -10,7 +10,8 @@ Gmail to authenticate the employer's sender domain, an exact requisition for a
 single application, an explicit rule-based rejection, and a current status of
 Submitted. Other decisions and messages that do not meet these criteria remain
 available for review. Each automated rejection records the email on the
-application timeline. Reconnecting Gmail clears the opt-in.
+application timeline. Reconnecting Gmail or resetting tracked applications clears
+the opt-in.
 
 ## Large mailboxes
 
