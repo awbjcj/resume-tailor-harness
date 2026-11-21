@@ -146,18 +146,19 @@ def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -
                 label=f"Processed {processor.stats['processed']} emails; reused {processor.stats['cached']} cached results",
             )
         auto_applied = 0
-        # Gmail lists arrivals in chronological order. Let pending arrival
-        # pages reconcile newer decisions before acting on an earlier one.
-        if not scanner.has_work("history"):
+        # Restored or backfilled mail may contain a newer decision even when
+        # the arrival cursor is current.
+        discovery_pending = any(scanner.has_work(lane) for lane in LANES)
+        if not discovery_pending:
             reporter.checkpoint()
-            auto_applied = apply_confirmed_rejections(session, scanner.account, processor.catalog)
+            auto_applied = apply_confirmed_rejections(
+                session, scanner.account, processor.catalog
+            )
         if review_cleared:
             reporter.checkpoint()
             processor.restore_cleared_proposals()
             session.commit()
-        has_more = any(scanner.has_work(lane) for lane in LANES) or bool(
-            processor.stale_ids(1)
-        )
+        has_more = discovery_pending or bool(processor.stale_ids(1))
         pending = session.exec(
             select(func.count())
             .select_from(Notification)

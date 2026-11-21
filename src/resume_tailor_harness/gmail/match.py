@@ -3,10 +3,18 @@ from html import unescape
 from urllib.parse import unquote, parse_qs, urlsplit
 from typing import Protocol
 
+from resume_tailor_harness.discovery.source_resolution.catalog import BOARD_FAMILIES
 from resume_tailor_harness.discovery.source_resolution.identity import registrable_domain
 from resume_tailor_harness.gmail.client import EmailMessage, authored_text
 from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.tracking.tables import Job
+
+
+_SHARED_BOARD_DOMAINS = frozenset(
+    registrable_domain(f"https://{host}")
+    for family in BOARD_FAMILIES
+    for host in family.search_hosts
+)
 
 
 class MatchableJob(Protocol):
@@ -134,13 +142,25 @@ class ApplicationMatcher[JobT: MatchableJob]:
     def confirms_requisition(self, email: EmailMessage, job_id: int) -> bool:
         if not email.sender_verified:
             return False
-        employer, dot, _ = registrable_domain(f"https://{email.sender_domain}").partition(".")
-        refs = _requisitions(_message_text(email))
-        if not dot or len(refs) != 1:
+        sender_url = f"https://{email.sender_domain}"
+        domain = registrable_domain(sender_url, include_private=True)
+        if "." not in domain or registrable_domain(sender_url) in _SHARED_BOARD_DOMAINS:
             return False
-        reference = next(iter(refs))
-        matches = self.refs.get(reference, set()) & self.domains.get(employer, set())
-        return len(matches) == 1 and self.jobs[next(iter(matches))].id == job_id
+        refs = _requisitions(_message_text(email))
+        if len(refs) != 1:
+            return False
+        employer = domain.partition(".")[0]
+        matches = self.refs.get(next(iter(refs)), set()) & self.domains.get(employer, set())
+        if len(matches) != 1:
+            return False
+        job = self.jobs[next(iter(matches))]
+        # A company name is corroborating evidence. The complete domain must
+        # also be present on this tracked posting or its application link.
+        return job.id == job_id and any(
+            registrable_domain(url, include_private=True) == domain
+            for url in (job.url, application_link(job.url, job.criteria_json))
+            if url
+        )
 
     def match(self, email: EmailMessage) -> JobT | None:
         candidates = self._companies(email)

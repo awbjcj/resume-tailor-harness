@@ -6,9 +6,11 @@ notifications**, you can opt in to auto-applying confirmed rejections for the
 connected Gmail account.
 
 Automation covers messages received after you enable the setting. It requires
-Gmail to authenticate the employer's sender domain, an exact requisition for a
-single application, an explicit rule-based rejection, and a current status of
-Submitted. Other decisions and messages that do not meet these criteria remain
+Gmail to authenticate the sender, the full registered sender domain to match
+the tracked posting or application URL, an exact requisition for a single
+application, an explicit rule-based rejection, and a current status of
+Submitted. Shared recruiting domains alone are insufficient. Automation waits
+for arrival, label recovery, and backfill queues to catch up. Other decisions and messages that do not meet these criteria remain
 available for review. Each automated rejection records the email on the
 application timeline. Reconnecting Gmail or resetting tracked applications clears
 the opt-in.
