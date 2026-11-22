@@ -164,10 +164,13 @@ export function AppLayout() {
   const showDiscoveryActions = ["/", "/scout", "/triage", "/shortlist", "/pipeline", "/match-gap", "/applications"].includes(pathname);
   const chrome = useRef<HTMLElement>(null);
   const main = useRef<HTMLElement>(null);
+  const previousPath = useRef<string | null>(null);
   useEffect(() => {
+    const navigated = previousPath.current !== null && previousPath.current !== pathname;
+    previousPath.current = pathname;
     if (hash) return;
     window.scrollTo(0, 0);
-    main.current?.focus({ preventScroll: true });
+    if (navigated) main.current?.focus({ preventScroll: true });
   }, [pathname, hash]);
   useLayoutEffect(() => {
     const header = chrome.current;
