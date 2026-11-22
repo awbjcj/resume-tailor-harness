@@ -68,3 +68,6 @@ test-output.txt
 .playwright-mcp/
 
 *.tar.gz
+
+.codex/
+.impeccable/
