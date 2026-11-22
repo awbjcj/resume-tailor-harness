@@ -191,6 +191,7 @@ class LlmRateOut(UtcCamelModel):
     cache_write_micros_per_million: int | None
     output_micros_per_million: int
     tool_micros_per_unit: int | None
+    audio_input_micros_per_minute: int | None = None
     rate_period: RatePeriod | None
     effective_from: datetime
     effective_to: datetime | None
@@ -199,6 +200,47 @@ class LlmRateOut(UtcCamelModel):
 
 class LlmRatePage(Page[LlmRateOut]):
     pass
+
+
+class CreditReservationOut(UtcCamelModel):
+    id: str
+    user_id: str
+    cycle_id: str
+    operation: str
+    model: str
+    status: str
+    reserved_micros: int
+    created_at: datetime
+    submitted_at: datetime | None
+
+
+class CreditReservationList(CamelModel):
+    reservations: list[CreditReservationOut]
+    next_offset: int | None = None
+
+
+class CreditSummaryOut(CamelModel):
+    cap_micros: int
+    spent_micros: int
+    held_micros: int
+    remaining_micros: int
+    warning: bool
+    optional_work_paused: bool
+
+
+class CreditReconciliationIn(CamelModel):
+    outcome: Literal["unbilled", "usage"]
+    reason: str = Field(min_length=1, max_length=500)
+    audio_input_microseconds: int = Field(default=0, ge=0)
+    input_tokens: int = Field(default=0, ge=0)
+    output_tokens: int = Field(default=0, ge=0)
+    cache_read_tokens: int = Field(default=0, ge=0)
+    cache_write_tokens: int = Field(default=0, ge=0)
+    audio_output_tokens: int = Field(default=0, ge=0)
+
+
+class CreditReconciliationOut(CamelModel):
+    ok: bool
 
 
 class LlmRateCreate(CamelModel):
@@ -211,6 +253,7 @@ class LlmRateCreate(CamelModel):
     cache_write_micros_per_million: int | None = Field(default=None, ge=0)
     output_micros_per_million: int = Field(ge=0)
     tool_micros_per_unit: int | None = Field(default=None, ge=0)
+    audio_input_micros_per_minute: int | None = Field(default=None, ge=0)
     rate_period: RatePeriod | None = None
     effective_from: datetime
     effective_to: datetime | None = None

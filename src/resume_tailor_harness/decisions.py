@@ -8,12 +8,14 @@ admission rules, not a claim of calibrated semantic accuracy.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import math
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from types import SimpleNamespace
+from uuid import NAMESPACE_URL, uuid5
 
 import httpx
 
@@ -23,6 +25,15 @@ from resume_tailor_harness.llm_limits import async_llm_call
 from resume_tailor_harness.tenancy.costs import (
     OPENAI_DECISIONS_RATE_MODEL,
     MeteredUsage,
+    calculate_cost,
+)
+from resume_tailor_harness.tenancy.context import current_context
+from resume_tailor_harness.tenancy.openai_credit_budget import (
+    CreditBudgetError,
+    cycle_identity,
+    mark_submitted,
+    release_unsubmitted,
+    reserve,
 )
 from resume_tailor_harness.tenancy.limits import (
     BudgetExceededError,
@@ -244,6 +255,8 @@ class DecisionClient:
                 agent_family=family, model_id=f"openai:{MODEL}:decisions"
             )
         )
+        credit_reservation = None
+        bound_usage: MeteredUsage | None = None
         try:
             # The fixed origin, explicit key, no redirects and disabled ambient
             # proxies prevent general OpenAI/sub2api settings from taking over.
@@ -265,8 +278,58 @@ class DecisionClient:
                     return {}
                 if not self.enabled:
                     return {}
+                if self.settings.openai_credit_budget_enabled:
+                    context = current_context()
+                    if context is None or context.system_engine is None:
+                        self.failed = True
+                        return {}
+                    # Count every byte twice plus framing overhead at the more
+                    # expensive cache-write rate, with the correct context band.
+                    token_bound = len(body) * 2 + 4_096
+                    bound_usage = MeteredUsage(
+                        provider="openai", model=MODEL,
+                        input_tokens=token_bound, cache_write_tokens=token_bound,
+                        reasoning_mode="decisions",
+                    )
+                    bound = await asyncio.to_thread(calculate_cost, context.system_engine, bound_usage)
+                    if bound.total_micros is None or bound.total_micros <= 0:
+                        self.failed = True
+                        return {}
+                    try:
+                        digest = hashlib.sha256(body).hexdigest()
+                        stable_id = uuid5(
+                            NAMESPACE_URL,
+                            f"decisions:{cycle_identity(context.settings)}:{family}:{digest}",
+                        )
+                        credit_reservation = await asyncio.to_thread(
+                            reserve,
+                            request_id=str(stable_id),
+                            operation="decisions",
+                            model=OPENAI_DECISIONS_RATE_MODEL,
+                            fingerprint=digest,
+                            amount_micros=bound.total_micros,
+                        )
+                    except CreditBudgetError:
+                        self.failed = True
+                        return {}
+                    if credit_reservation.replay_text is not None:
+                        try:
+                            cached = json.loads(credit_reservation.replay_text)
+                        except ValueError:
+                            self.failed = True
+                            return {}
+                        accepted = _answers(cached, questions) if isinstance(cached, dict) else {}
+                        self.accepted += len(accepted)
+                        return accepted
                 if before_request is not None:
                     before_request(len(body))
+                if credit_reservation is not None:
+                    assert bound_usage is not None
+                    try:
+                        await asyncio.to_thread(mark_submitted, credit_reservation.id, bound_usage)
+                    except CreditBudgetError:
+                        self.failed = True
+                        return {}
                 self.calls += 1
                 async with httpx.AsyncClient(
                     timeout=REQUEST_TIMEOUT_SECONDS,
@@ -291,6 +354,9 @@ class DecisionClient:
                 error="Decisions request failed; standard classifier retained",
             )
             return {}
+        finally:
+            if credit_reservation is not None:
+                await asyncio.to_thread(release_unsubmitted, credit_reservation.id)
         try:
             result = response.json()
         except ValueError as exc:
@@ -301,14 +367,24 @@ class DecisionClient:
             raise UsageSettlementError("Decisions returned an invalid receipt")
         usage = _usage(result)
         receipt_id = result.get("id") or response.headers.get("x-request-id")
-        await asyncio.to_thread(
-            record_direct_usage,
-            usage,
-            own_key=False,
-            request_id=f"decisions:{receipt_id}"
-            if isinstance(receipt_id, str) and receipt_id
-            else None,
-        )
+        if credit_reservation is not None:
+            await asyncio.to_thread(
+                record_direct_usage,
+                usage,
+                own_key=False,
+                request_id=f"official-credit:{credit_reservation.id}",
+                credit_reservation_id=credit_reservation.id,
+                credit_result_text=json.dumps(result, separators=(",", ":")),
+            )
+        else:
+            await asyncio.to_thread(
+                record_direct_usage,
+                usage,
+                own_key=False,
+                request_id=f"decisions:{receipt_id}"
+                if isinstance(receipt_id, str) and receipt_id
+                else None,
+            )
         accepted = _answers(result, questions)
         self.accepted += len(accepted)
         record_agent_run(

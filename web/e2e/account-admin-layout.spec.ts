@@ -134,7 +134,7 @@ test("cost quotas keeps one sidebar destination active and contains narrow layou
   const createRateBox = await page.getByRole("button", { name: "Create immutable version" }).boundingBox();
   expect(createRateBox?.x).toBeGreaterThan(rateReasonBox?.x ?? 0);
 
-  await page.getByRole("switch", { name: "Optional cache and tool rates" }).click();
+  await page.getByRole("switch", { name: "Optional cache, audio and tool rates" }).click();
   const optionalRateFields = [
     page.getByLabel("Cache read (USD / 1M)"),
     page.getByLabel("Cache write (USD / 1M)"),

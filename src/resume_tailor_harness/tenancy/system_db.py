@@ -240,6 +240,7 @@ class UsageEvent(SystemBase):
     reasoning_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     audio_input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     audio_output_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    audio_input_microseconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     weighted_total: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     own_key: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -267,6 +268,45 @@ class UsageLineItem(SystemBase):
     rate_id: Mapped[str] = mapped_column(String(32), nullable=False)
 
 
+class OpenAICreditCycle(SystemBase):
+    """An operator-configured credit period; overlapping definitions fail closed."""
+
+    __tablename__ = "openai_credit_cycles"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    cap_micros: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class OpenAICreditReservation(SystemBase):
+    """Durable idempotency and an outstanding conservative charge bound."""
+
+    __tablename__ = "openai_credit_reservations"
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(12), nullable=False, index=True)
+    cycle_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    operation: Mapped[str] = mapped_column(String(24), nullable=False)
+    model: Mapped[str] = mapped_column(String(160), nullable=False)
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    reserved_micros: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    result_text: Mapped[str | None] = mapped_column(Text)
+
+
+class OpenAICreditReconciliation(SystemBase):
+    """Audited operator resolution of an uncertain provider request."""
+
+    __tablename__ = "openai_credit_reconciliations"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    reservation_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    actor_user_id: Mapped[str] = mapped_column(String(12), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
 class LlmRate(SystemBase):
     __tablename__ = "llm_rates"
     __table_args__ = (
@@ -283,6 +323,8 @@ class LlmRate(SystemBase):
     cache_write_micros_per_million: Mapped[int | None] = mapped_column(Integer)
     output_micros_per_million: Mapped[int] = mapped_column(Integer, nullable=False)
     tool_micros_per_unit: Mapped[int | None] = mapped_column(Integer)
+    # Duration-priced audio is represented as duration, not synthetic tokens.
+    audio_input_micros_per_minute: Mapped[int | None] = mapped_column(Integer)
     # None = active for every hour of the day. "peak" / "off_peak" restrict
     # the row to DeepSeek-style time-of-day bands (see costs.py::_rate_period).
     rate_period: Mapped[str | None] = mapped_column(String(16))

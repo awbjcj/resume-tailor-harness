@@ -130,8 +130,8 @@ function handlers() {
   ];
 }
 
-function renderPage() {
-  server.use(...handlers());
+function renderPage(...overrides: Parameters<typeof server.use>) {
+  server.use(...overrides, ...handlers());
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <MemoryRouter><AdminQuotasPage /></MemoryRouter>
@@ -329,14 +329,26 @@ describe("AdminQuotasPage", () => {
     await screen.findByRole("heading", { name: "Cost quotas" });
 
     await user.click(screen.getByRole("tab", { name: "Rate cards" }));
-    await user.click(screen.getByRole("switch", { name: "Optional cache and tool rates" }));
+    await user.click(screen.getByRole("switch", { name: "Optional cache, audio and tool rates" }));
 
     const row = screen.getByTestId("rate-options-row");
     expect(within(row).getByLabelText("Cache read (USD / 1M)")).toBeInTheDocument();
     expect(within(row).getByLabelText("Cache write (USD / 1M)")).toBeInTheDocument();
     expect(within(row).getByLabelText("Tool fee (USD / unit)")).toBeInTheDocument();
+    expect(within(row).getByLabelText("Audio input (USD / minute)")).toBeInTheDocument();
     expect(within(row).getByLabelText("Reason for this rate version")).toBeInTheDocument();
     expect(within(row).getByRole("button", { name: "Create immutable version" })).toBeInTheDocument();
+  });
+
+  it("shows duration-priced transcription in dollars per minute", async () => {
+    renderPage(http.get("/api/admin/llm-rates", () => HttpResponse.json(page([
+      { ...RATE_CARDS[0], id: "transcription", model: "gpt-transcribe", inputMicrosPerMillion: 0,
+        outputMicrosPerMillion: 0, audioInputMicrosPerMinute: 4_500 },
+    ]))));
+    await screen.findByRole("heading", { name: "Cost quotas" });
+    await userEvent.click(screen.getByRole("tab", { name: "Rate cards" }));
+    expect(await screen.findByText("$0.0045 / minute")).toBeInTheDocument();
+    expect(screen.getByText("Audio duration")).toBeInTheDocument();
   });
 
   it("has no automated accessibility violations in the default console", async () => {

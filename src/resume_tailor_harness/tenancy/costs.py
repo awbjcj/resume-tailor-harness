@@ -17,6 +17,7 @@ MILLION = 1_000_000
 # Internal rate-card identity, never a model ID sent to OpenAI. Decisions has
 # endpoint-specific billing even though the provider returns gpt-6-luna.
 OPENAI_DECISIONS_RATE_MODEL = "gpt-6-luna:decisions"
+OPENAI_TRANSCRIBE_MODEL = "gpt-transcribe"
 OPENAI_REALTIME_TTS_MODEL = "gpt-realtime-2.1-mini"
 # The text-only synthesis request has separately priced audio output. Keep
 # those prices editable without changes to the shared rate table schema.
@@ -44,6 +45,7 @@ class MeteredUsage:
     reasoning_tokens: int = 0
     audio_input_tokens: int = 0
     audio_output_tokens: int = 0
+    audio_input_microseconds: int = 0
     total_tokens: int = 0
     tool_units: int = 0
     provider_cost_micros: int | None = None
@@ -207,6 +209,16 @@ def calculate_cost(
     )
     if rate is None:
         return PricedUsage(None, 0, "RATE_UNAVAILABLE", None)
+    if provider == "openai" and usage.model == OPENAI_TRANSCRIBE_MODEL:
+        # Do not turn missing/contradictory provider usage into a zero charge.
+        if (
+            usage.audio_input_microseconds <= 0
+            or usage.input_tokens
+            or usage.output_tokens
+            or usage.audio_input_tokens
+            or usage.audio_output_tokens
+        ):
+            return PricedUsage(None, 0, "RATE_UNAVAILABLE", rate.id)
 
     ordinary_input = usage.input_tokens
     if provider != "anthropic":
@@ -262,6 +274,12 @@ def calculate_cost(
         cost = _cost(units, resolved_rate)
         if units:
             lines.append(CostLine(kind, units, resolved_rate, cost, component_rate_id))
+    if usage.audio_input_microseconds:
+        duration_rate = rate.audio_input_micros_per_minute
+        if duration_rate is None:
+            return PricedUsage(None, 0, "RATE_UNAVAILABLE", rate.id)
+        duration_cost = (usage.audio_input_microseconds * duration_rate + 60_000_000 - 1) // 60_000_000
+        lines.append(CostLine("AUDIO_DURATION_US", usage.audio_input_microseconds, duration_rate, duration_cost, rate.id))
     tool_micros = sum(line.cost_micros for line in lines if line.kind == "TOOL")
     return PricedUsage(
         sum(line.cost_micros for line in lines),
@@ -553,6 +571,28 @@ def seed_llm_rates(engine: Engine) -> None:
                 tool=None,
                 source=realtime_source,
             )
+        transcription_start = datetime(2026, 11, 22, tzinfo=timezone.utc)
+        previous_transcription = session.execute(
+            select(LlmRate).where(
+                LlmRate.provider == "openai",
+                LlmRate.model == OPENAI_TRANSCRIBE_MODEL,
+                LlmRate.effective_from == transcription_start,
+            )
+        ).scalars().first()
+        previous_end = previous_transcription.effective_to if previous_transcription else None
+        transcription_rate = upsert_rate(
+            provider="openai",
+            model=OPENAI_TRANSCRIBE_MODEL,
+            effective_from=transcription_start,
+            input_rate=0,
+            cache_read=None,
+            cache_write=None,
+            output_rate=0,
+            tool=None,
+            source="https://developers.openai.com/api/docs/pricing",
+        )
+        transcription_rate.audio_input_micros_per_minute = 4_500
+        transcription_rate.effective_to = previous_end
 
         # Standard (not Batch) OpenAI pricing, verified against the official pricing page
         # on 2026-08-01.  Cache writes use OpenAI's published 1.25x input

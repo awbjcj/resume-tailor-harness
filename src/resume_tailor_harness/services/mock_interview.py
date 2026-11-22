@@ -357,7 +357,15 @@ def _synthesize_turn(
     synthesizer: SpeechSynthesizer | None,
 ) -> None:
     try:
-        audio = (synthesizer or llm_runner.synthesize_speech)(text)
+        if synthesizer is not None:
+            audio = synthesizer(text)
+        elif getattr(llm_runner.get_settings(), "official_audio_enabled", False):
+            from resume_tailor_harness.services.official_audio import synthesize
+
+            request_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"interview:{session_id}:{turn_index}"))
+            audio = synthesize(text, request_id)
+        else:
+            audio = llm_runner.synthesize_speech(text)
         attach_turn_audio(interview_dir, session_id, turn_index, audio)
     except Exception:
         logger.warning(

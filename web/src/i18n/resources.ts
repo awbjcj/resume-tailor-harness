@@ -32,6 +32,22 @@ export async function loadChineseInteractionTranslations(): Promise<InteractionC
 }
 
 const en = {
+  interviewVoice: {
+    record: "Record answer",
+    starting: "Opening microphone…",
+    recording: "Recording {{count}}s / 120s",
+    stop: "Stop and transcribe",
+    discard: "Discard",
+    transcribing: "Transcribing…",
+    review: "Review and edit the transcript, then send your answer.",
+    pendingBilling: "Review and edit the transcript before sending. Audio usage is awaiting reconciliation.",
+    failed: "Transcription could not be completed. Retry safely, discard the recording, or type your answer.",
+    microphoneError: "Could not open the microphone. Check permission or type your answer.",
+    unavailable: "Voice is unavailable right now. You can still type your answer.",
+    budgetPaused: "Voice is paused to protect the remaining credit. You can still type your answer.",
+    budget: "OpenAI credit: {{spent}} spent · {{held}} on hold · {{remaining}} remaining",
+    warning: "OpenAI spending and holds have reached 80% of this period's allocation.",
+  },
   tagList: {} as typeof tagListEn,
   interactionCopy: {} as InteractionCopy,
   decisions: {} as typeof decisionsEn,
@@ -400,6 +416,10 @@ const en = {
       months: "Months",
     },
     rate: {
+      audioDuration: "Audio duration",
+      perMinute: "{{amount}} / minute",
+      audioInput: "Audio input (USD / minute)",
+      optionalRates: "Optional cache, audio and tool rates",
       bands: {
         economical: { label: "Economical", detail: "Up to $5 / 1M" },
         standard: { label: "Standard", detail: "$5–$20 / 1M" },
@@ -876,6 +896,22 @@ type TranslationShape<T> = {
 };
 
 const zhCN = {
+  interviewVoice: {
+    record: "录制回答",
+    starting: "正在打开麦克风…",
+    recording: "录制中 {{count}} 秒 / 120 秒",
+    stop: "停止并转写",
+    discard: "丢弃",
+    transcribing: "正在转写…",
+    review: "请检查并编辑转写内容，然后发送回答。",
+    pendingBilling: "发送前请检查并编辑转写内容。语音费用正等待核对。",
+    failed: "无法完成转写。可以安全重试、丢弃录音或输入回答。",
+    microphoneError: "无法打开麦克风。请检查权限或输入回答。",
+    unavailable: "语音暂时不可用，仍可输入回答。",
+    budgetPaused: "语音已暂停以保护剩余额度，仍可输入回答。",
+    budget: "OpenAI 额度：已使用 {{spent}} · 保留 {{held}} · 剩余 {{remaining}}",
+    warning: "本周期的 OpenAI 已用和保留额度已达到分配额度的 80%。",
+  },
   tagList: {} as typeof tagListEn,
   interactionCopy: {} as InteractionCopy,
   decisions: {} as typeof decisionsEn,
@@ -1225,6 +1261,10 @@ const zhCN = {
       months: "个月",
     },
     rate: {
+      audioDuration: "音频时长",
+      perMinute: "{{amount}} / 分钟",
+      audioInput: "音频输入（美元 / 分钟）",
+      optionalRates: "可选缓存、音频和工具费率",
       bands: {
         economical: { label: "经济型", detail: "每百万 token 不超过 $5" },
         standard: { label: "标准型", detail: "每百万 token $5–$20" },

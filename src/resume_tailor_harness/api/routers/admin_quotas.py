@@ -12,6 +12,11 @@ from sqlalchemy.orm import Session
 from resume_tailor_harness.api.deps import require_admin
 from resume_tailor_harness.api.errors import ApiException
 from resume_tailor_harness.api.schemas.admin_quotas import (
+    CreditReconciliationIn,
+    CreditReconciliationOut,
+    CreditReservationList,
+    CreditReservationOut,
+    CreditSummaryOut,
     LlmRateCreate,
     LlmRateOut,
     LlmRatePage,
@@ -35,6 +40,8 @@ from resume_tailor_harness.api.schemas.admin_quotas import (
 )
 from resume_tailor_harness.api.schemas.base import Pagination
 from resume_tailor_harness.tenancy.context import UserContext
+from resume_tailor_harness.tenancy.openai_credit_budget import CreditBudgetError, reconcile, snapshot
+from resume_tailor_harness.tenancy.usage import UsageSettlementError
 from resume_tailor_harness.tenancy.costs import invalidate_rate_cache, normalize_provider
 from resume_tailor_harness.tenancy.quotas import (
     InsufficientCreditError,
@@ -51,6 +58,7 @@ from resume_tailor_harness.mail.account_notifications import (
 )
 from resume_tailor_harness.tenancy.system_db import (
     LlmRate,
+    OpenAICreditReservation,
     QuotaAccount,
     QuotaLedgerEntry,
     QuotaOperation,
@@ -62,6 +70,54 @@ from resume_tailor_harness.tenancy.system_db import (
 )
 
 router = APIRouter(prefix="/admin", tags=["admin-quotas"])
+
+
+@router.get("/openai-credit/summary", response_model=CreditSummaryOut)
+def credit_summary(_context: UserContext = Depends(require_admin)) -> CreditSummaryOut:
+    try:
+        return CreditSummaryOut.model_validate(snapshot(), from_attributes=True)
+    except CreditBudgetError as exc:
+        raise ApiException(409, "CREDIT_UNAVAILABLE", str(exc)) from exc
+
+
+@router.get("/openai-credit/reservations", response_model=CreditReservationList)
+def credit_reservations(
+    request: Request,
+    _context: UserContext = Depends(require_admin),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> CreditReservationList:
+    with Session(request.app.state.system_engine) as session:
+        rows = list(session.execute(
+            select(OpenAICreditReservation)
+            .where(OpenAICreditReservation.status.in_(("reserved", "submitted")))
+            .order_by(OpenAICreditReservation.created_at, OpenAICreditReservation.id)
+            .offset(offset)
+            .limit(limit + 1)
+        ).scalars())
+        return CreditReservationList(
+            reservations=[CreditReservationOut.model_validate(row) for row in rows[:limit]],
+            next_offset=offset + limit if len(rows) > limit else None,
+        )
+
+
+@router.post("/openai-credit/reservations/{reservation_id}/reconcile", response_model=CreditReconciliationOut)
+def reconcile_credit_reservation(
+    reservation_id: str,
+    body: CreditReconciliationIn,
+    _context: UserContext = Depends(require_admin),
+) -> CreditReconciliationOut:
+    try:
+        reconcile(
+            reservation_id,
+            unbilled=body.outcome == "unbilled",
+            **body.model_dump(exclude={"outcome"}),
+        )
+    except CreditBudgetError as exc:
+        raise ApiException(409, "CREDIT_RECONCILIATION_FAILED", str(exc)) from exc
+    except UsageSettlementError as exc:
+        raise ApiException(409, "CREDIT_RECONCILIATION_FAILED", "Usage could not be settled") from exc
+    return CreditReconciliationOut(ok=True)
 
 
 @router.get("/quota-summary")

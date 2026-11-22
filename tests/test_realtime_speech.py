@@ -111,6 +111,35 @@ def test_realtime_collects_only_matching_output_and_separates_text(monkeypatch):
     assert seen["closed"]
 
 
+def test_official_realtime_rejects_redirects_and_ambient_proxies(monkeypatch):
+    seen = _mock_wire(monkeypatch, [
+        {"type": "response.created", "response": {"id": "response-1"}},
+        {"type": "response.done", "response": _terminal()},
+    ])
+
+    class RawSocket:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+    raw = RawSocket()
+    monkeypatch.setattr(realtime_speech.socket, "create_connection", lambda address, timeout: raw)
+    realtime_speech.render(
+        "hello", model=MODEL, voice="marin", api_key="key",
+        base_url="https://api.openai.com/v1", instructions="Read.", strict_official_origin=True,
+    )
+    assert seen["connect"][0].startswith("wss://api.openai.com/v1/realtime?")
+    assert seen["connect"][1]["sock"] is raw
+    assert seen["connect"][1]["proxy"] is None
+    with pytest.raises(ValueError, match="fixed OpenAI endpoint"):
+        realtime_speech.render(
+            "hello", model=MODEL, voice="marin", api_key="key",
+            base_url="https://untrusted.example/v1", instructions="Read.", strict_official_origin=True,
+        )
+
+
 @pytest.mark.parametrize(
     ("event", "message"),
     [
