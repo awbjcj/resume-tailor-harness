@@ -34,6 +34,17 @@ class Settings(BaseSettings):
     # never the general provider route or a member's key.
     openai_decisions_enabled: bool = False
     openai_decisions_api_key: str = Field(default="", repr=False)
+    # Dedicated, deployment-owned credential and actual credit-period bounds.
+    # Audio stays disabled until all three values are configured.
+    official_audio_enabled: bool = False
+    official_audio_api_key: str = Field(default="", repr=False)
+    openai_credit_budget_enabled: bool = False
+    # Operator attestation: only the budgeted audio and Decisions credentials
+    # may spend the credit project. Other project traffic is not interceptable.
+    openai_credit_project_isolated: bool = False
+    openai_credit_cycle_start: str = ""
+    openai_credit_cycle_end: str = ""
+    openai_credit_project_cap_micros: int = Field(default=15_000_000, gt=0, le=15_000_000)
     gemini_api_key: str = ""
     deepseek_api_key: str = ""
 

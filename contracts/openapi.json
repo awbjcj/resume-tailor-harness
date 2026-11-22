@@ -3944,6 +3944,25 @@
         "title": "Body_launch_import_urls_api_jobs_import_urls_post",
         "type": "object"
       },
+      "Body_official_transcribe_audio_api_transcribe_official_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "request_id"
+        ],
+        "title": "Body_official_transcribe_audio_api_transcribe_official_post",
+        "type": "object"
+      },
       "Body_preview_bundle_api_settings_bundle_preview_post": {
         "properties": {
           "file": {
@@ -6693,6 +6712,206 @@
           }
         },
         "title": "CrawlLimits",
+        "type": "object"
+      },
+      "CreditReconciliationIn": {
+        "properties": {
+          "audioInputMicroseconds": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Audioinputmicroseconds",
+            "type": "integer"
+          },
+          "audioOutputTokens": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Audiooutputtokens",
+            "type": "integer"
+          },
+          "cacheReadTokens": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Cachereadtokens",
+            "type": "integer"
+          },
+          "cacheWriteTokens": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Cachewritetokens",
+            "type": "integer"
+          },
+          "inputTokens": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Inputtokens",
+            "type": "integer"
+          },
+          "outcome": {
+            "enum": [
+              "unbilled",
+              "usage"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "outputTokens": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Outputtokens",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "outcome",
+          "reason"
+        ],
+        "title": "CreditReconciliationIn",
+        "type": "object"
+      },
+      "CreditReconciliationOut": {
+        "properties": {
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "title": "CreditReconciliationOut",
+        "type": "object"
+      },
+      "CreditReservationList": {
+        "properties": {
+          "nextOffset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextoffset"
+          },
+          "reservations": {
+            "items": {
+              "$ref": "#/components/schemas/CreditReservationOut"
+            },
+            "title": "Reservations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reservations"
+        ],
+        "title": "CreditReservationList",
+        "type": "object"
+      },
+      "CreditReservationOut": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "cycleId": {
+            "title": "Cycleid",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "reservedMicros": {
+            "title": "Reservedmicros",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "submittedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submittedat"
+          },
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "cycleId",
+          "operation",
+          "model",
+          "status",
+          "reservedMicros",
+          "createdAt",
+          "submittedAt"
+        ],
+        "title": "CreditReservationOut",
+        "type": "object"
+      },
+      "CreditSummaryOut": {
+        "properties": {
+          "capMicros": {
+            "title": "Capmicros",
+            "type": "integer"
+          },
+          "heldMicros": {
+            "title": "Heldmicros",
+            "type": "integer"
+          },
+          "optionalWorkPaused": {
+            "title": "Optionalworkpaused",
+            "type": "boolean"
+          },
+          "remainingMicros": {
+            "title": "Remainingmicros",
+            "type": "integer"
+          },
+          "spentMicros": {
+            "title": "Spentmicros",
+            "type": "integer"
+          },
+          "warning": {
+            "title": "Warning",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "capMicros",
+          "spentMicros",
+          "heldMicros",
+          "remainingMicros",
+          "warning",
+          "optionalWorkPaused"
+        ],
+        "title": "CreditSummaryOut",
         "type": "object"
       },
       "CycleTimeOut": {
@@ -10997,6 +11216,18 @@
       },
       "LlmRateCreate": {
         "properties": {
+          "audioInputMicrosPerMinute": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audioinputmicrosperminute"
+          },
           "cacheReadMicrosPerMillion": {
             "anyOf": [
               {
@@ -11132,6 +11363,17 @@
       },
       "LlmRateOut": {
         "properties": {
+          "audioInputMicrosPerMinute": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audioinputmicrosperminute"
+          },
           "cacheReadMicrosPerMillion": {
             "anyOf": [
               {
@@ -12827,6 +13069,85 @@
           "totalComp"
         ],
         "title": "OfferOut",
+        "type": "object"
+      },
+      "OfficialTranscribeAvailabilityOut": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "heldMicros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heldmicros"
+          },
+          "optionalWorkPaused": {
+            "default": false,
+            "title": "Optionalworkpaused",
+            "type": "boolean"
+          },
+          "remainingMicros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remainingmicros"
+          },
+          "spentMicros": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spentmicros"
+          },
+          "warning": {
+            "default": false,
+            "title": "Warning",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available",
+          "enabled"
+        ],
+        "title": "OfficialTranscribeAvailabilityOut",
+        "type": "object"
+      },
+      "OfficialTranscribeOut": {
+        "properties": {
+          "billingPending": {
+            "title": "Billingpending",
+            "type": "boolean"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "billingPending"
+        ],
+        "title": "OfficialTranscribeOut",
         "type": "object"
       },
       "OverrideConflictOut": {
@@ -23321,6 +23642,195 @@
           }
         },
         "summary": "Create Rate",
+        "tags": [
+          "admin-quotas"
+        ]
+      }
+    },
+    "/api/admin/openai-credit/reservations": {
+      "get": {
+        "operationId": "credit_reservations_api_admin_openai_credit_reservations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditReservationList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Credit Reservations",
+        "tags": [
+          "admin-quotas"
+        ]
+      }
+    },
+    "/api/admin/openai-credit/reservations/{reservation_id}/reconcile": {
+      "post": {
+        "operationId": "reconcile_credit_reservation_api_admin_openai_credit_reservations__reservation_id__reconcile_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reservation_id",
+            "required": true,
+            "schema": {
+              "title": "Reservation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreditReconciliationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditReconciliationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reconcile Credit Reservation",
+        "tags": [
+          "admin-quotas"
+        ]
+      }
+    },
+    "/api/admin/openai-credit/summary": {
+      "get": {
+        "operationId": "credit_summary_api_admin_openai_credit_summary_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Credit Summary",
         "tags": [
           "admin-quotas"
         ]
@@ -42972,6 +43482,108 @@
           }
         },
         "summary": "Transcribe Availability"
+      }
+    },
+    "/api/transcribe/official": {
+      "post": {
+        "operationId": "official_transcribe_audio_api_transcribe_official_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_official_transcribe_audio_api_transcribe_official_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialTranscribeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Official Transcribe Audio"
+      }
+    },
+    "/api/transcribe/official/availability": {
+      "get": {
+        "operationId": "official_transcribe_availability_api_transcribe_official_availability_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialTranscribeAvailabilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Official Transcribe Availability"
       }
     },
     "/api/triage": {

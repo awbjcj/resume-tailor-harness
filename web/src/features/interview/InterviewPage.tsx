@@ -328,6 +328,8 @@ export function InterviewPage() {
             <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
               <ChatRunProgress runId={attachedRunId} status={stream.status} reconnecting={stream.reconnecting} />
               <ChatComposer
+                key={active.sessionId}
+                interviewVoice
                 value={composer}
                 onChange={setComposer}
                 onSend={() => void sendMessage()}

@@ -2745,6 +2745,10 @@ def speech_available() -> bool:
     from resume_tailor_harness import realtime_speech
 
     settings = get_settings()
+    if getattr(settings, "official_audio_enabled", False):
+        from resume_tailor_harness.services.official_audio import speech_available as official_available
+
+        return official_available()
     provider, model = split_provider(settings.speech_model)
     return (
         provider in _SPEECH_PROVIDERS
