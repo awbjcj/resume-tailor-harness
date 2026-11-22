@@ -147,7 +147,7 @@ describe("RedoDialog", () => {
     const user = userEvent.setup();
     setup();
     expect(screen.getByRole("button", { name: "重做（3 个职位）" })).toBeEnabled();
-    expect(screen.getByText("选择要为这 3 个职位重做的步骤。默认保留已有的简历版本。")).toBeInTheDocument();
+    expect(screen.getByText("选择要重新执行的步骤，适用于 3 个职位。默认保留现有简历版本。")).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "删除较早生成的版本" })).not.toBeChecked();
     await user.click(screen.getByRole("checkbox", { name: /重新提取/ }));
     expect(screen.getByRole("button", { name: "重做（3 个职位）" })).toBeEnabled();

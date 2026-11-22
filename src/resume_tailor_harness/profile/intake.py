@@ -43,6 +43,7 @@ def add_note_source(
     text: str,
     *,
     anchor: str | None = None,
+    synthesis_only: bool = False,
 ) -> SourceDoc:
     if not text.strip():
         raise ValueError("note text is empty")
@@ -55,7 +56,7 @@ def add_note_source(
         profile_dir,
         f"note--{_slug(heading, 'note')}.md",
         body,
-        mode="synthesis" if target else "literal",
+        mode="synthesis" if target or synthesis_only else "literal",
         anchor=target,
     )
 

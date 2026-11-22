@@ -7,6 +7,7 @@ from typing import Any
 from sqlmodel import Session
 
 from resume_tailor_harness.api.runs.manager import RunManager
+from resume_tailor_harness.api.runs.launch import launch
 from resume_tailor_harness.db import get_session as open_session
 from resume_tailor_harness.github.repos import verify_repo
 from resume_tailor_harness.models.profile import Contact, ProfileFacts
@@ -15,9 +16,13 @@ from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.services.suggestions import (
     SuggestionContext,
     generate_suggestion,
+    require_roadmap_target,
     resolve_suggestion_context,
 )
-from resume_tailor_harness.suggestions.agents import build_formatter_agent, build_search_agent
+from resume_tailor_harness.suggestions.agents import (
+    build_formatter_agent,
+    build_search_agent,
+)
 from resume_tailor_harness.tracking.match_gap import DemandGraph, build_demand_graph
 from resume_tailor_harness.tenancy.paths import resolve_tenant_path
 
@@ -53,6 +58,7 @@ def submit_suggestion_run(
     context: SuggestionContext,
     facts_path: str,
     cluster_path: str,
+    expected_roadmap_id: int | None = None,
 ) -> str:
     def work(reporter):
         reporter.begin(1, f"Researching {context.label}")
@@ -67,6 +73,10 @@ def submit_suggestion_run(
                 kind=context.kind,
                 key=context.key,
             )
+            if expected_roadmap_id is not None:
+                require_roadmap_target(
+                    worker_session, current_context, expected_roadmap_id
+                )
             # End the graph-read transaction before the expensive concurrent
             # research phase, especially for the shared in-memory SQLite engine.
             worker_session.rollback()
@@ -82,8 +92,15 @@ def submit_suggestion_run(
                 ),
                 facts=facts,
                 reporter=reporter,
+                expected_roadmap_id=expected_roadmap_id,
             )
         reporter.step(1)
         return {"kind": row.kind, "key": row.key}
 
-    return manager.submit("suggestion", work)
+    return launch(
+        manager,
+        "suggestion",
+        work,
+        singleton_key=f"suggestion:{context.kind}:{context.key}",
+        singleton_conflict="raise" if expected_roadmap_id is not None else "join",
+    ).run_id

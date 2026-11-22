@@ -100,15 +100,26 @@ def test_build_model_gemini_3_uses_high_thinking_level_when_reasoning():
     assert model.thinking_level == "high"
 
 
-def test_build_model_pre_gemini_3_still_disables_thinking_with_a_budget():
-    # Older Gemini ids have no thinking_level and treat an unset thinking config
-    # as "provider decides" (unbounded automatic budget) rather than off, so 0
-    # remains the way to disable it there. Reachable in practice: gemini-2.5-*
-    # is still a current model a user can enter in the custom tier field (only
-    # gemini-2.0 and older are deprecated).
-    model = build_model("gemini:gemini-2.0-flash", api_key="sk-test")
+def test_build_model_gemini_25_flash_disables_thinking_with_a_budget():
+    model = build_model("gemini:gemini-2.5-flash", api_key="sk-test")
     assert model.thinking_budget == 0
     assert model.thinking_level is None
+
+
+@pytest.mark.parametrize("model_id", ["gemini-2.0-flash", "gemini-1.5-pro", "custom-pro"])
+def test_build_model_unknown_or_older_gemini_omits_thinking_controls(model_id):
+    model = build_model(f"gemini:{model_id}", api_key="sk-test")
+    assert model.thinking_budget is None
+    assert model.thinking_level is None
+
+
+def test_gemini_25_pro_uses_its_supported_minimum_thinking_budget():
+    from resume_tailor_harness.llm_runner import build_search_equipped
+
+    direct = build_model("gemini:gemini-2.5-pro", api_key="sk-test")
+    searched, _ = build_search_equipped("gemini:gemini-2.5-pro", mode="native")
+    assert direct.thinking_budget == searched.thinking_budget == 128
+    assert direct.thinking_level is searched.thinking_level is None
 
 
 def test_build_model_pre_gemini_3_never_sends_thinking_level_when_reasoning():

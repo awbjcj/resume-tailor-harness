@@ -6,7 +6,7 @@ import type { FilterState } from "@/lib/filters/types";
 const CHINESE_FACETS: Partial<Record<keyof FilterState, Record<string, string>>> = {
   status: {
     raw: "新获取", extracted: "已提取", rejected: "已拒绝", filtered: "已筛除",
-    shortlisted: "已加入候选", approved: "已批准", tailored: "已定制", rendered: "已生成",
+    shortlisted: "已加入候选", approved: "已批准", tailored: "已定制", rendered: "已生成", applied: "已申请",
   },
   remote: { remote: "远程", hybrid: "混合办公", onsite: "现场办公" },
   sponsorship: { offered: "提供担保", silent: "未说明", denied: "不提供担保" },

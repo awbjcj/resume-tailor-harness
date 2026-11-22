@@ -26,6 +26,7 @@ const AnalyticsPage = lazy(() =>
 const ApplicationsPage = lazy(() =>
   import("@/features/applications/ApplicationsPage").then((m) => ({ default: m.ApplicationsPage })),
 );
+const LearningRoadmapsPage = lazy(() => import("@/features/match-gap/LearningRoadmapsPage").then((m) => ({ default: m.LearningRoadmapsPage })));
 const MatchGapPage = lazy(() =>
   import("@/features/match-gap/MatchGapPage").then((m) => ({ default: m.MatchGapPage })),
 );
@@ -162,6 +163,7 @@ export const router = createBrowserRouter([
       { path: "triage", element: <SetupGate>{page(<TriagePage />)}</SetupGate> },
       { path: "analytics", element: <SetupGate>{page(<AnalyticsPage />)}</SetupGate> },
       { path: "applications", element: <SetupGate>{page(<ApplicationsPage />)}</SetupGate> },
+      { path: "learning-roadmaps", element: <SetupGate>{page(<LearningRoadmapsPage />)}</SetupGate> },
       { path: "match-gap", element: <SetupGate>{page(<MatchGapPage />)}</SetupGate> },
       { path: "profile", element: <SetupGate>{page(<ProfileWorkspace />)}</SetupGate> },
       { path: "coach", element: page(<CoachPage />) },

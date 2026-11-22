@@ -67,6 +67,34 @@ def test_build_does_not_reimport_a_deleted_legacy_resume(client):
     assert client.get("/api/profile/sources").json() == []
 
 
+@pytest.mark.parametrize("retain_project", [False, True])
+def test_new_wizard_resume_registers_in_existing_manifest(client, monkeypatch, retain_project):
+    old = client.post(
+        "/api/profile/sources",
+        files={"file": ("old.txt", b"old source resume", "text/plain")},
+    )
+    assert old.status_code == 201
+    if retain_project:
+        assert client.post(
+            "/api/profile/sources",
+            files={"file": ("dossier.md", b"---\nrepo_url: https://github.com/me/project\n---\n# Project", "text/markdown")},
+        ).status_code == 201
+    assert client.delete(f"/api/profile/sources/{old.json()['id']}").status_code == 204
+    uploaded = client.post(
+        "/api/profile/documents",
+        files={"file": ("new.txt", b"new wizard resume", "text/plain")},
+        data={"docType": "resume"},
+    )
+    assert uploaded.status_code == 201
+    sources = client.get("/api/profile/sources").json()
+    assert any(row["filename"] == "new.txt" and row["primary"] for row in sources)
+    assert client.get("/api/setup/status").json()["profile"]["hasResume"] is True
+    from resume_tailor_harness.services import profile_build
+
+    monkeypatch.setattr(profile_build, "run_corpus_build", lambda *args, **kwargs: {})
+    assert client.post("/api/profile/build").status_code == 202
+
+
 def test_build_without_key_is_400(tmp_path):
     app = create_app(
         db_url="sqlite://",

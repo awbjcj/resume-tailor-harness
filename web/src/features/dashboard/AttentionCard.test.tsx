@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { AttentionCard } from "./AttentionCard";
 
 const mocks = vi.hoisted(() => ({ records: vi.fn(), dismiss: vi.fn(), resolve: vi.fn(), clear: vi.fn() }));
@@ -101,10 +102,13 @@ describe("AttentionCard", () => {
     renderAttentionCard([jobRecord]);
 
     expect(await screen.findByText(/Acme: Staff Engineer/)).toBeInTheDocument();
-    expect(screen.getByText("tailor")).toBeInTheDocument();
+    expect(screen.getByText("Resume tailoring")).toBeInTheDocument();
     expect(screen.getByText(/openai:gpt-5/)).toBeInTheDocument();
     expect(screen.getByText(/×3/)).toBeInTheDocument();
     expect(screen.queryByText("job:42:tailor")).toBeNull();
+    await changeLanguage("zh-CN");
+    expect(await screen.findByText("简历定制")).toBeInTheDocument();
+    expect(screen.getByText(/match_plan_enabled/)).toBeInTheDocument();
   });
 
   it("hides the traceback until the expander is opened", async () => {

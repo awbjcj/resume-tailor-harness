@@ -14,6 +14,7 @@ from resume_tailor_harness.services.reset import (
 )
 from resume_tailor_harness.tracking.tables import (
     Application,
+    ApplicationEvent,
     CoverLetter,
     ClearedRunHistory,
     Job,
@@ -24,6 +25,7 @@ from resume_tailor_harness.tracking.tables import (
     RunOperationLog,
     SavedBoardView,
     SkillSuggestion,
+    LearningRoadmapProgress,
 )
 
 
@@ -94,7 +96,13 @@ def _seed_pipeline(session: Session) -> None:
             message_id="m1",
         )
     )
-    session.add(SkillSuggestion(kind="cluster", key="python"))
+    suggestion = SkillSuggestion(kind="skill", key="python")
+    session.add(suggestion)
+    session.flush()
+    assert suggestion.id is not None
+    session.add(
+        LearningRoadmapProgress(suggestion_id=suggestion.id, status="completed")
+    )
     session.add(
         RunOperationLog(run_id="run-1", entries=[{"message": "private operation"}])
     )
@@ -148,6 +156,10 @@ def _seed_files(paths: ResetPaths) -> None:
 
 def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
     _seed_pipeline(session)
+    application = session.exec(select(Application)).one()
+    assert application.id is not None
+    session.add(ApplicationEvent(application_id=application.id, kind="rejected", source="mailbox"))
+    session.commit()
     _seed_files(paths)
 
     report = reset_workspace(session, paths, ResetScope.jobs)
@@ -162,16 +174,19 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
         "workspace_notes": 0,
         "gmail_receipts": 0,
         "gmail_sync_state": 0,
+        "gmail_automation_preference": 0,
         "runoperationlog": 1,
         "clearedrunhistory": 1,
         "run_completions": 1,
         "run_completion_targets": 1,
         "saved_board_views": 1,
         "notifications": 1,
+        "application_events": 1,
         "applications": 1,
         "cover_letters": 1,
         "resume_versions": 1,
         "skill_suggestions": 1,
+        "learning_roadmap_progress": 1,
         "jobs": 1,
     }
     assert report.areas_cleared == [
@@ -181,6 +196,7 @@ def test_jobs_scope_truncates_pipeline_and_clears_exact_targets(session, paths):
         "connector_runs",
     ]
     assert report.failures == {}
+    assert session.exec(select(ApplicationEvent)).first() is None
     assert session.exec(select(Job)).first() is None
     assert list(paths.output_dir.iterdir()) == []
     assert list(paths.runs_dir.iterdir()) == []
@@ -195,7 +211,10 @@ def test_profile_scope_clears_current_corpus_layout_only(session, paths):
 
     report = reset_workspace(session, paths, ResetScope.profile)
 
-    assert report.rows_deleted == {"skill_suggestions": 1}
+    assert report.rows_deleted == {
+        "learning_roadmap_progress": 1,
+        "skill_suggestions": 1,
+    }
     assert report.areas_cleared == ["profile", "taxonomy"]
     assert session.exec(select(Job)).first() is not None
     assert session.exec(select(Application)).first() is not None
@@ -226,7 +245,7 @@ def test_all_scope_preserves_config_secrets_and_overrides(session, paths):
 
     report = reset_workspace(session, paths, ResetScope.all)
 
-    assert sum(report.rows_deleted.values()) == 11
+    assert sum(report.rows_deleted.values()) == 12
     assert report.areas_cleared == [
         "output",
         "runs",

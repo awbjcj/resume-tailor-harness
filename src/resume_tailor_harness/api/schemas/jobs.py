@@ -18,7 +18,7 @@ from resume_tailor_harness.company_intelligence.models import (
     CompanySourceType,
     CompanyVerificationState,
 )
-from resume_tailor_harness.h1b.models import H1BSponsorshipEvidence
+from resume_tailor_harness.h1b.models import H1BCountBasis, H1BSponsorshipEvidence
 from resume_tailor_harness.models.review import FACT_CHECK_REVIEWER, ReviewCritique
 from resume_tailor_harness.tailor.verdict import failing_gate_names
 
@@ -231,6 +231,7 @@ class H1BSponsorshipEvidenceOut(CamelModel):
     normalized_company: str
     display_company: str | None
     fiscal_periods: list[str]
+    count_basis: H1BCountBasis | None = None
     filing_count: int | None
     certified_count: int | None
     denied_count: int | None = None

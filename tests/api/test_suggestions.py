@@ -202,9 +202,7 @@ def test_theme_cache_becomes_stale_when_demanding_jobs_change(monkeypatch, tmp_p
     )
 
     with ThreadPoolExecutor(max_workers=1) as executor:
-        app = create_app(
-            db_url="sqlite://", runs_root=tmp_path, run_executor=executor
-        )
+        app = create_app(db_url="sqlite://", runs_root=tmp_path, run_executor=executor)
         with TestClient(app) as client:
             _seed_job(app.state.engine)
             launched = client.post(
@@ -263,3 +261,302 @@ def test_suggestion_runs_dedupe_and_report_not_found_per_target(monkeypatch, tmp
         for item in results[:2]:
             record = _wait_for_run(client, item["runId"])
             assert record["state"] == "done", record
+
+
+def test_learning_library_keeps_orphaned_advice_and_progress(tmp_path, monkeypatch):
+    from resume_tailor_harness.tracking.tables import SkillSuggestion
+
+    _configure(monkeypatch, tmp_path)
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        with get_session(app.state.engine) as session:
+            row = SkillSuggestion(
+                kind="domain",
+                key="infra",
+                payload_json={
+                    "repos": [],
+                    "resources": [],
+                    "bridge": "Learn infrastructure",
+                    "citations": [],
+                    "project": None,
+                },
+            )
+            orphan = SkillSuggestion(
+                kind="skill",
+                key="retired-skill",
+                payload_json={
+                    "repos": [],
+                    "resources": [],
+                    "bridge": "Keep this plan",
+                    "citations": [],
+                    "project": None,
+                },
+            )
+            session.add(row)
+            session.add(orphan)
+            session.commit()
+            session.refresh(row)
+            row_id = row.id
+        response = client.get("/api/learning-roadmaps")
+        assert response.status_code == 200
+        plans = {item["label"]: item for item in response.json()}
+        assert plans["Cloud / Infrastructure"]["available"] is True
+        assert plans["retired-skill"]["available"] is False
+        assert (
+            plans["retired-skill"]["envelope"]["suggestion"]["bridge"]
+            == "Keep this plan"
+        )
+        for status in ["in_progress", "completed", "archived", "planned"]:
+            assert (
+                client.patch(
+                    f"/api/learning-roadmaps/{row_id}", json={"status": status}
+                ).status_code
+                == 204
+            )
+            saved = next(
+                item
+                for item in client.get("/api/learning-roadmaps").json()
+                if item["id"] == row_id
+            )
+            assert saved["status"] == status
+        assert (
+            client.patch(
+                f"/api/learning-roadmaps/{row_id}", json={"status": "unknown"}
+            ).status_code
+            == 422
+        )
+        assert (
+            client.patch(
+                "/api/learning-roadmaps/99999", json={"status": "planned"}
+            ).status_code
+            == 404
+        )
+        # Replacing generated content does not reset user-owned learning state.
+        client.patch(f"/api/learning-roadmaps/{row_id}", json={"status": "completed"})
+        with get_session(app.state.engine) as session:
+            saved_row = session.get(SkillSuggestion, row_id)
+            assert saved_row is not None
+            saved_row.payload_json = {
+                **saved_row.payload_json,
+                "bridge": "Updated advice",
+            }
+            session.add(saved_row)
+            session.commit()
+        saved = next(
+            item
+            for item in client.get("/api/learning-roadmaps").json()
+            if item["id"] == row_id
+        )
+        assert saved["status"] == "completed"
+        assert saved["envelope"]["suggestion"]["bridge"] == "Updated advice"
+
+
+def test_roadmap_generation_returns_quota_error_envelope(monkeypatch, tmp_path):
+    from resume_tailor_harness.api.runs.manager import RunManager, RunQuotaError
+
+    _configure(monkeypatch, tmp_path)
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+
+    def reject(*args, **kwargs):
+        raise RunQuotaError("Concurrent run limit reached")
+
+    monkeypatch.setattr(RunManager, "submit", reject)
+    with TestClient(app, raise_server_exceptions=False) as client:
+        _seed_job(app.state.engine)
+        response = client.post(
+            "/api/suggestions/generate",
+            json={"kind": "domain", "key": "infra"},
+        )
+    assert response.status_code == 429
+    assert response.json()["error"]["code"] == "QUOTA_EXCEEDED"
+
+
+def test_roadmap_generation_rejects_a_superseded_selection_before_research(
+    monkeypatch, tmp_path
+):
+    from resume_tailor_harness.tracking.tables import SkillSuggestion
+
+    _configure(monkeypatch, tmp_path)
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        with get_session(app.state.engine) as session:
+            legacy = SkillSuggestion(kind="skill", key="K8s")
+            canonical = SkillSuggestion(kind="skill", key="kubernetes")
+            session.add_all([legacy, canonical])
+            session.commit()
+            legacy_id = legacy.id
+        response = client.post(
+            "/api/suggestions/generate",
+            json={"kind": "skill", "key": "kubernetes", "expectedRoadmapId": legacy_id},
+        )
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "ROADMAP_CHANGED"
+
+
+def test_roadmap_generation_reuses_legacy_row_and_keeps_its_progress(
+    monkeypatch, tmp_path
+):
+    from resume_tailor_harness.tracking.tables import (
+        LearningRoadmapProgress,
+        SkillSuggestion,
+    )
+
+    _configure(monkeypatch, tmp_path)
+    monkeypatch.setattr(run_module, "build_search_agent", lambda: _Agent("Research"))
+    monkeypatch.setattr(
+        run_module,
+        "build_formatter_agent",
+        lambda: _Agent(SuggestionDraft(bridge="New advice")),
+    )
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        with get_session(app.state.engine) as session:
+            row = SkillSuggestion(kind="skill", key="Kubernetes")
+            session.add(row)
+            session.commit()
+            assert row.id is not None
+            row_id = row.id
+            session.add(
+                LearningRoadmapProgress(suggestion_id=row_id, status="completed")
+            )
+            session.commit()
+
+        response = client.post(
+            "/api/suggestions/generate",
+            json={"kind": "skill", "key": "kubernetes", "expectedRoadmapId": row_id},
+        )
+        assert response.status_code == 202, response.json()
+        assert _wait_for_run(client, response.json()["runId"])["state"] == "done"
+        with get_session(app.state.engine) as session:
+            saved = session.get(SkillSuggestion, row_id)
+            progress = session.get(LearningRoadmapProgress, row_id)
+            assert saved is not None and saved.key == "kubernetes"
+            assert saved.payload_json["bridge"] == "New advice"
+            assert progress is not None and progress.status == "completed"
+
+
+def test_concurrent_first_progress_updates_both_succeed(tmp_path, monkeypatch):
+    from threading import Barrier
+
+    from sqlmodel import Session, select
+
+    from resume_tailor_harness.db import init_db, make_engine
+    from resume_tailor_harness.services.learning_roadmaps import update_roadmap
+    from resume_tailor_harness.tracking.tables import (
+        LearningRoadmapProgress,
+        SkillSuggestion,
+    )
+
+    engine = make_engine(f"sqlite:///{tmp_path / 'progress.db'}")
+    init_db(engine)
+    with Session(engine) as session:
+        row = SkillSuggestion(kind="skill", key="python")
+        session.add(row)
+        session.commit()
+        row_id = row.id
+    assert row_id is not None
+    original_get = Session.get
+
+    def slow_get(self, entity, ident, **kwargs):
+        result = original_get(self, entity, ident, **kwargs)
+        if entity is LearningRoadmapProgress and result is None:
+            # Widen the first-save race: both requests used to observe no row.
+            time.sleep(0.1)
+        return result
+
+    monkeypatch.setattr(Session, "get", slow_get)
+    start = Barrier(2)
+
+    def save():
+        with Session(engine) as session:
+            start.wait(timeout=5)
+            return update_roadmap(session, row_id, "in_progress")
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = [executor.submit(save) for _ in range(2)]
+        assert all(result.result(timeout=5) for result in results)
+    with Session(engine) as session:
+        rows = session.exec(select(LearningRoadmapProgress)).all()
+        assert len(rows) == 1
+        assert rows[0].status == "in_progress"
+    engine.dispose()
+
+
+def test_duplicate_roadmap_generation_joins_active_run(monkeypatch, tmp_path):
+    from threading import Event
+
+    _configure(monkeypatch, tmp_path)
+    release = Event()
+
+    class SlowAgent(_Agent):
+        def run(self, prompt):
+            assert release.wait(timeout=5)
+            return super().run(prompt)
+
+    monkeypatch.setattr(run_module, "build_search_agent", lambda: SlowAgent("Research"))
+    monkeypatch.setattr(
+        run_module,
+        "build_formatter_agent",
+        lambda: _Agent(SuggestionDraft(bridge="Bridge")),
+    )
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        try:
+            first = client.post(
+                "/api/suggestions/generate", json={"kind": "domain", "key": "infra"}
+            )
+            second = client.post(
+                "/api/suggestions/generate", json={"kind": "domain", "key": "infra"}
+            )
+            assert first.status_code == second.status_code == 202
+            assert first.json()["runId"] == second.json()["runId"]
+        finally:
+            release.set()
+        assert _wait_for_run(client, first.json()["runId"])["state"] == "done"
+
+
+def test_roadmap_generation_does_not_join_an_unchecked_run(monkeypatch, tmp_path):
+    from threading import Event
+
+    from resume_tailor_harness.tracking.tables import SkillSuggestion
+
+    _configure(monkeypatch, tmp_path)
+    release = Event()
+
+    class SlowAgent(_Agent):
+        def run(self, prompt):
+            assert release.wait(timeout=5)
+            return super().run(prompt)
+
+    monkeypatch.setattr(run_module, "build_search_agent", lambda: SlowAgent("Research"))
+    monkeypatch.setattr(
+        run_module,
+        "build_formatter_agent",
+        lambda: _Agent(SuggestionDraft(bridge="Bridge")),
+    )
+    app = create_app(db_url="sqlite://", runs_root=tmp_path)
+    with TestClient(app) as client:
+        _seed_job(app.state.engine)
+        with get_session(app.state.engine) as session:
+            row = SkillSuggestion(kind="domain", key="infra")
+            session.add(row)
+            session.commit()
+            row_id = row.id
+        try:
+            first = client.post(
+                "/api/suggestions/generate", json={"kind": "domain", "key": "infra"}
+            )
+            second = client.post(
+                "/api/suggestions/generate",
+                json={"kind": "domain", "key": "infra", "expectedRoadmapId": row_id},
+            )
+            assert first.status_code == 202
+            assert second.status_code == 409
+            assert second.json()["error"]["code"] == "CONFLICT"
+        finally:
+            release.set()
+        assert _wait_for_run(client, first.json()["runId"])["state"] == "done"

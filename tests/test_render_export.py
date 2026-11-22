@@ -50,6 +50,14 @@ def test_job_slug_and_version_filenames():
     assert cover_letter_pdf_name(cover) == "cover-letter-v3-draft.pdf"
 
 
+def test_export_manifest_uses_manual_application_link():
+    job = Job(
+        id=42, source="manual", url="https://posting.example/jobs/42",
+        criteria_json={"manual_details": {"application_url": "https://apply.example/42"}},
+    )
+    assert build_manifest(job, [], [], None)["job"]["url"] == "https://apply.example/42"
+
+
 def test_resume_download_name_uses_company_and_title():
     job = Job(id=42, source="manual", company="Acme Corp", title="Senior Engineer")
     version = ResumeVersion(id=7, job_id=42, round=1, origin="revision")

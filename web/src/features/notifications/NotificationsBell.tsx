@@ -1,273 +1,131 @@
 import "@/i18n/interaction-copy-notifications";
-import { useEffect, useState } from "react";
-import { Bell, Check, CircleCheck, Inbox, Loader2, RefreshCw, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Bell, CircleCheck, Inbox } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { EmailDraftDialog } from "@/features/job/EmailDraftDialog";
-import {
-  useClearNotificationHistory,
-  useAcceptNotification,
-  useDismissNotification,
-  useGmailSync,
-  useNotifications,
-} from "./use-notifications";
-import {
-  useMarkAllRunCompletionsRead,
-  useMarkRunCompletionRead,
-  useRunCompletions,
-} from "./use-run-completions";
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { RunResultLink } from "@/features/runs/RunResultLink";
 import { localizeRunError, localizeRunKind, localizeRunPhase } from "@/i18n/dynamic-labels";
 import { formatUserDateTime } from "@/lib/date-time";
 
+import { ApplicationNotificationDetails, NotificationJobLink } from "./ApplicationNotificationDetails";
 import { ClearHistoryButton } from "./ClearHistoryButton";
-import { RunResultLink } from "@/features/runs/RunResultLink";
-import { ApplicationUpdateReviewDialog } from "./ApplicationUpdateReviewDialog";
-
-function isEventNudge(kind: string): boolean {
-  return kind === "interview_soon" || kind === "offer_deadline_soon";
-}
-
-function notificationTitle(t: TFunction, item: { kind: string; company?: string | null; proposedStatus: string }) {
-  const company = item.company || t("interactionCopy.notifications.application");
-  if (item.kind === "follow_up") return t("interactionCopy.notifications.followUp", { company });
-  if (item.kind === "interview_soon") return t("interactionCopy.notifications.interviewSoon", { company });
-  if (item.kind === "offer_deadline_soon") return t("interactionCopy.notifications.offerDeadline", { company });
-  const knownStatus = /^(ready|submitted|interview|offer|rejected|closed)$/.test(item.proposedStatus);
-  const status = knownStatus
-    ? t(`application.statuses.${item.proposedStatus}` as "application.statuses.ready")
-    : item.proposedStatus;
-  return t("interactionCopy.notifications.moveTo", { status });
-}
-
-type NotificationEvidenceLocalizer = typeof import("./notification-evidence").notificationEvidence;
+import { isEventReminder } from "./notification-evidence";
+import { useClearNotificationHistory, useNotifications } from "./use-notifications";
+import { useMarkAllRunCompletionsRead, useMarkRunCompletionRead, useRunCompletions } from "./use-run-completions";
 
 export function NotificationsBell() {
   const { t, i18n } = useTranslation();
-  const { data: items = [], isLoading } = useNotifications();
-  const { data: runItems = [], isLoading: runsLoading } = useRunCompletions();
-  const accept = useAcceptNotification();
-  const dismiss = useDismissNotification();
+  const notifications = useNotifications();
+  const runs = useRunCompletions();
   const markRunRead = useMarkRunCompletionRead();
   const markAllRunsRead = useMarkAllRunCompletionsRead();
-  const sync = useGmailSync();
   const clear = useClearNotificationHistory();
-  const [draftJobId, setDraftJobId] = useState<number | null>(null);
-  const [localizeEvidence, setLocalizeEvidence] = useState<NotificationEvidenceLocalizer | null>(null);
-  useEffect(() => {
-    if (!items.length) return;
-    let active = true;
-    void import("./notification-evidence").then(
-      (module) => { if (active) setLocalizeEvidence(() => module.notificationEvidence); },
-      () => { /* Preserve the original evidence if this optional copy cannot load. */ },
-    );
-    return () => { active = false; };
-  }, [items.length]);
-  const unreadRuns = runItems.filter((item) => item.readAt == null);
-  const count = items.length + unreadRuns.length;
+
+  const reminders = notifications.data?.filter(isEventReminder) ?? [];
+  const runItems = runs.data ?? [];
+  const unreadRuns = runItems.filter((item) => item.readAt == null).length;
+  const count = reminders.length + unreadRuns;
+  const loading = notifications.isPending || runs.isPending;
+  const failed = notifications.isError || runs.isError;
 
   return (
-    <>
     <Popover>
-      <PopoverTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={count ? t("interactionCopy.notifications.ariaPending", { count }) : t("interactionCopy.notifications.aria")}
-            className="relative"
-          >
-            <Bell className="size-4" aria-hidden="true" />
-            {count > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[0.68rem] font-semibold leading-5 text-primary-foreground">
-                {count}
-              </span>
-            )}
-          </Button>
-        }
-      />
-      <PopoverContent align="end" className="w-[min(24rem,calc(100vw-2rem))] p-3">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-sm font-semibold">Notifications</div>
-            <div className="text-xs text-muted-foreground">
-              Application actions and completed runs
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={sync.isPending}
-            onClick={() => sync.mutate()}
-          >
-            {sync.isPending ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <RefreshCw className="size-4" aria-hidden="true" />
-            )}
-            Sync Gmail
-          </Button>
-        </div>
-        {sync.error && (
-          <p role="alert" className="mb-3 text-sm text-destructive">
-            {localizeRunError(sync.error.message, i18n.resolvedLanguage)}
-          </p>
-        )}
-        <div className="mb-3 space-y-2">
-          <p className="text-xs text-muted-foreground">{t("runHistory.gmailReviewHelp")}</p>
-          <Button size="xs" variant="outline" disabled={sync.isPending}
-            onClick={() => sync.mutate({ reviewCleared: true })}>
-            {t("runHistory.reviewClearedGmail")}
-          </Button>
+      <PopoverTrigger render={
+        <Button variant="ghost" size="icon" className="relative"
+          aria-label={count ? t("interactionCopy.notifications.ariaPending", { count }) : t("interactionCopy.notifications.aria")}>
+          <Bell className="size-4" aria-hidden="true" />
+          {count > 0 && (
+            <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 flex min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[0.68rem] font-semibold leading-5 text-primary-foreground">
+              {count}
+            </span>
+          )}
+        </Button>
+      } />
+      <PopoverContent align="end" className="w-[min(24rem,calc(100vw-2rem))] gap-3 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <PopoverTitle>{t("interactionCopy.notifications.aria")}</PopoverTitle>
           <ClearHistoryButton label={t("runHistory.clearNotifications")} pending={clear.isPending}
-            disabled={runsLoading || runItems.length === 0} error={clear.error}
+            disabled={runItems.length === 0} error={clear.error}
             onClear={(onSuccess) => clear.mutate(undefined, { onSuccess })} />
         </div>
-        {isLoading || runsLoading ? (
-          <p className="text-sm text-muted-foreground">Loading notifications...</p>
-        ) : items.length === 0 && runItems.length === 0 ? (
-          <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-            <Inbox className="mb-2 size-4" aria-hidden="true" />
-            Nothing pending.
-          </div>
-        ) : (
-          <div className="max-h-[28rem] space-y-4 overflow-y-auto pr-1">
-            {runItems.length > 0 && (
-              <section aria-labelledby="run-history-title">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <h3 id="run-history-title" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Run history
-                  </h3>
-                  {unreadRuns.length > 0 && (
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="ghost"
-                      disabled={markAllRunsRead.isPending}
-                      onClick={() => markAllRunsRead.mutate()}
-                    >
-                      Mark all read
-                    </Button>
-                  )}
-                </div>
-                <ul className="space-y-2">
-                  {runItems.map((item) => {
-                    const kind = localizeRunKind(item.kind, i18n.resolvedLanguage, t);
-                    const status = item.status === "succeeded"
-                      ? t("runHistory.outcomes.succeeded")
-                      : item.status === "failed"
-                        ? t("runHistory.outcomes.failed")
-                        : item.status === "cancelled"
-                          ? t("runHistory.outcomes.cancelled")
-                          : item.status;
-                    return (
-                    <li
-                      key={item.id}
-                      className={`rounded-lg border p-3 text-sm ${
-                        item.readAt == null ? "bg-primary/5" : "bg-background"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="font-medium">
-                            {t("interactionCopy.notifications.runStatus", { kind, status })}
-                          </div>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                            {localizeRunError(item.error, i18n.resolvedLanguage)
-                              ?? (item.kind === "gmailSync"
-                                && (item.label === "Done with warnings" || item.label === "Sync complete; more emails remain")
-                                ? localizeRunPhase(item.label, i18n.resolvedLanguage)
-                                : formatUserDateTime(item.completedAt, i18n.resolvedLanguage))}
-                          </p>
-                          <div className="mt-2"><RunResultLink item={item} /></div>
-                        </div>
-                        {item.readAt == null && (
-                          <Button
-                            type="button"
-                            size="icon-xs"
-                            variant="ghost"
-                            aria-label={t("runHistory.markRead", { kind })}
-                            disabled={markRunRead.isPending}
-                            onClick={() => markRunRead.mutate(item.id)}
-                          >
-                            <CircleCheck aria-hidden="true" />
-                          </Button>
-                        )}
-                      </div>
-                    </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            )}
-
-            {items.length > 0 && (
-              <section aria-labelledby="application-actions-title">
-                <h3 id="application-actions-title" className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Application actions
-                </h3>
-          <ul className="space-y-2">
-            {items.map((item) => (
-              <li key={item.id} className="rounded-lg border bg-background p-3 text-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{notificationTitle(t, item)}</div>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                      {localizeEvidence?.(t, i18n.resolvedLanguage, item.kind, item.evidence) ?? item.evidence}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap justify-end gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={dismiss.isPending}
-                    onClick={() => dismiss.mutate(item.id)}
-                  >
-                    <X className="size-4" aria-hidden="true" />
-                    Dismiss
-                  </Button>
-                  {item.proposedStatus && <ApplicationUpdateReviewDialog item={item} />}
-                  {isEventNudge(item.kind) && item.jobId != null ? (
-                    <Button size="sm" render={<Link to={`/pipeline?job=${item.jobId}`} />}>
-                      View job
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      disabled={accept.isPending}
-                      onClick={() => {
-                        accept.mutate(item.id);
-                        if (item.kind === "follow_up" && item.jobId != null) {
-                          setDraftJobId(item.jobId);
-                        }
-                      }}
-                    >
-                      <Check className="size-4" aria-hidden="true" />
-                      {item.kind === "follow_up" ? "Draft follow-up" : "Accept"}
-                    </Button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-              </section>
-            )}
+        {failed && (
+          <div className="flex flex-wrap items-center gap-2">
+            <p role="alert" className="text-destructive">{t("interactionCopy.notifications.loadError")}</p>
+            <Button size="xs" variant="outline" onClick={() => {
+              if (notifications.isError) void notifications.refetch();
+              if (runs.isError) void runs.refetch();
+            }}>{t("runHistory.retry")}</Button>
           </div>
         )}
+        {loading && <p role="status" className="text-muted-foreground">{t("interactionCopy.notifications.loading")}</p>}
+        {!loading && !failed && reminders.length === 0 && runItems.length === 0 && (
+          <p className="flex items-center gap-2 rounded-lg border border-dashed bg-muted/20 p-3 text-muted-foreground">
+            <Inbox className="size-4" aria-hidden="true" />
+            {t("interactionCopy.notifications.nothingPending")}
+          </p>
+        )}
+        <div className="max-h-[min(28rem,55dvh)] space-y-4 overflow-y-auto p-1 empty:hidden">
+          {reminders.length > 0 && (
+            <section aria-labelledby="bell-reminders">
+              <h3 id="bell-reminders" className="mb-2 text-xs font-semibold text-muted-foreground">
+                {t("interactionCopy.notifications.reminders")}
+              </h3>
+              <ul className="space-y-2">
+                {reminders.map((item) => (
+                  <li key={item.id} className="space-y-2 rounded-lg border p-3">
+                    <ApplicationNotificationDetails item={item} />
+                    {item.jobId != null && <NotificationJobLink jobId={item.jobId} />}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {runItems.length > 0 && (
+            <section aria-labelledby="bell-run-history">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 id="bell-run-history" className="text-xs font-semibold text-muted-foreground">
+                  {t("interactionCopy.notifications.runHistory")}
+                </h3>
+                {unreadRuns > 0 && (
+                  <Button type="button" size="xs" variant="ghost" disabled={markAllRunsRead.isPending}
+                    onClick={() => markAllRunsRead.mutate()}>
+                    {t("interactionCopy.notifications.markAllRead")}
+                  </Button>
+                )}
+              </div>
+              <ul className="space-y-2">
+                {runItems.map((item) => {
+                  const kind = localizeRunKind(item.kind, i18n.resolvedLanguage, t);
+                  const status = t(`runHistory.outcomes.${item.status}`);
+                  const hasSyncDetail = item.kind === "gmailSync"
+                    && (item.label === "Done with warnings" || item.label === "Sync complete; more emails remain");
+                  return (
+                    <li key={item.id} className={`flex items-start justify-between gap-2 rounded-lg border p-3 ${item.readAt == null ? "bg-primary/5" : "bg-background"}`}>
+                      <div className="min-w-0 wrap-anywhere">
+                        <p className="font-medium">{t("interactionCopy.notifications.runStatus", { kind, status })}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                          {localizeRunError(item.error, i18n.resolvedLanguage) ?? (hasSyncDetail
+                            ? localizeRunPhase(item.label, i18n.resolvedLanguage)
+                            : formatUserDateTime(item.completedAt, i18n.resolvedLanguage))}
+                        </p>
+                        <div className="mt-2 empty:hidden"><RunResultLink item={item} /></div>
+                      </div>
+                      {item.readAt == null && (
+                        <Button type="button" size="icon-sm" variant="ghost"
+                          aria-label={t("runHistory.markRead", { kind })} disabled={markRunRead.isPending}
+                          onClick={() => markRunRead.mutate(item.id)}>
+                          <CircleCheck aria-hidden="true" />
+                        </Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
-    {draftJobId != null && (
-      <EmailDraftDialog
-        jobId={draftJobId}
-        defaultType="follow_up"
-        open
-        onOpenChange={(o) => !o && setDraftJobId(null)}
-      />
-    )}
-    </>
   );
 }

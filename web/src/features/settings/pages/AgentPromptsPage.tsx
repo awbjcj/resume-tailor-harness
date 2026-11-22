@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LockKeyhole } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -23,6 +24,7 @@ import { useDraft } from "../use-draft";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import {
   type AgentPromptItem,
+  PROMPTS_KEY,
   usePrompts,
   useSaveGuidance,
 } from "../use-prompts";
@@ -102,7 +104,7 @@ function PromptRow({ item, visible }: { item: AgentPromptItem; visible: boolean 
                 <Button
                   size="sm"
                   disabled={save.isPending || guidance === (item.guidance ?? "")}
-                  onClick={() => save.mutate({ key: item.key, guidance }, { onSuccess: () => setGuidance(guidance) })}
+                  onClick={() => save.mutate({ key: item.key, guidance }, { onSuccess: (saved) => setGuidance(saved.guidance ?? "") })}
                 >
                   {save.isPending ? <Spinner data-icon="inline-start" /> : null}
                   Save guidance
@@ -123,8 +125,10 @@ function PromptRow({ item, visible }: { item: AgentPromptItem; visible: boolean 
 
 export function AgentPromptsPage() {
   const prompts = usePrompts();
+  const queryClient = useQueryClient();
   const { t, i18n } = useTranslation();
   const [search, setSearch] = useState("");
+  const [resetVersion, setResetVersion] = useState(0);
 
   if (prompts.isPending || (!prompts.data && prompts.isError)) return <SettingsPage title="Agent prompts" loading={prompts.isPending} error={prompts.error} onRetry={prompts.refetch} />;
 
@@ -143,7 +147,10 @@ export function AgentPromptsPage() {
   const shown = sections.reduce((total, section) => total + section.items.filter(({ visible }) => visible).length, 0);
 
   return (
-    <SettingsPage title="Agent prompts" error={prompts.error} onRetry={prompts.refetch} description="Customize guidance for each agent. Each agent saves separately; integrity rules remain read-only." actions={<ResetSectionButton sectionId="agent_guidance" label="Agent prompts" />}>
+    <SettingsPage title="Agent prompts" error={prompts.error} onRetry={prompts.refetch} description="Customize guidance for each agent. Each agent saves separately; integrity rules remain read-only." actions={<ResetSectionButton sectionId="agent_guidance" label="Agent prompts" onReset={() => {
+      queryClient.setQueryData<AgentPromptItem[]>(PROMPTS_KEY, (current) => current?.map((item) => ({ ...item, guidance: null })));
+      setResetVersion((version) => version + 1);
+    }} />}>
       <p className="text-sm text-muted-foreground">{t("agentPrompts.originalLanguage")}</p>
       <div className="space-y-2">
         <ListSearch value={search} onChange={setSearch} aria-label={t("longLists.searchAgentPrompts")} placeholder={t("longLists.searchAgentPrompts")} className="max-w-lg" />
@@ -161,7 +168,7 @@ export function AgentPromptsPage() {
             <Accordion multiple className="mt-2 rounded-lg border px-3">
               {items.map(({ item, visible }) => (
                 <PromptRow
-                  key={item.key}
+                  key={`${item.key}-${resetVersion}`}
                   item={item}
                   visible={visible}
                 />

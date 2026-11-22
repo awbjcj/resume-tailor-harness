@@ -7,7 +7,7 @@ import type { paths } from "@/lib/api/schema";
 export type AgentPromptItem =
   paths["/api/agents/prompts"]["get"]["responses"][200]["content"]["application/json"][number];
 
-const PROMPTS_KEY = ["agent-prompts"] as const;
+export const PROMPTS_KEY = ["agent-prompts"] as const;
 
 export function usePrompts() {
   return useQuery({

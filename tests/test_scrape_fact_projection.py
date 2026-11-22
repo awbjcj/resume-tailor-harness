@@ -3,6 +3,7 @@ from sqlmodel import Session
 
 from resume_tailor_harness.db import init_db, make_engine
 from resume_tailor_harness.discovery.scraper.contracts import (
+    FieldIssue,
     JobFacts,
     Observation,
     OverridePatch,
@@ -279,3 +280,55 @@ def test_clearing_override_removes_obsolete_conflict_from_observation_view():
         view = job_observations(session, job_id)[-1]
         assert view.effective_facts.remote_policy == "hybrid"
         assert not any(issue.kind == "conflict" for issue in view.issues)
+
+
+def test_unresolved_extraction_conflicts_remain_visible_without_an_override():
+    from resume_tailor_harness.services.scrape_queries import job_observations
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        store = ScrapeStore(session)
+        first = Observation(
+            source_id="board", revision=1, job_key="one", accepted=True,
+            facts=JobFacts(source_url="https://example.com/1", title="Engineer", jd_text="Build systems"),
+        )
+        job_id = ingest_observation(session, first, store)
+        assert job_id is not None
+        newer = first.model_copy(deep=True, update={"id": "conflicting", "accepted": False})
+        newer.issues = [FieldIssue(field="title", kind="conflict", message="Structured and visible content disagree")]
+        store.save_observation(newer)
+        view = job_observations(session, job_id)[-1]
+        assert [issue.message for issue in view.issues] == ["Structured and visible content disagree"]
+
+
+def test_updating_a_saved_correction_resolves_only_its_old_conflict():
+    from resume_tailor_harness.services.scrape_corrections import set_job_override
+    from resume_tailor_harness.services.scrape_queries import job_observations
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        store = ScrapeStore(session)
+        first = Observation(
+            source_id="board", revision=1, job_key="one", accepted=True,
+            facts=JobFacts(source_url="https://example.com/1", title="Engineer", jd_text="Build systems", remote_policy="onsite"),
+        )
+        job_id = ingest_observation(session, first, store)
+        assert job_id is not None
+        revision = set_job_override(session, job_id, "remote_policy", OverridePatch(field="remote_policy", value="remote", expected_revision=0))
+        newer = first.model_copy(deep=True, update={"id": "newer"})
+        newer.facts.remote_policy = "hybrid"
+        newer.issues = [FieldIssue(field="title", kind="conflict", message="Structured and visible content disagree")]
+        store.save_observation(newer)
+        before = job_observations(session, job_id)[-1]
+        assert len(before.issues) == 2
+        assert all("correction revision" not in issue.message for issue in before.issues)
+        set_job_override(session, job_id, "remote_policy", OverridePatch(field="remote_policy", value="onsite", expected_revision=revision))
+        after = job_observations(session, job_id)[-1]
+        assert after.effective_facts.remote_policy == "onsite"
+        assert [issue.message for issue in after.issues] == ["Structured and visible content disagree"]
+        latest = first.model_copy(deep=True, update={"id": "latest"})
+        latest.facts.remote_policy = "remote"
+        store.save_observation(latest)
+        assert any("source changed beneath" in issue.message for issue in job_observations(session, job_id)[-1].issues)

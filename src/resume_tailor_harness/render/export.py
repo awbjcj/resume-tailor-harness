@@ -11,6 +11,7 @@ from typing import Any
 from sqlmodel import Session
 
 from resume_tailor_harness.db import workspace_write
+from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.progress import atomic_write_text
 from resume_tailor_harness.render.renderer import _slug
 from resume_tailor_harness.tenancy.paths import resolve_tenant_path
@@ -123,7 +124,7 @@ def build_manifest(
             "id": job.id,
             "company": job.company,
             "title": job.title,
-            "url": job.url,
+            "url": application_link(job.url, job.criteria_json),
             "status": job.status,
         },
         "resumeVersions": [_version_entry(v) for v in sorted(versions, key=_row_id)],

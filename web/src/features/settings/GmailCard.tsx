@@ -1,21 +1,30 @@
+import "@/i18n/interaction-copy-notifications";
 import { Mail, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { localizeRunError } from "@/i18n/dynamic-labels";
 import { useGmailSync } from "@/features/notifications/use-notifications";
 import {
+  useGmailAutomation,
   useGmailConnect,
   useGmailDisconnect,
   useGmailStatus,
 } from "./use-gmail";
 
 export function GmailCard() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: status, isLoading, isError, refetch } = useGmailStatus();
   const connect = useGmailConnect();
   const disconnect = useGmailDisconnect();
   const sync = useGmailSync();
+  const automation = useGmailAutomation();
+  const client = status?.clientSource === "platform"
+    ? t("interactionCopy.notifications.gmailPlatformClient")
+    : status?.clientSource === "own"
+      ? t("interactionCopy.notifications.gmailOwnClient")
+      : status?.clientSource ?? "";
 
   return (
     <section aria-labelledby="gmail-settings-title" className="flex flex-col gap-4 rounded-lg border p-4">
@@ -30,9 +39,9 @@ export function GmailCard() {
               : isLoading
                 ? "Checking connection…"
                 : status?.connected
-                  ? status.draftCapable
-                    ? `Connected (${status.clientSource} client). Sync and drafts are enabled.`
-                    : `Connected (${status.clientSource} client). Reconnect to enable drafts.`
+                  ? t(status.draftCapable
+                    ? "interactionCopy.notifications.gmailConnectedDrafts"
+                    : "interactionCopy.notifications.gmailConnectedReadOnly", { client })
                   : "Not connected. Connect to sync application status and draft emails."}
           </p>
         </div>
@@ -45,7 +54,7 @@ export function GmailCard() {
             <Button
               size="sm"
               variant="outline"
-              disabled={connect.isPending || disconnect.isPending || sync.isPending}
+              disabled={connect.isPending || disconnect.isPending || sync.isPending || automation.isPending}
               onClick={() => connect.mutate()}
             >
               Reconnect
@@ -53,7 +62,7 @@ export function GmailCard() {
             <Button
               size="sm"
               variant="outline"
-              disabled={disconnect.isPending || connect.isPending || sync.isPending}
+              disabled={disconnect.isPending || connect.isPending || sync.isPending || automation.isPending}
               onClick={() => disconnect.mutate()}
             >
               Disconnect
@@ -72,7 +81,7 @@ export function GmailCard() {
       </div>
       <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="min-w-0 text-sm text-muted-foreground">
-          Sync recruiting emails to suggest application updates. Review changes in Notifications before applying them.
+          {t("interactionCopy.notifications.gmailSettingsHelp")}
         </p>
         <Button
           className="shrink-0 self-start"
@@ -84,6 +93,30 @@ export function GmailCard() {
           {sync.isPending ? "Syncing…" : "Sync Gmail"}
         </Button>
       </div>
+      {status?.connected && (
+        <div className="flex items-start justify-between gap-4 border-t pt-4">
+          <div>
+            <label htmlFor="gmail-auto-rejections" className="text-sm font-medium">
+              Auto-apply confirmed rejections
+            </label>
+            <p id="gmail-auto-rejections-help" className="mt-1 text-sm text-muted-foreground">
+              Future emails with an authenticated employer, an exact requisition, and a clear rejection can move a Submitted application to Rejected. Each change appears on the application timeline.
+            </p>
+            {automation.error && (
+              <p role="alert" className="mt-2 text-sm text-destructive">
+                {localizeRunError(automation.error.message, i18n.resolvedLanguage)}
+              </p>
+            )}
+          </div>
+          <Switch
+            id="gmail-auto-rejections"
+            aria-describedby="gmail-auto-rejections-help"
+            checked={status.autoApplyRejections ?? false}
+            disabled={automation.isPending || disconnect.isPending || connect.isPending || isError}
+            onCheckedChange={(enabled) => automation.mutate(enabled)}
+          />
+        </div>
+      )}
       {sync.error && (
         <p role="alert" className="text-sm text-destructive">
           {localizeRunError(sync.error.message, i18n.resolvedLanguage)}

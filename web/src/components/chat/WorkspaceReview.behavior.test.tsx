@@ -146,6 +146,17 @@ describe("workspace review interactions", () => {
     expect(screen.queryByRole("button", { name: "Approve and save" })).not.toBeInTheDocument();
   });
 
+  it("marks an outcome-unknown receipt as needing verification", async () => {
+    const saved = proposal();
+    saved.actions = [saved.actions[0]];
+    saved.actions[0].receipt = { state: "outcome_unknown", result: {}, approvedBy: "local-user", createdAt: saved.createdAt };
+    serve(saved);
+    render(<WorkspaceReview surface="coach" sessionId="s1" />, { wrapper: withQueryClient });
+    expect((await screen.findAllByText("The outcome is unconfirmed. Check the record to see what happened. Don't retry this change.")).length).toBeGreaterThan(1);
+    expect(screen.queryByText("All changes have been reviewed.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve and save" })).not.toBeInTheDocument();
+  });
+
   it("leaves deletions unselected and requires confirmation before sending the exact selected actions", async () => {
     const user = userEvent.setup();
     const saved = proposal();

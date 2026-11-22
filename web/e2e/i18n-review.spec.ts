@@ -183,18 +183,33 @@ test("localizes the interview banner and generated notifications across language
     { id: 1, applicationId: 1, kind: "follow_up", proposedStatus: "", evidence: "No activity for 20 days: Acme · Engineer", messageId: "followup", state: "pending", createdAt: "2026-10-23T12:00:00Z", jobId: 7, company: "Acme", title: "Engineer" },
     { id: 2, applicationId: 1, kind: "rejected", proposedStatus: "rejected", evidence: "Thank you for applying.", messageId: "email", state: "pending", createdAt: "2026-10-23T12:00:00Z", jobId: 7, company: "Acme", title: "Engineer" },
   ] }));
+  await page.route("**/api/dashboard/summary", (route) => route.fulfill({ json: {
+    statusCounts: { raw: 2, shortlisted: 1, approved: 1 },
+    queues: { triage: 2, approve: 1, tailor: 1, apply: 0 }, applied: 0,
+  } }));
 
-  await page.goto("/settings/review");
+  await page.goto("/");
   await expect(page.getByRole("link", { name: "继续面试" })).toBeVisible();
-  await page.getByRole("button", { name: "通知（2 条待处理）" }).click();
-  await expect(page.getByText("20 天没有新动态：Acme · Engineer")).toBeVisible();
-  await expect(page.getByText("更新状态为已拒绝")).toBeVisible();
-  await expect(page.getByText("Thank you for applying.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "通知", exact: true })).toBeVisible();
+  const chineseBoard = page.getByRole("region", { name: "申请通知" });
+  await expect(page.getByRole("link", { name: "初筛 2 个职位" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "为 1 个职位定制简历" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "准备 0 个职位的申请" })).toBeVisible();
+  await expect(chineseBoard.getByText("20 天没有新动态：Acme · Engineer")).toBeVisible();
+  await expect(chineseBoard.getByText("建议状态：已拒绝")).toBeVisible();
+  await expect(chineseBoard.getByRole("button", { name: "同意更新" })).toBeVisible();
+  await expect(chineseBoard.getByRole("button", { name: "忽略更新" })).toBeVisible();
+  await expect(chineseBoard.getByText("Thank you for applying.")).toBeVisible();
 
   await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
   await expect(page.getByRole("link", { name: "Resume", exact: true })).toBeVisible();
-  const bell = page.getByRole("button", { name: "Notifications (2 pending)" });
-  if (await bell.getAttribute("aria-expanded") !== "true") await bell.click();
-  await expect(page.getByText("No activity for 20 days: Acme · Engineer")).toBeVisible();
-  await expect(page.getByText("Move to Rejected")).toBeVisible();
+  const englishBoard = page.getByRole("region", { name: "Application notifications" });
+  await expect(page.getByRole("link", { name: "Triage 2 jobs" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Tailor a resume for 1 job" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Apply: prepare 0 applications" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Render PDFs for 0 jobs" })).toBeVisible();
+  await expect(englishBoard.getByText("No activity for 20 days: Acme · Engineer")).toBeVisible();
+  await expect(englishBoard.getByText("Suggested status: Rejected")).toBeVisible();
+  await expect(englishBoard.getByRole("button", { name: "Approve update" })).toBeVisible();
+  await expect(englishBoard.getByRole("button", { name: "Dismiss update" })).toBeVisible();
 });

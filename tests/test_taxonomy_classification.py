@@ -555,6 +555,25 @@ def test_reconcile_uses_new_peer_candidates_with_embedding_context():
     assert outcome.additions.aliases == {"k8s": "k8s", "kube": "k8s"}
 
 
+def test_reconcile_passes_resolved_canonicals_to_later_shards():
+    def respond(new, existing):
+        if new == ["alpha"] and "base" in existing:
+            return [["base", "alpha"]]
+        if new == ["beta"] and "alpha" in existing:
+            return [["alpha", "beta"]]
+        if new == ["beta"] and "base" in existing:
+            return [["base", "beta"]]
+        return [[token] for token in new]
+
+    canonicalizer = _Canonicalizer(respond)
+    outcome = _classify(
+        demanded={"alpha", "beta"}, existing=ClusterMap(aliases={"base": "base"}),
+        canonicalizer=canonicalizer, batch_size=2, reconcile_batch_size=1,
+    )
+    assert outcome.additions.aliases == {"alpha": "base", "beta": "base"}
+    assert "alpha" not in canonicalizer.calls[-1]["existing_canonicals"]
+
+
 def test_existing_unthemed_canonical_is_themed_without_canonical_call():
     canonicalizer = _Canonicalizer()
     existing = ClusterMap(aliases={"python": "python"})

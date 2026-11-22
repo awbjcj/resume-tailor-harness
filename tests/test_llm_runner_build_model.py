@@ -369,6 +369,11 @@ def test_claude_max_tokens_respects_the_sdk_non_streaming_ceiling():
     assert build_model("claude-opus-4-1-20250805", api_key="k").max_tokens == 8192
 
 
+def test_legacy_claude_output_budget_stays_within_old_model_limits():
+    assert build_model("claude-3-5-haiku-20241022", api_key="k").max_tokens <= 8192
+    assert build_model("claude-3-opus-20240229", api_key="k").max_tokens <= 4096
+
+
 def test_anthropic_version_treats_pre_4_ids_as_legacy():
     assert anthropic_version("claude-sonnet-5") == (5, 0)
     assert anthropic_version("claude-opus-4-8") == (4, 8)

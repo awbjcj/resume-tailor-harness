@@ -8470,6 +8470,19 @@
         "title": "GithubRepositoryOut",
         "type": "object"
       },
+      "GmailAutomationIn": {
+        "properties": {
+          "autoApplyRejections": {
+            "title": "Autoapplyrejections",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "autoApplyRejections"
+        ],
+        "title": "GmailAutomationIn",
+        "type": "object"
+      },
       "GmailConnectOut": {
         "properties": {
           "authUrl": {
@@ -8485,6 +8498,11 @@
       },
       "GmailStatusOut": {
         "properties": {
+          "autoApplyRejections": {
+            "default": false,
+            "title": "Autoapplyrejections",
+            "type": "boolean"
+          },
           "clientSource": {
             "default": "platform",
             "title": "Clientsource",
@@ -8678,6 +8696,18 @@
           "confidence": {
             "title": "Confidence",
             "type": "number"
+          },
+          "countBasis": {
+            "anyOf": [
+              {
+                "const": "fiscal_year_to_date_determinations",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countbasis"
           },
           "dataVersion": {
             "anyOf": [
@@ -10759,6 +10789,75 @@
           "language"
         ],
         "title": "Language",
+        "type": "object"
+      },
+      "LearningRoadmapOut": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "envelope": {
+            "$ref": "#/components/schemas/SuggestionEnvelope"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "status": {
+            "default": "planned",
+            "enum": [
+              "planned",
+              "in_progress",
+              "completed",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "supersededById": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersededbyid"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "available",
+          "envelope"
+        ],
+        "title": "LearningRoadmapOut",
+        "type": "object"
+      },
+      "LearningRoadmapUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "planned",
+              "in_progress",
+              "completed",
+              "archived"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "LearningRoadmapUpdate",
         "type": "object"
       },
       "LengthBudget": {
@@ -19796,6 +19895,43 @@
           }
         },
         "title": "SuggestionEnvelope",
+        "type": "object"
+      },
+      "SuggestionGenerateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedRoadmapId": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectedroadmapid"
+          },
+          "key": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "skill",
+              "domain"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "key"
+        ],
+        "title": "SuggestionGenerateRequest",
         "type": "object"
       },
       "SuggestionOut": {
@@ -29905,6 +30041,62 @@
         "summary": "Resolve Error"
       }
     },
+    "/api/gmail/automation": {
+      "put": {
+        "operationId": "gmail_automation_api_gmail_automation_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GmailAutomationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GmailAutomationIn"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gmail Automation"
+      }
+    },
     "/api/gmail/connect": {
       "get": {
         "operationId": "gmail_connect_api_gmail_connect_get",
@@ -33538,6 +33730,114 @@
           }
         },
         "summary": "Set Override"
+      }
+    },
+    "/api/learning-roadmaps": {
+      "get": {
+        "operationId": "get_learning_roadmaps_api_learning_roadmaps_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LearningRoadmapOut"
+                  },
+                  "title": "Response Get Learning Roadmaps Api Learning Roadmaps Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Learning Roadmaps"
+      }
+    },
+    "/api/learning-roadmaps/{suggestion_id}": {
+      "patch": {
+        "operationId": "patch_learning_roadmap_api_learning_roadmaps__suggestion_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "suggestion_id",
+            "required": true,
+            "schema": {
+              "title": "Suggestion Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningRoadmapUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Learning Roadmap"
       }
     },
     "/api/mailboxes": {
@@ -42067,7 +42367,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SuggestionTarget"
+                "$ref": "#/components/schemas/SuggestionGenerateRequest"
               }
             }
           },

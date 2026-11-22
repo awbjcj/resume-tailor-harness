@@ -60,6 +60,7 @@ def test_pipeline_exposes_persisted_h1b_sponsorship_status():
     client = _client()
     now = datetime.now(timezone.utc)
     evidence = H1BSponsorshipEvidence(
+        count_basis="fiscal_year_to_date_determinations",
         status="matched",
         normalized_company="acme",
         display_company="Acme",

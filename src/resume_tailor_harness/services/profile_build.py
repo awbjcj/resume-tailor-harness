@@ -59,6 +59,7 @@ def run_corpus_build(
     facts_out = resolve_tenant_path(facts_out)
     from resume_tailor_harness.profile.conversation import (
         capture_skill_overrides,
+        can_rebuild_without_resume,
         edits_path,
         load_edits,
         replay_edits,
@@ -74,7 +75,9 @@ def run_corpus_build(
     if load_edits(profile_dir).changes and not any(
         doc.primary and doc.mode == "literal" for doc in load_manifest(profile_dir).docs
     ):
-        return _build_conversation_profile(profile_dir, Path(facts_out), reporter)
+        if can_rebuild_without_resume(profile_dir):
+            return _build_conversation_profile(profile_dir, Path(facts_out), reporter)
+        raise ValueError("Add a primary resume source before rebuilding the profile")
     from resume_tailor_harness.profile.build import build_corpus_profile
     from resume_tailor_harness.profile.aspect_classifier import (
         build_aspect_classifier_agent,
@@ -246,16 +249,20 @@ def run_corpus_build(
 
 
 def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -> dict:
-    """A user-created profile has no corpus requirement or extraction model work."""
+    """Rebuild a user-created profile and verify any saved synthesis notes."""
     from resume_tailor_harness.models.profile import Contact
     from resume_tailor_harness.profile.conversation import (
+        can_rebuild_without_resume,
         capture_skill_overrides,
         edits_path,
         load_edits,
+        profile_revision,
         replay_edits,
         save_edits,
     )
+    from resume_tailor_harness.profile.corpus import load_manifest
     from resume_tailor_harness.profile.effective import build_effective_taxonomy
+    from resume_tailor_harness.profile.fragments import extract_synthesis_fragments
     from resume_tailor_harness.profile.manual_skills import (
         apply_manual_skills,
         load_manual_skills,
@@ -268,11 +275,19 @@ def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -
         save_matrix,
     )
     from resume_tailor_harness.profile.skill_cleanup import clean_skills
+    from resume_tailor_harness.profile.merge import MergeReport, apply_synthesis_fragments
+    from resume_tailor_harness.profile.synthesis import (
+        build_entailment_agent,
+        build_synthesis_agent,
+        profile_skeleton,
+    )
     from resume_tailor_harness.services.profile_skills import _utcnow
 
     if reporter is not None:
         reporter.begin(1, "Rebuilding your conversational profile")
     with manual_skills_lock(profile_dir):
+        if not can_rebuild_without_resume(profile_dir):
+            raise ValueError("Add a primary resume source before rebuilding the profile")
         ledger_path = profile_dir / "manual_skills.json"
         manual_ledger = load_manual_skills(ledger_path)
         facts, manual_warnings = apply_manual_skills(
@@ -281,6 +296,50 @@ def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -
         )
         edits = load_edits(profile_dir)
         facts, warnings = replay_edits(facts, edits)
+        revision = profile_revision(profile_dir)
+        manifest = load_manifest(profile_dir)
+        inputs = source_inputs(profile_dir, manifest)
+
+    synthesis_docs = [
+        doc for doc in manifest.docs
+        if doc.mode == "synthesis" and doc.id not in edits.excluded_source_refs
+    ]
+    doc_status: dict[str, str] = {}
+    anchor_decisions: list[str] = []
+    verification_drops: list[str] = []
+    conflicts: list[str] = []
+    if synthesis_docs:
+        # Run model work without holding the profile mutation lock, then fence
+        # publication against concurrent edits and source changes below.
+        manifest.docs = synthesis_docs
+        extracted = extract_synthesis_fragments(
+            profile_dir, manifest, profile_skeleton(facts),
+            build_synthesis_agent(), build_entailment_agent(),
+        )
+        doc_status = extracted.status
+        if any(
+            doc.id not in extracted.fragments or doc_status.get(doc.id, "").startswith(("failed:", "stale:"))
+            for doc in synthesis_docs
+        ):
+            raise ValueError("A saved note could not be verified; retry the profile refresh")
+        report = MergeReport()
+        anchor_decisions, _ = apply_synthesis_fragments(
+            facts, [(doc, extracted.fragments[doc.id]) for doc in synthesis_docs], report
+        )
+        conflicts = report.conflicts
+        verification_drops = [
+            f"{doc_id}: {drop}" for doc_id, drops in extracted.drops.items() for drop in drops
+        ]
+        # The first replay prepared the conversation skeleton, before source
+        # skills existed. Replay again so edits and suppressions also apply to
+        # the verified skills just merged from notes.
+        facts, manual_warnings = apply_manual_skills(facts, manual_ledger)
+        facts, replay_warnings = replay_edits(facts, edits)
+        warnings.extend(replay_warnings)
+
+    with manual_skills_lock(profile_dir):
+        if profile_revision(profile_dir) != revision or source_inputs(profile_dir) != inputs:
+            raise ValueError("Profile or source evidence changed during refresh; retry")
         cleanup = None
         if manual_ledger.auto_cleanup:
             facts, cleanup = clean_skills(
@@ -294,10 +353,9 @@ def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -
             )
         capture_skill_overrides(facts, edits)
         matrix = build_decorated_matrix(profile_dir, facts)
-        # This path intentionally rebuilds only approved conversation changes;
-        # saved source documents have not been extracted by it.
-        inputs = source_inputs(profile_dir)
-        inputs.documents = {}
+        # Only verified synthesis documents were consumed by this path.
+        consumed = {doc.id for doc in synthesis_docs}
+        inputs.documents = {key: value for key, value in inputs.documents.items() if key in consumed}
         with rollback_scope(
             (
                 facts_path,
@@ -324,10 +382,10 @@ def _build_conversation_profile(profile_dir: Path, facts_path: Path, reporter) -
         "projects": len(facts.projects),
         "matrixRows": len(matrix.rows),
         "groupedRows": sum(row.group is not None for row in matrix.rows),
-        "docStatus": {},
-        "conflicts": [],
-        "anchorDecisions": [],
-        "verificationDrops": [],
+        "docStatus": doc_status,
+        "conflicts": conflicts,
+        "anchorDecisions": anchor_decisions,
+        "verificationDrops": verification_drops,
         "inferred": [],
         "warnings": [*manual_warnings, *warnings],
         "skillCleanup": cleanup.model_dump(mode="json") if cleanup else None,

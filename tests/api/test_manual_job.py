@@ -9,7 +9,8 @@ from resume_tailor_harness.db import get_session
 from resume_tailor_harness.discovery import pipeline
 from resume_tailor_harness.discovery.ingest import IngestOutcome, save_or_upgrade
 from resume_tailor_harness.discovery.search_config import SearchConfig
-from resume_tailor_harness.models.job import JobCriteria, Seniority
+from resume_tailor_harness.models.job import JobCriteria, SalaryRange, Seniority
+from resume_tailor_harness.models.manual_job import ManualJobDetails
 from resume_tailor_harness.models.profile import Contact, ProfileFacts
 from resume_tailor_harness.services import discovery
 from resume_tailor_harness.tracking.tables import Job
@@ -130,6 +131,47 @@ def test_duplicate_keeps_progress_and_metadata(client):
     after = client.get(f"/api/jobs/{first['id']}").json()
     assert after["status"] == "approved"
     assert after["criteriaJson"] == first["criteriaJson"]
+
+
+def test_posting_identity_is_distinct_from_a_shared_application_link(client):
+    first = full_job()
+    first["details"]["applicationUrl"] = "https://apply.example.com/general"
+    second = deepcopy(first)
+    second.update(url="https://example.com/jobs/43", title="Security Engineer", jdText="Protect application infrastructure.")
+    second["details"]["postingId"] = "REQ-43"
+    first_response = client.post("/api/jobs", json=first)
+    second_response = client.post("/api/jobs", json=second)
+    assert first_response.status_code == second_response.status_code == 201
+    assert first_response.json()["id"] != second_response.json()["id"]
+    assert second_response.json()["url"] == "https://apply.example.com/general"
+    with get_session(client.app.state.engine) as session:
+        first_row = session.get(Job, first_response.json()["id"])
+        second_row = session.get(Job, second_response.json()["id"])
+        assert first_row is not None and first_row.url == first["url"]
+        assert second_row is not None and second_row.url == second["url"]
+
+
+@pytest.mark.parametrize(
+    "currency, period, minimum, maximum, expected",
+    [
+        ("USD", "year", 80000, None, (80000, 100000)),
+        ("USD", "year", None, 90000, (50000, 90000)),
+        ("EUR", "year", 80000, None, (80000, None)),
+        ("USD", "hour", 80, None, (80, None)),
+        ("USD", "year", 120000, None, (120000, None)),
+    ],
+)
+def test_manual_salary_preserves_only_compatible_extracted_bounds(
+    currency, period, minimum, maximum, expected
+):
+    details = ManualJobDetails(
+        salary_min=minimum, salary_max=maximum,
+        salary_currency=currency, salary_period=period,
+    )
+    result = details.apply(JobCriteria(salary_range=SalaryRange(minimum=50000, maximum=100000)))
+    assert result.salary_range is not None
+    assert (result.salary_range.minimum, result.salary_range.maximum) == expected
+    assert (result.salary_range.currency, result.salary_range.period) == (currency, period)
 
 
 def test_manual_job_obeys_active_quota(client, monkeypatch):

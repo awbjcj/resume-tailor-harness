@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import random
 import re
 import threading
@@ -2132,6 +2133,10 @@ def _anthropic_max_tokens(model: str, *, reasoning: bool) -> int:
     the SDK enforces (Opus 4/4.1 only) so a custom id cannot raise ValueError.
     """
     want = 32000 if reasoning else 16000
+    if anthropic_version(model) is None:
+        # Pre-4 and unrecognized custom IDs may have much smaller model output
+        # limits than the SDK's non-streaming guidance. Keep a conservative cap.
+        want = min(want, 4096)
     try:
         from anthropic._constants import MODEL_NONSTREAMING_TOKENS
     except ImportError:  # pragma: no cover - private SDK constant
@@ -2222,6 +2227,21 @@ def _openai_max_output_tokens(*, reasoning: bool) -> int:
     spent out of this same allowance, so the same visible answer needs more.
     """
     return 64000 if reasoning else 32000
+
+
+def _gemini_api_version_options(*, agno: bool = False) -> dict[str, str]:
+    """Preserve Developer API defaults without overriding SDK configuration."""
+    if os.getenv("GOOGLE_GENAI_API_VERSION"):
+        return {}
+    # Agno explicitly enables Vertex for "true"; otherwise SDK 3 resolves
+    # ENTERPRISE before VERTEXAI, accepting both "true" and "1".
+    vertex = os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "")
+    enterprise = os.getenv("GOOGLE_GENAI_USE_ENTERPRISE")
+    if (agno and vertex.lower() == "true") or (
+        (enterprise if enterprise is not None else vertex).lower() in {"true", "1"}
+    ):
+        return {}
+    return {"api_version": "v1beta"}
 
 
 def _endpoint_kwargs(provider: str, base_url: str | None) -> dict[str, Any]:
@@ -2396,9 +2416,12 @@ def _build_model_from_route(
     if provider == "gemini":
         Gemini = _compatible_gemini_class()
         options = _endpoint_kwargs("gemini", base_url)
-        options.setdefault("client_params", {}).setdefault("http_options", {})[
-            "retry_options"
-        ] = {"attempts": 1}
+        http_options = options.setdefault("client_params", {}).setdefault("http_options", {})
+        # google-genai 3 defaults to v1; retain our prior Developer API route
+        # for preview models/latest aliases and compatible gateways.
+        for name, value in _gemini_api_version_options(agno=True).items():
+            http_options.setdefault(name, value)
+        http_options["retry_options"] = {"attempts": 1}
 
         # Gemini treats an unset thinking config as "provider decides" (an
         # automatic, unbounded budget) rather than off, so a non-reasoning agent
@@ -2409,7 +2432,7 @@ def _build_model_from_route(
         # INVALID_ARGUMENT before any generation, which agno then surfaces as a
         # plain str (the error body) rather than the output_schema. Bound it
         # with thinking_level="low" instead; that reports no thought tokens.
-        # Pre-3 ids have no thinking_level, so there 0 is still the way off.
+        # Older ids require model-specific budgets where supported.
         if model.casefold().startswith(("gemini-3", "gemini-4")):
             if model.casefold() == "gemini-4-argon":
                 # This adapter uses generateContent, whose non-streaming hop
@@ -2428,14 +2451,19 @@ def _build_model_from_route(
                 include_thoughts=reasoning,
                 **options,
             )
-        # Pre-3 ids have no thinking_level at all -- sending one is the mirror
-        # image of the thinking_budget-on-Gemini-3 failure, and agno forwards any
-        # non-None value straight into ThinkingConfig -- so 0 is the only way off
-        # here, and reasoning is left to the provider's own budget.
+        # Pre-3 ids have no thinking_level. Only the documented 2.5 Flash
+        # family supports disabling thinking; 2.5 Pro has a minimum of 128.
+        # Leave unknown/older custom models to their provider's defaults.
+        family = model.casefold()
+        minimum = (
+            128 if family.startswith("gemini-2.5-pro")
+            else 0 if family.startswith("gemini-2.5-flash")
+            else None
+        )
         return Gemini(
             id=model,
             api_key=key,
-            thinking_budget=None if reasoning else 0,
+            thinking_budget=None if reasoning else minimum,
             include_thoughts=reasoning,
             **options,
         )
@@ -2639,7 +2667,12 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
         from google import genai
         from google.genai import types
 
-        client = genai.Client(api_key=key)
+        # Preserve the pre-3.x Developer API route, including latest aliases.
+        api_version = _gemini_api_version_options().get("api_version")
+        client = genai.Client(
+            api_key=key,
+            http_options=types.HttpOptions(api_version=api_version) if api_version else None,
+        )
         with llm_call():
             SpendGate().recheck(provider, model, own_key=own_key)
             response = client.models.generate_content(
@@ -2709,11 +2742,20 @@ def transcribe(audio: bytes, mime_type: str, *, model_id: str | None = None) -> 
 def speech_available() -> bool:
     """Whether the configured speech model has a direct OpenAI credential."""
 
+    from resume_tailor_harness import realtime_speech
+
     settings = get_settings()
-    model_id = settings.speech_model
-    provider, _ = split_provider(model_id)
-    return provider in _SPEECH_PROVIDERS and bool(
-        _settings_provider_key(settings, provider).strip()
+    provider, model = split_provider(settings.speech_model)
+    return (
+        provider in _SPEECH_PROVIDERS
+        and bool(_settings_provider_key(settings, provider).strip())
+        and (
+            not model.startswith("gpt-realtime")
+            or (
+                realtime_speech.realtime_model(model)
+                and realtime_speech.encoder_available()
+            )
+        )
     )
 
 
@@ -2742,34 +2784,69 @@ def synthesize_speech(
     if not api_key:
         raise ValueError(f"no API key configured for speech provider {provider!r}")
 
+    from resume_tailor_harness import realtime_speech
+    from resume_tailor_harness.llm_routing import direct_api_base_url
     from resume_tailor_harness.tenancy.limits import (
         enforce_agent_budget,
         selected_key_is_own,
     )
     from resume_tailor_harness.tenancy.spend import SpendGate
 
+    # Speech bypasses subscription routing. Preserve the deployment's paired
+    # direct OpenAI endpoint and credential, rather than inheriting a gateway.
+    base_url = provider_sdk_base_url(
+        provider, direct_api_base_url(provider, settings)
+    )
+    selected_voice = voice or settings.speech_voice
+    if realtime_speech.realtime_model(model):
+        from resume_tailor_harness.tenancy.context import current_context
+        from resume_tailor_harness.tenancy.usage import record_direct_usage
+
+        if not realtime_speech.encoder_available():
+            raise RuntimeError("Realtime speech requires ffmpeg with libmp3lame")
+        if not base_url:
+            raise RuntimeError("OpenAI Realtime requires a direct base URL")
+        # The speech key is already bound from the per-request settings overlay.
+        # Do not infer its custody from a previous text/gateway spend decision.
+        context = current_context()
+        own_key = context is not None and provider in context.own_key_providers
+        with llm_call():
+            SpendGate().recheck(provider, model, own_key=own_key)
+            pcm, response = realtime_speech.render(
+                cleaned,
+                model=model,
+                voice=selected_voice,
+                api_key=api_key,
+                base_url=base_url,
+                instructions=_SPEECH_INSTRUCTIONS,
+            )
+        if response.get("usage") is not None or response.get("status") == "completed":
+            record_direct_usage(
+                realtime_speech.metered_usage(model, response),
+                own_key=own_key,
+                request_id=response.get("id"),
+            )
+        if response.get("status") != "completed":
+            raise RuntimeError("OpenAI Realtime speech did not complete")
+        return realtime_speech.pcm_to_mp3(pcm)
+
+    if model.startswith("gpt-realtime"):
+        raise ValueError("unsupported OpenAI Realtime speech model")
+
+    from openai import OpenAI
+
     budget_agent = SimpleNamespace(model=SimpleNamespace(id=model, provider=provider))
     enforce_agent_budget(budget_agent)
     own_key = selected_key_is_own(provider, budget_agent)
-    from openai import OpenAI
-
-    # Speech is deliberately not subscription-routed. The configured gateway
-    # implements text endpoints but not POST /v1/audio/speech. Passing the
-    # official endpoint explicitly also prevents the OpenAI SDK from silently
-    # inheriting a deployment-wide OPENAI_BASE_URL gateway override.
-    from resume_tailor_harness.llm_routing import direct_api_base_url
-
     client = OpenAI(
         api_key=api_key,
-        base_url=provider_sdk_base_url(
-            provider, direct_api_base_url(provider, settings)
-        ),
+        base_url=base_url,
     )
     with llm_call():
         SpendGate().recheck(provider, model, own_key=own_key)
         response = client.audio.speech.create(
             model=model,
-            voice=voice or settings.speech_voice,
+            voice=selected_voice,
             input=cleaned,
             instructions=_SPEECH_INSTRUCTIONS,
             response_format="mp3",

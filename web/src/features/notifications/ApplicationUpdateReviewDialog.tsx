@@ -18,7 +18,7 @@ const loadReview = () => import("./ApplicationUpdateReviewBody").then((module) =
   default: module.ApplicationUpdateReviewBody,
 }));
 
-export function ApplicationUpdateReviewDialog({ item }: { item: NotificationItem }) {
+export function ApplicationUpdateReviewDialog({ item, disabled }: { item: NotificationItem; disabled?: boolean }) {
   const { t } = useTranslation();
   // Freeze before loading the form. Background sync cannot replace the
   // evidence or revision the user chose while the module is still arriving.
@@ -29,7 +29,7 @@ export function ApplicationUpdateReviewDialog({ item }: { item: NotificationItem
 
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => setReviewed({ ...item })}>
+      <Button size="sm" variant="outline" disabled={disabled} onClick={() => setReviewed({ ...item })}>
         {t("applicationUpdates.addToTimeline")}
       </Button>
       {reviewed && (ReviewBody ? (

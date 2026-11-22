@@ -30,7 +30,7 @@ for them.
    and saved, but cannot retrieve mail and is not used to send messages.
 5. Select **Test & connect**. The connection is saved only after IMAP and any
    enabled SMTP credentials are verified.
-6. Select **Sync & analyze**. Review proposed application updates in Notifications.
+6. Select **Sync & analyze**. Review proposed updates under **Application notifications** on the dashboard.
 
 Connections use implicit TLS or mandatory STARTTLS, with certificate verification.
 Unencrypted connections and private, loopback, or link-local destinations are

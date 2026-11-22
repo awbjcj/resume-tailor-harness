@@ -116,7 +116,10 @@ def _seed_domain_backlog(path, tokens, *, attempts=0):
         TaxonomyState(
             grouping_status={
                 t: GroupingStatus(
-                    reason="incomplete", phase="domain", escalation_attempts=attempts
+                    reason="incomplete", phase="domain", escalation_attempts=attempts,
+                    # Give the seeded backlog equal age, leaving the token as
+                    # the deterministic tie-breaker even across a clock tick.
+                    last_attempted_at="2026-01-01T00:00:00+00:00",
                 )
                 for t in tokens
             }

@@ -39,8 +39,7 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   The web callback authenticates via a signed link-token state, never the
   session cookie. An in-process scheduler (`gmail/scheduler.py`, every
   `gmail_sync_interval_hours`) runs `services/gmail_sync.run_gmail_sync`
-  per connected user — sync proposals land in the notification bell; nothing
-  auto-applies. `services/email_writer.py` grounds drafts in facts.json
+  per connected user. Sync proposals appear under **Application notifications** on the dashboard. `services/email_writer.py` grounds drafts in facts.json
   only (human gate, no LLM fact-check round) and saves them as in-thread
   Gmail drafts via `EmailDraft` rows; drafts never gate job deletion but
   cascade on delete. `gmail.send` is permanently out of scope.
@@ -95,7 +94,11 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   work. Prefer an exact JR/R/REQ reference from the job URL/source identity;
   otherwise use a unique role title for multiple applications at one company.
   Ambiguous or explicitly different requisitions must not update an arbitrary
-  application. Proposals remain reviewable notifications, never auto-applied.
+  application. With explicit opt-in, only a future authenticated Gmail rejection
+  with an exact employer and requisition can advance a Submitted application.
+  Match the full registered sender domain against the tracked job links. Wait
+  for all discovery lanes to catch up and record the decision as a timeline
+  event in the same transaction that accepts its proposal.
 - **Precision precedes a guessed decision.** Rules require decision phrases,
   discard quoted history, and avoid receipt/marketing/conditional messages.
   AI returns structured labels with confidence >= 0.9 and an exact evidence quote;

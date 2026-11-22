@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { facetLabel } from "@/i18n/facet-labels";
 import type { components } from "@/lib/api/schema";
 
 import { CareerLabOfferReferences } from "./CareerLabOfferReferences";
@@ -137,6 +138,7 @@ export function CareerLabContextRail({
   setContext: (value: CareerLabContext) => void;
   skillRef: RefObject<HTMLSelectElement | null>;
 }) {
+  const { i18n } = useTranslation();
   const jobs = useCareerLabJobs();
   const jobDetail = useCareerLabJobDetail(context.jobId ?? null);
   const [jobSearch, setJobSearch] = useState("");
@@ -272,7 +274,7 @@ export function CareerLabContextRail({
                     <Label htmlFor="career-job-status">Job status</Label>
                     <select id="career-job-status" value={jobStatus} onChange={(event) => updateStatus(event.target.value)} className="h-9 w-full rounded-lg border border-input bg-background px-2 text-sm">
                       <option value="">All statuses</option>
-                      {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                      {statuses.map((status) => <option key={status} value={status}>{facetLabel("status", status, i18n.resolvedLanguage)}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1.5">
@@ -294,7 +296,7 @@ export function CareerLabContextRail({
                   className="h-9 w-full rounded-lg border border-input bg-background px-2 text-sm"
                 >
                   <option value="">No job selected</option>
-                  {filteredJobs.map((job) => <option key={job.jobId} value={job.jobId}>{[job.company, job.title].filter(Boolean).join(" · ") || `Job ${job.jobId}`} · {job.status}</option>)}
+                  {filteredJobs.map((job) => <option key={job.jobId} value={job.jobId}>{[job.company, job.title].filter(Boolean).join(" · ") || `Job ${job.jobId}`} · {facetLabel("status", job.status, i18n.resolvedLanguage)}</option>)}
                 </select>
                 {jobs.isPending ? <p className="text-xs text-muted-foreground">Loading jobs…</p> : null}
                 {jobs.isError ? <p className="text-xs text-destructive">Jobs could not be loaded.</p> : null}

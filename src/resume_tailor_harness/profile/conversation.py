@@ -181,7 +181,12 @@ def current_facts(root: Path) -> ProfileFacts | None:
 def can_rebuild_without_resume(root: Path) -> bool:
     ledger = load_edits(root)
     return (
-        not ledger.deleted and bool(ledger.changes) and (root / "facts.json").is_file()
+        not ledger.deleted
+        and any(
+            item.change.entity == "profile" and item.change.operation == "create"
+            for item in ledger.changes
+        )
+        and (root / "facts.json").is_file()
     )
 
 

@@ -216,6 +216,58 @@ def test_custom_category_and_group_crud_and_deletion_keeps_skills(library):
     )
 
 
+def test_deleting_a_group_keeps_members_in_other_despite_taxonomy(library):
+    from resume_tailor_harness.taxonomy.clusters import ClusterMap, save_cluster_map
+
+    directory, _ = library
+    save_cluster_map(ClusterMap(aliases={"python": "python"}, domain_of={"python": "languages"},
+                                category_of={"languages": "languages"}), directory / "cluster_map.json")
+    organization = profile_groups.edit_organization(directory, "group", label="Custom", category="technical")
+    group = next(key for key, value in organization.group_catalog().items() if value.label == "Custom")
+    profile_groups.set_group(directory, "python", group)
+    profile_groups.edit_organization(directory, "group", key=group, delete=True)
+    assert next(row for row in _matrix(directory).rows if row.key == "python").group == "other"
+
+
+def test_repeated_manual_renames_do_not_duplicate_a_skill(library):
+    directory, _ = library
+    added = profile_skills.add_skill(directory, "Original", "hard")
+    profile_skills.update_skill(directory, "Original", "Middle", [], "hard")
+    profile_skills.update_skill(directory, "Middle", "Final", [], "hard")
+    profile_skills.add_skill(directory, "Another", "hard")
+    matches = [skill for skill in _skills(directory) if skill.id == added.id]
+    assert len(matches) == 1 and matches[0].name == "Final"
+
+
+def test_failed_skill_rebuild_does_not_modify_cached_facts(library, monkeypatch):
+    directory, facts = library
+    facts.skills["hard"].append(Skill(id="inferred", name="Design", inferred=True, category="hard", evidence_fact_ids=["work"]))
+    save_facts(facts, directory / "facts.json")
+    cached = load_facts(directory / "facts.json")
+    monkeypatch.setattr(build, "build_inference_agent", lambda: object())
+    monkeypatch.setattr(build, "infer_skills", lambda *_: (_ for _ in ()).throw(RuntimeError("model failed")))
+    with pytest.raises(RuntimeError, match="model failed"):
+        build.rebuild_profile_skills(directory)
+    assert any(skill.id == "inferred" for bucket in cached.skills.values() for skill in bucket)
+    assert any(skill.id == "inferred" for bucket in load_facts(directory / "facts.json").skills.values() for skill in bucket)
+
+
+def test_editor_updates_and_clears_the_canonical_group_correction(library):
+    from resume_tailor_harness.taxonomy.clusters import ClusterMap, save_cluster_map
+
+    directory, facts = library
+    facts.skills["hard"].append(Skill(id="js", name="JS", category="hard"))
+    save_facts(facts, directory / "facts.json")
+    save_cluster_map(ClusterMap(aliases={"js": "javascript", "javascript": "javascript"},
+                                domain_of={"javascript": "web"}, category_of={"web": "languages"}),
+                     directory / "cluster_map.json")
+    profile_groups.set_group(directory, "js", "frontend-web")
+    profile_skills.update_skill(directory, "js", "JS", [], "hard", group="databases-storage")
+    assert next(row for row in _matrix(directory).rows if row.key == "javascript").group == "databases-storage"
+    profile_skills.update_skill(directory, "js", "JS", [], "hard", group="")
+    assert "javascript" not in load_group_corrections(corrections_path(directory)).corrections
+
+
 def test_corrupt_organization_blocks_mutations_without_overwriting(library):
     directory, _ = library
     path = corrections_path(directory)

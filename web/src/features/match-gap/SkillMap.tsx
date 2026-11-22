@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import "@/i18n/roadmap-copy";
+import { localizeGroupingStatus } from "@/i18n/dynamic-labels";
 import { isProvisionalSkill } from "./aggregate";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { select } from "d3-selection";
@@ -48,6 +51,7 @@ export function SkillMap({
   selected,
   onToggleSelect,
   onOpenSkill,
+  onOpenDomain,
 }: {
   categoryRows: CategoryRow[];
   // Full, unfiltered taxonomy used to populate edit-dialog target lists so that
@@ -58,7 +62,9 @@ export function SkillMap({
   selected: Set<string>;
   onToggleSelect: (target: SuggestionTarget) => void;
   onOpenSkill: (skill: SkillRow) => void;
+  onOpenDomain?: (target: SuggestionTarget) => void;
 }) {
+  const { t, i18n } = useTranslation();
   const editRows = editCategoryRows ?? categoryRows;
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -174,6 +180,9 @@ export function SkillMap({
           </p>
         </div>
         <div className="flex flex-wrap justify-end gap-2">
+          {focusedDomain && focusedDomain.id !== UNASSIGNED_ID && onOpenDomain && (
+            <Button size="sm" variant="outline" onClick={() => onOpenDomain({ kind: "domain", key: focusedDomain.id, label: focusedDomain.label })}>{t("roadmaps.viewDomain")}</Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => setMenuAction({ type: "add-skill" })}>Add skill</Button>
           {activeView.level !== "galaxy" && (
             <Button
@@ -267,7 +276,7 @@ export function SkillMap({
                         ? isProvisionalSkill(node.skill)
                           ? "Provisional category placement; the specific domain still needs confirmation."
                           : node.skill.groupingStatus
-                            ? `Grouping ${node.skill.groupingStatus.state}: ${node.skill.groupingStatus.reason}`
+                            ? localizeGroupingStatus(node.skill.groupingStatus, i18n.resolvedLanguage)
                             : undefined
                         : undefined
                     }

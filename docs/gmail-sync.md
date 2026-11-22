@@ -1,7 +1,19 @@
 # Gmail synchronization
 
 The web Sync action and scheduled sync share a durable, incremental pipeline.
-Status changes remain proposals for the user to accept.
+Status changes are proposed for review by default. In **Settings → Email &
+notifications**, you can opt in to auto-applying confirmed rejections for the
+connected Gmail account.
+
+Automation covers messages received after you enable the setting. It requires
+Gmail to authenticate the sender, the full registered sender domain to match
+the tracked posting or application URL, an exact requisition for a single
+application, an explicit rule-based rejection, and a current status of
+Submitted. Shared recruiting domains alone are insufficient. Automation waits
+for arrival, label recovery, and backfill queues to catch up. Other decisions and messages that do not meet these criteria remain
+available for review. Each automated rejection records the email on the
+application timeline. Reconnecting Gmail or resetting tracked applications clears
+the opt-in.
 
 ## Large mailboxes
 
@@ -9,12 +21,16 @@ The first sync records Gmail's current history ID, then starts two independent
 backfills: inbox messages and recruiting search results, including archived mail.
 Both scans continue through saved page tokens with no fixed age cutoff. New
 messages are discovered through Gmail history while old mail is still being read.
-Routine read/unread changes do not cause message downloads.
+Message arrivals and label changes use independent history checkpoints. New mail
+can advance while older read/unread activity is still being scanned. Label
+history still picks up messages restored from spam or trash.
 
 Each run processes at most `GMAIL_SYNC_MAX_PAGES` pages of at most
 `GMAIL_MAX_MESSAGES` messages each (page size capped at 500). Defaults are 20 pages
-of 50 messages. A partial run returns `has_more: true` and a progress message;
-the completion label says “Sync complete; more emails remain.” A saved continuation
+of 50 messages. Gmail history can stage up to 500 change records at a time.
+Each run resumes the rotation between history, backfill, and cached work. A partial
+run returns `has_more: true` and a progress message.
+The completion label says “Sync complete; more emails remain.” A saved continuation
 is normal progress, not a warning. The next manual or scheduled sync resumes
 the saved work. Increasing budgets changes throughput, not which messages are
 permanently eligible. The existing scheduler interval still controls when
@@ -52,6 +68,8 @@ still refresh metadata so restoring a message from spam/trash can make it eligib
 - Company names and domains use complete normalized names, not arbitrary substrings
   or the first word of a multiword company. Indexes are built once per pass.
 - Requisition identifiers take precedence and are scoped by company when available.
+  This includes numeric Workday requisitions shown after the role in an email
+  and at the end of the matching posting URL.
   Distinct roles at one employer require a unique role/requisition match. Ambiguous
   mail is retained without proposing a status.
 - Rules look for actual hiring decisions, excluding quoted replies, common

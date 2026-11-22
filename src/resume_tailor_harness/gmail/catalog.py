@@ -5,10 +5,11 @@ from datetime import datetime
 from hashlib import sha256
 import json
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlmodel import Session, col
 
 from resume_tailor_harness.gmail.match import ApplicationMatcher
+from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.tracking.tables import Application, Job
 
 
@@ -19,6 +20,7 @@ class MatchingJob:
     title: str | None
     url: str | None
     source_identity: str | None
+    criteria_json: dict | None
 
 
 @dataclass(frozen=True)
@@ -55,6 +57,7 @@ class ApplicationCatalog:
                 col(Job.title),
                 col(Job.url),
                 col(Job.source_identity),
+                func.json_extract(col(Job.criteria_json), "$.manual_details.application_url"),
             )
             .join(Job, col(Application.job_id) == col(Job.id))
             .where(col(Job.archived_at).is_(None))
@@ -63,11 +66,14 @@ class ApplicationCatalog:
         apps = {}
         jobs = []
         catalog = []
-        for app_id, job_id, status, submitted, company, title, url, source_id in rows:
+        for app_id, job_id, status, submitted, company, title, url, source_id, raw_apply_url in rows:
             assert app_id is not None
             apps[app_id] = MatchingApplication(app_id, job_id, status, submitted)
-            jobs.append(MatchingJob(job_id, company, title, url, source_id))
-            catalog.append((app_id, submitted, job_id, company, title, url, source_id))
+            apply_url = application_link(url, {"manual_details": {"application_url": raw_apply_url}})
+            # Keep only the matching input, not the job's full criteria payload.
+            matching_criteria = {"manual_details": {"application_url": apply_url}} if apply_url else None
+            jobs.append(MatchingJob(job_id, company, title, url, source_id, matching_criteria))
+            catalog.append((app_id, submitted, job_id, company, title, url, source_id, apply_url))
         revision = sha256(
             json.dumps(
                 [self.mode[0], catalog, self.mode[1]],

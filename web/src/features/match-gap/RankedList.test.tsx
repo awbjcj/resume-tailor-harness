@@ -29,6 +29,7 @@ const domains: DomainRow[] = [
         nice: 0,
         tech: 0,
         members: { Python: 3 },
+        groupingStatus: { state: "uncertain", reason: "invalid or incomplete model output", lastAttemptedAt: "2026-11-01T00:00:00Z" },
       },
       {
         key: "django",
@@ -62,6 +63,7 @@ it("discloses skills with independent selection and detail controls", async () =
     />,
   );
 
+  expect(screen.getByText("Hard skill")).toBeInTheDocument();
   expect(screen.getAllByText(/1 adjacent skill/).length).toBeGreaterThan(0);
   await userEvent.click(screen.getByRole("button", { name: /expand backend/i }));
   expect(screen.getByText("Ready")).toBeInTheDocument();
@@ -77,6 +79,9 @@ it("discloses skills with independent selection and detail controls", async () =
   );
   await changeLanguage("zh-CN");
   expect(await screen.findAllByText(/1 项相近技能/)).not.toHaveLength(0);
+  expect(screen.getByText("硬技能")).toBeInTheDocument();
+  expect(screen.getByText("已就绪")).toBeInTheDocument();
+  expect(screen.getByText("分组待确认：模型输出无效或不完整")).toBeInTheDocument();
 });
 
 it("does not allow selecting the synthetic undomaind group", () => {

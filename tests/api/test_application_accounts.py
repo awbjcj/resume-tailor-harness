@@ -143,6 +143,22 @@ def test_untrusted_sites_never_create_or_retrieve_credentials(setup, subtests):
             assert len(client.get("/api/application-accounts").json()["accounts"]) == 1
 
 
+def test_registration_uses_explicit_application_origin_not_posting_origin(setup):
+    app, client = setup
+    with Session(app.state.engine) as session:
+        job = session.get(Job, 1)
+        assert job is not None
+        job.url = "https://posting.example/jobs/1"
+        job.criteria_json = {"manual_details": {"application_url": URL}}
+        session.add(job)
+        session.commit()
+    enable(client)
+    rejected = prepare(client, browserUrl="https://posting.example/login")
+    assert rejected.json()["error"]["code"] == "LOGIN_SITE_UNTRUSTED"
+    accepted = prepare(client)
+    assert accepted.status_code == 200 and accepted.json()["action"] == "register"
+
+
 def test_scope_eligibility_stale_state_failure_and_user_repair(setup):
     app, client = setup
     enable(client)

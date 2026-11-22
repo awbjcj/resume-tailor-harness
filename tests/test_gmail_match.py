@@ -38,6 +38,45 @@ def test_no_match_returns_none():
     assert match_email_to_application(email, [_job(1, "Acme")]) is None
 
 
+def test_matching_catalog_tracks_manual_application_url_requisitions():
+    from sqlmodel import Session
+
+    from resume_tailor_harness.db import init_db, make_engine
+    from resume_tailor_harness.gmail.catalog import ApplicationCatalog
+    from resume_tailor_harness.tracking.tables import Application
+
+    engine = make_engine("sqlite://")
+    init_db(engine)
+    with Session(engine) as session:
+        job = Job(
+            source="manual", company="Acme", title="Engineer",
+            url="https://posting.example/jobs/1",
+            criteria_json={"manual_details": {"application_url": "https://apply.example/jobs/JR123456"}},
+        )
+        session.add(job)
+        session.commit()
+        session.refresh(job)
+        job_id = job.id
+        assert job_id is not None
+        session.add(Application(job_id=job_id, status="submitted"))
+        session.commit()
+        catalog = ApplicationCatalog("test", False)
+        catalog.refresh(session)
+        original = catalog.revision
+        first = EmailMessage("Acme HR", "acme.com", "JR123456 update", "")
+        match = catalog.matcher.match(first)
+        assert match is not None and match.id == job_id
+        job.criteria_json = {"manual_details": {"application_url": "https://apply.example/jobs/JR654321"}}
+        session.add(job)
+        session.commit()
+        catalog.refresh(session)
+        assert catalog.revision != original
+        assert catalog.matcher.match(first) is None
+        second = EmailMessage("Acme HR", "acme.com", "JR654321 update", "")
+        match = catalog.matcher.match(second)
+        assert match is not None and match.id == job_id
+
+
 def _nvidia_job(id_, requisition, title="Senior Applied AI Engineer"):
     return Job(
         id=id_,
@@ -59,6 +98,23 @@ def test_requisition_selects_correct_application_regardless_of_order():
     target = _nvidia_job(2, "JR2025254")
     assert match_email_to_application(email, [other, target]) == target
     assert match_email_to_application(email, [target, other]) == target
+    assert match_email_to_application(email, [other]) is None
+
+
+def test_numeric_workday_requisition_disqualifies_a_same_title_posting():
+    email = EmailMessage(
+        "Acme HR <hr@workday.acme.com>",
+        "workday.acme.com",
+        "Application update",
+        "Thank you for applying to our Engineer position, 7001002.",
+    )
+    other = Job(
+        id=1,
+        source="workday",
+        company="Acme",
+        title="Engineer",
+        url="https://acme.wd1.myworkdayjobs.com/Careers/job/Engineer_7001001-2",
+    )
     assert match_email_to_application(email, [other]) is None
 
 

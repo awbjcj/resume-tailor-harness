@@ -47,12 +47,15 @@ def test_fresh_page_after_commit_has_bounded_narrow_reads(count):
                 column not in catalog_sql
                 for column in (
                     "jd_text",
-                    "criteria_json",
                     "analysis_meta_json",
                     "fit_rationale",
                     "notes",
                 )
             )
+            # Extract the one matching scalar in SQLite; do not load the full
+            # potentially large criteria JSON into every page's catalog.
+            assert catalog_sql.count("jobs.criteria_json") == 1
+            assert "json_extract(jobs.criteria_json" in catalog_sql.lower()
             assert reader.stats["matched"] == count
             assert len(session.exec(select(Notification)).all()) == count
     finally:

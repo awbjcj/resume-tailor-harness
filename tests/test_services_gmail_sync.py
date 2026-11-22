@@ -57,6 +57,7 @@ class FakeGmailService:
         self.history_id = "1"
         self.mailbox = "test@example.com"
         self.history_pages: list[dict] = []
+        self.label_history_pages: list[dict] = []
         self.batch_sizes: list[int] = []
         self.profile_reads = 0
         self.history_reads = 0
@@ -77,12 +78,14 @@ class FakeGmailService:
         return self
 
     def list(self, **kwargs):
-        self.history_reads += 1
+        if kwargs["historyTypes"] == ["messageAdded"]:
+            self.history_reads += 1
+            pages = self.history_pages
+        else:
+            pages = self.label_history_pages
         index = int(kwargs.get("pageToken", "0"))
         return _FakeRequest(
-            self.history_pages[index]
-            if self.history_pages
-            else {"historyId": self.history_id}
+            pages[index] if pages else {"historyId": self.history_id}
         )
 
     def new_batch_http_request(self, callback):

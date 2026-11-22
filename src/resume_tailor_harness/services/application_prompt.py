@@ -11,6 +11,7 @@ from resume_tailor_harness.api.schemas.config import (
     SearchConfigDoc,
 )
 from resume_tailor_harness.models.profile import ProfileFacts
+from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.profile.store import load_facts
 from resume_tailor_harness.tracking.tables import Job
 
@@ -574,7 +575,7 @@ def build_application_prompt(
                 [
                     ("Role", job.title),
                     ("Company", job.company),
-                    ("Application link", job.url),
+                    ("Application link", application_link(job.url, job.criteria_json)),
                     ("Location", job.location),
                 ]
             ),

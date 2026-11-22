@@ -125,6 +125,31 @@ def test_connect_callback_status_disconnect_cycle(client, monkeypatch):
     assert gone.json()["connected"] is False
 
 
+def test_automation_is_off_until_explicitly_enabled_and_disconnect_revokes_it(client, monkeypatch):
+    from resume_tailor_harness.gmail.errors import GmailNotConnected
+    from tests.test_services_gmail_sync import FakeGmailService
+
+    endpoint = "/api/gmail/automation"
+    enable = {"autoApplyRejections": True}
+    assert client.get("/api/gmail/status").json()["autoApplyRejections"] is False
+
+    def unconnected(_):
+        raise GmailNotConnected("Connect Gmail first")
+
+    monkeypatch.setattr(gmail_auth, "build_service", unconnected)
+    assert client.put(endpoint, json=enable).json()["error"]["code"] == "GMAIL_NOT_CONNECTED"
+    assert client.put(endpoint, json={"autoApplyRejections": "false"}).status_code == 422
+
+    monkeypatch.setattr(gmail_auth, "build_service", lambda _: FakeGmailService([]))
+    monkeypatch.setattr(
+        gmail_auth, "load_credentials", lambda _: SimpleNamespace(scopes=[], token=None)
+    )
+    assert client.put(endpoint, json=enable).json() == enable
+    assert client.get("/api/gmail/status").json()["autoApplyRejections"] is True
+    assert client.delete("/api/gmail/token").status_code == 200
+    assert client.get("/api/gmail/status").json()["autoApplyRejections"] is False
+
+
 def test_callback_rejects_forged_state(client, monkeypatch):
     _patch_flow(monkeypatch)
     response = client.get(

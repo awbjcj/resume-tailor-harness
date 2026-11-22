@@ -1,6 +1,7 @@
 import { isProvisionalSkill } from "./aggregate";
 import { useTranslation } from "react-i18next";
-import { localizeDisplayValue } from "@/i18n/dynamic-labels";
+import { localizeGroupingStatus } from "@/i18n/dynamic-labels";
+import "@/i18n/roadmap-copy";
 import { BriefcaseBusinessIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -24,12 +25,6 @@ type Job = {
   seniority?: string | null;
 };
 
-function stateLabel(state: SuggestionState, language: string | undefined): string {
-  if (state === "none") return "Not generated";
-  if (state === "not_found") return "Unavailable";
-  return localizeDisplayValue(state[0].toUpperCase() + state.slice(1), language);
-}
-
 export function SkillModal({
   skill,
   domainLabel,
@@ -43,7 +38,7 @@ export function SkillModal({
   jobs: Job[];
   onClose: () => void;
 }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const open = skill !== null;
   const { data: envelope, isLoading, isError, refetch } = useSuggestion(
     "skill",
@@ -82,7 +77,7 @@ export function SkillModal({
                       ? "Adjacent"
                       : "Gap"}
                 </Badge>
-                <Badge variant="outline">{stateLabel(state, i18n.resolvedLanguage)}</Badge>
+                <Badge variant="outline">{t(`roadmaps.suggestionStatus.${state}`)}</Badge>
               </div>
               <DialogTitle className="text-2xl font-semibold sm:text-3xl">
                 {skill.skill}
@@ -94,7 +89,7 @@ export function SkillModal({
                 <p role="status" className="mt-2 text-sm text-muted-foreground">
                   {isProvisionalSkill(skill)
                     ? "Provisional category placement; the specific domain still needs confirmation."
-                    : `Grouping ${skill.groupingStatus?.state}: ${skill.groupingStatus?.reason}`}
+                    : skill.groupingStatus && localizeGroupingStatus(skill.groupingStatus, i18n.resolvedLanguage)}
                 </p>
               )}
             </DialogHeader>

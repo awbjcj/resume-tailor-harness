@@ -119,9 +119,12 @@ def edit_catalog(
         if kind == "group":
             ledger.removed_groups.append(key)
             ledger.groups.pop(key, None)
-            ledger.corrections = {
-                k: v for k, v in ledger.corrections.items() if v.group != key
-            }
+            for correction in ledger.corrections.values():
+                if correction.group == key:
+                    correction.group = "other"
+            for token, group in ledger.automatic.items():
+                if group == key and token not in ledger.corrections:
+                    ledger.corrections[token] = GroupCorrection(group="other")
             ledger.automatic = {k: v for k, v in ledger.automatic.items() if v != key}
         else:
             for slug, definition in ledger.group_catalog().items():

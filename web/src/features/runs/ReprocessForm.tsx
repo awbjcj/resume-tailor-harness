@@ -19,7 +19,7 @@ export default function ReprocessForm({ onStarted }: { onStarted: () => void }) 
   return <DialogContent>
     <DialogHeader>
       <DialogTitle>Reprocess</DialogTitle>
-      <DialogDescription>Re-run the full funnel for one scope. Fit scores and statuses may change. Jobs with progress are not changed.</DialogDescription>
+      <DialogDescription>Run the full screening process again for the selected scope. Fit scores and statuses may change. Jobs with progress are not changed.</DialogDescription>
     </DialogHeader>
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>Scope</Label>
@@ -31,6 +31,6 @@ export default function ReprocessForm({ onStarted }: { onStarted: () => void }) 
     <Button onClick={async () => {
       const ok = await launch("reprocess", () => launchers.reprocess([scope]));
       if (ok) onStarted();
-    }}>Start reprocess</Button>
+    }}>Start reprocessing</Button>
   </DialogContent>;
 }

@@ -572,6 +572,13 @@ def load_matrix(
         return None
     if facts is not None and matrix.facts_sha256 != facts_sha256(facts):
         return None
+    if taxonomy is not None and not matrix.taxonomy_revision and facts is not None:
+        # A legacy cache carries no semantic revision. Recompute from the
+        # current verified inputs rather than using its stale rows or dropping
+        # matching context until the next profile build.
+        rebuilt = build_matrix(facts, taxonomy)
+        decorate_matrix_groups(rebuilt, Path(path).parent, taxonomy)
+        return rebuilt
     if taxonomy is not None and matrix.taxonomy_revision != taxonomy.semantic_revision:
         return None
     return matrix

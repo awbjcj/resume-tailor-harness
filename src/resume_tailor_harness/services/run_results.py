@@ -269,10 +269,10 @@ def completion_results(
                     "render": "resumes",
                     "coverLetter": "coverLetters",
                     "coverLetterRevise": "coverLetters",
-                    "companyIntelligence": "job",
-                    "hiringContactIntelligence": "job",
+                    "companyIntelligence": "research",
+                    "hiringContactIntelligence": "research",
                     "h1bSponsorship": "sponsorship",
-                    "rolePreparation": "interview",
+                    "rolePreparation": "research",
                 }.get(row.kind)
                 if tab:
                     output.result_href = (

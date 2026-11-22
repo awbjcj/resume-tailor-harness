@@ -1774,6 +1774,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/gmail/automation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Gmail Automation */
+        put: operations["gmail_automation_api_gmail_automation_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/gmail/connect": {
         parameters: {
             query?: never;
@@ -2619,6 +2636,40 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/learning-roadmaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Learning Roadmaps */
+        get: operations["get_learning_roadmaps_api_learning_roadmaps_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/learning-roadmaps/{suggestion_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Learning Roadmap */
+        patch: operations["patch_learning_roadmap_api_learning_roadmaps__suggestion_id__patch"];
         trace?: never;
     };
     "/api/mailboxes": {
@@ -8009,6 +8060,11 @@ export interface components {
              */
             uploadedOverride: boolean;
         };
+        /** GmailAutomationIn */
+        GmailAutomationIn: {
+            /** Autoapplyrejections */
+            autoApplyRejections: boolean;
+        };
         /** GmailConnectOut */
         GmailConnectOut: {
             /** Authurl */
@@ -8016,6 +8072,11 @@ export interface components {
         };
         /** GmailStatusOut */
         GmailStatusOut: {
+            /**
+             * Autoapplyrejections
+             * @default false
+             */
+            autoApplyRejections: boolean;
             /**
              * Clientsource
              * @default platform
@@ -8098,6 +8159,8 @@ export interface components {
             certifiedCount: number | null;
             /** Confidence */
             confidence: number;
+            /** Countbasis */
+            countBasis?: "fiscal_year_to_date_determinations" | null;
             /** Dataversion */
             dataVersion: string | null;
             /** Deniedcount */
@@ -8813,6 +8876,32 @@ export interface components {
             synthesized: boolean;
         } & {
             [key: string]: unknown;
+        };
+        /** LearningRoadmapOut */
+        LearningRoadmapOut: {
+            /** Available */
+            available: boolean;
+            envelope: components["schemas"]["SuggestionEnvelope"];
+            /** Id */
+            id: number;
+            /** Label */
+            label: string;
+            /**
+             * Status
+             * @default planned
+             * @enum {string}
+             */
+            status: "planned" | "in_progress" | "completed" | "archived";
+            /** Supersededbyid */
+            supersededById?: number | null;
+        };
+        /** LearningRoadmapUpdate */
+        LearningRoadmapUpdate: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "planned" | "in_progress" | "completed" | "archived";
         };
         /** LengthBudget */
         LengthBudget: {
@@ -12031,6 +12120,18 @@ export interface components {
              */
             stale: boolean;
             suggestion?: components["schemas"]["SuggestionOut"] | null;
+        };
+        /** SuggestionGenerateRequest */
+        SuggestionGenerateRequest: {
+            /** Expectedroadmapid */
+            expectedRoadmapId?: number | null;
+            /** Key */
+            key: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "skill" | "domain";
         };
         /** SuggestionOut */
         SuggestionOut: {
@@ -17701,6 +17802,41 @@ export interface operations {
             };
         };
     };
+    gmail_automation_api_gmail_automation_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GmailAutomationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GmailAutomationIn"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     gmail_connect_api_gmail_connect_get: {
         parameters: {
             query?: never;
@@ -19793,6 +19929,72 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OverrideRevisionOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_learning_roadmaps_api_learning_roadmaps_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LearningRoadmapOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_learning_roadmap_api_learning_roadmaps__suggestion_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                suggestion_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LearningRoadmapUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -24571,7 +24773,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SuggestionTarget"];
+                "application/json": components["schemas"]["SuggestionGenerateRequest"];
             };
         };
         responses: {

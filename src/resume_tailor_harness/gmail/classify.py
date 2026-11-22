@@ -23,7 +23,8 @@ _RULES = {
         r"\b(?:not moving forward|decided not to (?:move forward|proceed|pursue)|"
         r"(?:will not|won't|not) (?:be )?(?:moving forward|proceed(?:ing)?|continu(?:e|ing))|"
         r"(?:you have |you were |you are )?not (?:been )?selected|"
-        r"(?:moving forward with|(?:have )?(?:chosen|chose|selected)) (?:other candidates|another candidate)|"
+        r"(?:moving forward with|we(?: have|'ve)? decided to move forward with|"
+        r"(?:have )?(?:chosen|chose|selected)) (?:other candidates|another candidate)|"
         r"(?:unable to|not able to|cannot|can't) (?:extend (?:you )?an offer|offer you (?:the|this) (?:role|position))|"
         r"no longer under consideration|position has been filled)\b"
     ),
@@ -41,7 +42,7 @@ _NEGATED_ACTION = re.compile(
     r"\b(?:unable to|not able to|cannot|can't|do not|don't|no longer|not invited)\b"
 )
 _NON_DECISION = re.compile(
-    r"\b(?:if (?:you are |you'?re )?(?:selected|shortlisted)|if we decide|"
+    r"\b(?:if (?:you are |you'?re )?(?:selected|shortlisted)|if we(?: have|'ve)? decided?\b|"
     r"interview tips|sample offer|newsletter|no offer has been made|offer .{0,15}not ready|"
     r"still reviewing|application (?:has been |was )?received|received your application)\b"
 )
@@ -75,6 +76,22 @@ def _rule_label(email: EmailMessage) -> str:
     }:
         labels.add("interview")
     return next(iter(labels)) if len(labels) == 1 else "none"
+
+
+_CONFIRMED_REJECTION = re.compile(
+    r"^(?:unfortunately,? )?we(?: have|'ve)? decided "
+    r"(?:not to (?:move forward|proceed) with your (?:application|candidacy)|"
+    r"to move forward with (?:other candidates|another candidate))\b"
+)
+_CONDITIONAL = re.compile(r"\b(?:if|unless|whether)\b")
+
+
+def confirmed_rejection(email: EmailMessage) -> bool:
+    """The narrower deterministic evidence allowed to change a status."""
+    return bool(email.body) and _rule_label(email) == "rejection" and any(
+        _CONFIRMED_REJECTION.match(sentence) and not _CONDITIONAL.search(sentence)
+        for sentence in re.split(r"[.!?]+\s+", _normalized(_content(email)))
+    )
 
 
 def _llm_label(email: EmailMessage, llm: Runner) -> str:

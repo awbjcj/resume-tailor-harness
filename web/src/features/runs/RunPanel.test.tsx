@@ -58,7 +58,7 @@ describe("RunPanel", () => {
       etaText: null,
     });
     render(<RunPanel />);
-    expect(screen.getByRole("progressbar", { name: /suggestion progress queued/i })).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: /learning advice progress queued/i })).toBeInTheDocument();
   });
 
   it("shows ETA, counts, and a cancel button for a running op", () => {
@@ -110,6 +110,24 @@ describe("RunPanel", () => {
 
     expect(screen.getByText(/个人资料生成 · 正在提取并合并来源文档的内容/)).toBeInTheDocument();
     expect(screen.queryByText(/PROFILE-BUILD|EXTRACTING AND MERGING SOURCE DOCUMENTS/)).not.toBeInTheDocument();
+  });
+
+  it("names learning advice runs and their research phase in Chinese", async () => {
+    await changeLanguage("zh-CN");
+    useRunStore.getState().upsert({
+      runId: "suggestion",
+      kind: "suggestion",
+      status: "running",
+      percent: 0,
+      phase: "Researching Kubernetes",
+      current: 0,
+      total: 1,
+      etaText: null,
+    });
+    render(<RunPanel />);
+
+    expect(screen.getByText(/学习建议 · 正在调研 Kubernetes/)).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: /学习建议进度/ })).toBeInTheDocument();
   });
 
   it("localizes a running ETA in Chinese", async () => {

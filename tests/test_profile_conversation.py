@@ -496,6 +496,126 @@ def test_conversational_profile_rebuild_needs_no_primary_resume(tmp_path, monkey
     assert _facts(tmp_path).skills["Languages"][0].name == "Python"
 
 
+def test_source_profile_correction_does_not_authorize_blank_rebuild(profile):
+    from resume_tailor_harness.profile.conversation import can_rebuild_without_resume
+    from resume_tailor_harness.services.profile_build import run_corpus_build
+
+    _apply(profile, _stage(profile, [_change(entity="profile", operation="update", values={"summary": "Updated"})]))
+    before = (profile / "facts.json").read_bytes()
+    assert not can_rebuild_without_resume(profile)
+    with pytest.raises(ValueError, match="primary resume"):
+        run_corpus_build(profile_dir=profile, facts_out=profile / "facts.json", github_username=None)
+    assert (profile / "facts.json").read_bytes() == before
+
+
+def test_coach_note_can_be_approved_and_rebuilt_without_a_resume(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    from resume_tailor_harness.models.profile import Project
+    from resume_tailor_harness.profile.coach_store import CoachDraftNote
+    from resume_tailor_harness.profile.corpus import load_manifest
+    from resume_tailor_harness.profile.fragments import FragmentResult
+    from resume_tailor_harness.profile.publication import publication_status
+    from resume_tailor_harness.profile.synthesis import (
+        ClaimVerdict, ClaimVerdicts, SynthesizedClaim, SynthesizedEntry, SynthesizedFragment,
+    )
+    from resume_tailor_harness.services.profile_build import run_corpus_build
+    from resume_tailor_harness.services.profile_coach import approve_draft
+    from resume_tailor_harness.services.profile_skills import add_alias, delete_skill, update_skill
+
+    _apply(tmp_path, _stage(tmp_path, [_change(entity="profile", operation="create", values={"contact": {"name": "Ada"}})]))
+    quote = "I built the platform using Python and Rust."
+    apply_turn_delta(
+        tmp_path, "s1", user_text=quote,
+        coach_turn=CoachTurnRecord(role="coach", kind="draft_note", text="Draft", topic_id="t1"),
+        new_topics=[], skipped_topic_ids=[],
+        draft=CoachDraftNote(topic_id="t1", title="Platform", summary="Built the platform.", quotes=[quote]),
+    )
+    doc_id = approve_draft(tmp_path, "s1", "t1", title="Platform", summary="Built the platform.", quotes=[quote])
+    doc = next(doc for doc in load_manifest(tmp_path).docs if doc.id == doc_id)
+    assert doc.mode == "synthesis" and not doc.primary
+    class FakeAgent:
+        def __init__(self, content):
+            self.content = content
+
+        async def arun(self, _prompt):
+            return SimpleNamespace(content=self.content)
+
+    fragment = SynthesizedFragment(
+        entries=[
+            SynthesizedEntry(kind="project", title="Platform", claims=[
+                SynthesizedClaim(text="Built the platform.", support=[quote]),
+                SynthesizedClaim(text="Founded the company.", support=[quote]),
+            ]),
+            SynthesizedEntry(kind="skills", category="hard", claims=[
+                SynthesizedClaim(text="Python", support=[quote]),
+                SynthesizedClaim(text="Rust", support=[quote]),
+            ]),
+        ],
+    )
+    verdicts = ClaimVerdicts(verdicts=[
+        ClaimVerdict(index=0, verdict="supported"),
+        ClaimVerdict(index=1, verdict="unsupported"),
+        ClaimVerdict(index=2, verdict="supported"),
+        ClaimVerdict(index=3, verdict="supported"),
+    ])
+    monkeypatch.setattr("resume_tailor_harness.profile.synthesis.build_synthesis_agent", lambda: FakeAgent(fragment))
+    monkeypatch.setattr("resume_tailor_harness.profile.synthesis.build_entailment_agent", lambda: FakeAgent(verdicts))
+    result = run_corpus_build(profile_dir=tmp_path, facts_out=tmp_path / "facts.json", github_username=None)
+    assert result["docStatus"][doc_id] == "extracted"
+    assert _facts(tmp_path).contact.name == "Ada"
+    assert any(project.name == "Platform" for project in _facts(tmp_path).projects)
+    assert any("Founded the company" in drop for drop in result["verificationDrops"])
+    assert "Founded the company" not in (tmp_path / "facts.json").read_text(encoding="utf-8")
+    assert publication_status(tmp_path).freshness == "current"
+
+    delete_skill(tmp_path, "python")
+    update_skill(tmp_path, "rust", "Rust Systems", [], "hard")
+    renamed = next(skill for bucket in _facts(tmp_path).skills.values() for skill in bucket if skill.name == "Rust Systems")
+    add_alias(tmp_path, renamed.id, "Rustlang")
+    rebuilt = run_corpus_build(profile_dir=tmp_path, facts_out=tmp_path / "facts.json", github_username=None)
+    skills = [skill for bucket in _facts(tmp_path).skills.values() for skill in bucket]
+    assert {skill.name for skill in skills} == {"Rust Systems"}
+    assert "Rustlang" in skills[0].aliases
+    assert not any("could not be reattached" in warning for warning in rebuilt["warnings"])
+
+    before = (tmp_path / "facts.json").read_bytes()
+    publication_before = (tmp_path / "publication.json").read_bytes()
+    monkeypatch.setattr(
+        "resume_tailor_harness.profile.fragments.extract_synthesis_fragments",
+        lambda *_: FragmentResult(status={doc_id: "failed: provider unavailable"}),
+    )
+    with pytest.raises(ValueError, match="could not be verified"):
+        run_corpus_build(profile_dir=tmp_path, facts_out=tmp_path / "facts.json", github_username=None)
+    assert (tmp_path / "facts.json").read_bytes() == before
+    assert (tmp_path / "publication.json").read_bytes() == publication_before
+
+    def concurrent_edit(*_):
+        updated = _facts(tmp_path).model_copy(deep=True)
+        updated.contact.name = "Concurrent edit"
+        save_facts(updated, tmp_path / "facts.json")
+        return FragmentResult(
+            fragments={doc_id: ProfileFacts(contact=Contact(name=""), projects=[Project(id="project", name="Platform", source_ref=doc_id)])},
+            status={doc_id: "extracted"},
+        )
+
+    monkeypatch.setattr("resume_tailor_harness.profile.fragments.extract_synthesis_fragments", concurrent_edit)
+    with pytest.raises(ValueError, match="changed during refresh"):
+        run_corpus_build(profile_dir=tmp_path, facts_out=tmp_path / "facts.json", github_username=None)
+    assert _facts(tmp_path).contact.name == "Concurrent edit"
+    assert (tmp_path / "publication.json").read_bytes() == publication_before
+
+
+def test_unrelated_direct_add_does_not_restore_conversation_deleted_skill(profile):
+    from resume_tailor_harness.services.profile_skills import add_skill
+
+    added = add_skill(profile, "Rust", "hard")
+    _apply(profile, _stage(profile, [_change(entity="skill", operation="delete", target_id=added.id)]))
+    add_skill(profile, "Go", "hard")
+    assert {s.name for bucket in _facts(profile).skills.values() for s in bucket} >= {"Go"}
+    assert all(s.name != "Rust" for bucket in _facts(profile).skills.values() for s in bucket)
+
+
 def test_failed_commit_rolls_back_facts_ledger_matrix_and_draft(profile, monkeypatch):
     draft = _stage(
         profile, [_change(entity="skill", operation="delete", target_id="sk1")]

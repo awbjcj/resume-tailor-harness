@@ -58,6 +58,10 @@ class SuggestionTarget(CamelModel):
         return value.strip() if isinstance(value, str) else value
 
 
+class SuggestionGenerateRequest(SuggestionTarget):
+    expected_roadmap_id: int | None = Field(default=None, gt=0)
+
+
 class SuggestionRunsRequest(CamelModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -85,3 +89,20 @@ SuggestionRunResultOut = Annotated[
 
 class SuggestionRunsOut(CamelModel):
     results: list[SuggestionRunResultOut]
+
+
+LearningStatus = Literal["planned", "in_progress", "completed", "archived"]
+
+
+class LearningRoadmapOut(CamelModel):
+    id: int
+    label: str
+    status: LearningStatus = "planned"
+    available: bool
+    superseded_by_id: int | None = None
+    envelope: SuggestionEnvelope
+
+
+class LearningRoadmapUpdate(CamelModel):
+    model_config = ConfigDict(extra="forbid")
+    status: LearningStatus

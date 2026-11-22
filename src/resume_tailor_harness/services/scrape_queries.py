@@ -16,7 +16,11 @@ from resume_tailor_harness.discovery.scraper.contracts import (
     JobFacts,
     Observation,
 )
-from resume_tailor_harness.discovery.scraper.store import ScrapeStore
+from resume_tailor_harness.discovery.scraper.store import (
+    CORRECTION_REVISION_MARKER,
+    SAVED_CORRECTION_CONFLICT,
+    ScrapeStore,
+)
 from resume_tailor_harness.discovery.scraper.tables import (
     ScrapeObservationRow,
     ScrapeOverrideRow,
@@ -78,15 +82,26 @@ def job_observations(session: Session, job_id: int) -> list[SourceObservationVie
     for row in rows:
         item = Observation.model_validate_json(row.payload)
         effective = store.effective_facts(item)
-        issues = [
-            issue
-            for issue in item.issues
-            if issue.kind != "conflict"
-            or (
-                issue.field is not None
-                and getattr(item.facts, issue.field) != getattr(effective, issue.field)
-            )
-        ]
+        issues = []
+        for issue in item.issues:
+            if issue.kind != "conflict" or not issue.field:
+                issues.append(issue)
+                continue
+            prefix, marker, revision = issue.message.partition(CORRECTION_REVISION_MARKER)
+            if prefix != SAVED_CORRECTION_CONFLICT:
+                issues.append(issue)
+                continue
+            if marker and revision.endswith("]") and revision[:-1].isdigit():
+                current = session.get(ScrapeOverrideRow, (item.job_key, issue.field)) if item.job_key else None
+                if current is not None and not current.removed and current.revision == int(revision[:-1]):
+                    issues.append(issue.model_copy(update={"message": prefix}))
+            elif issue.message == SAVED_CORRECTION_CONFLICT:
+                # Legacy observations have no revision provenance. Preserve
+                # their previous conservative comparison behavior.
+                if getattr(item.facts, issue.field) != getattr(effective, issue.field):
+                    issues.append(issue)
+            else:
+                issues.append(issue)
         result.append(
             SourceObservationView(
                 id=item.id,

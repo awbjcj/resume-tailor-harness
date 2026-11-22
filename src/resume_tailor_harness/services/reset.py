@@ -16,10 +16,11 @@ from resume_tailor_harness.workspace_agent.tables import (
     WorkspaceActionReceipt,
 )
 from resume_tailor_harness.tenancy.context import current_context
-from resume_tailor_harness.gmail.tables import GmailReceipt, GmailSyncState
+from resume_tailor_harness.gmail.tables import GmailAutomationPreference, GmailReceipt, GmailSyncState
 from resume_tailor_harness.tenancy.workspace import WorkspacePaths
 from resume_tailor_harness.tracking.tables import (
     Application,
+    ApplicationEvent,
     CoverLetter,
     ClearedRunHistory,
     Job,
@@ -29,6 +30,7 @@ from resume_tailor_harness.tracking.tables import (
     RunCompletionTarget,
     RunOperationLog,
     SavedBoardView,
+    LearningRoadmapProgress,
     SkillSuggestion,
 )
 
@@ -45,19 +47,25 @@ _PIPELINE_TABLES: tuple[type[SQLModel], ...] = (
     WorkspaceNote,
     GmailReceipt,
     GmailSyncState,
+    GmailAutomationPreference,
     RunOperationLog,
     ClearedRunHistory,
     RunCompletionTarget,
     RunCompletion,
     SavedBoardView,
     Notification,
+    ApplicationEvent,
     Application,
     CoverLetter,
     ResumeVersion,
+    LearningRoadmapProgress,
     SkillSuggestion,
     Job,
 )
-_PROFILE_TABLES: tuple[type[SQLModel], ...] = (SkillSuggestion,)
+_PROFILE_TABLES: tuple[type[SQLModel], ...] = (
+    LearningRoadmapProgress,
+    SkillSuggestion,
+)
 _PROFILE_DIRECTORIES = ("fragments",)
 # The source manifest and its documents are user-owned intake, not derived
 # profile output. Account-level resets preserve both; users remove/reset sources

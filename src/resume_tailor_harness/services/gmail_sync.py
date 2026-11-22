@@ -1,7 +1,7 @@
 """One bounded, resumable pass: discover changes → cache evidence → propose updates.
 
 Shared by the manual POST /api/gmail/sync run and the scheduler tick, so
-the two can never drift. Never auto-applies a status change.
+the two share the same proposal and opt-in automation policy.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from sqlmodel import select
 from resume_tailor_harness.config import get_settings
 from resume_tailor_harness.db import get_session
 from resume_tailor_harness.gmail.auth import build_service
+from resume_tailor_harness.gmail.automation import apply_confirmed_rejections
 from resume_tailor_harness.gmail.classify import (
     build_classifier_llm,
     classifier_available,
@@ -26,7 +27,7 @@ from resume_tailor_harness.gmail.classify import (
 )
 from resume_tailor_harness.gmail.errors import GmailApiError
 from resume_tailor_harness.gmail.processing import MessageProcessor
-from resume_tailor_harness.gmail.scan import LANES, MailboxScanner
+from resume_tailor_harness.gmail.scan import HISTORY_TYPES, LANES, MailboxScanner
 from resume_tailor_harness.llm_runner import Runner
 from resume_tailor_harness.tracking.tables import Notification
 
@@ -126,37 +127,44 @@ def _run_sync(engine, reporter, service, llm, *, review_cleared: bool = False) -
         stale = processor.stale_ids(page_size)
         for page in range(settings.gmail_sync_max_pages):
             reporter.checkpoint()
-            if page == 0 and stale:
-                processor.process(stale, recruiting=False)
-                session.commit()
+            lane = scanner.next_lane(cached=bool(stale))
+            if lane is None:
+                break
+            if lane == "cached":
+                ids, stale = stale, []
             else:
-                active = [lane for lane in LANES if scanner.has_work(lane)]
-                if not active:
-                    break
-                lane = active[page % len(active)]
                 ids = scanner.take(lane, page_size)
-                processor.process(
-                    ids, recruiting=lane != "inbox", refresh=lane == "history"
-                )
-                scanner.complete(lane, len(ids))
-                session.commit()
+            processor.process(
+                ids,
+                recruiting=lane not in ("inbox", "cached"),
+                refresh=lane in HISTORY_TYPES,
+            )
+            scanner.complete(lane, len(ids))
+            session.commit()
             reporter.step(
                 page + 1,
                 label=f"Processed {processor.stats['processed']} emails; reused {processor.stats['cached']} cached results",
+            )
+        auto_applied = 0
+        # Restored or backfilled mail may contain a newer decision even when
+        # the arrival cursor is current.
+        discovery_pending = any(scanner.has_work(lane) for lane in LANES)
+        if not discovery_pending:
+            reporter.checkpoint()
+            auto_applied = apply_confirmed_rejections(
+                session, scanner.account, processor.catalog
             )
         if review_cleared:
             reporter.checkpoint()
             processor.restore_cleared_proposals()
             session.commit()
-        has_more = any(scanner.has_work(lane) for lane in LANES) or bool(
-            processor.stale_ids(1)
-        )
+        has_more = discovery_pending or bool(processor.stale_ids(1))
         pending = session.exec(
             select(func.count())
             .select_from(Notification)
             .where(Notification.state == "pending")
         ).one()
-        stats = {**processor.stats, "ai_calls": classifier.calls}
+        stats = {**processor.stats, "ai_calls": classifier.calls, "auto_applied": auto_applied}
     if has_more:
         reporter.step(
             1,

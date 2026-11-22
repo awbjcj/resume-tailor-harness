@@ -179,3 +179,30 @@ describe("MatchGapContainer", () => {
     expect((await axe(container)).violations).toEqual([]);
   });
 });
+
+
+it.each(["map", "outline"])("opens saved second-level domain advice from %s using the domain identity", async (view) => {
+  server.use(
+    http.get("/api/match-gap", () => HttpResponse.json(populated)),
+    http.get("/api/suggestions", ({ request }) => {
+      const params = new URL(request.url).searchParams;
+      expect(params.get("kind")).toBe("domain");
+      expect(params.get("key")).toBe("infra");
+      return HttpResponse.json({ stale: false, suggestion: {
+        kind: "domain", key: "infra", bridge: "Build on your infrastructure experience.",
+        repos: [], resources: [], citations: [], project: null,
+        generatedAt: "2026-06-27T12:00:00Z",
+      } });
+    }),
+  );
+  wrap(<MatchGapContainer />);
+  await screen.findByRole("heading", { name: "Match / Gap" });
+  if (view === "map") {
+    await userEvent.click(screen.getByRole("button", { name: "Explore Cloud & Infrastructure" }));
+    await userEvent.click(screen.getByRole("button", { name: "Explore Cloud / Infrastructure" }));
+  } else {
+    await userEvent.click(screen.getByRole("tab", { name: "Outline" }));
+  }
+  await userEvent.click(screen.getByRole("button", { name: "View domain roadmap" }));
+  expect(await screen.findByText("Build on your infrastructure experience.")).toBeInTheDocument();
+});

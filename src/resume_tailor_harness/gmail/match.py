@@ -3,8 +3,18 @@ from html import unescape
 from urllib.parse import unquote, parse_qs, urlsplit
 from typing import Protocol
 
+from resume_tailor_harness.discovery.source_resolution.catalog import BOARD_FAMILIES
+from resume_tailor_harness.discovery.source_resolution.identity import registrable_domain
 from resume_tailor_harness.gmail.client import EmailMessage, authored_text
+from resume_tailor_harness.models.manual_job import application_link
 from resume_tailor_harness.tracking.tables import Job
+
+
+_SHARED_BOARD_DOMAINS = frozenset(
+    registrable_domain(f"https://{host}")
+    for family in BOARD_FAMILIES
+    for host in family.search_hosts
+)
 
 
 class MatchableJob(Protocol):
@@ -18,6 +28,8 @@ class MatchableJob(Protocol):
     def url(self) -> str | None: ...
     @property
     def source_identity(self) -> str | None: ...
+    @property
+    def criteria_json(self) -> dict | None: ...
 
 
 def _text(value: str) -> str:
@@ -47,20 +59,28 @@ def _requisitions(text: str) -> set[str]:
             re.I,
         )
     )
+    # Some Workday templates put the numeric requisition after the role.
+    refs.update(
+        re.findall(r"\b(?:position|role)\s*,\s*(\d{4,})(?=\s*(?:[.!?]|$))", text, re.I)
+    )
     return refs
 
 
 def _job_requisitions(job: MatchableJob) -> set[str]:
-    refs = _requisitions(f"{job.url or ''} {job.source_identity or ''}")
-    url = urlsplit(job.url or "")
-    for key, values in parse_qs(url.query).items():
-        if key.lower() in {"gh_jid", "jobid", "job_id", "requisitionid"}:
-            refs.update(value for value in values if value.isdigit())
-    refs.update(
-        re.findall(
-            r"(?:/|:)(\d{4,})(?:/|$)", f"{url.path} {job.source_identity or ''}".strip()
-        )
-    )
+    urls = {job.url or "", application_link(job.url, job.criteria_json) or ""}
+    refs = _requisitions(f"{' '.join(urls)} {job.source_identity or ''}")
+    for value in urls:
+        url = urlsplit(value)
+        for key, values in parse_qs(url.query).items():
+            if key.lower() in {"gh_jid", "jobid", "job_id", "requisitionid"}:
+                refs.update(value for value in values if value.isdigit())
+        refs.update(re.findall(r"(?:/|:)(\d{4,})(?:/|$)", url.path))
+        if (url.hostname or "").endswith(".myworkdayjobs.com"):
+            # A posting may add a suffix like "-2" to the same requisition.
+            suffix = re.search(r"_(\d{4,})(?:-\d+)?/?$", unquote(url.path))
+            if suffix:
+                refs.add(suffix[1])
+    refs.update(re.findall(r"(?:/|:)(\d{4,})(?:/|$)", job.source_identity or ""))
     return refs
 
 
@@ -118,6 +138,29 @@ class ApplicationMatcher[JobT: MatchableJob]:
                 if words[pos : pos + len(name)] == name:
                     found.add(index)
         return found
+
+    def confirms_requisition(self, email: EmailMessage, job_id: int) -> bool:
+        if not email.sender_verified:
+            return False
+        sender_url = f"https://{email.sender_domain}"
+        domain = registrable_domain(sender_url, include_private=True)
+        if "." not in domain or registrable_domain(sender_url) in _SHARED_BOARD_DOMAINS:
+            return False
+        refs = _requisitions(_message_text(email))
+        if len(refs) != 1:
+            return False
+        employer = domain.partition(".")[0]
+        matches = self.refs.get(next(iter(refs)), set()) & self.domains.get(employer, set())
+        if len(matches) != 1:
+            return False
+        job = self.jobs[next(iter(matches))]
+        # A company name is corroborating evidence. The complete domain must
+        # also be present on this tracked posting or its application link.
+        return job.id == job_id and any(
+            registrable_domain(url, include_private=True) == domain
+            for url in (job.url, application_link(job.url, job.criteria_json))
+            if url
+        )
 
     def match(self, email: EmailMessage) -> JobT | None:
         candidates = self._companies(email)
