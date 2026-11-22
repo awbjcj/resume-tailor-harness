@@ -39,7 +39,7 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   The web callback authenticates via a signed link-token state, never the
   session cookie. An in-process scheduler (`gmail/scheduler.py`, every
   `gmail_sync_interval_hours`) runs `services/gmail_sync.run_gmail_sync`
-  per connected user — sync proposals land in the notification bell by default. `services/email_writer.py` grounds drafts in facts.json
+  per connected user. Sync proposals appear under **Application notifications** on the dashboard. `services/email_writer.py` grounds drafts in facts.json
   only (human gate, no LLM fact-check round) and saves them as in-thread
   Gmail drafts via `EmailDraft` rows; drafts never gate job deletion but
   cascade on delete. `gmail.send` is permanently out of scope.
