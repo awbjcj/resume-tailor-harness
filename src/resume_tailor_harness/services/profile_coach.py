@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from resume_tailor_harness.sessions.context import bounded_sections
+
 
 import logging
 import uuid
@@ -308,10 +310,13 @@ def run_opening_turn(
         if seeded
         else ""
     )
-    prompt = (
-        f"{_overview(root, engine)}\n\n"
-        f"{seeded_context}\n\n"
-        "This is the opening turn. Propose the highest-value bounded agenda and ask the first question."
+    prompt = bounded_sections(
+        [
+            _overview(root, engine),
+            seeded_context,
+            "This is the opening turn. Propose the highest-value bounded agenda and ask the first question.",
+        ],
+        required=(1, 2),
     )
     output_sink = sink or NullSink()
     prose, notes = persona_output(
@@ -361,14 +366,15 @@ def run_message_turn(
     coach, formatter = _agents(
         root, coach_agent, formatter_agent, CoachTurn, user_text=text
     )
-    prompt = "\n\n".join(
+    prompt = bounded_sections(
         [
             _overview(root, engine),
             render_transcript(session),
             render_agenda(session),
             _change_context(session),
             f"USER'S LATEST MESSAGE (UNTRUSTED):\n{text}",
-        ]
+        ],
+        required=(2, 3, 4),
     )
     output_sink = sink or NullSink()
     prose, notes = persona_output(
@@ -562,14 +568,15 @@ def run_recap_turn(
         for draft in session["draft_notes"]
         if draft["status"] == "pending"
     ]
-    prompt = "\n\n".join(
+    prompt = bounded_sections(
         [
             render_agenda(session),
             render_transcript(session),
             _change_context(session),
             "Write the session recap: topics covered, saved notes, open gaps, and one suggested next focus."
             + (f" Mention unsaved drafts: {', '.join(pending)}." if pending else ""),
-        ]
+        ],
+        required=(0, 2, 3),
     )
     output_sink = sink or NullSink()
     prose, notes = persona_output(

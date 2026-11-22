@@ -73,6 +73,13 @@ def _spec(
 
 PROMPT_SPECS = (
     _spec(
+        "career-lab-continuation",
+        "Career Lab continuation",
+        "profile",
+        "Selects cited working memory while retaining the full conversation.",
+        career_lab_agents._CONTINUATION_INSTRUCTIONS,
+    ),
+    _spec(
         "career-lab-router",
         "Career Lab router",
         "profile",

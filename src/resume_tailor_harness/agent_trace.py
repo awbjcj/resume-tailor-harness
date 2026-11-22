@@ -99,6 +99,7 @@ def record_agent_run(
             "skill": str(skill_ref) if skill_ref is not None else None,
             "model": getattr(run_meta, "model_id", None),
             "retries": retries,
+            "context": getattr(runner, "context_stats", None),
             "toolCalls": _tool_calls(response),
             "inputTokens": _metric(metrics, "input_tokens"),
             "outputTokens": _metric(metrics, "output_tokens"),

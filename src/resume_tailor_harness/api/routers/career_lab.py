@@ -41,13 +41,17 @@ from resume_tailor_harness.career_lab.store import (
     unarchive_session,
 )
 from resume_tailor_harness.career_skills.models import AgentFamily
-from resume_tailor_harness.career_skills.registry import CareerSkillRegistry, SkillUnavailable
+from resume_tailor_harness.career_skills.registry import (
+    CareerSkillRegistry,
+    SkillUnavailable,
+)
 from resume_tailor_harness.config import Settings
 from resume_tailor_harness.llm_runner import missing_model_keys
 from resume_tailor_harness.tracking.tables import Job
 from resume_tailor_harness.services.career_lab import (
     run_end_turn,
     run_message_turn,
+    run_resume_turn,
     run_start_turn,
     session_view,
 )
@@ -460,3 +464,51 @@ def delete_career_lab(
         delete_session(_root(request), session_id)
     except ValueError as exc:
         raise _value_error(exc) from exc
+
+
+@router.post(
+    "/career-lab/sessions/{session_id}/resume/{operation_id}",
+    response_model=RunOut,
+    status_code=202,
+)
+def resume_career_lab(
+    session_id: str,
+    operation_id: str,
+    request: Request,
+    manager: RunManager = Depends(get_run_manager),
+    settings: Settings = Depends(get_settings_dep),
+):
+    _guard_keys(settings)
+    root = _root(request)
+    try:
+        current = session_view(root, session_id)
+    except ValueError as exc:
+        raise _value_error(exc) from exc
+    if current.get("recoveryId") != operation_id:
+        raise ApiException(
+            409, "CONFLICT", "Recovery operation changed; reload the conversation."
+        )
+    return launch(
+        manager,
+        "career-lab-turn",
+        with_conversation_stream(
+            manager,
+            lambda reporter, sink: run_resume_turn(
+                reporter,
+                root=root,
+                engine=get_engine(request),
+                session_id=session_id,
+                operation_id=operation_id,
+                sink=sink,
+                registry=_registry(settings),
+                settings=settings,
+            ),
+        ),
+        singleton_key=f"career-lab:{session_id}",
+        singleton_conflict="raise",
+        busy_code="CAREER_LAB_BUSY",
+        busy_message="A Career Lab turn is already running",
+        meta=_run_meta(
+            session_id=session_id, turn_count=len(current["turns"]), skill=None
+        ),
+    )

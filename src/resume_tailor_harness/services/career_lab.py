@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 
-import json
 import logging
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
 from resume_tailor_harness.workspace_agent.runtime import workspace_turn
 from resume_tailor_harness.career_lab.agents import (
     build_formatter_agent,
+    build_continuation_agent,
     build_persona_agent,
     build_router_agent,
 )
 from resume_tailor_harness.career_lab.context import conversation_context
+from resume_tailor_harness.career_lab import recovery
 from resume_tailor_harness.career_lab.models import (
     CareerLabArtifactMeta,
     CareerLabContextRefs,
@@ -39,8 +41,14 @@ from resume_tailor_harness.career_skills.registry import (
     VerifiedSkill,
 )
 from resume_tailor_harness.config import Settings, get_settings
-from resume_tailor_harness.llm_runner import Runner, UnparsedAgentOutput, expect_schema
+from resume_tailor_harness.llm_runner import (
+    AgentRunner,
+    Runner,
+    UnparsedAgentOutput,
+    expect_schema,
+)
 from resume_tailor_harness.profile.snapshot import profile_snapshot
+from resume_tailor_harness.sessions.context import bounded_json
 from resume_tailor_harness.sessions.stream import (
     Notice,
     NullSink,
@@ -107,8 +115,7 @@ def _workspace_root(root: Path) -> Path:
 
 
 def _bounded_json(value: object, limit: int = _MAX_CONTEXT_CHARS) -> str:
-    rendered = json.dumps(value, ensure_ascii=False, default=str)
-    return rendered[:limit]
+    return bounded_json(value, limit)
 
 
 def _resolve_context(engine, root: Path, refs: CareerLabContextRefs) -> str:
@@ -143,6 +150,9 @@ def _resolve_context(engine, root: Path, refs: CareerLabContextRefs) -> str:
             projected["resume_version_id"] = refs.resume_version_id
         if refs.offer_application_ids:
             projected["offer_application_ids"] = refs.offer_application_ids
+        projected["_source_fingerprints"] = {
+            key: recovery.fingerprint(value) for key, value in projected.items()
+        }
         return _bounded_json(projected)
 
     from resume_tailor_harness.db import get_session
@@ -157,7 +167,7 @@ def _resolve_context(engine, root: Path, refs: CareerLabContextRefs) -> str:
                 "company": job.company,
                 "title": job.title,
                 "location": job.location,
-                "description": (job.jd_text or "")[:_MAX_CONTEXT_CHARS],
+                "description": job.jd_text or "",
                 "criteria": job.criteria_json or {},
             }
 
@@ -172,7 +182,7 @@ def _resolve_context(engine, root: Path, refs: CareerLabContextRefs) -> str:
             raise ValueError("resume version does not belong to the selected job")
         if version is not None:
             projected["resume"] = {
-                "content": _bounded_json(version.content_json or {}),
+                "content": version.content_json or {},
                 "job_id": version.job_id,
             }
 
@@ -187,12 +197,30 @@ def _resolve_context(engine, root: Path, refs: CareerLabContextRefs) -> str:
                     "job_id": application.job_id,
                     "resume_version_id": application.resume_version_id,
                     "status": application.status,
-                    "notes": (application.notes or "")[:2_000],
+                    "notes": application.notes or "",
                 }
             )
         if offers:
             projected["offers"] = offers
+    projected["_source_fingerprints"] = {
+        key: recovery.fingerprint(value) for key, value in projected.items()
+    }
     return _bounded_json(projected)
+
+
+def _trace_context(runner: Runner, conversation: str) -> None:
+    if not isinstance(runner, AgentRunner):
+        return
+    payload = json.loads(conversation.split("\n", 1)[1])
+    state = payload.get("continuation") or {}
+    runner.context_stats = {
+        "policy": "career-lab-context-v2",
+        "inputBytes": len(conversation.encode("utf-8")),
+        "recentTurns": len(payload["history"]),
+        "coveredTurns": state.get("through_turn", 0),
+        "memoryItems": len(state.get("items", [])),
+        "sourceDigest": state.get("source_digest"),
+    }
 
 
 def _route_prompt(conversation: str) -> str:
@@ -233,6 +261,7 @@ def _route(
     *,
     registry: CareerSkillRegistry,
 ) -> tuple[CareerLabRoute, VerifiedSkill | None, AgentRunMeta]:
+    _trace_context(router, conversation)
     meta = _router_meta(router)
     try:
         route = expect_schema(
@@ -309,17 +338,30 @@ def _complete_turn(
     persona_agent: Runner | None,
     formatter_agent: Runner | None,
     settings: Settings | None,
+    receipt: recovery.DraftRecovery | None = None,
+    root: Path | None = None,
+    session_id: str = "",
 ) -> tuple[str, CareerLabArtifactMeta | None, str, AgentRunMeta]:
     reporter.begin(2, "Drafting your Career Lab response")
     persona = persona_agent or build_persona_agent(skill, settings=settings)
+    _trace_context(persona, conversation)
     formatter = formatter_agent or build_formatter_agent(settings=settings)
-    prose, notes = persona_output(
-        persona,
-        _prompt(conversation),
-        sink,
-        reporter,
-        source="career lab persona",
-    )
+    if receipt is not None and receipt.stage == "drafted":
+        prose, notes = receipt.prose, receipt.notes
+        sink.emit(TextDelta(prose))
+    else:
+        prose, notes = persona_output(
+            persona,
+            _prompt(conversation),
+            sink,
+            reporter,
+            source="career lab persona",
+        )
+        if receipt is not None and root is not None:
+            receipt.prose, receipt.notes = prose, notes
+            receipt.agent_meta = _persona_meta(persona, skill).model_dump(mode="json")
+            receipt.stage = "drafted"
+            recovery.save_draft(root, session_id, receipt)
     fallback = prose or notes
     artifact: CareerLabArtifactMeta | None = None
     notice = ""
@@ -339,7 +381,12 @@ def _complete_turn(
         sink.emit(Notice(notice))
     _checkpoint(reporter)
     reporter.step(1, label="Validating the draft")
-    return fallback, artifact, notice, _persona_meta(persona, skill)
+    meta = (
+        AgentRunMeta.model_validate(receipt.agent_meta)
+        if receipt is not None and receipt.agent_meta
+        else _persona_meta(persona, skill)
+    )
+    return fallback, artifact, notice, meta
 
 
 def _view(session: dict) -> dict:
@@ -352,6 +399,8 @@ def _view(session: dict) -> dict:
         "status": session["status"],
         "archivedAt": session.get("archived_at"),
         "jobId": session.get("job_id"),
+        "recoveryId": (session.get("recovery") or {}).get("operation_id"),
+        "recoveryStage": (session.get("recovery") or {}).get("stage"),
         "turns": [
             {
                 "turnId": turn["turn_id"],
@@ -396,15 +445,77 @@ def _prepare_turn(
     text = _clean_message(message)
     # Resolve once before any paid call. Router and specialist see exactly the
     # same loaded history/current context, including the latest message once.
-    conversation = conversation_context(
-        session,
+    from resume_tailor_harness.career_lab import continuation as memory
+    from resume_tailor_harness.career_lab.context import ConversationContextTooLarge
+
+    request = {
+        "message": text,
+        "skill": str(skill) if skill is not None else None,
+        "context_refs": context_refs.model_dump(mode="json"),
+    }
+    prior = session.get("recovery") or {}
+    reuse = prior.get("stage") != "committed" and prior.get("request") == request
+    if reuse:
+        from datetime import datetime, timezone
+
+        if (
+            prior["attempts"] >= recovery.MAX_ATTEMPTS
+            or (
+                datetime.now(timezone.utc) - datetime.fromisoformat(prior["created_at"])
+            ).total_seconds()
+            > recovery.MAX_AGE_SECONDS
+        ):
+            raise recovery.ContextBudgetExceeded(
+                "Recovery budget exhausted; send a new request. Saved work remains available."
+            )
+        if prior.get("continuation"):
+            session["continuation"] = prior["continuation"]
+    source_context = _resolve_context(engine, root, context_refs)
+
+    def render():
+        return conversation_context(
+            session, message=text, goal=goal, refs=context_refs, context=source_context
+        )
+
+    # An oversized current request cannot be repaired by discarding history.
+    conversation_context(
+        {"session_id": session["session_id"], "turns": []},
         message=text,
         goal=goal,
         refs=context_refs,
-        context=_resolve_context(engine, root, context_refs),
+        context=source_context,
     )
+    try:
+        conversation = render()
+        compact = len(conversation.encode("utf-8")) > memory.TRIGGER_BYTES
+    except ConversationContextTooLarge:
+        compact = True
+    if compact and len(session["turns"]) > 2 and not reuse:
+        summarizer = build_continuation_agent(settings=settings)
+
+        def select(chunk):
+            output = expect_schema(
+                summarizer.run(json.dumps(chunk, ensure_ascii=False)),
+                memory.MemorySelection,
+                source="continuation",
+            )
+            meta = getattr(summarizer, "run_meta", None)
+            return output, getattr(meta, "model_id", "")
+
+        state = memory.prepare(session, select, lambda: _checkpoint(reporter))
+        session["continuation"] = state.model_dump(mode="json")
+        conversation = render()
+        sink.emit(
+            Notice(
+                "Continuing with cited working memory and recent turns. Your full conversation remains saved."
+            )
+        )
+    else:
+        conversation = render()
     registry = _registry(registry)
-    if skill is None:
+    if reuse and prior.get("selected_skill"):
+        resolved = _skill(registry, prior["selected_skill"])
+    elif skill is None:
         router = router_agent or build_router_agent(settings=settings)
         route, resolved, router_meta = _route(
             router,
@@ -427,6 +538,31 @@ def _prepare_turn(
             ) from exc
         route = CareerLabRoute(skill=selected, needs_selection=False)
         resolved = _skill(registry, selected)
+    persona_agent = persona_agent or build_persona_agent(resolved, settings=settings)
+    current_meta = _persona_meta(persona_agent, resolved)
+    receipt = None
+    if session["session_id"] != "pending":
+        _checkpoint(reporter)
+        source_version = recovery.fingerprint(
+            {
+                "conversation": conversation,
+                "skill": resolved.ref.model_dump(mode="json"),
+                "model": getattr(
+                    getattr(persona_agent, "run_meta", None), "model_id", None
+                )
+                or getattr(settings or get_settings(), "mid_model", ""),
+                "policy": current_meta.model_dump(mode="json"),
+                "instructions": getattr(persona_agent.agent, "instructions", None)
+                if isinstance(persona_agent, AgentRunner)
+                else None,
+            }
+        )
+        receipt = recovery.begin(root, session, request, source_version)
+        session["_recovery_id"] = receipt.operation_id
+        session["_recovery_attempt"] = receipt.attempts
+        receipt.selected_skill = resolved.ref.name
+        receipt.continuation = session.get("continuation")
+        recovery.save_draft(root, session["session_id"], receipt)
     assistant_text, artifact, notice, meta = _complete_turn(
         reporter,
         conversation=conversation,
@@ -435,6 +571,9 @@ def _prepare_turn(
         persona_agent=persona_agent,
         formatter_agent=formatter_agent,
         settings=settings,
+        receipt=receipt,
+        root=root,
+        session_id=session["session_id"],
     )
     return resolved, assistant_text, artifact, notice, meta
 
@@ -485,6 +624,9 @@ def _start_or_message(
             assistant_text=prepared.question,
             agent_meta=prepared.agent_meta,
             expected_turn_count=len(session["turns"]),
+            continuation=session.get("continuation"),
+            recovery_id=session.get("_recovery_id"),
+            recovery_attempt=session.get("_recovery_attempt"),
         )
         reporter.step(1, label="Waiting for your answer")
         return session_view(root, session["session_id"])
@@ -500,6 +642,9 @@ def _start_or_message(
         artifact=artifact,
         notice=notice,
         expected_turn_count=len(session["turns"]),
+        continuation=session.get("continuation"),
+        recovery_id=session.get("_recovery_id"),
+        recovery_attempt=session.get("_recovery_attempt"),
     )
     reporter.step(2, label="Draft is ready")
     return session_view(root, session["session_id"])
@@ -641,3 +786,47 @@ def run_end_turn(reporter, *, root: Path, session_id: str) -> dict:
     ended = end_session(root, session_id)
     reporter.step(1, label="Session ended")
     return _view(ended)
+
+
+@workspace_turn("career-lab")
+def run_resume_turn(
+    reporter,
+    *,
+    root: Path,
+    engine,
+    session_id: str,
+    operation_id: str,
+    sink: StreamSink | None = None,
+    registry=None,
+    settings=None,
+    persona_agent=None,
+    formatter_agent=None,
+    router_agent=None,
+) -> dict:
+    session = load_session(root, session_id)
+    receipt = recovery.DraftRecovery.model_validate(session.get("recovery") or {})
+    if receipt.operation_id != operation_id:
+        raise ValueError("Recovery operation changed; reload the conversation.")
+    # The same transaction that appends the reply marks this receipt committed.
+    # A lost run completion can therefore be reconciled without another write.
+    if receipt.stage == "committed":
+        return session_view(root, session_id)
+    if receipt.base_turn_count != len(session["turns"]):
+        raise ValueError("Recovery inputs changed; reload the conversation.")
+    return run_message_turn(
+        reporter,
+        root=root,
+        engine=engine,
+        session_id=session_id,
+        message=receipt.request["message"],
+        skill=receipt.request["skill"],
+        context_refs=CareerLabContextRefs.model_validate(
+            receipt.request["context_refs"]
+        ),
+        sink=sink,
+        registry=registry,
+        settings=settings,
+        persona_agent=persona_agent,
+        formatter_agent=formatter_agent,
+        router_agent=router_agent,
+    )

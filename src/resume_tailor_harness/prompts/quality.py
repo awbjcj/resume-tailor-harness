@@ -404,6 +404,14 @@ TASK_QUALITY: dict[str, tuple[str, ...]] = {
         "step and a way to verify completion. Do not turn a resource mention "
         "into an endorsement or a proposed project into a candidate fact.",
     ),
+    "career-lab-continuation": (
+        "Preserve exact user constraints, corrections, negation, scope and unresolved work. "
+        "Select sufficient verbatim quotes for each important decision; a bare keyword "
+        "is not a faithful record. Retain source turn ids and do not merge speakers.",
+        "Treat assistant proposals as drafts, never accepted decisions. If a later "
+        "turn changes an earlier constraint, include the correction with its source. "
+        "Never infer authorization, external effects, or verified applicant facts.",
+    ),
     "career-lab-router": (
         "Route by the requested deliverable and latest clarified goal, not "
         "isolated words. Preserve the ongoing conversation when switching "

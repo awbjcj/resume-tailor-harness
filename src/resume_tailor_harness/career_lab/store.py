@@ -75,8 +75,10 @@ def delete_sessions_for_job(
     """Drop every thread anchored to a deleted job. Returns how many were removed."""
     return store.delete_where(
         root,
-        lambda row: row.get("job_id") == job_id
-        and (session_ids is None or row["session_id"] in session_ids),
+        lambda row: (
+            row.get("job_id") == job_id
+            and (session_ids is None or row["session_id"] in session_ids)
+        ),
     )
 
 
@@ -106,6 +108,9 @@ def append_turns(
     artifact: CareerLabArtifactMeta | None = None,
     notice: str = "",
     expected_turn_count: int | None = None,
+    continuation: dict | None = None,
+    recovery_id: str | None = None,
+    recovery_attempt: int | None = None,
 ) -> dict:
     """Validate both turns and commit them in one atomic session mutation."""
     user = user_text.strip()
@@ -126,6 +131,21 @@ def append_turns(
         if session["status"] != "active":
             raise ValueError("session ended")
         _check_turn_count(session, expected_turn_count)
+        if recovery_id is not None:
+            receipt = session.get("recovery") or {}
+            if (
+                receipt.get("operation_id") != recovery_id
+                or receipt.get("stage") == "committed"
+                or receipt.get("attempts") != recovery_attempt
+            ):
+                raise ValueError("Recovery operation changed; reload the conversation.")
+            receipt["stage"] = "committed"
+            session["recovery"] = receipt
+        if continuation is not None:
+            from resume_tailor_harness.career_lab.continuation import validated
+
+            validated({**session, "continuation": continuation})
+            session["continuation"] = continuation
         first_id = f"t{len(session['turns']) + 1}"
         second_id = f"t{len(session['turns']) + 2}"
         at = now_iso()
@@ -167,6 +187,9 @@ def append_clarification_turns(
     assistant_text: str,
     agent_meta: AgentRunMeta,
     expected_turn_count: int | None = None,
+    continuation: dict | None = None,
+    recovery_id: str | None = None,
+    recovery_attempt: int | None = None,
 ) -> dict:
     """Commit a user observation and the router's next question atomically."""
     user = user_text.strip()
@@ -189,6 +212,21 @@ def append_clarification_turns(
         if session["status"] != "active":
             raise ValueError("session ended")
         _check_turn_count(session, expected_turn_count)
+        if recovery_id is not None:
+            receipt = session.get("recovery") or {}
+            if (
+                receipt.get("operation_id") != recovery_id
+                or receipt.get("stage") == "committed"
+                or receipt.get("attempts") != recovery_attempt
+            ):
+                raise ValueError("Recovery operation changed; reload the conversation.")
+            receipt["stage"] = "committed"
+            session["recovery"] = receipt
+        if continuation is not None:
+            from resume_tailor_harness.career_lab.continuation import validated
+
+            validated({**session, "continuation": continuation})
+            session["continuation"] = continuation
         first_id = f"t{len(session['turns']) + 1}"
         second_id = f"t{len(session['turns']) + 2}"
         at = now_iso()

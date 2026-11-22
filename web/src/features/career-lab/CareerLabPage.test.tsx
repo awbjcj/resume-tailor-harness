@@ -465,3 +465,14 @@ describe("CareerLabPage", () => {
     expect(screen.queryByRole("button", { name: /upload/i })).not.toBeInTheDocument();
   });
 });
+
+
+it("offers durable response recovery after a page reload", async () => {
+  const resume = vi.fn().mockResolvedValue({ runId: "resumed" });
+  mocks.send.mockReturnValue({ mutateAsync: resume });
+  mocks.sessions.mockReturnValue({ data: { sessions: [summary()] }, isPending: false });
+  mocks.session.mockReturnValue({ data: { ...summary(), turns: [], recoveryId: "op1", recoveryStage: "drafted" }, isPending: false });
+  renderPage();
+  await userEvent.click(screen.getByRole("button", { name: "Resume saved response" }));
+  expect(resume).toHaveBeenCalledWith(expect.objectContaining({ sessionId: "s1", resumeOperationId: "op1", message: "" }));
+});

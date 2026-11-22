@@ -1,0 +1,45 @@
+name: Context regressions
+on:
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'src/resume_tailor_harness/career_lab/**'
+      - 'src/resume_tailor_harness/sessions/**'
+      - 'src/resume_tailor_harness/interview/**'
+      - 'src/resume_tailor_harness/profile/coach.py'
+      - 'src/resume_tailor_harness/services/career_lab.py'
+      - 'src/resume_tailor_harness/services/profile_coach.py'
+      - 'src/resume_tailor_harness/services/mock_interview.py'
+      - 'src/resume_tailor_harness/api/runs/**'
+      - 'src/resume_tailor_harness/api/routers/career_lab.py'
+      - 'src/resume_tailor_harness/workspace_agent/**'
+      - 'src/resume_tailor_harness/prompts/**'
+      - 'src/resume_tailor_harness/agent_trace.py'
+      - 'src/resume_tailor_harness/llm_runner.py'
+      - 'tests/api/test_career_lab_router.py'
+      - 'tests/api/test_run_manager.py'
+      - 'tests/test_profile_coach*'
+      - 'tests/test_long_task_context.py'
+      - 'tests/test_career_lab*'
+      - 'tests/test_mock_interview*'
+      - '.github/workflows/context-regressions.yml'
+permissions:
+  contents: read
+jobs:
+  context-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.13'
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: >-
+          uv run pytest -n 0 tests/test_long_task_context.py
+          tests/test_career_lab_context.py tests/test_career_lab_service.py
+          tests/test_career_lab_store.py tests/test_profile_coach.py
+          tests/test_profile_coach_service.py tests/test_interview_agent.py
+          tests/test_mock_interview_service.py tests/api/test_run_manager.py
+          tests/api/test_career_lab_router.py tests/test_prompt_injection.py
+          tests/test_prompt_quality.py

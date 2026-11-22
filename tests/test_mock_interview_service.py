@@ -46,8 +46,10 @@ _HINTS = ["Use a concrete example.", "Connect the result to the role."]
 class FakeRunner:
     def __init__(self, outputs: list[Any]) -> None:
         self._outputs = list(outputs)
+        self.prompts: list[str] = []
 
     def run(self, prompt: str) -> Any:
+        self.prompts.append(prompt)
         return SimpleNamespace(content=self._outputs.pop(0))
 
     async def arun(self, prompt: str) -> Any:
@@ -318,11 +320,12 @@ def test_full_interview_flow(tmp_path, engine):
             [InterviewTurn(message="That's all from me, thank you.", action="conclude")]
         ),
     )
+    debrief_agent = FakeRunner(["debrief notes"])
     view = run_debrief_turn(
         FakeReporter(),
         interview_dir=tmp_path,
         session_id=sid,
-        interviewer_agent=FakeRunner(["debrief notes"]),
+        interviewer_agent=debrief_agent,
         formatter_agent=FakeRunner(
             [
                 DebriefTurn(
@@ -342,6 +345,9 @@ def test_full_interview_flow(tmp_path, engine):
     assert view["debrief"]["summary"] == "Good technical depth."
     summary = sessions_view(tmp_path)["sessions"][0]
     assert summary["overallScore"] == 3.5
+
+    assert "I shipped a FastAPI service." in debrief_agent.prompts[0]
+    assert "I owned the billing migration." in debrief_agent.prompts[0]
 
 
 def test_answer_streams_and_stores_interviewer_prose(tmp_path, engine):

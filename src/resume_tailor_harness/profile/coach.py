@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from resume_tailor_harness.sessions.context import recent_transcript, bounded_sections
+
 
 import re
 from dataclasses import dataclass, field
@@ -398,7 +400,7 @@ def profile_overview(profile_dir: Path | str, session=None) -> str:
     ]
     if unmined:
         sections.append(unmined)
-    return "\n\n".join(sections)
+    return bounded_sections(sections, limit=12_000)
 
 
 def render_agenda(session: dict) -> str:
@@ -433,32 +435,7 @@ def render_transcript(session: dict, char_cap: int = TRANSCRIPT_CHAR_CAP) -> str
         for turn in session["turns"]
         if turn["topic_id"] not in completed
     ]
-    prefix = "TRANSCRIPT:\n"
-    collapsed_text = "\n".join(collapsed)
-    if len(prefix) + len(collapsed_text) + 1 > char_cap:
-        return (prefix + collapsed_text)[:char_cap]
-    remaining = char_cap - len(prefix) - len(collapsed_text) - (1 if collapsed else 0)
-    kept: list[str] = []
-    used = 0
-    omitted = False
-    for line in reversed(active):
-        cost = len(line) + (1 if kept else 0)
-        if used + cost <= remaining:
-            kept.append(line)
-            used += cost
-        else:
-            omitted = True
-            if not kept and remaining > len("[… elided …]") + 1:
-                marker = "[… elided …]"
-                tail_size = remaining - len(marker) - 1
-                kept.append(f"{marker}\n{line[-tail_size:]}")
-            break
-    kept.reverse()
-    parts = [prefix.rstrip(), *collapsed]
-    if omitted and kept and not kept[-1].startswith("[… elided …]"):
-        parts.append("[… older active turns elided …]")
-    parts.extend(kept)
-    return "\n".join(parts)[:char_cap]
+    return recent_transcript("TRANSCRIPT:\n", collapsed, active, char_cap)
 
 
 _COACH_INSTRUCTIONS = [
