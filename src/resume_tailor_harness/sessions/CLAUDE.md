@@ -45,3 +45,9 @@ Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loa
   a separately reviewed workspace action.
   `interview/store.py::append_workspace_exchange` owns maintenance persistence
   and retains skill provenance just like a practice turn.
+
+- **Context projection is purpose-specific (ADR 0014).** Practice can collapse
+  completed questions; debrief scoring must use `render_debrief_transcript` and
+  preserve the answers or fail explicitly. `sessions/context.py` owns allocation
+  and omission markers, reserving recent evidence before completed summaries.
+  A string or transcript cap alone is not a whole application prompt budget.

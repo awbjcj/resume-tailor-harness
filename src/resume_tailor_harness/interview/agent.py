@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from resume_tailor_harness.sessions.context import (
+    recent_transcript,
+    ContextBudgetExceeded,
+)
+
 
 import json
 from dataclasses import dataclass
@@ -283,28 +288,27 @@ def render_transcript(session: dict, char_cap: int = TRANSCRIPT_CHAR_CAP) -> str
         for turn in session["turns"]
         if turn["question_id"] not in done and not turn.get("workspace_request")
     ]
-    prefix = "TRANSCRIPT:\n"
-    collapsed_text = "\n".join(collapsed)
-    if len(prefix) + len(collapsed_text) + 1 > char_cap:
-        return (prefix + collapsed_text)[:char_cap]
-    remaining = char_cap - len(prefix) - len(collapsed_text) - (1 if collapsed else 0)
-    kept: list[str] = []
-    used = 0
-    omitted = False
-    for line in reversed(active):
-        cost = len(line) + (1 if kept else 0)
-        if used + cost <= remaining:
-            kept.append(line)
-            used += cost
-        else:
-            omitted = True
-            break
-    kept.reverse()
-    parts = [prefix.rstrip(), *collapsed]
-    if omitted:
-        parts.append("[… older turns elided …]")
-    parts.extend(kept)
-    return "\n".join(parts)[:char_cap]
+    return recent_transcript("TRANSCRIPT:\n", collapsed, active, char_cap)
+
+
+def render_debrief_transcript(session: dict, char_cap: int = 24_000) -> str:
+    """Scoring must see complete answers, including completed questions.
+
+    Fail before grading rather than silently grade excerpts as complete answers.
+    Practice projection remains deliberately lossy and is never used here.
+    """
+    turns = [
+        f"{turn['role'].upper()} ({turn['question_id'] or '-'}): {turn['text']}"
+        for turn in session["turns"]
+        if not turn.get("workspace_request")
+    ]
+    rendered = "TRANSCRIPT:\n" + "\n".join(turns)
+    if len(rendered) > char_cap:
+        raise ContextBudgetExceeded(
+            "Interview answers exceed the debrief evidence budget; no scores were generated. "
+            "Use shorter practice sessions. Your full answers remain saved."
+        )
+    return rendered
 
 
 _DEMEANOR_LINES = {

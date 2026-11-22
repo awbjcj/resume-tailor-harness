@@ -1181,6 +1181,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/career-lab/sessions/{session_id}/resume/{operation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume Career Lab */
+        post: operations["resume_career_lab_api_career_lab_sessions__session_id__resume__operation_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/career-lab/sessions/{session_id}/unarchive": {
         parameters: {
             query?: never;
@@ -6449,6 +6466,10 @@ export interface components {
             goal: string;
             /** Jobid */
             jobId?: number | null;
+            /** Recoveryid */
+            recoveryId?: string | null;
+            /** Recoverystage */
+            recoveryStage?: string | null;
             /** Sessionid */
             sessionId: string;
             /** Startedat */
@@ -16138,6 +16159,40 @@ export interface operations {
                 "application/json": components["schemas"]["CareerLabMessageIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_career_lab_api_career_lab_sessions__session_id__resume__operation_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+                operation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             202: {

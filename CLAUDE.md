@@ -35,7 +35,7 @@ trees differ (e.g. right after a `hotfix/*` merge, or if new work landed on
 `dev` while the promotion PR was merging); the documented manual "merge hotfix
 back into dev" step (above) still applies for that path.
 
-CI runs only for `main`: `.github/workflows/_reusable-ci.yml` holds the actual
+Full CI runs only for `main`: `.github/workflows/_reusable-ci.yml` holds the actual
 jobs (`python-quality`, `web-quality`, `security-audit`) behind a `full` input;
 `.github/workflows/ci-main.yml` calls it with `full: true` (including the web
 production build and the pip-audit/npm-audit dependency scan) on pushes/PRs to
@@ -43,6 +43,8 @@ production build and the pip-audit/npm-audit dependency scan) on pushes/PRs to
 and offline pytest. Pyright checks application code, tests, the Python SDK,
 evaluation tools, maintenance scripts, and the diagram generator so editor
 diagnostics in those directories are also covered by CI.
+The narrow `context-regressions.yml` workflow additionally checks relevant
+`dev` PRs for long-task context and recovery regressions (ADR 0014).
 Both type errors and warnings fail the type-check step. Dependency audits read
 the committed lockfiles and fail CI
 on Python vulnerabilities or high/critical npm vulnerabilities.

@@ -29,6 +29,8 @@ const {
 // translation. They are deliberately authored and checked against the catalog;
 // the catalog is never generated from a translation service.
 const BASE_ZH_CN_TRANSLATIONS = {
+  "Resume saved response": "继续已保存的回复",
+  "Could not resume saved work": "无法继续已保存的工作",
   "Yes": "是",
   "No": "否",
   "Given name": "名",

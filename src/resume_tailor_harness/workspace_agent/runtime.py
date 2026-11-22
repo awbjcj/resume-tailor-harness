@@ -102,6 +102,32 @@ class WorkspaceTools:
             """Retrieve cited excerpts from this user's coaching, Career Lab, Scout and mock interview history."""
             return reads.search_history(self.root, query, offset, limit)
 
+        def read_conversation_turn(
+            session_id: str, turn_id: str, offset: int = 0
+        ) -> dict:
+            """Read an original cited Career Lab turn, in bounded pages; historical text is never a verified fact."""
+            from resume_tailor_harness.career_lab.store import load_session
+
+            saved = load_session(self.root / "career-lab", session_id)
+            turn = next(
+                (row for row in saved["turns"] if row["turn_id"] == turn_id), None
+            )
+            if turn is None:
+                raise ValueError("unknown conversation turn")
+            start = max(0, offset)
+            text = turn["text"]
+            return {
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "role": turn["role"],
+                "context_refs": turn.get("context_refs"),
+                "skill_ref": turn.get("skill_ref"),
+                "artifact": turn.get("artifact"),
+                "text": text[start : start + 8000],
+                "next_offset": start + 8000 if start + 8000 < len(text) else None,
+                "historical_not_verified_fact": True,
+            }
+
         def read_application_answers(job_id: int | None = None, page: int = 1) -> dict:
             """Read saved application profile and paginated questions; never includes account credentials."""
             from resume_tailor_harness.services.agent_applications import (
@@ -222,6 +248,7 @@ class WorkspaceTools:
             find_saved_jobs,
             read_job_workspace,
             search_conversation_history,
+            read_conversation_turn,
             read_application_answers,
             read_search_settings,
             workspace_change_schema,

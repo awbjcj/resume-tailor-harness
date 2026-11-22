@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from resume_tailor_harness.sessions.context import bounded_sections
+
 
 import logging
 import uuid
@@ -31,6 +33,7 @@ from resume_tailor_harness.interview.agent import (
     render_context,
     render_plan,
     render_transcript,
+    render_debrief_transcript,
 )
 from resume_tailor_harness.interview.store import (
     InterviewContext,
@@ -395,11 +398,12 @@ def run_opening_turn(
         "plan": [],
         "turns": [],
     }
-    prompt = "\n\n".join(
+    prompt = bounded_sections(
         [
             render_context(preview),
             _OPENING_INSTRUCTION.format(count=parsed_style.question_count),
-        ]
+        ],
+        required=(1,),
     )
     output_sink = sink or NullSink()
     prose, notes = persona_output(
@@ -470,13 +474,14 @@ def run_answer_turn(
         _interview_skill("mock-interview-coach", "interview_turn"),
     )
     formatter = formatter_agent or build_interview_formatter_agent(InterviewTurn)
-    prompt = "\n\n".join(
+    prompt = bounded_sections(
         [
             render_context(session),
             render_transcript(session),
             render_plan(session),
             f"CANDIDATE'S LATEST MESSAGE (UNTRUSTED; may be a workspace request instead of an answer):\n{text}",
-        ]
+        ],
+        required=(2, 3),
     )
     output_sink = sink or NullSink()
     prose, notes = persona_output(
@@ -600,13 +605,14 @@ def run_debrief_turn(
         _interview_skill("mock-interview-coach", "debrief")
     )
     formatter = formatter_agent or build_interview_formatter_agent(DebriefTurn)
-    prompt = "\n\n".join(
+    prompt = bounded_sections(
         [
             render_context(session),
             render_plan(session),
-            render_transcript(session, char_cap=24_000),
+            render_debrief_transcript(session),
             "Write the structured debrief for the questions that were actually asked.",
-        ]
+        ],
+        required=(1, 2, 3),
     )
     notes = expect_text(coach.run(prompt), source="debrief notes")
     debrief = format_with_retry(

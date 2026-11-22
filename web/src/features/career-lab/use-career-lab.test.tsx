@@ -245,3 +245,16 @@ describe("Career Lab hooks", () => {
     expect(result.current).toBeNull();
   });
 });
+
+
+it("resumes the durable operation instead of resending its user message", async () => {
+  const { wrapper } = wrap();
+  const { result } = renderHook(() => useSendCareerLabMessage(), { wrapper });
+  await act(async () => {
+    await result.current.mutateAsync({ sessionId: "s1", message: "", resumeOperationId: "op1" });
+  });
+  expect(mocks.post).toHaveBeenCalledWith("/api/career-lab/sessions/{session_id}/resume/{operation_id}", {
+    params: { path: { session_id: "s1", operation_id: "op1" } },
+  });
+  expect(mocks.trackRun).toHaveBeenCalled();
+});

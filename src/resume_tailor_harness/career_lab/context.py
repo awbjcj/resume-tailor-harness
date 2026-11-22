@@ -1,10 +1,11 @@
-"""One complete, untrusted conversation snapshot for routing and drafting."""
+"""One bounded, untrusted working snapshot for routing and drafting."""
 
 from __future__ import annotations
 
 import json
 
 from resume_tailor_harness.career_lab.models import CareerLabContextRefs
+from resume_tailor_harness.career_lab.continuation import validated
 
 # Application payload guard, NOT a claim about any provider's token window.
 # Fail explicitly instead of truncating messages; providers still enforce their
@@ -31,12 +32,14 @@ def conversation_context(
     refs: CareerLabContextRefs,
     context: str,
 ) -> str:
-    """Preserve every visible turn and its references, regardless of skill.
+    """Preserve full history or a cited continuation plus recent turns.
 
     Only the already-loaded session is read. Do not look up other sessions or
     promote past text to instructions. JSON keeps role/metadata boundaries
     unambiguous even when the user's text contains newlines or role labels.
     """
+    continuation = validated(session)
+    offset = continuation.through_turn if continuation else 0
     turns = [
         {
             key: turn[key]
@@ -51,7 +54,7 @@ def conversation_context(
             )
             if turn.get(key) is not None
         }
-        for turn in session["turns"]
+        for turn in session["turns"][offset:]
     ]
     payload = {
         "session_id": session["session_id"],
@@ -66,6 +69,28 @@ def conversation_context(
         # replacement for any part of the conversation history.
         "current_context": context,
     }
+    if continuation:
+        selected_ids = {item.turn_id for item in continuation.items}
+        payload["continuation"] = {
+            **continuation.model_dump(mode="json"),
+            "sources": [
+                {
+                    key: turn[key]
+                    for key in (
+                        "turn_id",
+                        "role",
+                        "context_refs",
+                        "skill_ref",
+                        "artifact",
+                    )
+                    if turn.get(key) is not None
+                }
+                for turn in session["turns"][:offset]
+                if turn["turn_id"] in selected_ids
+            ],
+            "historical_not_verified_fact": True,
+            "coverage": "Selected quotes only; retrieve original cited turns for missing detail. Never infer approval.",
+        }
     rendered = json.dumps(payload, ensure_ascii=False)
     if len(rendered.encode("utf-8")) > MAX_CONVERSATION_BYTES:
         raise ConversationContextTooLarge()

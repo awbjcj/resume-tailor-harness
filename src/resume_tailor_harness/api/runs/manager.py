@@ -127,9 +127,12 @@ class RunProgressReporter(ProgressReporter):
         )[:2000]
         state = str(self._record.get("state") or "running")
         if not self._history or (message, state) != (
-            self._history[-1]["message"], self._history[-1]["state"]
+            self._history[-1]["message"],
+            self._history[-1]["state"],
         ):
-            self._history.append({"timestamp": _now(), "message": message, "state": state})
+            self._history.append(
+                {"timestamp": _now(), "message": message, "state": state}
+            )
             self._history = self._history[-200:]
         self._record["logs"] = self._history
         super()._flush(force=force)
@@ -148,6 +151,19 @@ class RunProgressReporter(ProgressReporter):
     def record_partial_result(self, result: object) -> None:
         """Keep a receipt for committed work even if the next checkpoint stops."""
         self._partial_result = result
+        if not self._record:
+            # A receipt records already committed work, even if cancellation
+            # arrived before the workflow started reporting its next phase.
+            self._record = read_progress(self.run_id, root=self.root) or {}
+        self._record.update(
+            result=result,
+            kind=self.kind,
+            user_id=self.user_id,
+            created_at=self.created_at,
+            meta=self.meta,
+        )
+        self._flush(force=True)
+        self._wake()
 
     def begin(
         self,
@@ -159,6 +175,8 @@ class RunProgressReporter(ProgressReporter):
         **extra: object,
     ) -> None:
         self._raise_if_cancelled()
+        if self._partial_result is not None:
+            extra.setdefault("result", self._partial_result)
         super().begin(
             total,
             label,

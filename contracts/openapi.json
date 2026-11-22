@@ -4612,6 +4612,28 @@
             ],
             "title": "Jobid"
           },
+          "recoveryId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recoveryid"
+          },
+          "recoveryStage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recoverystage"
+          },
           "sessionId": {
             "title": "Sessionid",
             "type": "string"
@@ -27455,6 +27477,70 @@
           }
         },
         "summary": "Message Career Lab"
+      }
+    },
+    "/api/career-lab/sessions/{session_id}/resume/{operation_id}": {
+      "post": {
+        "operationId": "resume_career_lab_api_career_lab_sessions__session_id__resume__operation_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "operation_id",
+            "required": true,
+            "schema": {
+              "title": "Operation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resume Career Lab"
       }
     },
     "/api/career-lab/sessions/{session_id}/unarchive": {

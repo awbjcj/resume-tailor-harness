@@ -94,9 +94,9 @@ def test_registered_root_discovers_later_and_restored_records(tmp_path, default_
         snapshot = manager.get(run_id)
         assert snapshot is not None and snapshot.user_id == "alice"
         assert [run.run_id for run in manager.list_active(user_id="alice")] == [run_id]
-        assert [
-            run.run_id for run in manager.list_rehydratable(user_id="alice")
-        ] == [run_id]
+        assert [run.run_id for run in manager.list_rehydratable(user_id="alice")] == [
+            run_id
+        ]
         assert manager.list_active(user_id="bob") == []
         assert manager.list_rehydratable(user_id="bob") == []
         manager.clear(run_id)
@@ -885,3 +885,22 @@ def test_run_manager_rejects_traversal_ids_without_touching_outside_files(tmp_pa
     assert outside.read_text(encoding="utf-8") == "keep"
     with pytest.raises(ValueError, match="invalid run id"):
         mgr.stream_path("../outside")
+
+
+def test_committed_partial_receipt_survives_next_phase_and_restart(tmp_path):
+    first = RunManager(root=tmp_path)
+    run_id = first.create("redo")
+    reporter = first.reporter(run_id, "redo")
+    reporter.begin(2, "Preparing")
+    reporter.record_partial_result({"completedIds": [7], "nextStep": "render"})
+    reporter.begin(1, "Rendering")
+    second = RunManager(root=tmp_path)
+    try:
+        assert second.recover_interrupted() == 1
+        record = second.get(run_id)
+        assert record is not None
+        assert record.state == "error"
+        assert record.result == {"completedIds": [7], "nextStep": "render"}
+    finally:
+        first.shutdown()
+        second.shutdown()

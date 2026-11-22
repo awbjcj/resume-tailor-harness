@@ -112,6 +112,8 @@ class CareerLabTurnOut(CamelModel):
 
 
 class CareerLabSessionOut(CamelModel):
+    recovery_id: str | None = None
+    recovery_stage: str | None = None
     session_id: str
     title: str = ""
     goal: str = ""

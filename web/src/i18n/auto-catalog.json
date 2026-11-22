@@ -2679,6 +2679,11 @@
     "en": "Could not render the PDF. Try again or choose another style.",
     "zh-CN": "无法生成 PDF。请重试或选择其他样式。"
   },
+  "Could not resume saved work": {
+    "key": "ui_09b10f8d2991",
+    "en": "Could not resume saved work",
+    "zh-CN": "无法继续已保存的工作"
+  },
   "Could not save this key. Try again.": {
     "key": "ui_c4bc3197c867",
     "en": "Could not save this key. Try again.",
@@ -8468,6 +8473,11 @@
     "key": "ui_378528ca3817",
     "en": "Resume revision",
     "zh-CN": "简历修订"
+  },
+  "Resume saved response": {
+    "key": "ui_82c6a84e91be",
+    "en": "Resume saved response",
+    "zh-CN": "继续已保存的回复"
   },
   "Resume shape": {
     "key": "ui_fd350dbf812a",

@@ -13,6 +13,8 @@ from resume_tailor_harness.career_skills.models import (
 )
 from resume_tailor_harness.models.base import ExtensibleModel
 from resume_tailor_harness.sessions.store import SessionModel
+from resume_tailor_harness.career_lab.continuation import Continuation
+from resume_tailor_harness.career_lab.recovery import DraftRecovery
 
 
 class CareerLabArtifactRef(ExtensibleModel):
@@ -110,3 +112,5 @@ class CareerLabSession(SessionModel):
     # ``None`` is the un-anchored thread started from the Career Lab page.
     job_id: int | None = Field(default=None, ge=1)
     turns: list[CareerLabTurnRecord] = Field(default_factory=list)
+    continuation: Continuation | None = None
+    recovery: DraftRecovery | None = None
