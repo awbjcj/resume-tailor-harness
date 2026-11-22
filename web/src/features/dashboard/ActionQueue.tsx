@@ -47,7 +47,7 @@ export function ActionQueue({ summary }: { summary: DashboardSummary }) {
           <Link
             key={card.key}
             to={summary.queueTargets?.[card.key]?.href ?? card.to}
-            aria-label={`${t(card.verbKey)} ${count} ${t(card.subKey)}`}
+            aria-label={t(`dashboard.queueActions.${card.key}`, { count })}
             className="group rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             data-empty={empty}
           >

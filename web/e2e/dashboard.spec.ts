@@ -128,13 +128,13 @@ test("dashboard handles application decisions and follow-ups while the bell stay
   await expect(review.getByRole("checkbox", { name: /confirmed the stage and date/ })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(review).toBeHidden();
-  const approve = interview.getByRole("button", { name: "Approve", exact: true });
+  const approve = interview.getByRole("button", { name: "Approve update", exact: true });
   expect((await approve.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await approve.press("Enter");
   await expect(interview).toHaveCount(0);
   await expect(board.getByRole("heading", { name: "Application notifications" })).toBeFocused();
   const rejection = board.getByRole("listitem").filter({ hasText: "Thanks for your interest." });
-  await rejection.getByRole("button", { name: "Reject update" }).click();
+  await rejection.getByRole("button", { name: "Dismiss update" }).click();
   await expect(rejection).toHaveCount(0);
   const draft = board.getByRole("button", { name: "Draft follow-up" });
   await draft.click();

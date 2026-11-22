@@ -57,9 +57,9 @@ describe("DashboardPage", () => {
     renderPage();
     const board = within(await screen.findByRole("region", { name: "Application notifications" }));
     expect(screen.getByRole("heading", { name: "No jobs waiting in the pipeline" })).toBeInTheDocument();
-    expect(await board.findByText("Move to Rejected")).toBeInTheDocument();
-    expect(board.getByRole("button", { name: "Approve" })).toBeEnabled();
-    expect(board.getByRole("button", { name: "Reject update" })).toBeEnabled();
+    expect(await board.findByText("Suggested status: Rejected")).toBeInTheDocument();
+    expect(board.getByRole("button", { name: "Approve update" })).toBeEnabled();
+    expect(board.getByRole("button", { name: "Dismiss update" })).toBeEnabled();
     expect(board.getByRole("button", { name: "Review cleared Gmail updates" })).toBeEnabled();
     await user.click(board.getByRole("button", { name: "Sync Gmail" }));
     expect(await board.findByRole("alert")).toHaveTextContent("Connect Gmail in Settings before syncing");

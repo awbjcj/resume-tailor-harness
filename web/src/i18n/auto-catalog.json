@@ -114,11 +114,6 @@
     "en": "{{v0}} {{v1}}",
     "zh-CN": "{{v0}} {{v1}}"
   },
-  "{{v0}} {{v1}} {{v2}}": {
-    "key": "ui_a923f2f34641",
-    "en": "{{v0}} {{v1}} {{v2}}",
-    "zh-CN": "{{v0}} {{v1}} {{v2}}"
-  },
   "{{v0}} {{v1}} tier": {
     "key": "ui_0532ee228189",
     "en": "{{v0}} {{v1}} tier",
@@ -2448,16 +2443,6 @@
     "key": "ui_915dba66780c",
     "en": "Connect your AI providers, then choose the models used by each tier.",
     "zh-CN": "连接 AI 服务商，然后选择各层级使用的模型。"
-  },
-  "Connected ({{v0}} client). Reconnect to enable drafts.": {
-    "key": "ui_d9c917b31abd",
-    "en": "Connected ({{v0}} client). Reconnect to enable drafts.",
-    "zh-CN": "已连接（{{v0}} 客户端）。重新连接后可启用草稿功能。"
-  },
-  "Connected ({{v0}} client). Sync and drafts are enabled.": {
-    "key": "ui_2c16e6e04bcb",
-    "en": "Connected ({{v0}} client). Sync and drafts are enabled.",
-    "zh-CN": "已连接（{{v0}} 客户端）。已启用同步和草稿功能。"
   },
   "Connection type": {
     "key": "ui_a2cfeb2898b2",

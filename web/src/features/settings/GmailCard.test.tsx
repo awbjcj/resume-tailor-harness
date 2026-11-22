@@ -1,13 +1,30 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
+import { changeLanguage } from "@/i18n";
 import { server } from "@/test/server";
 import { withQueryClient } from "@/test/utils";
 import { GmailCard } from "./GmailCard";
 
 describe("GmailCard", () => {
+  it.each([
+    ["platform", true, "Connected using the platform's OAuth client. Sync and drafts are available.", "已通过平台提供的 OAuth 客户端连接，可以同步邮件和创建草稿。"],
+    ["own", false, "Connected using your own OAuth client. Reconnect to enable drafts.", "已通过你自己的 OAuth 客户端连接。重新连接后即可创建草稿。"],
+  ])("localizes the %s client and connection capabilities", async (clientSource, draftCapable, english, chinese) => {
+    server.use(http.get("*/api/gmail/status", () => HttpResponse.json({
+      connected: true, scopes: [], draftCapable, clientSource,
+    })));
+    render(<GmailCard />, { wrapper: withQueryClient });
+    expect(await screen.findByText(english)).toBeInTheDocument();
+
+    await act(async () => { await changeLanguage("zh-CN"); });
+    expect(screen.getByText(chinese)).toBeInTheDocument();
+    await act(async () => { await changeLanguage("en"); });
+    expect(screen.getByText(english)).toBeInTheDocument();
+  });
+
   it("saves the opt-in and allows it to be switched back off", async () => {
     const user = userEvent.setup();
     let enabled = false;

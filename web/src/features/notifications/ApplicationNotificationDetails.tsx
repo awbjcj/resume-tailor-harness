@@ -12,6 +12,7 @@ function notificationTitle(t: TFunction, item: NotificationItem) {
   if (item.kind === "follow_up") return t("interactionCopy.notifications.followUp", { company });
   if (item.kind === "interview_soon") return t("interactionCopy.notifications.interviewSoon", { company });
   if (item.kind === "offer_deadline_soon") return t("interactionCopy.notifications.offerDeadline", { company });
+  if (!item.proposedStatus) return t("interactionCopy.notifications.applicationUpdate");
   const knownStatus = /^(ready|submitted|interview|offer|rejected|closed)$/.test(item.proposedStatus);
   const status = knownStatus
     ? t(`application.statuses.${item.proposedStatus}` as "application.statuses.ready")
