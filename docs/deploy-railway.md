@@ -64,27 +64,60 @@ Railway's default on-failure restart policy at three retries. Environment
 variables and credentials remain managed in Railway;
 the H-1B service in the same project is outside this partial.
 
-To review and apply a change, install the pinned SDK with Node 22 or newer and
-link the Railway CLI to the intended project, environment, and service:
+Install the pinned SDK with Node 22 or newer and link the Railway CLI to the
+intended project, environment, and service:
 
 ```sh
 npm ci --prefix .railway
 railway link
-railway config plan
-railway config apply
 ```
 
-Inspect the plan before applying. In particular, do not apply a plan that
-detaches, recreates, or resizes the existing `/app/data` volume unless that
-change is intentional. A Git push does not apply Railway IaC by itself: apply
-the reviewed configuration explicitly after the change reaches the deployment
-branch. On Windows, if the SDK cannot find the installed CLI despite reporting
-a sufficiently recent CLI version, point `_` to the native `railway.exe` for
-the plan and apply commands. For a global npm installation:
+On Windows, if the SDK cannot find the installed CLI despite reporting a
+sufficiently recent CLI version, point `_` to the native `railway.exe` for the
+plan and apply commands. For a global npm installation:
 
 ```powershell
 $env:_ = Join-Path ((npm root -g).Trim()) '@railway/cli/bin/railway.exe'
 ```
+
+### First migration from a legacy config file
+
+For an existing service that still uses `railway.json` or `railway.toml`,
+complete the cutover **before** deploying a commit that removes that file.
+Coordinate deployments during the migration so a new deployment cannot start
+between clearing the legacy path and applying its replacement settings.
+
+1. In a local checkout containing `.railway/railway.ts`, check that the IaC
+   preserves the intended build, healthcheck, restart policy, replica, and
+   existing volume settings. Keep the currently deployed legacy file available
+   until the cutover is complete.
+2. If the service has a Config File path set in Railway, clear it with
+   `railway config migrate cutover` or in the service settings. Cutover affects
+   only the linked environment and does not deploy the application. If no path
+   is set, Railway can still auto-detect a legacy file at the repository or
+   service root on the next deployment.
+3. Run `railway config plan`, review the changes, then run
+   `railway config apply`. Do not apply a plan that detaches, recreates, or
+   resizes the existing `/app/data` volume unless that change is intentional.
+4. Once the IaC settings are applied, promote the commit removing the legacy
+   file to the deployment branch. Verify the resulting deployment and service
+   settings, including the healthcheck and restart policy.
+
+See Railway's [migration and cutover guide](https://docs.railway.com/infrastructure-as-code#migrating-from-config-as-code)
+for the current CLI behavior and recovery options.
+
+### Subsequent IaC changes
+
+A Git push does not apply Railway IaC by itself. After a routine configuration
+change reaches the deployment branch, review and apply it explicitly:
+
+```sh
+railway config plan
+railway config apply
+```
+
+Review the plan for unintended changes to the service or its volume before
+applying it.
 
 ## Email delivery
 
