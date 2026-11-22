@@ -1,3 +1,4 @@
+import "@/i18n/interaction-copy-notifications";
 import { Mail, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -13,12 +14,17 @@ import {
 } from "./use-gmail";
 
 export function GmailCard() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: status, isLoading, isError, refetch } = useGmailStatus();
   const connect = useGmailConnect();
   const disconnect = useGmailDisconnect();
   const sync = useGmailSync();
   const automation = useGmailAutomation();
+  const client = status?.clientSource === "platform"
+    ? t("interactionCopy.notifications.gmailPlatformClient")
+    : status?.clientSource === "own"
+      ? t("interactionCopy.notifications.gmailOwnClient")
+      : status?.clientSource ?? "";
 
   return (
     <section aria-labelledby="gmail-settings-title" className="flex flex-col gap-4 rounded-lg border p-4">
@@ -33,9 +39,9 @@ export function GmailCard() {
               : isLoading
                 ? "Checking connection…"
                 : status?.connected
-                  ? status.draftCapable
-                    ? `Connected (${status.clientSource} client). Sync and drafts are enabled.`
-                    : `Connected (${status.clientSource} client). Reconnect to enable drafts.`
+                  ? t(status.draftCapable
+                    ? "interactionCopy.notifications.gmailConnectedDrafts"
+                    : "interactionCopy.notifications.gmailConnectedReadOnly", { client })
                   : "Not connected. Connect to sync application status and draft emails."}
           </p>
         </div>
@@ -75,7 +81,7 @@ export function GmailCard() {
       </div>
       <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="min-w-0 text-sm text-muted-foreground">
-          Sync recruiting emails and review suggested changes in Notifications.
+          {t("interactionCopy.notifications.gmailSettingsHelp")}
         </p>
         <Button
           className="shrink-0 self-start"

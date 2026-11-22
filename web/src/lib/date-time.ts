@@ -1,3 +1,5 @@
+import i18n from "i18next";
+
 /**
  * The browser is the authority for a user's current timezone.  API timestamps
  * are always explicit UTC instants; format them here instead of letting each
@@ -21,13 +23,17 @@ function asDate(value: DateTimeValue): Date {
   return value instanceof Date ? value : new Date(value);
 }
 
+function displayLocale(locale?: string): string | undefined {
+  return locale ?? i18n.resolvedLanguage ?? i18n.language;
+}
+
 export function formatDateTimeInTimeZone(
   value: DateTimeValue,
   timeZone: string,
   locale?: string,
   options?: Intl.DateTimeFormatOptions,
 ): string {
-  return asDate(value).toLocaleString(locale, { ...options, timeZone });
+  return asDate(value).toLocaleString(displayLocale(locale), { ...options, timeZone });
 }
 
 export function formatDateInTimeZone(
@@ -36,7 +42,7 @@ export function formatDateInTimeZone(
   locale?: string,
   options?: Intl.DateTimeFormatOptions,
 ): string {
-  return asDate(value).toLocaleDateString(locale, { ...options, timeZone });
+  return asDate(value).toLocaleDateString(displayLocale(locale), { ...options, timeZone });
 }
 
 export function formatTimeInTimeZone(
@@ -45,7 +51,7 @@ export function formatTimeInTimeZone(
   locale?: string,
   options?: Intl.DateTimeFormatOptions,
 ): string {
-  return asDate(value).toLocaleTimeString(locale, { ...options, timeZone });
+  return asDate(value).toLocaleTimeString(displayLocale(locale), { ...options, timeZone });
 }
 
 export function formatUserDateTime(

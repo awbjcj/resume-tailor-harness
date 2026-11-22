@@ -26,6 +26,9 @@ test("keeps selected actions, interview banner, and notifications usable while s
     if (url.pathname === "/api/notifications") return route.fulfill({ json: [{
       id: 1, applicationId: 1, kind: "follow_up", proposedStatus: "", evidence: "No activity for 20 days: Acme · Platform Engineer",
       messageId: "followup", state: "pending", createdAt: "2026-10-23T12:00:00Z", jobId: 7, company: "Acme", title: "Platform Engineer",
+    }, {
+      id: 2, applicationId: 1, kind: "interview_soon", proposedStatus: "", evidence: "Interview Oct 24, 18:00 UTC: Acme · Platform Engineer",
+      messageId: "interview", state: "pending", createdAt: "2026-10-23T12:00:00Z", jobId: 7, company: "Acme", title: "Platform Engineer",
     }] });
     if (url.pathname === "/api/run-completions" || url.pathname === "/api/board-views") return route.fulfill({ json: [] });
     if (url.pathname === "/api/jobs/bulk") return route.fulfill({ json: { affected: 1, skipped: 0, reasons: {} } });
@@ -55,7 +58,8 @@ test("keeps selected actions, interview banner, and notifications usable while s
   await expect(dialog).toBeHidden();
 
   await page.getByRole("button", { name: "通知（1 条待处理）" }).click();
-  await expect(page.getByText("20 天没有新动态：Acme · Platform Engineer")).toBeVisible();
+  await expect(page.getByText("面试：10月24日 18:00 UTC · Acme · Platform Engineer")).toBeVisible();
+  await expect(page.getByText("20 天没有新动态：Acme · Platform Engineer")).toHaveCount(0);
   await page.keyboard.press("Escape");
   await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
   await expect(page.getByRole("status", { name: "1 selected" })).toBeVisible();
