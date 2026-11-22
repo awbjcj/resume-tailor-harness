@@ -629,18 +629,23 @@ def test_draft_recovery_regenerates_pending_review_card_without_applying_it(
                 session["recovery"].pop("has_workspace_previews")
 
             store.mutate(tmp_path, "recover-review", remove_marker)
-        resume_kwargs = dict(
-            root=tmp_path,
-            engine=engine,
-            session_id="recover-review",
-            operation_id=recovered["operation_id"],
-            persona_agent=persona,
-            formatter_agent=_Formatter(),
-            registry=registry,
-        )
-        reply = career_lab.run_resume_turn(_Reporter(), **resume_kwargs)
+        operation_id = recovered["operation_id"]
+
+        def resume():
+            return career_lab.run_resume_turn(
+                _Reporter(),
+                root=tmp_path,
+                engine=engine,
+                session_id="recover-review",
+                operation_id=operation_id,
+                persona_agent=persona,
+                formatter_agent=_Formatter(),
+                registry=registry,
+            )
+
+        reply = resume()
         assert reply["turns"][-1]["text"] == "The note is ready for review."
-        assert career_lab.run_resume_turn(_Reporter(), **resume_kwargs) == reply
+        assert resume() == reply
 
     with Session(engine) as db:
         proposal = db.exec(select(WorkspaceProposal)).one()
