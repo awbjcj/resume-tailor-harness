@@ -181,6 +181,17 @@ export function CareerLabPage() {
     }
   };
 
+  const resumeSaved = async () => {
+    if (!active?.recoveryId || busy) return;
+    setRunError("");
+    stream.reset();
+    try {
+      const launched = await send.mutateAsync({ sessionId: active.sessionId, message: "",
+        resumeOperationId: active.recoveryId, onDone: (completed) => onDone(completed) });
+      attachRun(launched.runId);
+    } catch (error) { setRunError(error instanceof Error ? error.message : "Could not resume saved work"); }
+  };
+
   const stop = () => {
     void stream.stop();
   };
@@ -311,7 +322,10 @@ export function CareerLabPage() {
             {canCompose ? <div className="space-y-3 border-t bg-card/95 p-4 sm:p-6">
               <ChatRunProgress runId={runId} status={stream.status} reconnecting={stream.reconnecting} />
               <CareerLabContextSummary context={context} onChange={setContext} disabled={busy} />
-              <ChatComposer
+              {active?.status === "active" && active.recoveryId && active.recoveryStage !== "committed" ? (
+              <Button variant="outline" disabled={busy} onClick={() => void resumeSaved()}>Resume saved response</Button>
+            ) : null}
+            <ChatComposer
                 value={composer}
                 onChange={setComposer}
                 onSend={() => void sendMessage()}

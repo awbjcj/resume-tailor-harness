@@ -101,6 +101,55 @@ def test_skill_capability_contract(tmp_path):
         assert all("directory" not in row for row in response.json()["skills"])
 
 
+def test_resume_endpoint_reuses_draft_and_reconciles_committed_turn(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(
+        "resume_tailor_harness.llm_runner.resolve_api_key", lambda *a, **kw: "key"
+    )
+    calls = []
+
+    class Persona(_Persona):
+        def run(self, prompt):
+            calls.append(prompt)
+            return super().run(prompt)
+
+    class CrashedFormatter(_Formatter):
+        def run(self, prompt):
+            raise RuntimeError("interrupted after draft")
+
+    monkeypatch.setattr(service, "build_persona_agent", lambda *a, **kw: Persona())
+    monkeypatch.setattr(service, "build_formatter_agent", lambda **kw: _Formatter())
+    with _client(tmp_path) as client:
+        start = client.post(
+            "/api/career-lab/sessions",
+            json={"message": "Plan", "skill": "salary-negotiation-prep"},
+        )
+        sid = _wait(client, start.json()["runId"])["result"]["sessionId"]
+        monkeypatch.setattr(
+            service, "build_formatter_agent", lambda **kw: CrashedFormatter()
+        )
+        message = client.post(
+            f"/api/career-lab/sessions/{sid}/messages",
+            json={"message": "Continue", "skill": "salary-negotiation-prep"},
+        )
+        assert _wait(client, message.json()["runId"])["state"] == "error"
+        detail = client.get(f"/api/career-lab/sessions/{sid}").json()
+        assert detail["recoveryStage"] == "drafted"
+        operation = detail["recoveryId"]
+        assert (
+            client.post(f"/api/career-lab/sessions/{sid}/resume/wrong").status_code
+            == 409
+        )
+        monkeypatch.setattr(service, "build_formatter_agent", lambda **kw: _Formatter())
+        for _ in range(2):
+            resumed = client.post(f"/api/career-lab/sessions/{sid}/resume/{operation}")
+            assert resumed.status_code == 202
+            assert _wait(client, resumed.json()["runId"])["state"] == "done"
+        assert len(calls) == 2  # opening and the original draft only
+        assert len(client.get(f"/api/career-lab/sessions/{sid}").json()["turns"]) == 4
+
+
 def test_start_message_end_and_archive_contract(monkeypatch, tmp_path):
     monkeypatch.setattr(
         "resume_tailor_harness.llm_runner.resolve_api_key",

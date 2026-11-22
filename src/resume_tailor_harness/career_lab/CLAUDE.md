@@ -1,16 +1,18 @@
 # Career Lab developer reference
 
-- **One conversation snapshot across skills.** `context.py` serializes every
-  committed user/assistant turn, historical skill/context references, goal,
-  and the latest input exactly once. The service builds it once and supplies
-  the same snapshot to the Agno router and selected persona; changing skills
-  never resets or slices history. JSON framing keeps user text as data.
-  The 256,000-byte application payload guard raises
-  `CONVERSATION_CONTEXT_TOO_LARGE` before either agent runs. This is not a
-  provider token-window guarantee: provider/system/skill/output limits still
-  apply. No automatic compaction is performed. Source-document projections
-  retain their separate bounds. Commits of replies check the loaded turn count
-  under the store lock, rejecting stale replies without changing the transcript.
+- **One bounded working snapshot across skills.** Full history remains durable.
+  `context.py` includes full history for ordinary conversations and a validated
+  quote-backed continuation plus recent turns for long ones. Router and persona
+  see the same projection and latest input exactly once. No summary becomes a
+  verified fact or approval. Source projections remain valid JSON with explicit
+  omissions and source fingerprints. See ADR 0014 for budgets and failure modes.
+- **Explicit draft recovery.** `recovery.py` saves prepared/drafted stages for an
+  existing session. Resume revalidates sources, skill identity and model/policy,
+  uses a bounded original attempt/deadline budget and fences stale writers.
+  Reply append and committed receipt are one atomic write. A committed operation
+  can be resumed after lost notification without duplicating the turn. Failed
+  starts still create no session; interrupted existing turns may retain recovery
+  metadata but never a half-committed user/assistant exchange.
 
 Migrated from the project root `CLAUDE.md` (2026-08-15, CLAUDE.md split) — loads only when working under `src/resume_tailor_harness/career_lab/`.
 

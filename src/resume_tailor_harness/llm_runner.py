@@ -286,6 +286,7 @@ class AgentRunner:
     ) -> None:
         self._agent = agent
         self._run_meta = run_meta
+        self.context_stats: dict[str, object] | None = None
         # Persist the shared prompt revision as well as the builder's policy.
         # Legacy runners and the unchanged fact-check gate have no quality block.
         from resume_tailor_harness.prompts.quality import (

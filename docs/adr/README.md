@@ -17,3 +17,5 @@ Decisions the architecture reviews must not re-litigate. Newest last.
 | [0011](0011-curated-skill-agents-h1b-only-mcp.md) | Curated single-skill agents + H-1B-only MCP | Each task agent sees one verified skill; only a dedicated sponsorship agent receives the read-only H-1B MCP toolset. |
 | [0012](0012-application-status-progression-and-terminal.md) | Application status progression + terminal set | `ready → submitted → interview → offer` advances only; `rejected` and `closed` are terminal exits reachable from every progression state. |
 | [0013](0013-has-progress-requires-real-investment.md) | Progress requires real investment | A bare `ready` application row does not block deletion; advanced status, notes, events, or attached artifacts do. |
+
+- [0014: Bounded context and explicit draft recovery](0014-bounded-context-and-explicit-draft-recovery.md)

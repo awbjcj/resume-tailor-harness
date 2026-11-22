@@ -84,6 +84,15 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
       if (!finished.current.delete(run.runId)) setLocalRunId(run.runId);
     } catch (caught) { setPending(null); setError(caught instanceof Error ? caught.message : "Unable to start the response."); }
   };
+  const resumeSaved = async () => {
+    if (!sessionId || !session.data?.recoveryId || busy) return;
+    setError("");
+    stream.reset();
+    try {
+      const run = await send.mutateAsync({ sessionId, message: "", resumeOperationId: session.data.recoveryId, onDone: (run) => onDone(run, "") });
+      if (!finished.current.delete(run.runId)) setLocalRunId(run.runId);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "Could not resume saved work"); }
+  };
   const stop = () => {
     void stream.stop();
   };
@@ -102,6 +111,7 @@ export function JobAssistantConversation({ jobId, jobLabel, versions }: Props) {
     <ChatRunProgress runId={runId} status={stream.status} reconnecting={stream.reconnecting} />
     {error || stream.error ? <p role="alert" className="text-sm text-destructive">{error || stream.error}</p> : null}
     <WorkspaceReview surface="career-lab" sessionId={sessionId} turnCount={session.data?.turns?.length ?? 0} />
+    {session.data?.recoveryId && session.data.recoveryStage !== "committed" ? <Button variant="outline" disabled={busy} onClick={() => void resumeSaved()}>Resume saved response</Button> : null}
     <ChatComposer value={message} onChange={setMessage} onSend={() => void submit()} onStop={stop} busy={busy} disabled={sessions.isPending || sessions.isError || session.isError || Boolean(sessionId && session.isPending)} settling={stream.status === "settled"} ariaLabel="Ask about this job" placeholder="Ask about this role or selected resume…" />
     {sessionId ? <Link to={`/career-lab?session=${encodeURIComponent(sessionId)}`} className="text-center text-xs font-medium text-primary underline underline-offset-4">Open full workspace</Link> : null}
   </div>;

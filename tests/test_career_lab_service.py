@@ -3,7 +3,7 @@
 from pathlib import Path
 import json
 from types import SimpleNamespace
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import pytest
 
@@ -363,3 +363,164 @@ def test_oversize_start_does_not_create_session(tmp_path, monkeypatch):
     with pytest.raises(context.ConversationContextTooLarge):
         career_lab.run_start_turn(**_turn_kwargs(tmp_path))
     assert list(tmp_path.glob("session-*.json")) == []
+
+
+def test_draft_recovery_survives_reload_and_commit_is_repeat_safe(tmp_path):
+    skill = _skill()
+    create_session(tmp_path, session_id="recover")
+    persona = _Persona(_meta(skill))
+
+    class CrashingFormatter(_Formatter):
+        def run(self, prompt):
+            raise RuntimeError("process stopped after draft")
+
+    kwargs: dict[str, Any] = dict(
+        reporter=_Reporter(),
+        root=tmp_path,
+        engine=None,
+        session_id="recover",
+        message="Compare my offers",
+        skill=skill.ref.name,
+        persona_agent=persona,
+        formatter_agent=CrashingFormatter(),
+        registry=CareerSkillRegistry.from_paths("skills", "skills-lock.json"),
+    )
+    with pytest.raises(RuntimeError, match="process stopped"):
+        career_lab.run_message_turn(**kwargs)
+    saved = load_session(tmp_path, "recover")
+    assert saved["turns"] == []
+    assert saved["recovery"]["stage"] == "drafted"
+    operation = saved["recovery"]["operation_id"]
+    result = career_lab.run_resume_turn(
+        _Reporter(),
+        root=tmp_path,
+        engine=None,
+        session_id="recover",
+        operation_id=operation,
+        persona_agent=persona,
+        formatter_agent=_Formatter(),
+        registry=kwargs["registry"],
+    )
+    assert len(persona.prompts) == 1
+    assert len(result["turns"]) == 2
+    assert result["recoveryStage"] == "committed"
+    again = career_lab.run_resume_turn(
+        _Reporter(),
+        root=tmp_path,
+        engine=None,
+        session_id="recover",
+        operation_id=operation,
+    )
+    assert again == result
+    assert len(load_session(tmp_path, "recover")["turns"]) == 2
+
+
+def test_recovery_rejects_changed_source_and_budget_exhaustion(tmp_path, monkeypatch):
+    from resume_tailor_harness.career_lab.recovery import begin, fingerprint
+    from resume_tailor_harness.sessions.context import ContextBudgetExceeded
+
+    session = create_session(tmp_path, session_id="s1")
+    request = {"message": "hello"}
+    for _ in range(3):
+        begin(tmp_path, session, request, fingerprint("v1"))
+    with pytest.raises(ContextBudgetExceeded, match="budget exhausted"):
+        begin(tmp_path, session, request, fingerprint("v1"))
+    with pytest.raises(ContextBudgetExceeded, match="inputs or policy changed"):
+        begin(tmp_path, session, request, fingerprint("v2"))
+
+
+def test_long_history_compacts_with_citations_then_reloads_without_resummarizing(
+    tmp_path, monkeypatch
+):
+    from resume_tailor_harness.career_lab import continuation
+    from resume_tailor_harness.career_lab.store import append_turns
+    from resume_tailor_harness.career_lab.continuation import (
+        MemorySelection,
+        MemoryItem,
+    )
+
+    skill = _skill()
+    create_session(tmp_path, session_id="long", goal="Compare offers")
+    for i in range(5):
+        append_turns(
+            tmp_path,
+            "long",
+            user_text=f"Remote work is mandatory {i}. " + "detail " * 5000,
+            context_refs=None,
+            assistant_text="Draft",
+            skill_ref=skill.ref,
+            agent_meta=_meta(skill),
+        )
+    original = load_session(tmp_path, "long")["turns"]
+
+    class Selector:
+        calls = 0
+
+        def run(self, prompt):
+            self.calls += 1
+            rows = json.loads(prompt)
+            user = next(row for row in rows if row["role"] == "user")
+            return _Response(
+                MemorySelection(
+                    items=[
+                        MemoryItem(
+                            kind="constraint",
+                            turn_id=user["turn_id"],
+                            quote=user["text"][:80],
+                        )
+                    ]
+                )
+            )
+
+    selector = Selector()
+    monkeypatch.setattr(continuation, "TRIGGER_BYTES", 100_000)
+    monkeypatch.setattr(career_lab, "build_continuation_agent", lambda **kw: selector)
+    persona = _Persona(_meta(skill))
+    common: dict[str, Any] = dict(
+        reporter=_Reporter(),
+        root=tmp_path,
+        engine=None,
+        session_id="long",
+        skill=skill.ref.name,
+        persona_agent=persona,
+        formatter_agent=_Formatter(),
+        registry=CareerSkillRegistry.from_paths("skills", "skills-lock.json"),
+    )
+    career_lab.run_message_turn(
+        message="Correction: hybrid is now acceptable.", **common
+    )
+    saved = load_session(tmp_path, "long")
+    assert saved["turns"][: len(original)] == original
+    assert saved["continuation"]["through_turn"] == 8
+    prompt = _conversation(persona.prompts[-1])
+    assert prompt["continuation"]["historical_not_verified_fact"] is True
+    assert prompt["current_turn"]["text"] == "Correction: hybrid is now acceptable."
+    assert prompt["continuation"]["items"]
+    calls = selector.calls
+    career_lab.run_message_turn(message="Continue with that correction.", **common)
+    assert selector.calls == calls
+    assert "hybrid is now acceptable" in persona.prompts[-1]
+
+
+def test_stale_recovery_worker_cannot_commit_after_new_attempt(tmp_path):
+    from resume_tailor_harness.career_lab.recovery import begin
+    from resume_tailor_harness.career_lab.store import append_turns
+
+    session = create_session(tmp_path, session_id="fenced")
+    first = begin(tmp_path, session, {"message": "hello"}, "input")
+    begin(tmp_path, session, {"message": "hello"}, "input")
+    skill = _skill()
+    with pytest.raises(ValueError, match="operation changed"):
+        append_turns(
+            tmp_path,
+            "fenced",
+            user_text="hello",
+            context_refs=None,
+            assistant_text="stale",
+            skill_ref=skill.ref,
+            agent_meta=_meta(skill),
+            expected_turn_count=0,
+            recovery_id=first.operation_id,
+            recovery_attempt=first.attempts,
+        )
+    assert load_session(tmp_path, "fenced")["turns"] == []

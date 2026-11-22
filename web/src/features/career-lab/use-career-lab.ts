@@ -23,6 +23,7 @@ type StartInput = {
   context?: CareerLabContext;
 };
 type MessageInput = {
+  resumeOperationId?: string;
   sessionId: string;
   message: string;
   skill?: CareerLabSkillName;
@@ -174,8 +175,10 @@ export function useStartCareerLab() {
 
 export function useSendCareerLabMessage() {
   return useRunMutation<MessageInput>(
-    ({ sessionId, message, skill, context }) =>
-      unwrap(
+    ({ sessionId, message, skill, context, resumeOperationId }) =>
+      resumeOperationId ? unwrap(api.POST("/api/career-lab/sessions/{session_id}/resume/{operation_id}", {
+        params: { path: { session_id: sessionId, operation_id: resumeOperationId } },
+      })) : unwrap(
         api.POST("/api/career-lab/sessions/{session_id}/messages", {
           params: { path: { session_id: sessionId } },
           body: { message, skill, context },
