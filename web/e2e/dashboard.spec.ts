@@ -77,6 +77,76 @@ test("dashboard is home and queue cards deep-link", async ({ page }) => {
   await expect(page).toHaveURL(/\/triage/);
 });
 
+test("dashboard handles application decisions and follow-ups while the bell stays informational", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const base = {
+    applicationId: 1, jobId: 7, company: "Acme", title: "Staff Engineer",
+    createdAt: "2026-10-23T12:00:00Z", state: "pending", revision: "r1",
+  };
+  let pending = [
+    { ...base, id: 1, kind: "interview", proposedStatus: "interview", evidence: "Can we schedule a call?", messageId: "email-1" },
+    { ...base, id: 2, kind: "rejected", proposedStatus: "rejected", evidence: "Thanks for your interest.", messageId: "email-2" },
+    { ...base, id: 3, kind: "follow_up", proposedStatus: "", evidence: "No activity for 20 days: Acme · Staff Engineer", messageId: "follow-up" },
+    { ...base, id: 4, kind: "offer_deadline_soon", proposedStatus: "", evidence: "Offer deadline Oct 24, 18:00 UTC: Acme · Staff Engineer", messageId: "reminder" },
+  ];
+  const decisions: string[] = [];
+  await page.route("**/api/notifications", (route) => route.fulfill({ json: pending }));
+  await page.route(/\/api\/notifications\/\d+\/(accept|dismiss)$/, (route) => {
+    const [, id, action] = /\/(\d+)\/(accept|dismiss)$/.exec(route.request().url())!;
+    const item = pending.find((entry) => entry.id === Number(id));
+    decisions.push(`${id}/${action}`);
+    if (id === "3" && decisions.filter((decision) => decision === "3/accept").length === 1) {
+      return route.fulfill({ status: 500, json: { error: { code: "TEST_ERROR", message: "Try again" } } });
+    }
+    pending = pending.filter((entry) => entry !== item);
+    return route.fulfill({ json: item });
+  });
+  await page.route("**/api/jobs/7/email-drafts", (route) => route.fulfill({ json: [] }));
+  await page.route("**/api/run-completions*", (route) => route.fulfill({ json: [{
+    id: 11, runId: "saved", kind: "discover", label: "Imported source documents", status: "succeeded",
+    error: null, completedAt: "2026-10-23T12:00:00Z", readAt: null,
+  }] }));
+
+  await page.goto("/");
+  const board = page.getByRole("region", { name: "Application notifications" });
+  const bell = page.getByRole("button", { name: "Notifications (2 pending)" });
+  await expect(board.getByText("Can we schedule a call?")).toBeVisible();
+  await expect(board.getByRole("link", { name: "View job" })).toHaveAttribute("href", "/pipeline?job=7");
+  await expect(page.getByRole("region", { name: "Recent runs" }).getByText("Imported source documents")).toBeVisible();
+  await bell.click();
+  const popover = page.getByRole("dialog", { name: "Notifications" });
+  await expect(popover.getByText("Offer deadline: Acme")).toBeVisible();
+  await expect(popover.getByText("Discovery succeeded")).toBeVisible();
+  await expect(popover.getByText("Can we schedule a call?")).toHaveCount(0);
+  await expect(popover.getByText("Follow up: Acme")).toHaveCount(0);
+  await expect(popover.getByRole("button", { name: /approve|reject update|draft follow-up|sync gmail/i })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  const interview = board.getByRole("listitem").filter({ hasText: "Can we schedule a call?" });
+  await interview.getByRole("button", { name: "Add to timeline" }).click();
+  const review = page.getByRole("dialog", { name: "Review application update" });
+  await expect(review.getByRole("checkbox", { name: /confirmed the stage and date/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(review).toBeHidden();
+  const approve = interview.getByRole("button", { name: "Approve", exact: true });
+  expect((await approve.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  await approve.press("Enter");
+  await expect(interview).toHaveCount(0);
+  await expect(board.getByRole("heading", { name: "Application notifications" })).toBeFocused();
+  const rejection = board.getByRole("listitem").filter({ hasText: "Thanks for your interest." });
+  await rejection.getByRole("button", { name: "Reject update" }).click();
+  await expect(rejection).toHaveCount(0);
+  const draft = board.getByRole("button", { name: "Draft follow-up" });
+  await draft.click();
+  await expect(board.getByRole("alert")).toHaveText("Could not save your decision. Try again.");
+  await draft.click();
+  await expect(page.getByRole("dialog", { name: "Draft email" }).getByRole("button", { name: "Follow-up", pressed: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(draft).toHaveCount(0);
+  expect(decisions).toEqual(["1/accept", "2/dismiss", "3/accept", "3/accept"]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("mobile chrome keeps launch actions compact and horizontally contained", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");

@@ -5,6 +5,7 @@ import { JourneyRail } from "@/features/journey/JourneyRail";
 import { formatUserDate } from "@/lib/date-time";
 
 import { ActionQueue } from "./ActionQueue";
+import { ApplicationNotifications } from "./ApplicationNotifications";
 import { AttentionCard } from "./AttentionCard";
 import { DeskHealth } from "./DeskHealth";
 import { InProgressCard } from "./InProgressCard";
@@ -14,11 +15,6 @@ import { QuickAccess } from "./QuickAccess";
 import { StageRail } from "./StageRail";
 import { UpcomingCard } from "./UpcomingCard";
 import { useDashboardSummary } from "./use-dashboard-summary";
-
-export function heroTitle(waiting: number): string {
-  if (waiting === 0) return "Nothing is waiting on you";
-  return `${waiting} job${waiting === 1 ? " is" : "s are"} waiting on you`;
-}
 
 export function DashboardPage() {
   const { t, i18n } = useTranslation();
@@ -48,6 +44,7 @@ export function DashboardPage() {
         meta={<time dateTime={new Date().toLocaleDateString("en-CA")}>{date}</time>}
       />
       {totalJobs > 0 && <ActionQueue summary={summary} />}
+      <ApplicationNotifications />
       <JourneyRail />
       {totalJobs > 0 && <StageRail summary={summary} />}
       <aside
