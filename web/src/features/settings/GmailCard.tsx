@@ -1,3 +1,4 @@
+import "@/i18n/interaction-copy-notifications";
 import { Mail, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -13,7 +14,7 @@ import {
 } from "./use-gmail";
 
 export function GmailCard() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: status, isLoading, isError, refetch } = useGmailStatus();
   const connect = useGmailConnect();
   const disconnect = useGmailDisconnect();
@@ -75,7 +76,7 @@ export function GmailCard() {
       </div>
       <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="min-w-0 text-sm text-muted-foreground">
-          Sync recruiting emails and review suggested changes in Notifications.
+          {t("interactionCopy.notifications.gmailSettingsHelp")}
         </p>
         <Button
           className="shrink-0 self-start"

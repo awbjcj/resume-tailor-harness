@@ -1,4 +1,9 @@
 import type { TFunction } from "i18next";
+import type { NotificationItem } from "./use-notifications";
+
+export function isEventReminder(item: NotificationItem): boolean {
+  return !item.proposedStatus && (item.kind === "interview_soon" || item.kind === "offer_deadline_soon");
+}
 
 // These reminders are produced by the app in a fixed format. Email excerpts
 // and any unrecognized messages must stay exactly as received.

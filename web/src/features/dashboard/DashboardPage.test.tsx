@@ -1,11 +1,12 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { server } from "@/test/server";
 import { withQueryClient } from "@/test/utils";
-import { DashboardPage, heroTitle } from "./DashboardPage";
+import { DashboardPage } from "./DashboardPage";
 import { SUMMARY } from "./fixtures";
 
 const READY_STATUS = {
@@ -30,15 +31,40 @@ function renderPage() {
   );
 }
 
-describe("heroTitle", () => {
-  it("states the actionable total grammatically", () => {
-    expect(heroTitle(0)).toBe("Nothing is waiting on you");
-    expect(heroTitle(1)).toBe("1 job is waiting on you");
-    expect(heroTitle(8)).toBe("8 jobs are waiting on you");
-  });
-});
-
 describe("DashboardPage", () => {
+  beforeEach(() => {
+    server.use(http.get("/api/notifications", () => HttpResponse.json([])));
+  });
+
+  it("shows application approvals even when the pipeline queues are empty", async () => {
+    server.use(
+      http.get("/api/dashboard/summary", () => HttpResponse.json({
+        ...SUMMARY,
+        statusCounts: {},
+        queues: { triage: 0, approve: 0, tailor: 0, apply: 0 },
+      })),
+      http.get("/api/setup/status", () => HttpResponse.json(READY_STATUS)),
+      http.get("/api/notifications", () => HttpResponse.json([{
+        id: 3, applicationId: 1, jobId: 7, company: "Acme", title: "Engineer",
+        kind: "rejected", proposedStatus: "rejected", evidence: "Thank you for applying.",
+        messageId: "rejection", state: "pending", revision: "r1", createdAt: "2026-10-23T12:00:00Z",
+      }])),
+      http.post("/api/gmail/sync", () => HttpResponse.json({
+        error: { code: "GMAIL_NOT_CONNECTED", message: "Connect Gmail in Settings before syncing" },
+      }, { status: 409 })),
+    );
+    const user = userEvent.setup();
+    renderPage();
+    const board = within(await screen.findByRole("region", { name: "Application notifications" }));
+    expect(screen.getByRole("heading", { name: "No jobs waiting in the pipeline" })).toBeInTheDocument();
+    expect(await board.findByText("Move to Rejected")).toBeInTheDocument();
+    expect(board.getByRole("button", { name: "Approve" })).toBeEnabled();
+    expect(board.getByRole("button", { name: "Reject update" })).toBeEnabled();
+    expect(board.getByRole("button", { name: "Review cleared Gmail updates" })).toBeEnabled();
+    await user.click(board.getByRole("button", { name: "Sync Gmail" }));
+    expect(await board.findByRole("alert")).toHaveTextContent("Connect Gmail in Settings before syncing");
+  });
+
   it("renders hero total, queue cards, and stage rail from the summary", async () => {
     server.use(
       http.get("/api/dashboard/summary", () => HttpResponse.json(SUMMARY)),

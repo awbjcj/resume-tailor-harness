@@ -622,7 +622,7 @@ const en = {
     },
   },
   dashboard: {
-    waiting_zero: "No jobs need your attention",
+    waiting_zero: "No jobs waiting in the pipeline",
     waiting_one: "{{count}} job is waiting on you",
     waiting_other: "{{count}} jobs are waiting on you",
     operations: "Operations",
@@ -763,7 +763,6 @@ const en = {
     historyHint: "Latest 50 operations. Logs retain up to 200 progress messages per operation.",
     clearOperations: "Clear operation history",
     clearNotifications: "Clear run history",
-    gmailReviewHelp: "Gmail updates need your review. Choose Accept to update an application. Clearing run history keeps pending updates; recover previously cleared updates below.",
     reviewClearedGmail: "Review cleared Gmail updates",
     clearConfirm: "Clear this history? Job results and active operations are kept.",
     confirmClear: "Clear history",
@@ -1427,7 +1426,7 @@ const zhCN = {
     },
   },
   dashboard: {
-    waiting_zero: "没有待处理的职位",
+    waiting_zero: "求职流程中没有待处理的职位",
     waiting_one: "有 {{count}} 个职位等待你处理",
     waiting_other: "有 {{count}} 个职位等待你处理",
     operations: "求职概览",
@@ -1566,7 +1565,6 @@ const zhCN = {
     historyHint: "显示最近 50 次操作，每次操作最多保留 200 条进度日志。",
     clearOperations: "清空操作历史",
     clearNotifications: "清空运行历史",
-    gmailReviewHelp: "Gmail 更新需要你审核。点击“接受”后才会更新申请状态。清空运行历史会保留待审核更新；可通过下方按钮恢复此前清除的更新。",
     reviewClearedGmail: "重新审核已清除的 Gmail 更新",
     clearConfirm: "清空此历史记录？职位结果和正在进行的操作将保留。",
     confirmClear: "清空历史",

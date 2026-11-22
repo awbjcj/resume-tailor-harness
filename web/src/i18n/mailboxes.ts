@@ -1,7 +1,7 @@
 export const mailboxesEn = {
   description: "Connect your email accounts, analyze application emails, and choose which notifications to receive.",
   title: "Other email accounts",
-  help: "Sign in with Microsoft to connect Outlook, or select another provider to fill in its server settings. Review suggested application updates in Notifications.",
+  help: "Sign in with Microsoft to connect Outlook, or select another provider to fill in its server settings. Review suggested updates under Application notifications on the dashboard.",
   microsoft: "Connect Outlook / Microsoft 365",
   microsoftUnavailable: "Ask your administrator to enable Microsoft sign-in.",
   add: "Add email account", provider: "Email provider", custom: "Custom IMAP / SMTP",
@@ -33,7 +33,7 @@ export const mailboxesEn = {
 export const mailboxesZh: typeof mailboxesEn = {
   description: "连接邮箱、分析求职邮件，并选择要接收的通知。",
   title: "其他邮箱账户",
-  help: "登录 Microsoft 账户来连接 Outlook，或选择其他服务商自动填写服务器设置。请在“通知”中审核邮件分析提出的申请更新建议。",
+  help: "登录 Microsoft 账户来连接 Outlook，或选择其他服务商自动填写服务器设置。请在仪表板的“申请通知”中审核邮件分析提出的更新建议。",
   microsoft: "连接 Outlook / Microsoft 365", microsoftUnavailable: "管理员需要先启用 Microsoft 登录。",
   add: "添加邮箱账户", provider: "邮箱服务商", custom: "自定义 IMAP / SMTP",
   email: "邮箱地址", password: "应用专用密码", username: "用户名",

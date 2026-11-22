@@ -183,18 +183,21 @@ test("localizes the interview banner and generated notifications across language
     { id: 1, applicationId: 1, kind: "follow_up", proposedStatus: "", evidence: "No activity for 20 days: Acme · Engineer", messageId: "followup", state: "pending", createdAt: "2026-10-23T12:00:00Z", jobId: 7, company: "Acme", title: "Engineer" },
     { id: 2, applicationId: 1, kind: "rejected", proposedStatus: "rejected", evidence: "Thank you for applying.", messageId: "email", state: "pending", createdAt: "2026-10-23T12:00:00Z", jobId: 7, company: "Acme", title: "Engineer" },
   ] }));
+  await page.route("**/api/dashboard/summary", (route) => route.fulfill({ json: {
+    statusCounts: {}, queues: { triage: 0, approve: 0, tailor: 0, apply: 0 }, applied: 0,
+  } }));
 
-  await page.goto("/settings/review");
+  await page.goto("/");
   await expect(page.getByRole("link", { name: "继续面试" })).toBeVisible();
-  await page.getByRole("button", { name: "通知（2 条待处理）" }).click();
-  await expect(page.getByText("20 天没有新动态：Acme · Engineer")).toBeVisible();
-  await expect(page.getByText("更新状态为已拒绝")).toBeVisible();
-  await expect(page.getByText("Thank you for applying.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "通知", exact: true })).toBeVisible();
+  const chineseBoard = page.getByRole("region", { name: "申请通知" });
+  await expect(chineseBoard.getByText("20 天没有新动态：Acme · Engineer")).toBeVisible();
+  await expect(chineseBoard.getByText("更新状态为已拒绝")).toBeVisible();
+  await expect(chineseBoard.getByText("Thank you for applying.")).toBeVisible();
 
   await page.getByRole("combobox", { name: "语言", exact: true }).selectOption("en");
   await expect(page.getByRole("link", { name: "Resume", exact: true })).toBeVisible();
-  const bell = page.getByRole("button", { name: "Notifications (2 pending)" });
-  if (await bell.getAttribute("aria-expanded") !== "true") await bell.click();
-  await expect(page.getByText("No activity for 20 days: Acme · Engineer")).toBeVisible();
-  await expect(page.getByText("Move to Rejected")).toBeVisible();
+  const englishBoard = page.getByRole("region", { name: "Application notifications" });
+  await expect(englishBoard.getByText("No activity for 20 days: Acme · Engineer")).toBeVisible();
+  await expect(englishBoard.getByText("Move to Rejected")).toBeVisible();
 });
