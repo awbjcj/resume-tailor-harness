@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from resume_tailor_harness.api.auth import hash_password
-from resume_tailor_harness.tenancy.system_db import LlmRate, User
+from resume_tailor_harness.tenancy.system_db import LlmRate, OpenAICreditReservation, User
 
 
 def _login(client, username="owner", password="owner-password"):
@@ -27,6 +27,33 @@ def _member(app, username="alice", *, disabled=False):
         )
         session.commit()
     return user_id
+
+
+def test_credit_hold_reconciliation_requires_admin_and_omits_transcript(mu_app, mu_client):
+    user_id = _member(mu_app)
+    reservation_id = "a" * 64
+    with Session(mu_app.state.system_engine) as session:
+        session.add(OpenAICreditReservation(
+            id=reservation_id, user_id=user_id, cycle_id="b" * 64,
+            operation="transcribe", model="gpt-transcribe", fingerprint="c" * 64,
+            status="submitted", reserved_micros=500,
+            created_at=datetime.now(timezone.utc), submitted_at=datetime.now(timezone.utc),
+            result_text="private transcript",
+        ))
+        session.commit()
+    assert _login(mu_client, "alice", "member-password").status_code == 200
+    assert mu_client.get("/api/admin/openai-credit/summary").status_code == 403
+    assert mu_client.get("/api/admin/openai-credit/reservations").status_code == 403
+    url = f"/api/admin/openai-credit/reservations/{reservation_id}/reconcile"
+    assert mu_client.post(url, json={"outcome": "unbilled", "reason": "provider confirmed"}).status_code == 403
+    assert _login(mu_client).status_code == 200
+    assert mu_client.get("/api/admin/openai-credit/summary").status_code == 409
+    response = mu_client.get("/api/admin/openai-credit/reservations")
+    assert response.status_code == 200
+    assert response.json()["reservations"][0]["id"] == reservation_id
+    assert "private transcript" not in response.text
+    assert mu_client.post(url, json={"outcome": "unbilled", "reason": "provider confirmed"}).json() == {"ok": True}
+    assert mu_client.get("/api/admin/openai-credit/reservations").json()["reservations"] == []
 
 
 def test_quota_console_manages_tiers_accounts_and_audited_operations(mu_app, mu_client):

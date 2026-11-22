@@ -45,6 +45,7 @@ vi.mock("./use-interview", () => ({
 }));
 
 vi.mock("@/components/TranscribeButton", () => ({ TranscribeButton: () => null }));
+vi.mock("@/features/interview/InterviewVoiceRecorder", () => ({ InterviewVoiceRecorder: () => null }));
 vi.mock("./NewInterviewDialog", () => ({
   NewInterviewDialog: ({ open }: { open: boolean }) =>
     open ? <div role="dialog">New mock interview</div> : null,

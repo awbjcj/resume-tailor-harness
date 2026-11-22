@@ -80,6 +80,12 @@ The Standard input/cache rates and zero output price are documented in
 Receipt IDs make settlement repeat-safe. Missing or incompatible receipts and
 settlement failures are errors.
 
+When `OPENAI_CREDIT_BUDGET_ENABLED=true`, Decisions also reserves from the
+actual OpenAI credit period shared with official interview voice. Requests
+with the same tenant, period and payload reuse their settled result; a timeout
+or cancellation retains its reservation rather than submitting it again.
+See [credit-period and voice operations](official-voice-interview.md).
+
 Run traces record separate `profile-groups-decisions`, `skill-categories-decisions`
 and `skill-domains-decisions` families without prompt or completion text. Regroup
 diagnostics include `decisionsCalls`, `decisionsChoicesAccepted` (category plus

@@ -347,6 +347,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/openai-credit/reservations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Credit Reservations */
+        get: operations["credit_reservations_api_admin_openai_credit_reservations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/openai-credit/reservations/{reservation_id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Credit Reservation */
+        post: operations["reconcile_credit_reservation_api_admin_openai_credit_reservations__reservation_id__reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/openai-credit/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Credit Summary */
+        get: operations["credit_summary_api_admin_openai_credit_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/quota-accounts": {
         parameters: {
             query?: never;
@@ -4751,6 +4802,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/transcribe/official": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Official Transcribe Audio */
+        post: operations["official_transcribe_audio_api_transcribe_official_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transcribe/official/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Official Transcribe Availability */
+        get: operations["official_transcribe_availability_api_transcribe_official_availability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/triage": {
         parameters: {
             query?: never;
@@ -6306,6 +6391,13 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_official_transcribe_audio_api_transcribe_official_post */
+        Body_official_transcribe_audio_api_transcribe_official_post: {
+            /** File */
+            file: string;
+            /** Request Id */
+            request_id: string;
+        };
         /** Body_preview_bundle_api_settings_bundle_preview_post */
         Body_preview_bundle_api_settings_bundle_preview_post: {
             /** File */
@@ -7373,6 +7465,97 @@ export interface components {
              * @default 10
              */
             listingPages: number;
+        };
+        /** CreditReconciliationIn */
+        CreditReconciliationIn: {
+            /**
+             * Audioinputmicroseconds
+             * @default 0
+             */
+            audioInputMicroseconds: number;
+            /**
+             * Audiooutputtokens
+             * @default 0
+             */
+            audioOutputTokens: number;
+            /**
+             * Cachereadtokens
+             * @default 0
+             */
+            cacheReadTokens: number;
+            /**
+             * Cachewritetokens
+             * @default 0
+             */
+            cacheWriteTokens: number;
+            /**
+             * Inputtokens
+             * @default 0
+             */
+            inputTokens: number;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "unbilled" | "usage";
+            /**
+             * Outputtokens
+             * @default 0
+             */
+            outputTokens: number;
+            /** Reason */
+            reason: string;
+        };
+        /** CreditReconciliationOut */
+        CreditReconciliationOut: {
+            /** Ok */
+            ok: boolean;
+        };
+        /** CreditReservationList */
+        CreditReservationList: {
+            /** Nextoffset */
+            nextOffset?: number | null;
+            /** Reservations */
+            reservations: components["schemas"]["CreditReservationOut"][];
+        };
+        /** CreditReservationOut */
+        CreditReservationOut: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Cycleid */
+            cycleId: string;
+            /** Id */
+            id: string;
+            /** Model */
+            model: string;
+            /** Operation */
+            operation: string;
+            /** Reservedmicros */
+            reservedMicros: number;
+            /** Status */
+            status: string;
+            /** Submittedat */
+            submittedAt: string | null;
+            /** Userid */
+            userId: string;
+        };
+        /** CreditSummaryOut */
+        CreditSummaryOut: {
+            /** Capmicros */
+            capMicros: number;
+            /** Heldmicros */
+            heldMicros: number;
+            /** Optionalworkpaused */
+            optionalWorkPaused: boolean;
+            /** Remainingmicros */
+            remainingMicros: number;
+            /** Spentmicros */
+            spentMicros: number;
+            /** Warning */
+            warning: boolean;
         };
         /** CycleTimeOut */
         CycleTimeOut: {
@@ -8997,6 +9180,8 @@ export interface components {
         };
         /** LlmRateCreate */
         LlmRateCreate: {
+            /** Audioinputmicrosperminute */
+            audioInputMicrosPerMinute?: number | null;
             /** Cachereadmicrospermillion */
             cacheReadMicrosPerMillion?: number | null;
             /** Cachewritemicrospermillion */
@@ -9034,6 +9219,8 @@ export interface components {
         };
         /** LlmRateOut */
         LlmRateOut: {
+            /** Audioinputmicrosperminute */
+            audioInputMicrosPerMinute?: number | null;
             /** Cachereadmicrospermillion */
             cacheReadMicrosPerMillion: number | null;
             /** Cachewritemicrospermillion */
@@ -9634,6 +9821,36 @@ export interface components {
             sequence: number;
             /** Totalcomp */
             totalComp: number;
+        };
+        /** OfficialTranscribeAvailabilityOut */
+        OfficialTranscribeAvailabilityOut: {
+            /** Available */
+            available: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Heldmicros */
+            heldMicros?: number | null;
+            /**
+             * Optionalworkpaused
+             * @default false
+             */
+            optionalWorkPaused: boolean;
+            /** Remainingmicros */
+            remainingMicros?: number | null;
+            /** Spentmicros */
+            spentMicros?: number | null;
+            /**
+             * Warning
+             * @default false
+             */
+            warning: boolean;
+        };
+        /** OfficialTranscribeOut */
+        OfficialTranscribeOut: {
+            /** Billingpending */
+            billingPending: boolean;
+            /** Text */
+            text: string;
         };
         /** OverrideConflictOut */
         OverrideConflictOut: {
@@ -13645,6 +13862,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LlmRateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    credit_reservations_api_admin_openai_credit_reservations_get: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditReservationList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_credit_reservation_api_admin_openai_credit_reservations__reservation_id__reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                reservation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreditReconciliationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditReconciliationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    credit_summary_api_admin_openai_credit_summary_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditSummaryOut"];
                 };
             };
             /** @description Validation Error */
@@ -25134,6 +25453,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TranscribeAvailabilityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    official_transcribe_audio_api_transcribe_official_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_official_transcribe_audio_api_transcribe_official_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfficialTranscribeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    official_transcribe_availability_api_transcribe_official_availability_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OfficialTranscribeAvailabilityOut"];
                 };
             };
             /** @description Validation Error */

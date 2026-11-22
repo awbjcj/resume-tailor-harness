@@ -390,7 +390,7 @@ function RateVersionsTable({ rates }: { rates: LlmRate[] }) {
                   <div className="font-mono text-sm font-semibold">{group.model}</div>
                   <div className="mt-1 flex items-center gap-2">
                     <span className="text-xs capitalize text-muted-foreground">{group.provider}</span>
-                    <Badge variant="outline" className={cn("h-5 px-1.5 text-[0.65rem]", tone.badge)}>{t(RATE_COST_BAND_LABEL_KEYS[band])}</Badge>
+                    <Badge variant="outline" className={cn("h-5 px-1.5 text-[0.65rem]", tone.badge)}>{rate.audioInputMicrosPerMinute != null ? t("adminQuota.rate.audioDuration") : t(RATE_COST_BAND_LABEL_KEYS[band])}</Badge>
                   </div>
                   {group.versions.length > 1 ? (
                     <div className="mt-2 text-[0.68rem] text-muted-foreground">{group.versions.length} versions · newest first</div>
@@ -398,7 +398,7 @@ function RateVersionsTable({ rates }: { rates: LlmRate[] }) {
                 </TableCell>
               ) : null}
               <TableCell className="font-mono">{tokens(rate.contextMinTokens)}–{rate.contextMaxTokens == null ? "∞" : tokens(rate.contextMaxTokens)}</TableCell>
-              <TableCell className="font-mono tabular-nums">{usd(t, rate.inputMicrosPerMillion)}</TableCell>
+              <TableCell className="font-mono tabular-nums">{rate.audioInputMicrosPerMinute == null ? usd(t, rate.inputMicrosPerMillion) : t("adminQuota.rate.perMinute", { amount: usd(t, rate.audioInputMicrosPerMinute) })}</TableCell>
               <TableCell className="font-mono tabular-nums">{optionalUsd(t, rate.cacheReadMicrosPerMillion)} / {optionalUsd(t, rate.cacheWriteMicrosPerMillion)}</TableCell>
               <TableCell className="font-mono tabular-nums">{usd(t, rate.outputMicrosPerMillion)}</TableCell>
               <TableCell className="font-mono tabular-nums">{optionalUsd(t, rate.toolMicrosPerUnit)}</TableCell>
@@ -1333,6 +1333,7 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
   const [cacheRead, setCacheRead] = useState("");
   const [cacheWrite, setCacheWrite] = useState("");
   const [toolFee, setToolFee] = useState("");
+  const [audioMinute, setAudioMinute] = useState("");
 
   const providers = useMemo(() => {
     if (modelCatalog.data?.length) {
@@ -1348,14 +1349,15 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
     [provider, rates],
   );
   const model = modelChoice === CUSTOM_MODEL ? customModel.trim() : modelChoice;
-  const inputMicros = positiveMicros(input);
-  const outputMicros = positiveMicros(output);
+  const inputMicros = optionalMicros(input) ?? undefined;
+  const outputMicros = optionalMicros(output) ?? undefined;
   const cacheReadMicros = optionalMicros(cacheRead);
   const cacheWriteMicros = optionalMicros(cacheWrite);
   const toolFeeMicros = optionalMicros(toolFee);
+  const audioMinuteMicros = optionalMicros(audioMinute);
   const effectiveAt = localDateTimeToIso(effective);
   const effectiveIsValid = effectiveAt != null;
-  const optionalRatesAreValid = [cacheReadMicros, cacheWriteMicros, toolFeeMicros].every((value) => value !== undefined);
+  const optionalRatesAreValid = [cacheReadMicros, cacheWriteMicros, toolFeeMicros, audioMinuteMicros].every((value) => value !== undefined);
   const canCreate = Boolean(
     model
     && inputMicros != null
@@ -1390,6 +1392,7 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
           cacheWriteMicrosPerMillion: cacheWriteMicros ?? null,
           outputMicrosPerMillion: outputMicros,
           toolMicrosPerUnit: toolFeeMicros ?? null,
+          audioInputMicrosPerMinute: audioMinuteMicros ?? null,
           ratePeriod: ratePeriod === "all" ? null : ratePeriod,
           effectiveFrom: effectiveAt,
           effectiveTo: null,
@@ -1411,6 +1414,7 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
       setCacheRead("");
       setCacheWrite("");
       setToolFee("");
+      setAudioMinute("");
       void queryClient.invalidateQueries({ queryKey: ["admin", "llm-rates"] });
     },
   });
@@ -1479,14 +1483,14 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
             className={cn(
               "grid gap-3 lg:items-end",
               showOptionalRates
-                ? "xl:grid-cols-[auto_repeat(3,minmax(6rem,0.4fr))_minmax(8rem,0.7fr)_auto]"
+                ? "xl:grid-cols-[auto_repeat(4,minmax(6rem,0.4fr))_minmax(8rem,0.7fr)_auto]"
                 : "lg:grid-cols-[auto_minmax(0,1fr)_auto]",
             )}
           >
             <div className="flex min-h-9 shrink-0 items-center gap-3 lg:pb-px">
               <Switch id="optional-rate-fields" checked={showOptionalRates} onCheckedChange={setShowOptionalRates} />
               <div>
-                <Label htmlFor="optional-rate-fields" className="whitespace-nowrap text-sm font-medium">Optional cache and tool rates</Label>
+                <Label htmlFor="optional-rate-fields" className="whitespace-nowrap text-sm font-medium">{t("adminQuota.rate.optionalRates")}</Label>
                 <p className="mt-1 whitespace-nowrap text-xs text-muted-foreground">Enable only when the provider charges them.</p>
               </div>
             </div>
@@ -1495,6 +1499,7 @@ function RateCreator({ rates }: { rates: LlmRate[] }) {
                 <Field label="Cache read (USD / 1M)" htmlFor="rate-cache-read" className="min-w-0"><Input id="rate-cache-read" className="h-9" inputMode="decimal" value={cacheRead} onChange={(event) => setCacheRead(event.target.value)} /></Field>
                 <Field label="Cache write (USD / 1M)" htmlFor="rate-cache-write" className="min-w-0"><Input id="rate-cache-write" className="h-9" inputMode="decimal" value={cacheWrite} onChange={(event) => setCacheWrite(event.target.value)} /></Field>
                 <Field label="Tool fee (USD / unit)" htmlFor="rate-tool-fee" className="min-w-0"><Input id="rate-tool-fee" className="h-9" inputMode="decimal" value={toolFee} onChange={(event) => setToolFee(event.target.value)} /></Field>
+                <Field label={t("adminQuota.rate.audioInput")} htmlFor="rate-audio-minute" className="min-w-0"><Input id="rate-audio-minute" className="h-9" inputMode="decimal" value={audioMinute} onChange={(event) => setAudioMinute(event.target.value)} /></Field>
               </>
             ) : null}
             <Field label="Reason for this rate version" htmlFor="rate-reason" className="min-w-0 flex-1">

@@ -36,6 +36,13 @@ CLI accounts use the deployment's provider endpoints.
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Direct OpenAI API endpoint. Applied explicitly whenever routing selects `api`; transcription and TTS always use this endpoint because Sub2API may not implement the audio APIs. |
 | `OPENAI_DECISIONS_ENABLED` | `false` | Admin opt-in for fast profile grouping, category assignment and existing-domain selection. Uses the direct Decisions API independently of provider routing. See [fast skill classification](openai-decisions.md). |
 | `OPENAI_DECISIONS_API_KEY` | empty | Separate deployment-owned OpenAI API key for Decisions. Required for enrollment; charges this key's OpenAI API balance. Never uses gateway or member credentials. |
+| `OFFICIAL_AUDIO_ENABLED` | `false` | Opt in to official interview transcription and speech using a dedicated platform credential. Requires credit-period accounting. See [official interview voice](official-voice-interview.md). |
+| `OFFICIAL_AUDIO_API_KEY` | empty | Dedicated deployment-owned OpenAI project credential for official interview audio; never workspace-overridable. |
+| `OPENAI_CREDIT_BUDGET_ENABLED` | `false` | Enable shared credit-period accounting for official interview audio and Decisions. |
+| `OPENAI_CREDIT_PROJECT_ISOLATED` | `false` | Operator attestation that the project is isolated from traffic outside the budgeted adapters. |
+| `OPENAI_CREDIT_CYCLE_START` | empty | Actual credit-period start, with timezone offset; inclusive. |
+| `OPENAI_CREDIT_CYCLE_END` | empty | Actual credit-period end, with timezone offset; exclusive. |
+| `OPENAI_CREDIT_PROJECT_CAP_MICROS` | `15000000` | Resume project allocation in USD micro-units; at most 15000000. Independent deployments must divide this cap. |
 | `GEMINI_API_KEY` | empty | Shared Google Gemini credential for `gemini:` model IDs. |
 | `DEEPSEEK_API_KEY` | empty | Shared DeepSeek credential for `deepseek:` model IDs. |
 | `SUB2API_BASE_URL` | empty | Subscription-gateway origin shared by all routed providers; empty disables gateway routing unless a provider is pinned to `subscription`. |

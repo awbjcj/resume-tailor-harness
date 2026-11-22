@@ -20,6 +20,7 @@ _USAGE_COLUMNS = (
     ("reasoning_tokens", "INTEGER NOT NULL DEFAULT 0"),
     ("audio_input_tokens", "INTEGER NOT NULL DEFAULT 0"),
     ("audio_output_tokens", "INTEGER NOT NULL DEFAULT 0"),
+    ("audio_input_microseconds", "INTEGER NOT NULL DEFAULT 0"),
     ("total_tokens", "INTEGER NOT NULL DEFAULT 0"),
     ("cost_micros", "INTEGER"),
     ("quota_cost_micros", "INTEGER NOT NULL DEFAULT 0"),
@@ -31,7 +32,10 @@ _USAGE_COLUMNS = (
     ("reasoning_mode", "VARCHAR(24)"),
 )
 
-_LLM_RATE_COLUMNS = (("rate_period", "VARCHAR(16)"),)
+_LLM_RATE_COLUMNS = (
+    ("rate_period", "VARCHAR(16)"),
+    ("audio_input_micros_per_minute", "INTEGER"),
+)
 
 _SHARED_KEYS_ALL_ACCOUNTS_MARKER = "migration_shared_keys_all_accounts_v1"
 

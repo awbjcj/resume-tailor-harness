@@ -5,8 +5,10 @@ from __future__ import annotations
 import base64
 import json
 import shutil
+import socket
 import subprocess
 import time
+from contextlib import ExitStack
 from typing import Any
 from urllib.parse import urlencode, urlsplit, urlunsplit
 
@@ -116,6 +118,7 @@ def render(
     api_key: str,
     base_url: str,
     instructions: str,
+    strict_official_origin: bool = False,
 ) -> tuple[bytes, dict[str, Any]]:
     """Return PCM and the terminal response, even if the provider stopped early.
 
@@ -128,6 +131,8 @@ def render(
     if len(text) > 8_192:
         raise ValueError("Realtime speech text exceeded its input limit")
     parts = urlsplit(base_url)
+    if strict_official_origin and base_url != "https://api.openai.com/v1":
+        raise ValueError("Official speech requires the fixed OpenAI endpoint")
     url = urlunsplit(
         (
             "wss" if parts.scheme == "https" else "ws",
@@ -167,17 +172,26 @@ def render(
     pcm = bytearray()
     deadline = time.monotonic() + _RENDER_TIMEOUT
     try:
-        with connect(
-            url,
-            additional_headers={"Authorization": f"Bearer {api_key}"},
-            open_timeout=10,
-            close_timeout=1,
-            max_size=1024 * 1024,
-        ) as socket:
-            socket.send(json.dumps(request))
+        with ExitStack() as stack:
+            # A preconnected socket disables WebSocket redirect following;
+            # proxy=None also ignores ambient proxy environment variables.
+            raw_socket = (
+                stack.enter_context(socket.create_connection(("api.openai.com", 443), timeout=10))
+                if strict_official_origin else None
+            )
+            connection = stack.enter_context(connect(
+                url,
+                sock=raw_socket,
+                proxy=None if strict_official_origin else True,
+                additional_headers={"Authorization": f"Bearer {api_key}"},
+                open_timeout=10,
+                close_timeout=1,
+                max_size=1024 * 1024,
+            ))
+            connection.send(json.dumps(request))
             response_id = None
             while (remaining := deadline - time.monotonic()) > 0:
-                event = json.loads(socket.recv(timeout=remaining))
+                event = json.loads(connection.recv(timeout=remaining))
                 event_type = event.get("type")
                 if event_type == "error":
                     raise RuntimeError("OpenAI Realtime rejected the speech request")
