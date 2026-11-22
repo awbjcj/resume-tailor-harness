@@ -8,7 +8,10 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from resume_tailor_harness.workspace_agent.runtime import workspace_turn
+from resume_tailor_harness.workspace_agent.runtime import (
+    has_workspace_previews,
+    workspace_turn,
+)
 from resume_tailor_harness.career_lab.agents import (
     build_formatter_agent,
     build_continuation_agent,
@@ -346,7 +349,13 @@ def _complete_turn(
     persona = persona_agent or build_persona_agent(skill, settings=settings)
     _trace_context(persona, conversation)
     formatter = formatter_agent or build_formatter_agent(settings=settings)
-    if receipt is not None and receipt.stage == "drafted":
+    # Review cards live in the current turn toolkit, not in the receipt.
+    # Regenerate preview-bearing drafts (and older, unmarked receipts).
+    if (
+        receipt is not None
+        and receipt.stage == "drafted"
+        and receipt.has_workspace_previews is False
+    ):
         prose, notes = receipt.prose, receipt.notes
         sink.emit(TextDelta(prose))
     else:
@@ -360,6 +369,7 @@ def _complete_turn(
         if receipt is not None and root is not None:
             receipt.prose, receipt.notes = prose, notes
             receipt.agent_meta = _persona_meta(persona, skill).model_dump(mode="json")
+            receipt.has_workspace_previews = has_workspace_previews()
             receipt.stage = "drafted"
             recovery.save_draft(root, session_id, receipt)
     fallback = prose or notes

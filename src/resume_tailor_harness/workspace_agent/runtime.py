@@ -302,6 +302,11 @@ def workspace_instructions() -> list[str]:
     return INSTRUCTIONS if _active.get() else []
 
 
+def has_workspace_previews() -> bool:
+    current = _active.get()
+    return bool(current and current.plans)
+
+
 def is_workspace_request() -> bool:
     current = _active.get()
     return bool(current and current.management)

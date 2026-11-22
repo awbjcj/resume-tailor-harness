@@ -524,3 +524,127 @@ def test_stale_recovery_worker_cannot_commit_after_new_attempt(tmp_path):
             recovery_attempt=first.attempts,
         )
     assert load_session(tmp_path, "fenced")["turns"] == []
+
+
+@pytest.mark.parametrize("legacy_receipt", [False, True])
+def test_draft_recovery_regenerates_pending_review_card_without_applying_it(
+    tmp_path, legacy_receipt
+):
+    from sqlmodel import Session, select
+
+    from resume_tailor_harness.config import Settings
+    from resume_tailor_harness.db import init_db, make_engine
+    from resume_tailor_harness.tenancy.context import UserContext, use_context
+    from resume_tailor_harness.tenancy.workspace import WorkspacePaths
+    from resume_tailor_harness.tracking.tables import Job
+    from resume_tailor_harness.workspace_agent.models import (
+        WorkspaceChange,
+        WorkspacePlan,
+    )
+    from resume_tailor_harness.workspace_agent.runtime import workspace_tools
+    from resume_tailor_harness.workspace_agent.tables import (
+        WorkspaceNote,
+        WorkspaceProposal,
+    )
+
+    skill = _skill()
+    engine = make_engine(f"sqlite:///{tmp_path / 'workspace.db'}")
+    init_db(engine)
+    with Session(engine) as db:
+        job = Job(
+            source="manual", company="Example", title="Engineer", jd_text="Build APIs"
+        )
+        db.add(job)
+        db.commit()
+        db.refresh(job)
+        assert job.id is not None
+        job_id = job.id
+    create_session(tmp_path, session_id="recover-review")
+
+    class PreviewPersona(_Persona):
+        def run(self, prompt):
+            super().run(prompt)
+            preview = next(
+                tool
+                for tool in workspace_tools()
+                if tool.__name__ == "preview_workspace_changes"
+            )
+            preview(
+                WorkspacePlan(
+                    title="Save a note",
+                    changes=[
+                        WorkspaceChange(
+                            operation="note.create",
+                            job_id=job_id,
+                            values={
+                                "title": "Recruiter",
+                                "body": "Discuss API ownership",
+                            },
+                            reason="Save the preparation",
+                        ),
+                    ],
+                )
+            )
+            return _Response("The note is ready for review.")
+
+    class InterruptFormatter(_Formatter):
+        def run(self, prompt):
+            raise RuntimeError("interrupted after drafting")
+
+    persona = PreviewPersona(_meta(skill))
+    registry = CareerSkillRegistry.from_paths("skills", "skills-lock.json")
+    context = UserContext(
+        user_id="test",
+        username="test",
+        role="member",
+        paths=WorkspacePaths(tmp_path),
+        settings=Settings(),
+        engine=engine,
+        system_engine=None,
+        own_key_providers=frozenset(),
+    )
+    with use_context(context):
+        with pytest.raises(RuntimeError, match="interrupted after drafting"):
+            career_lab.run_message_turn(
+                _Reporter(),
+                root=tmp_path,
+                engine=engine,
+                session_id="recover-review",
+                message="Save a note about API ownership",
+                skill=skill.ref.name,
+                persona_agent=persona,
+                formatter_agent=InterruptFormatter(),
+                registry=registry,
+            )
+        with Session(engine) as db:
+            assert db.exec(select(WorkspaceProposal)).all() == []
+            assert db.exec(select(WorkspaceNote)).all() == []
+        recovered = load_session(tmp_path, "recover-review")["recovery"]
+        assert recovered is not None
+        assert recovered["has_workspace_previews"] is True
+        if legacy_receipt:
+            from resume_tailor_harness.career_lab.store import store
+
+            def remove_marker(session):
+                session["recovery"].pop("has_workspace_previews")
+
+            store.mutate(tmp_path, "recover-review", remove_marker)
+        resume_kwargs = dict(
+            root=tmp_path,
+            engine=engine,
+            session_id="recover-review",
+            operation_id=recovered["operation_id"],
+            persona_agent=persona,
+            formatter_agent=_Formatter(),
+            registry=registry,
+        )
+        reply = career_lab.run_resume_turn(_Reporter(), **resume_kwargs)
+        assert reply["turns"][-1]["text"] == "The note is ready for review."
+        assert career_lab.run_resume_turn(_Reporter(), **resume_kwargs) == reply
+
+    with Session(engine) as db:
+        proposal = db.exec(select(WorkspaceProposal)).one()
+        assert proposal.session_id == "recover-review"
+        assert db.exec(select(WorkspaceNote)).all() == []
+    assert len(persona.prompts) == 2
+    engine.dispose()

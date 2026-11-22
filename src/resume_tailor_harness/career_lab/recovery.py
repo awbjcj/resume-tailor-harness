@@ -34,6 +34,7 @@ class DraftRecovery(BaseModel):
     prose: str = Field(default="", max_length=100_000)
     notes: str = Field(default="", max_length=100_000)
     agent_meta: dict = Field(default_factory=dict)
+    has_workspace_previews: bool | None = None
     continuation: dict | None = None
 
 
