@@ -9,7 +9,7 @@ import {
   LANGUAGE_STORAGE_KEY,
 } from "@/i18n";
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(async () => {
   server.resetHandlers();
   await changeLanguage(DEFAULT_LANGUAGE);
