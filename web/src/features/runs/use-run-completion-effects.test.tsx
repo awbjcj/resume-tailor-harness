@@ -48,6 +48,15 @@ function mount(qc: QueryClient) {
   return renderHook(() => useRunCompletionEffects(), { wrapper });
 }
 
+function trackAcknowledgement() {
+  const acknowledged = vi.fn();
+  server.use(http.post("/api/runs/ack", () => {
+    acknowledged();
+    return HttpResponse.json({ acknowledged: 1 });
+  }));
+  return acknowledged;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   resetRunTrackerForTests();
@@ -56,8 +65,8 @@ beforeEach(() => {
 });
 
 it("refreshes publication status when a GitHub sync finishes after a reload", async () => {
+  const acknowledged = trackAcknowledgement();
   server.use(
-    http.post("/api/runs/ack", () => HttpResponse.json({ acknowledged: 1 })),
     http.get("/api/setup/status", () => HttpResponse.json({
       profile: { freshness: "refresh-needed", pendingSourceCount: 1 },
     })),
@@ -72,6 +81,7 @@ it("refreshes publication status when a GitHub sync finishes after a reload", as
   expect(result.current.data?.profile.freshness).toBe("current");
   act(() => completeRuns([finished({ kind: "github-sync" })]));
   await waitFor(() => expect(result.current.data?.profile.freshness).toBe("refresh-needed"));
+  await waitFor(() => expect(acknowledged).toHaveBeenCalledOnce());
 });
 
 it("announces, acknowledges, and invalidates a completion", async () => {
@@ -97,7 +107,8 @@ it("announces, acknowledges, and invalidates a completion", async () => {
   await waitFor(() => expect(acked).toEqual([["r1"]]));
 });
 
-it("adds launch-specific keys while preserving kind-wide freshness", () => {
+it("adds launch-specific keys while preserving kind-wide freshness", async () => {
+  const acknowledged = trackAcknowledgement();
   const qc = new QueryClient();
   const invalidate = vi.spyOn(qc, "invalidateQueries");
   mount(qc);
@@ -107,6 +118,7 @@ it("adds launch-specific keys while preserving kind-wide freshness", () => {
 
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["match-gap"] });
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["job"] });
+  await waitFor(() => expect(acknowledged).toHaveBeenCalledOnce());
 });
 
 const recoveredChatRuns = [
@@ -129,7 +141,8 @@ it.each(
       kind, prefix, status,
     })),
   ),
-)("refreshes cached sessions for recovered $kind ($status) without a launch callback", ({ kind, prefix, status }) => {
+)("refreshes cached sessions for recovered $kind ($status) without a launch callback", async ({ kind, prefix, status }) => {
+  const acknowledged = trackAcknowledgement();
   const qc = new QueryClient();
   const listKey = [`${prefix}-sessions`, false];
   const detailKey = [`${prefix}-session`, "s1"];
@@ -143,6 +156,7 @@ it.each(
   expect(qc.getQueryState(listKey)?.isInvalidated).toBe(true);
   expect(qc.getQueryState(detailKey)?.isInvalidated).toBe(true);
   expect(qc.getQueryState(["job", 1])?.isInvalidated).toBe(false);
+  await waitFor(() => expect(acknowledged).toHaveBeenCalledOnce());
 });
 
 it("collapses a reconnect batch into one summary and acks every run", async () => {
