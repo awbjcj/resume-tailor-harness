@@ -155,6 +155,9 @@ async def test_supported_providers_send_responses_with_tools_and_resume_schema(
     assert "reasoning_effort" not in body
     if model_id == "openai:gpt-6.1-sol":
         assert body["reasoning"]["effort"] in ("low", "medium", "high", "xhigh", "max")
+    if selected_model in {"gpt-6.2-astra", "gpt-6.2-sol"}:
+        assert body["reasoning"]["effort"] == ("high" if reasoning else "low")
+        assert not {"temperature", "top_p", "top_logprobs"}.intersection(body)
     if search_mode == "native":
         if provider == "deepseek":
             assert {tool.get("name") for tool in body["tools"]} >= {

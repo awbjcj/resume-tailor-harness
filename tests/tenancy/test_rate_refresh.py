@@ -118,6 +118,13 @@ def test_sonnet_cache_cut_preserves_history_and_repairs_existing_rate(engine):
     "model,start,expiry,promo,regular",
     [
         (
+            "gemini-4-carbon",
+            datetime(2026, 11, 10, tzinfo=UTC),
+            datetime(2026, 12, 1, tzinfo=UTC),
+            (2_000_000, 100_000, 10_000_000),
+            (4_000_000, 200_000, 20_000_000),
+        ),
+        (
             "gemini-4-argon",
             datetime(2026, 10, 13, tzinfo=UTC),
             datetime(2026, 12, 1, tzinfo=UTC),
@@ -136,8 +143,8 @@ def test_sonnet_cache_cut_preserves_history_and_repairs_existing_rate(engine):
 def test_gemini_promotion_boundaries_and_cache_accounting(
     engine, model, start, expiry, promo, regular
 ):
-    if model == "gemini-4-argon":
-        assert find_rate(engine, "gemini", model, now=start.replace(day=12)) is None
+    if model.startswith("gemini-4-"):
+        assert find_rate(engine, "gemini", model, now=start - timedelta(days=1)) is None
     else:
         prior = find_rate(engine, "gemini", model, now=start.replace(day=22))
         assert prior is not None and prior.output_micros_per_million == 9_000_000
