@@ -1,4 +1,4 @@
-"""Capture Argon's real Generate Content SDK requests without provider calls."""
+"""Capture Gemini 4 Generate Content SDK requests without provider calls."""
 
 import json
 
@@ -25,10 +25,22 @@ def isolate_google_routing_environment(monkeypatch):
 
 
 @pytest.mark.parametrize("api_version", [None, "v1", "beta"])
-@pytest.mark.parametrize("reasoning", [False, True])
+@pytest.mark.parametrize(
+    "model_name,reasoning,selected_effort,wire_level,output_limit",
+    [
+        ("gemini-4-argon", False, None, "LOW", 32_768),
+        ("gemini-4-argon", True, None, "HIGH", 32_768),
+        ("gemini-4-carbon", True, "xhigh", "HIGH", 32_768),
+        ("gemini-4-hydrogen", True, "xhigh", "XHIGH", 65_536),
+        ("gemini-4-neon", True, "xhigh", "XHIGH", 65_536),
+    ],
+)
 @pytest.mark.parametrize("search", [False, True])
 @pytest.mark.parametrize("gateway", [False, True])
-def test_argon_sdk_payload_and_signed_parts(reasoning, search, gateway, api_version, monkeypatch):
+def test_gemini_4_sdk_payload_and_signed_parts(
+    model_name, reasoning, selected_effort, wire_level, output_limit,
+    search, gateway, api_version, monkeypatch,
+):
     if api_version:
         monkeypatch.setenv("GOOGLE_GENAI_API_VERSION", api_version)
     settings = Settings(
@@ -37,15 +49,16 @@ def test_argon_sdk_payload_and_signed_parts(reasoning, search, gateway, api_vers
         gemini_route_mode="subscription" if gateway else "api",
         sub2api_base_url="https://gateway.invalid" if gateway else "",
         sub2api_gemini_key="offline-gateway-key" if gateway else "",
+        mid_model=f"gemini:{model_name}",
+        mid_reasoning_effort=selected_effort,
     )
+    monkeypatch.setattr("resume_tailor_harness.llm_runner.get_settings", lambda: settings)
     if search:
         model, _ = build_search_equipped(
-            "gemini:gemini-4-argon", mode="native", reasoning=reasoning, settings=settings
+            settings.mid_model, mode="native", reasoning=reasoning, settings=settings
         )
     else:
-        model = build_model(
-            "gemini:gemini-4-argon", reasoning=reasoning, settings=settings
-        )
+        model = build_model(settings.mid_model, reasoning=reasoning, settings=settings)
     requests = []
 
     def respond(request):
@@ -109,17 +122,17 @@ def test_argon_sdk_payload_and_signed_parts(reasoning, search, gateway, api_vers
             "gateway.invalid" if gateway else "generativelanguage.googleapis.com"
         )
         version = "v1" if api_version == "v1" else "v1beta"
-        assert request.url.path == f"/{version}/models/gemini-4-argon:generateContent"
+        assert request.url.path == f"/{version}/models/{model_name}:generateContent"
         assert request.headers["x-goog-api-key"] == (
             "offline-gateway-key" if gateway else "offline-direct-key"
         )
         body = json.loads(request.content)
         config = body["generationConfig"]
         assert config["thinkingConfig"] == {
-            "thinking_level": "HIGH" if reasoning else "LOW",
+            "thinking_level": wire_level,
             "include_thoughts": reasoning,
         }
-        assert config["maxOutputTokens"] == 32_768
+        assert config["maxOutputTokens"] == output_limit
         assert not {"temperature", "topP", "topK"}.intersection(config)
         assert "cachedContent" not in body
         assert config["responseJsonSchema"]["properties"]["summary"]["type"] == "string"
