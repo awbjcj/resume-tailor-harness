@@ -64,10 +64,10 @@ builder imports a concrete agno model class directly.
   and `max`. A catalogued non-reasoning model receives its lowest declared
   effort; an uncatalogued id omits `reasoning` because its vocabulary is
   unknown.
-- **GPT-6.1 Sol has its own contract.** Its API effort values are
+- **GPT-6.1 Sol and GPT-6.2 Astra and Sol** accept
   `low`/`medium`/`high`/`xhigh`/`max`; non-reasoning agents use `low` because
-  `none` and `minimal` are rejected. It uses Responses for tool calling and
-  has a 5% cached-input rate, with full-request pricing above 272K input tokens.
+  `none` and `minimal` are rejected. Tool calling uses Responses. Cached
+  input costs 5% of ordinary input, with full-request pricing above 272K.
 - **OpenAI output and state are explicit.** `max_output_tokens` leaves room for
   reasoning plus visible structured output. `store=False` disables
   provider-managed response state (not broader provider retention), while
@@ -148,10 +148,10 @@ INVALID_ARGUMENT` before generating anything, and agno then hands back the
   bounds at `"low"`, which every Gemini 3 snapshot accepts. Do not borrow a
   sibling model's levels when adding a snapshot — read its own row in the
   provider matrix.
-  Gemini 4 Argon also uses `low`/`medium`/`high`, with implicit caching only.
-  The Generate Content adapter caps total output at 32,768 tokens (one
-  non-streaming hop) and sets a 900,000ms timeout, preserving it through route
-  changes. Interactions' 64K synchronous limit is a different endpoint contract.
+  Gemini 4 Carbon and Argon use `low`/`medium`/`high`. Hydrogen and Neon also
+  support `xhigh`. Caching is implicit. The Generate Content adapter uses
+  a one-hop ceiling of 32,768 tokens for Carbon and Argon or 65,536 for
+  Hydrogen and Neon, and a 900,000ms timeout on both routing modes.
   Agno 3.1.3 omits thoughts from Gemini `output_tokens`; the adapter normalizes
   candidate + thought tokens there once, keeping the reasoning detail separate.
 - **DeepSeek runs on the Responses API, and its whole request surface changed

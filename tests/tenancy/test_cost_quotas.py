@@ -1,6 +1,6 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -442,21 +442,41 @@ def test_september_22_model_rates_are_priced_at_current_public_rates(tmp_path):
             ) == expected
 
 
-def test_sol_61_rates_preserve_release_and_context_boundaries(tmp_path):
+@pytest.mark.parametrize(
+    "model,release,short,long",
+    [
+        (
+            "gpt-6.1-sol",
+            datetime(2026, 9, 29, tzinfo=UTC),
+            (2_000_000, 100_000, 2_500_000, 10_000_000),
+            (4_000_000, 200_000, 5_000_000, 15_000_000),
+        ),
+        (
+            "gpt-6.2-sol",
+            datetime(2026, 11, 17, tzinfo=UTC),
+            (2_000_000, 100_000, 2_500_000, 10_000_000),
+            (4_000_000, 200_000, 5_000_000, 15_000_000),
+        ),
+        (
+            "gpt-6.2-astra",
+            datetime(2026, 11, 17, tzinfo=UTC),
+            (8_000_000, 400_000, 10_000_000, 40_000_000),
+            (16_000_000, 800_000, 20_000_000, 60_000_000),
+        ),
+    ],
+)
+def test_openai_rates_preserve_release_and_context_boundaries(
+    tmp_path, model, release, short, long
+):
     engine = _engine(tmp_path)
-    assert (
-        find_rate(
-            engine, "openai", "gpt-6.1-sol", now=datetime(2026, 9, 28, tzinfo=UTC)
-        )
-        is None
-    )
+    assert find_rate(engine, "openai", model, now=release - timedelta(days=1)) is None
 
     seed_llm_rates(engine)
     with Session(engine) as session:
         rates = (
             session.execute(
                 select(LlmRate).where(
-                    LlmRate.provider == "openai", LlmRate.model == "gpt-6.1-sol"
+                    LlmRate.provider == "openai", LlmRate.model == model
                 )
             )
             .scalars()
@@ -465,15 +485,15 @@ def test_sol_61_rates_preserve_release_and_context_boundaries(tmp_path):
         assert len(rates) == 2
 
     for input_tokens, expected in (
-        (272_000, (2_000_000, 100_000, 2_500_000, 10_000_000)),
-        (272_001, (4_000_000, 200_000, 5_000_000, 15_000_000)),
+        (272_000, short),
+        (272_001, long),
     ):
         rate = find_rate(
             engine,
             "openai",
-            "gpt-6.1-sol",
+            model,
             input_tokens=input_tokens,
-            now=datetime(2026, 9, 29, tzinfo=UTC),
+            now=release,
         )
         assert rate is not None
         assert (
@@ -482,10 +502,7 @@ def test_sol_61_rates_preserve_release_and_context_boundaries(tmp_path):
             rate.cache_write_micros_per_million,
             rate.output_micros_per_million,
         ) == expected
-        assert (
-            rate.source_url
-            == "https://developers.openai.com/api/docs/models/gpt-6.1-sol"
-        )
+        assert rate.source_url == f"https://developers.openai.com/api/docs/models/{model}"
 
 
 def test_terra_61_rates_preserve_release_context_and_seed_idempotency(tmp_path):

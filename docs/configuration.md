@@ -146,10 +146,22 @@ use the project's `high` fallback unless an effort is selected, while agents
 without reasoning send `none`. The provider's own omitted-effort default is
 `medium`. Tool calling uses Responses. See [verified model contracts](model-refresh-2026-10-28.md).
 
-Gemini 4 is selectable as `gemini:gemini-4-argon`, with `low`, `medium`, and
-`high` levels. Agents without reasoning use `low` (thinking remains enabled).
-The Generate Content adapter uses a 32,768-token total output ceiling and a
-15-minute timeout; it does not enable multi-hop long decode or explicit caching.
+GPT-6.2 Sol (`openai:gpt-6.2-sol`) and Astra (`openai:gpt-6.2-astra`) use
+Responses and accept `low`, `medium`, `high`, `xhigh`, and `max`. Agents without
+reasoning send `low`. Their Standard rates change above 272,000 input tokens.
+See [OpenAI pricing](https://developers.openai.com/api/docs/pricing).
+
+The Gemini catalog includes `gemini:gemini-4-hydrogen`, `gemini:gemini-4-neon`,
+`gemini:gemini-4-carbon`, and `gemini:gemini-4-argon`. Hydrogen and Neon accept
+`low`, `medium`, `high`, and `xhigh`. Carbon and Argon accept `low`, `medium`,
+and `high`. Agents without reasoning use `low`, which still allows thinking.
+The Generate Content adapter uses a 15-minute timeout and a single-hop total
+output ceiling of 65,536 tokens for Hydrogen and Neon or 32,768 for Carbon and
+Argon. Gemini 4 caching is implicit. The harness uses Google's Standard paid
+rates for cost accounting, including Carbon's December 1 price change. Check
+model availability in your Sub2API group before selecting a subscription route.
+See [Gemini thinking](https://aistudio.google.com/docs/thinking?generate-content=true)
+and [Gemini pricing](https://aistudio.google.com/docs/pricing).
 
 The default cheap tier uses Claude Haiku 5.5 (`claude-haiku-5-5`). Existing
 explicit model selections remain in effect; select the new model in Settings

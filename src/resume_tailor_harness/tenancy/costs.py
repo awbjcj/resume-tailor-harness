@@ -311,6 +311,7 @@ def seed_llm_rates(engine: Engine) -> None:
     catalog_refresh = datetime(2026, 9, 22, tzinfo=timezone.utc)
     openai_sol_61_release = datetime(2026, 9, 29, tzinfo=timezone.utc)
     openai_terra_61_release = datetime(2026, 10, 26, tzinfo=timezone.utc)
+    openai_62_release = datetime(2026, 11, 17, tzinfo=timezone.utc)
     realtime_tts_rate_verified = datetime(2026, 11, 17, tzinfo=timezone.utc)
     sonnet_55_release = datetime(2026, 9, 28, tzinfo=timezone.utc)
     haiku_55_release = datetime(2026, 10, 7, tzinfo=timezone.utc)
@@ -705,6 +706,20 @@ def seed_llm_rates(engine: Engine) -> None:
 
         for model, source, release, short, long in (
             (
+                "gpt-6.2-astra",
+                "https://developers.openai.com/api/docs/models/gpt-6.2-astra",
+                openai_62_release,
+                (8, 0.4, 10, 40),
+                (16, 0.8, 20, 60),
+            ),
+            (
+                "gpt-6.2-sol",
+                "https://developers.openai.com/api/docs/models/gpt-6.2-sol",
+                openai_62_release,
+                (2, 0.1, 2.5, 10),
+                (4, 0.2, 5, 15),
+            ),
+            (
                 "gpt-6.1-terra",
                 openai_terra_61,
                 openai_terra_61_release,
@@ -770,25 +785,23 @@ def seed_llm_rates(engine: Engine) -> None:
                 minimum=minimum,
                 maximum=maximum,
             )
-        # Argon's introductory Standard price ends at the December boundary.
-        # Implicit caching has a read rate but no explicit-cache write charge.
-        argon_regular = datetime(2026, 12, 1, tzinfo=timezone.utc)
-        for argon_start, argon_end, input_rate, cache_read, output_rate in (
-            (datetime(2026, 10, 13, tzinfo=timezone.utc), argon_regular, 2, 0.1, 10),
-            (argon_regular, None, 4, 0.2, 20),
+        # Gemini 4 uses implicit caching. The promotional models are seeded
+        # below with both their launch and regular rates.
+        for model, launch_day, input_rate, cache_read, output_rate in (
+            ("gemini-4-hydrogen", 12, 1.5, 0.075, 7.5),
+            ("gemini-4-neon", 18, 3, 0.15, 15),
         ):
-            rate = upsert_rate(
+            upsert_rate(
                 provider="gemini",
-                model="gemini-4-argon",
-                effective_from=argon_start,
+                model=model,
+                effective_from=datetime(2026, 11, launch_day, tzinfo=timezone.utc),
                 input_rate=input_rate,
                 cache_read=cache_read,
                 cache_write=None,
                 output_rate=output_rate,
                 tool=14_000,
-                source=gemini,
+                source=f"{gemini}#{model}",
             )
-            rate.effective_to = argon_end
 
         upsert_rate(
             provider="anthropic",
@@ -1205,10 +1218,17 @@ def seed_llm_rates(engine: Engine) -> None:
                     maximum=maximum,
                 )
 
-        # Argon GA uses implicit caching only, with a separate introductory
+        # Argon and Carbon use implicit caching with a separate introductory
         # expiry from Flash. The 3.5 alias now routes to 3.6; apply its verified
         # destination price from this refresh, keeping the prior quote intact.
         for model, release, expiry, promo, regular in (
+            (
+                "gemini-4-carbon",
+                datetime(2026, 11, 10, tzinfo=timezone.utc),
+                datetime(2026, 12, 1, tzinfo=timezone.utc),
+                (2, 0.1, 10),
+                (4, 0.2, 20),
+            ),
             (
                 "gemini-4-argon",
                 datetime(2026, 10, 13, tzinfo=timezone.utc),

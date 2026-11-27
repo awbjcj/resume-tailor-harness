@@ -1093,6 +1093,16 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
     ],
     "openai": [
         ModelCatalogEntry(
+            "openai:gpt-6.2-sol",
+            "GPT-6.2 Sol",
+            ("low", "medium", "high", "xhigh", "max"),
+        ),
+        ModelCatalogEntry(
+            "openai:gpt-6.2-astra",
+            "GPT-6.2 Astra",
+            ("low", "medium", "high", "xhigh", "max"),
+        ),
+        ModelCatalogEntry(
             "openai:gpt-6.1-terra",
             "GPT-6.1 Terra",
             ("none", "low", "medium", "high", "xhigh", "max"),
@@ -1152,6 +1162,21 @@ MODEL_CATALOG: dict[str, list[ModelCatalogEntry]] = {
         ),
     ],
     "gemini": [
+        ModelCatalogEntry(
+            "gemini:gemini-4-hydrogen",
+            "Gemini 4 Hydrogen",
+            ("low", "medium", "high", "xhigh"),
+        ),
+        ModelCatalogEntry(
+            "gemini:gemini-4-neon",
+            "Gemini 4 Neon",
+            ("low", "medium", "high", "xhigh"),
+        ),
+        ModelCatalogEntry(
+            "gemini:gemini-4-carbon",
+            "Gemini 4 Carbon",
+            ("low", "medium", "high"),
+        ),
         ModelCatalogEntry(
             "gemini:gemini-4-argon",
             "Gemini 4 Argon",
@@ -1351,6 +1376,15 @@ class ProviderCapabilities:
 
 _NO_PROVIDER_CAPABILITIES = ProviderCapabilities(False, False, False)
 
+# Keep GenerateContent within a single hop, including on compatible gateways
+# where long-decode continuation support can differ from Google's SDK.
+_GEMINI_4_OUTPUT_LIMITS = {
+    "gemini-4-argon": 32_768,
+    "gemini-4-carbon": 32_768,
+    "gemini-4-hydrogen": 65_536,
+    "gemini-4-neon": 65_536,
+}
+
 
 def provider_capabilities(model_id: str) -> ProviderCapabilities:
     """Return conservative capabilities without importing a provider SDK."""
@@ -1377,6 +1411,8 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
             folded.startswith(("gpt-5", "o1", "o3", "o4"))
             or folded
             in {
+                "gpt-6.2-astra",
+                "gpt-6.2-sol",
                 "gpt-6.1-terra",
                 "gpt-6.1-sol",
                 "gpt-6-astra",
@@ -1388,7 +1424,7 @@ def provider_capabilities(model_id: str) -> ProviderCapabilities:
         )
     if provider == "gemini" and folded.startswith("gemini-"):
         return ProviderCapabilities(
-            folded == "gemini-4-argon" or folded.startswith(("gemini-3", "gemini-2.5")),
+            folded in _GEMINI_4_OUTPUT_LIMITS or folded.startswith(("gemini-3", "gemini-2.5")),
             True,
             True,
         )
@@ -2431,19 +2467,13 @@ def _build_model_from_route(
         # budget outright: thinking_budget=0 fails the entire request with 400
         # INVALID_ARGUMENT before any generation, which agno then surfaces as a
         # plain str (the error body) rather than the output_schema. Bound it
-        # with thinking_level="low" instead; that reports no thought tokens.
+        # with thinking_level="low" instead; Gemini 4 still thinks at low.
         # Older ids require model-specific budgets where supported.
         if model.casefold().startswith(("gemini-3", "gemini-4")):
-            if model.casefold() == "gemini-4-argon":
-                # This adapter uses generateContent, whose non-streaming hop
-                # cap is 32K (Interactions instead permits 64K synchronously).
-                # Stay within one hop; SDK continuation is version-dependent.
-                options["max_output_tokens"] = 32_768
-                # SDK HTTP options use milliseconds. Merge with the route so
-                # a gateway override does not discard the longer timeout.
-                options.setdefault("client_params", {}).setdefault("http_options", {})[
-                    "timeout"
-                ] = 900_000
+            output_limit = _GEMINI_4_OUTPUT_LIMITS.get(model.casefold())
+            if output_limit is not None:
+                options["max_output_tokens"] = output_limit
+                http_options["timeout"] = 900_000  # SDK uses milliseconds.
             return Gemini(
                 id=model,
                 api_key=key,
